@@ -7,31 +7,71 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Merriweather:wght@300;400;700&family=MedievalSharp&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 重置和基础样式 */
+        :root {
+            --primary: #2d5a3d;
+            --primary-dark: #1e4029;
+            --primary-light: #3d7451;
+            --secondary: #8b6914;
+            --secondary-dark: #6b4f0a;
+            --secondary-light: #b88c20;
+            --accent: #c17817;
+            --accent-dark: #9a5c0f;
+            --accent-light: #e69c3e;
+            --danger: #8b1a1a;
+            --danger-dark: #6b0f0f;
+            --danger-light: #b82e2e;
+            --nordic-blue: #4a6fa5;
+            --nordic-blue-dark: #315589;
+            --nordic-blue-light: #6b8fc9;
+            --ashen-red: #a52a2a;
+            --ashen-red-dark: #801c1c;
+            --ashen-red-light: #d14545;
+            --ashen-gray: #3c3c3c;
+            --ashen-gray-dark: #282828;
+            --ashen-gray-light: #5a5a5a;
+            --dark: #121212;
+            --darker: #0a0a0a;
+            --light: #f5f0e8;
+            --lighter: #fffcf5;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --shadow-light: rgba(0, 0, 0, 0.2);
+            --gold-gradient: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+            --metal-gradient: linear-gradient(135deg, #8a8a8a 0%, #c9c9c9 50%, #8a8a8a 100%);
+            --ashen-gradient: linear-gradient(135deg, #a52a2a 0%, #d14545 50%, #a52a2a 100%);
+            --scrollbar-thumb: var(--accent);
+            --scrollbar-track: var(--dark);
+            --mobile-breakpoint: 768px;
+            --tablet-breakpoint: 1024px;
+            --border-radius: 12px;
+            --border-radius-lg: 20px;
+            --transition: all 0.3s ease;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
 
         html {
             scroll-behavior: smooth;
-            -webkit-text-size-adjust: 100%;
-            -webkit-font-smoothing: antialiased;
+            -webkit-overflow-scrolling: touch;
         }
 
         body {
             font-family: 'Merriweather', serif;
-            background-color: #121212;
-            color: #f5f0e8;
-            line-height: 1.6;
+            background: 
+                radial-gradient(ellipse at top, var(--dark) 0%, var(--darker) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M0,0 L100,0 L100,100 Z" fill="%231e4029" opacity="0.05"/><path d="M0,0 L0,100 L100,100 Z" fill="%238b6914" opacity="0.05"/></svg>');
+            color: var(--light);
+            line-height: 1.8;
             overflow-x: hidden;
-            position: relative;
-            min-height: 100vh;
+            font-size: 1rem;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
 
-        /* iOS Chrome 修复：简化背景渐变 */
         body::before {
             content: '';
             position: fixed;
@@ -40,86 +80,161 @@
             width: 100%;
             height: 100%;
             background: 
-                radial-gradient(ellipse at top, #1a1a1a 0%, #121212 100%);
-            z-index: -2;
+                radial-gradient(circle at 20% 30%, rgba(193, 120, 23, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(45, 90, 61, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(139, 26, 26, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
         }
 
-        /* 英雄区域 - 简化背景 */
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 5px;
+            background-image: var(--metal-gradient);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+
+        /* 英雄区域 */
         .hero {
             position: relative;
             height: 100vh;
             min-height: 600px;
             max-height: 1000px;
             background: 
-                linear-gradient(rgba(10, 10, 10, 0.9), rgba(18, 18, 18, 0.95)),
-                url('https://images.unsplash.com/photo-1546182990-dffeafbe841d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+                linear-gradient(rgba(10, 10, 10, 0.85), rgba(18, 18, 18, 0.9)),
+                url('https://images.unsplash.com/photo-1546182990-dffeafbe841d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            padding: 20px;
+            border-bottom: 8px solid;
+            border-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger)) 1;
             overflow: hidden;
-            border-bottom: 5px solid #8b6914;
+            padding: 1rem;
         }
 
         .hero-content {
             animation: fadeInUp 1.2s ease-out 0.3s both;
             max-width: 900px;
+            padding: 2rem;
             width: 100%;
             position: relative;
             z-index: 2;
-            background: rgba(18, 18, 18, 0.8);
-            border-radius: 15px;
-            padding: 30px;
-            border: 1px solid rgba(193, 120, 23, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            -webkit-backdrop-filter: blur(10px);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(5px);
+            background: rgba(18, 18, 18, 0.5);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(193, 120, 23, 0.2);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        /* iOS Chrome 修复：使用纯色替代复杂渐变 */
         .hero h1 {
             font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            font-size: clamp(3rem, 10vw, 6rem);
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            margin-bottom: 20px;
-            color: #ffd700;
+            margin-bottom: 1.5rem;
             text-shadow: 
-                0 0 10px rgba(193, 120, 23, 0.5),
-                2px 2px 4px rgba(0, 0, 0, 0.8);
+                0 0 30px rgba(193, 120, 23, 0.7),
+                0 0 60px rgba(193, 120, 23, 0.4),
+                0 0 90px rgba(193, 120, 23, 0.2),
+                6px 6px 12px rgba(0, 0, 0, 0.9);
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% auto;
+            animation: shimmer 4s linear infinite, float 6s ease-in-out infinite;
             line-height: 1.1;
+            position: relative;
+        }
+
+        .hero h1::after {
+            content: '⚔️';
+            position: absolute;
+            right: -30px;
+            top: 0;
+            font-size: 4rem;
+            opacity: 0.5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
         }
 
         .hero-subtitle {
             font-family: 'Cinzel', serif;
-            font-size: clamp(1.2rem, 4vw, 1.8rem);
-            color: #e69c3e;
-            margin-bottom: 25px;
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            color: var(--accent-light);
+            margin-bottom: 2rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            line-height: 1.4;
+            letter-spacing: 0.05em;
             font-weight: 600;
-            line-height: 1.3;
+            position: relative;
+            display: inline-block;
+            padding: 0 1rem;
+        }
+
+        .hero-subtitle::before, .hero-subtitle::after {
+            content: '❖';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary);
+            opacity: 0.7;
+        }
+
+        .hero-subtitle::before {
+            left: -10px;
+        }
+
+        .hero-subtitle::after {
+            right: -10px;
         }
 
         .hero p {
-            font-size: clamp(1rem, 3vw, 1.2rem);
+            font-size: clamp(1rem, 3vw, 1.3rem);
             max-width: 800px;
-            margin: 0 auto 25px;
+            margin: 0 auto 2rem;
             line-height: 1.7;
-            color: #fffcf5;
+            color: var(--lighter);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
             background: rgba(0, 0, 0, 0.4);
-            padding: 20px;
-            border-radius: 10px;
-            border-left: 4px solid #c17817;
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent);
         }
 
         .scroll-indicator {
             position: absolute;
-            bottom: 30px;
+            bottom: 2.5rem;
             left: 50%;
             transform: translateX(-50%);
             animation: bounce 2s infinite;
-            color: #c17817;
+            color: var(--accent);
             font-size: 2.5rem;
             cursor: pointer;
             z-index: 10;
@@ -131,442 +246,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #c17817;
-            transition: all 0.3s ease;
+            border: 2px solid var(--accent);
+            transition: var(--transition);
         }
 
-        /* 主容器 */
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
+        .scroll-indicator:hover {
+            background: rgba(193, 120, 23, 0.2);
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 0 20px rgba(193, 120, 23, 0.5);
         }
 
-        /* 章节样式 */
-        .section {
-            margin-bottom: 50px;
-            padding: 25px;
-            background: rgba(26, 26, 26, 0.9);
-            border-radius: 15px;
-            border: 1px solid rgba(193, 120, 23, 0.2);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            position: relative;
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(15px); }
         }
 
-        .section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #2d5a3d, #8b6914, #c17817, #8b1a1a, #a52a2a);
-        }
-
-        .section-title {
-            font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: clamp(1.8rem, 5vw, 2.8rem);
-            font-weight: 800;
-            color: #e69c3e;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #8b6914;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            position: relative;
-            line-height: 1.2;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
-        }
-
-        /* iOS Chrome 修复：生物群系网格 - 使用flexbox替代复杂grid */
-        .biome-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            margin-top: 25px;
-        }
-
-        /* 平板和桌面布局 */
-        @media (min-width: 768px) {
-            .biome-grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 25px;
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .biome-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        /* 生物群系卡片 - 简化背景 */
-        .biome-card {
-            background: rgba(30, 30, 30, 0.95);
-            border: 2px solid #8b6914;
-            border-radius: 12px;
-            padding: 25px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            min-height: 450px;
-        }
-
-        /* iOS Chrome 修复：移除复杂的伪元素渐变 */
-        .biome-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 5px;
-            background: linear-gradient(90deg, #8b6914, #c17817);
-        }
-
-        .biome-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(193, 120, 23, 0.3);
-            border-color: #c17817;
-        }
-
-        .biome-name {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.4rem, 4vw, 1.8rem);
-            color: #c17817;
-            margin-bottom: 15px;
-            font-weight: 700;
-            line-height: 1.3;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .biome-difficulty {
-            display: inline-block;
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-family: 'Cinzel', serif;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        .difficulty-easy { background: #27ae60; color: white; }
-        .difficulty-medium { background: #e67e22; color: white; }
-        .difficulty-hard { background: #c0392b; color: white; }
-        .difficulty-extreme { background: #732d91; color: white; }
-        .difficulty-legend { background: #a52a2a; color: white; }
-
-        /* 资源标签容器 */
-        .resource-tag-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 15px 0;
-        }
-
-        .resource-tag {
-            display: inline-block;
-            padding: 6px 12px;
-            background: #2d5a3d;
-            color: white;
-            border-radius: 15px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.2s ease;
-        }
-
-        .resource-tag:hover {
-            transform: translateY(-2px);
-            background: #3d7451;
-        }
-
-        /* 敌人列表 */
-        .enemy-list {
-            list-style: none;
-            margin: 15px 0;
-            flex-grow: 1;
-        }
-
-        .enemy-list li {
-            padding: 10px;
-            margin: 8px 0;
-            background: rgba(139, 26, 26, 0.15);
-            border-left: 4px solid #8b1a1a;
-            border-radius: 0 5px 5px 0;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            position: relative;
-            padding-left: 35px;
-        }
-
-        .enemy-list li::before {
-            content: '☠️';
-            position: absolute;
-            left: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 1rem;
-        }
-
-        /* 提示框 */
-        .tip-box {
-            background: rgba(193, 120, 23, 0.1);
-            border: 2px solid #8b6914;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            position: relative;
-            border-left: 5px solid #c17817;
-        }
-
-        .tip-box::before {
-            content: '💡';
-            position: absolute;
-            top: -15px;
-            left: 20px;
-            font-size: 1.8rem;
-            background: #121212;
-            padding: 0 10px;
-        }
-
-        .warning-box {
-            background: rgba(165, 42, 42, 0.15);
-            border: 2px solid #a52a2a;
-            border-left: 5px solid #8b1a1a;
-        }
-
-        .warning-box::before {
-            content: '⚠️';
-        }
-
-        /* 进度流程图 */
-        .progression-flow {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            margin: 30px 0;
-            padding: 25px;
-            background: rgba(45, 90, 61, 0.15);
-            border-radius: 15px;
-            border: 2px solid #8b6914;
-        }
-
-        @media (min-width: 768px) {
-            .progression-flow {
-                flex-direction: row;
-                justify-content: space-between;
-                padding: 30px;
-            }
-        }
-
-        .progression-step {
-            text-align: center;
-            padding: 15px;
-            background: rgba(30, 30, 30, 0.8);
-            border-radius: 10px;
-            border: 1px solid rgba(193, 120, 23, 0.2);
-            transition: all 0.3s ease;
-            min-width: 120px;
-        }
-
-        .progression-step:hover {
-            background: rgba(45, 90, 61, 0.3);
-            transform: translateY(-5px);
-        }
-
-        .progression-step div:first-child {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-
-        /* Boss区域 */
-        .boss-section {
-            background: rgba(139, 26, 26, 0.15);
-            padding: 25px;
-            border-radius: 15px;
-            border: 3px solid #8b1a1a;
-            margin-top: 30px;
-        }
-
-        .boss-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-            margin-top: 25px;
-        }
-
-        @media (min-width: 768px) {
-            .boss-grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .boss-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        .boss-card {
-            background: rgba(30, 20, 20, 0.9);
-            border: 2px solid #8b1a1a;
-            border-radius: 10px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .boss-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #8b1a1a, #b82e2e);
-        }
-
-        .boss-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(139, 26, 26, 0.4);
-        }
-
-        .boss-name {
-            font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: clamp(1.3rem, 4vw, 1.6rem);
-            color: #ff6b6b;
-            margin-bottom: 10px;
-            font-weight: 800;
-            line-height: 1.3;
-        }
-
-        /* 武器网格 */
-        .weapon-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-top: 25px;
-        }
-
-        @media (min-width: 768px) {
-            .weapon-grid {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (min-width: 1024px) {
-            .weapon-grid {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-
-        .weapon-card {
-            background: rgba(30, 40, 60, 0.9);
-            border: 2px solid #4a6fa5;
-            border-radius: 10px;
-            padding: 25px;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .weapon-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, #315589, #6b8fc9);
-        }
-
-        .weapon-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(74, 111, 165, 0.4);
-        }
-
-        .weapon-name {
-            font-family: 'Cinzel', serif;
-            font-size: clamp(1.2rem, 4vw, 1.4rem);
-            color: #6b8fc9;
-            margin-bottom: 10px;
-            font-weight: 700;
-            line-height: 1.3;
-        }
-
-        /* 表格样式 */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 25px 0;
-            background: rgba(26, 26, 26, 0.9);
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        th {
-            background: #2d5a3d;
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-family: 'Cinzel', serif;
-            font-weight: 700;
-            font-size: 1.1rem;
-            border-bottom: 3px solid #c17817;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid rgba(193, 120, 23, 0.2);
-        }
-
-        tr:hover td {
-            background: rgba(193, 120, 23, 0.1);
-        }
-
-        /* 页脚 */
-        .footer {
-            background: rgba(18, 18, 18, 0.95);
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 5px solid #8b6914;
-            margin-top: 50px;
-        }
-
-        .footer h3 {
-            font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: clamp(1.8rem, 5vw, 2.5rem);
-            margin-bottom: 20px;
-            color: #c17817;
-            text-shadow: 0 0 10px rgba(193, 120, 23, 0.3);
-        }
-
-        .footer p {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            line-height: 1.7;
-            color: #fffcf5;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* 动画 */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -578,12 +272,828 @@
             }
         }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(10px); }
+        /* 容器与章节 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 3rem 1.5rem;
         }
 
-        /* 移动端优化 */
+        @media (min-width: 768px) {
+            .container {
+                padding: 4rem 2.5rem;
+            }
+        }
+
+        .section {
+            margin-bottom: 5rem;
+            padding: 2rem;
+            background: rgba(18, 18, 18, 0.7);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(193, 120, 23, 0.1);
+            box-shadow: 
+                0 10px 30px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger), var(--ashen-red));
+        }
+
+        .section-title {
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: clamp(2rem, 6vw, 3.5rem);
+            font-weight: 800;
+            color: var(--accent-light);
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.2rem;
+            border-bottom: 3px solid var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            position: relative;
+            padding-left: 70px;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .section-title i {
+            margin-right: 15px;
+            color: var(--accent);
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(193, 120, 23, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+
+        /* 不同章节图标 */
+        .section:nth-child(1) .section-title::before { content: '🌍'; }
+        .section:nth-child(2) .section-title::before { content: '🗺️'; }
+        .section:nth-child(3) .section-title::before { content: '👑'; }
+        .section:nth-child(4) .section-title::before { content: '⚔️'; }
+        .section:nth-child(5) .section-title::before { content: '🏗️'; }
+        .section:nth-child(6) .section-title::before { content: '🍖'; }
+        .section:nth-child(7) .section-title::before { content: '💡'; }
+
+        .intro-text {
+            background: linear-gradient(135deg, rgba(45, 90, 61, 0.3), rgba(26, 26, 26, 0.5));
+            padding: 2.5rem;
+            border-left: 6px solid var(--primary);
+            margin-bottom: 3rem;
+            font-size: 1.15rem;
+            border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+            backdrop-filter: blur(10px);
+            line-height: 1.9;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .intro-text::before {
+            content: '📜';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 2rem;
+            background: var(--dark);
+            padding: 0 15px;
+        }
+
+        /* 生物群系网格 - 移动端优化 */
+        .biome-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .biome-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .biome-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .biome-card {
+            background: linear-gradient(145deg, rgba(30, 30, 30, 0.9), rgba(18, 18, 18, 0.95));
+            border: 2px solid;
+            border-image: linear-gradient(135deg, var(--secondary), var(--accent)) 1;
+            border-radius: var(--border-radius-lg);
+            padding: 2rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .biome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(193, 120, 23, 0.15), transparent);
+            transition: left 0.7s;
+        }
+
+        .biome-card:hover::before {
+            left: 100%;
+        }
+
+        @media (hover: hover) {
+            .biome-card:hover {
+                transform: translateY(-12px) scale(1.02);
+                box-shadow: 
+                    0 25px 50px rgba(193, 120, 23, 0.4),
+                    0 0 0 1px rgba(193, 120, 23, 0.2);
+                border-image: linear-gradient(135deg, var(--accent), var(--accent-light)) 1;
+            }
+        }
+
+        /* 特殊样式 - 灰烬之地 */
+        .biome-card:last-child {
+            border-image: linear-gradient(135deg, var(--ashen-red), var(--danger)) 1;
+            background: linear-gradient(145deg, rgba(40, 20, 20, 0.9), rgba(18, 10, 10, 0.95));
+        }
+
+        .biome-card:last-child:hover {
+            box-shadow: 
+                0 25px 50px rgba(165, 42, 42, 0.5),
+                0 0 0 1px rgba(165, 42, 42, 0.3);
+            border-image: linear-gradient(135deg, var(--ashen-red-light), var(--danger-light)) 1;
+        }
+
+        .biome-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
+            color: var(--accent);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            word-break: break-word;
+        }
+
+        .biome-card:last-child .biome-name {
+            color: var(--ashen-red-light);
+            text-shadow: 0 0 10px rgba(165, 42, 42, 0.5);
+        }
+
+        .biome-difficulty {
+            display: inline-block;
+            padding: 0.4rem 1.2rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-family: 'Cinzel', serif;
+        }
+
+        .difficulty-easy { 
+            background: linear-gradient(135deg, #2ecc71, #27ae60); 
+            color: white; 
+        }
+        .difficulty-medium { 
+            background: linear-gradient(135deg, #f39c12, #e67e22); 
+            color: white; 
+        }
+        .difficulty-hard { 
+            background: linear-gradient(135deg, #e74c3c, #c0392b); 
+            color: white; 
+        }
+        .difficulty-extreme { 
+            background: linear-gradient(135deg, #8e44ad, #732d91); 
+            color: white; 
+        }
+        .difficulty-legend { 
+            background: linear-gradient(135deg, var(--ashen-red), var(--danger-dark)); 
+            color: white;
+            box-shadow: 0 4px 8px rgba(165, 42, 42, 0.5);
+        }
+
+        .resource-tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .resource-tag {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            border-radius: 20px;
+            margin: 0.3rem 0.2rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            line-height: 1.4;
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .resource-tag:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .biome-card:last-child .resource-tag {
+            background: linear-gradient(135deg, var(--ashen-red-dark), var(--ashen-red-light));
+        }
+
+        .enemy-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0.8rem 0;
+        }
+
+        .enemy-list li {
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            background: linear-gradient(90deg, rgba(139, 26, 26, 0.2), rgba(139, 26, 26, 0.05));
+            border-left: 5px solid var(--danger);
+            border-radius: 0 8px 8px 0;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            padding-left: 2.5rem;
+            word-break: break-word;
+        }
+
+        .enemy-list li::before {
+            content: '☠️';
+            position: absolute;
+            left: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+        }
+
+        @media (hover: hover) {
+            .enemy-list li:hover {
+                background: linear-gradient(90deg, rgba(139, 26, 26, 0.4), rgba(139, 26, 26, 0.2));
+                transform: translateX(8px);
+                box-shadow: 0 4px 8px rgba(139, 26, 26, 0.3);
+            }
+        }
+
+        .tip-box {
+            background: linear-gradient(135deg, rgba(193, 120, 23, 0.15), rgba(139, 105, 20, 0.1));
+            border: 2px solid var(--secondary);
+            border-radius: var(--border-radius);
+            padding: 1.8rem;
+            margin: 2rem 0;
+            position: relative;
+            padding-top: 2.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-left: 6px solid var(--accent);
+            word-break: break-word;
+        }
+
+        .tip-box::before {
+            content: '💡';
+            position: absolute;
+            top: -20px;
+            left: 25px;
+            font-size: 2.2rem;
+            background: var(--dark);
+            padding: 0 15px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, rgba(165, 42, 42, 0.2), rgba(128, 28, 28, 0.1));
+            border: 2px solid var(--ashen-red);
+            border-left: 6px solid var(--danger);
+        }
+
+        .warning-box::before {
+            content: '⚠️';
+            border-color: var(--danger);
+        }
+
+        /* 进度流程 */
+        .progression-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            margin: 3rem 0;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, rgba(45, 90, 61, 0.2), rgba(26, 26, 26, 0.4));
+            border-radius: var(--border-radius-lg);
+            border: 2px solid var(--secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .progression-flow {
+                flex-direction: row;
+                justify-content: space-between;
+                flex-wrap: nowrap;
+                gap: 0;
+                padding: 3rem;
+            }
+        }
+
+        .progression-step {
+            text-align: center;
+            padding: 1.5rem;
+            position: relative;
+            width: 100%;
+            max-width: 180px;
+            background: rgba(30, 30, 30, 0.7);
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(193, 120, 23, 0.2);
+            transition: var(--transition);
+            z-index: 1;
+        }
+
+        .progression-step:hover {
+            background: rgba(45, 90, 61, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (min-width: 768px) {
+            .progression-step {
+                flex: 1;
+                min-width: 150px;
+                padding: 1.5rem 1rem;
+            }
+            
+            .progression-step::after {
+                content: '➤';
+                position: absolute;
+                right: -15px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 2rem;
+                color: var(--accent);
+                z-index: 0;
+            }
+        }
+
+        .progression-step:last-child::after {
+            content: '';
+        }
+
+        .progression-step div:first-child {
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .progression-step div:nth-child(2) {
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Boss区域 */
+        .boss-section {
+            background: linear-gradient(135deg, rgba(139, 26, 26, 0.25), rgba(26, 26, 26, 0.6));
+            padding: 2.5rem;
+            border-radius: var(--border-radius-lg);
+            border: 3px solid var(--danger);
+            margin-top: 3rem;
+            box-shadow: 
+                0 15px 35px rgba(139, 26, 26, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+        }
+
+        .boss-section::before {
+            content: '⚔️';
+            position: absolute;
+            top: -25px;
+            right: 30px;
+            font-size: 3rem;
+            color: var(--danger);
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .boss-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .boss-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .boss-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .boss-card {
+            background: linear-gradient(145deg, rgba(30, 20, 20, 0.9), rgba(18, 10, 10, 0.95));
+            border: 3px solid var(--danger);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .boss-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--danger-dark), var(--danger-light));
+        }
+
+        @media (hover: hover) {
+            .boss-card:hover {
+                transform: translateY(-10px) scale(1.03);
+                box-shadow: 
+                    0 25px 50px rgba(139, 26, 26, 0.5),
+                    0 0 0 2px rgba(139, 26, 26, 0.3);
+                border-color: var(--danger-light);
+            }
+        }
+
+        /* 最终Boss特殊样式 */
+        .boss-card:last-child {
+            border: 3px solid var(--ashen-red);
+            background: linear-gradient(145deg, rgba(40, 15, 15, 0.95), rgba(20, 5, 5, 0.98));
+        }
+
+        .boss-card:last-child::before {
+            background: linear-gradient(90deg, var(--ashen-red-dark), var(--ashen-red-light));
+        }
+
+        .boss-card:last-child:hover {
+            box-shadow: 
+                0 25px 50px rgba(165, 42, 42, 0.6),
+                0 0 0 2px rgba(165, 42, 42, 0.4);
+            border-color: var(--ashen-red-light);
+        }
+
+        .boss-name {
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: #ff6b6b;
+            margin-bottom: 0.8rem;
+            font-weight: 800;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .boss-card:last-child .boss-name {
+            color: var(--ashen-red-light);
+            text-shadow: 0 0 10px rgba(165, 42, 42, 0.7);
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: linear-gradient(135deg, var(--secondary-dark), var(--secondary-light));
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.3rem;
+            font-weight: bold;
+            line-height: 1.4;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        /* 武器网格 */
+        .weapon-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.8rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .weapon-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .weapon-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .weapon-card {
+            background: linear-gradient(145deg, rgba(30, 40, 60, 0.9), rgba(18, 25, 40, 0.95));
+            border: 2px solid var(--nordic-blue);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .weapon-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--nordic-blue-dark), var(--nordic-blue-light));
+        }
+
+        @media (hover: hover) {
+            .weapon-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 
+                    0 20px 40px rgba(74, 111, 165, 0.4),
+                    0 0 0 1px rgba(74, 111, 165, 0.3);
+                border-color: var(--nordic-blue-light);
+            }
+        }
+
+        /* 魔法武器特殊样式 */
+        .weapon-card.magic {
+            background: linear-gradient(145deg, rgba(60, 30, 70, 0.9), rgba(40, 15, 55, 0.95));
+            border: 2px solid #8e44ad;
+        }
+
+        .weapon-card.magic::before {
+            background: linear-gradient(90deg, #732d91, #9b59b6);
+        }
+
+        .weapon-card.magic:hover {
+            box-shadow: 
+                0 20px 40px rgba(142, 68, 173, 0.5),
+                0 0 0 1px rgba(142, 68, 173, 0.4);
+            border-color: #9b59b6;
+        }
+
+        /* 灰烬武器特殊样式 */
+        .weapon-card.ashen {
+            background: linear-gradient(145deg, rgba(60, 20, 20, 0.9), rgba(40, 10, 10, 0.95));
+            border: 2px solid var(--ashen-red);
+        }
+
+        .weapon-card.ashen::before {
+            background: linear-gradient(90deg, var(--ashen-red-dark), var(--ashen-red-light));
+        }
+
+        .weapon-card.ashen:hover {
+            box-shadow: 
+                0 20px 40px rgba(165, 42, 42, 0.5),
+                0 0 0 1px rgba(165, 42, 42, 0.4);
+            border-color: var(--ashen-red-light);
+        }
+
+        .weapon-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3.5vw, 1.6rem);
+            color: var(--nordic-blue);
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weapon-card.magic .weapon-name {
+            color: #9b59b6;
+        }
+
+        .weapon-card.ashen .weapon-name {
+            color: var(--ashen-red-light);
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2.5rem 0;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            font-size: 1rem;
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(193, 120, 23, 0.2);
+        }
+
+        @media (min-width: 768px) {
+            table {
+                display: table;
+                white-space: normal;
+            }
+        }
+
+        th {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            color: white;
+            padding: 1.2rem;
+            text-align: left;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 3px solid var(--accent);
+        }
+
+        td {
+            padding: 1.2rem;
+            border-bottom: 1px solid rgba(193, 120, 23, 0.15);
+            white-space: normal;
+            transition: var(--transition);
+        }
+
+        tr:hover td {
+            background: rgba(193, 120, 23, 0.1);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(10, 10, 10, 0.98));
+            padding: 4rem 2rem;
+            text-align: center;
+            border-top: 8px solid;
+            border-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger), var(--ashen-red)) 1;
+            margin-top: 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="runes-footer" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M10,10 L20,20 M80,10 L90,20 M30,40 L40,50 M60,30 L70,40" stroke="%23c17817" stroke-width="1" opacity="0.05"/></pattern></defs><rect x="0" y="0" width="100" height="100" fill="url(%23runes-footer)"/></svg>');
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .footer h3 {
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: clamp(2rem, 5vw, 3rem);
+            margin-bottom: 1.5rem;
+            color: var(--accent);
+            text-shadow: 0 0 20px rgba(193, 120, 23, 0.5);
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.1em;
+        }
+
+        .footer p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+            color: var(--lighter);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .footer .quote {
+            font-style: italic;
+            color: var(--secondary-light);
+            font-size: 1.3rem;
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* 高亮和警告文本 */
+        .highlight {
+            color: var(--accent-light);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(193, 120, 23, 0.3);
+        }
+
+        .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
+        }
+
+        /* 导航菜单（简单版） */
+        .nav-indicator {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .nav-indicator {
+                display: flex;
+            }
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--dark);
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        /* 移动端优化 - 核心修复 */
         @media (max-width: 767px) {
             .hero {
                 height: 85vh;
@@ -591,103 +1101,173 @@
             }
             
             .hero-content {
-                padding: 20px;
+                padding: 1.5rem;
             }
             
             .section {
-                padding: 20px 15px;
-                margin: 20px 10px 40px;
+                padding: 1.5rem;
+                margin-bottom: 3rem;
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+                width: calc(100% - 1rem);
             }
             
-            .container {
-                padding: 30px 15px;
+            .section-title {
+                padding-left: 60px;
+                font-size: 1.8rem;
+            }
+            
+            .section-title::before {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
             }
             
             .biome-card, .boss-card, .weapon-card {
-                padding: 20px;
+                padding: 1.5rem;
+                margin: 0;
+                width: 100%;
+            }
+            
+            .biome-grid, .boss-grid, .weapon-grid {
+                gap: 1.5rem;
+            }
+            
+            .intro-text, .tip-box {
+                padding: 1.5rem;
+            }
+            
+            .footer {
+                padding: 3rem 1.5rem;
+                margin-top: 3rem;
+            }
+            
+            .resource-tag, .stat-badge {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.8rem;
             }
             
             /* 移动端表格优化 */
             table {
+                border: 0;
                 display: block;
                 overflow-x: auto;
                 -webkit-overflow-scrolling: touch;
             }
             
-            /* 确保iOS Chrome中背景正常显示 */
-            .biome-card, .boss-card, .weapon-card {
-                background-color: rgba(30, 30, 30, 0.95);
-                -webkit-backdrop-filter: none;
-                backdrop-filter: none;
+            table thead {
+                display: none;
             }
             
-            /* 移除可能引起问题的复杂背景 */
+            table tr {
+                display: block;
+                margin-bottom: 1rem;
+                background: rgba(30, 30, 30, 0.7);
+                border-radius: var(--border-radius);
+                padding: 1rem;
+            }
+            
+            table td {
+                display: block;
+                text-align: right;
+                font-size: 0.9rem;
+                padding: 0.8rem;
+                border-bottom: 1px solid rgba(193, 120, 23, 0.15);
+                position: relative;
+                padding-left: 50%;
+            }
+            
+            table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                width: 45%;
+                text-align: left;
+                font-weight: bold;
+                text-transform: uppercase;
+                color: var(--accent);
+                font-family: 'Cinzel', serif;
+            }
+            
+            /* 确保没有水平滚动 */
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                position: relative;
+            }
+            
+            * {
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
+        /* 平板优化 */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .container {
+                padding: 3rem;
+            }
+            
+            .section-title {
+                font-size: 2.5rem;
+            }
+            
+            .biome-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .boss-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .weapon-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            button, .biome-card, .boss-card, .weapon-card, .resource-tag, .stat-badge {
+                min-height: 44px;
+            }
+            
+            .scroll-indicator {
+                width: 70px;
+                height: 70px;
+            }
+        }
+
+        /* 打印优化 */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .hero, .footer, .scroll-indicator, .nav-indicator {
+                display: none;
+            }
+            
             .section {
-                background-color: rgba(26, 26, 26, 0.95);
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
             }
-        }
-
-        /* iOS Chrome 特定修复 */
-        @supports (-webkit-touch-callout: none) {
-            /* iOS 设备 */
-            .hero-content, .biome-card, .boss-card, .weapon-card, .section {
-                -webkit-backdrop-filter: blur(10px);
-                backdrop-filter: blur(10px);
-            }
-            
-            /* 确保渐变背景正常工作 */
-            body::before {
-                background: #121212;
-                background: radial-gradient(ellipse at top, #1a1a1a 0%, #121212 100%);
-            }
-            
-            /* 修复卡片背景 */
-            .biome-card {
-                background: rgba(30, 30, 30, 0.98);
-            }
-        }
-
-        /* 高亮和警告文本 */
-        .highlight {
-            color: #e69c3e;
-            font-weight: bold;
-        }
-
-        .warning {
-            color: #ff6b6b;
-            font-weight: bold;
-        }
-
-        /* 徽章 */
-        .stat-badge {
-            display: inline-block;
-            padding: 8px 15px;
-            background: #8b6914;
-            color: white;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin: 5px;
-            font-weight: bold;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-
-        .stat-badge:hover {
-            background: #b88c20;
-            transform: translateY(-2px);
-        }
-
-        /* 子标题样式 */
-        h4 {
-            color: #c17817;
-            margin: 15px 0 10px;
-            font-family: 'Cinzel', serif;
-            font-size: 1.2rem;
-            font-weight: 600;
         }
     </style>
 </head>
 <body>
+    <!-- 导航指示器 -->
+    <div class="nav-indicator">
+        <div class="nav-dot active" data-section="overview"></div>
+        <div class="nav-dot" data-section="biomes"></div>
+        <div class="nav-dot" data-section="bosses"></div>
+        <div class="nav-dot" data-section="weapons"></div>
+        <div class="nav-dot" data-section="building"></div>
+        <div class="nav-dot" data-section="food"></div>
+        <div class="nav-dot" data-section="tips"></div>
+    </div>
+
     <!-- 英雄区域 -->
     <div class="hero">
         <div class="hero-content">
@@ -697,7 +1277,7 @@
                 在这片被诸神遗弃的第十界，你将经历从一无所有到成为传奇英雄的史诗旅程。
                 本指南涵盖所有生物群系、武器系统、Boss攻略与生存技巧，助你征服灰烬之地，成为真正的维京传奇。
             </p>
-            <div style="margin-top: 25px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+            <div style="margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
                 <span class="stat-badge">🌍 七大生物群系</span>
                 <span class="stat-badge">👑 七大Boss攻略</span>
                 <span class="stat-badge">⚔️ 完整武器系统</span>
@@ -714,7 +1294,7 @@
         <!-- 游戏概述 -->
         <section class="section" id="overview">
             <h2 class="section-title"><i class="fas fa-book"></i> 游戏概述</h2>
-            <div class="tip-box">
+            <div class="intro-text">
                 <p><strong>Valheim</strong> 是一款由 Iron Gate Studio 开发的北欧神话题材生存建造游戏。玩家扮演一名维京战士，被奥丁选中来到第十界 Valheim，你的任务是征服这片土地上的强大敌人，证明自己配得上进入英灵殿。</p>
                 <br>
                 <p>游戏融合了<span class="highlight">生存、建造、探索、战斗</span>等多种元素，采用独特的低多边形美术风格，创造出既复古又现代的视觉体验。你需要收集资源、建造基地、制作装备、探索不同的生物群系，最终击败散布在世界各地的强大 Boss，包括最新更新的终极区域——<span class="warning">灰烬之地</span>。</p>
@@ -736,7 +1316,7 @@
         <!-- 生物群系指南 -->
         <section class="section" id="biomes">
             <h2 class="section-title"><i class="fas fa-mountain"></i> 生物群系完全指南</h2>
-            <p style="margin-bottom: 20px; font-size: 1.1rem;">
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
                 Valheim 世界由多个独特的生物群系组成，每个群系都有特定的资源、敌人和 Boss。
                 按照正确的顺序探索这些群系对于游戏进度至关重要。最新更新的<span class="warning">灰烬之地</span>是游戏的终极挑战区域。
             </p>
@@ -942,9 +1522,10 @@
                         <span class="resource-tag">灰烬木</span>
                         <span class="resource-tag">硫磺</span>
                         <span class="resource-tag">焦枯头骨</span>
-                        <span class="resource-tag">血石</span>
-                        <span class="resource-tag">翡翠</span>
-                        <span class="resource-tag">堇青石</span>
+                        <span class="resource-tag">血石/翡翠/堇青石</span>
+                        <span class="resource-tag">燃烧之心</span>
+                        <span class="resource-tag">火焰精华</span>
+                        <span class="resource-tag">熔岩核心</span>
                     </div>
 
                     <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
@@ -954,19 +1535,21 @@
                         <li><strong>堕落瓦尔基里 (Fallen Valkyrie)</strong> - 高速空中单位，俯冲攻击</li>
                         <li><strong>骨颚海怪 (Bonemaw Serpent)</strong> - 熔岩中的巨兽，造成燃烧伤害</li>
                         <li><strong>灰烬元素 (Ash Elemental)</strong> - 巨型元素生物，召唤火焰风暴</li>
+                        <li><strong>火焰潜伏者 (Flame Lurker)</strong> - 地下生物，突然袭击</li>
                     </ul>
 
                     <div class="tip-box warning-box">
                         <p class="warning">⚠️ 探索前准备：</p>
-                        <p>1. 携带<strong>大量抗火药水</strong><br>
-                        2. 装备<strong>雾之地毕业装</strong><br>
-                        3. 食物选择<strong>高生命值组合</strong><br>
-                        4. 准备好最坚固的<strong>黑金属船</strong><br>
-                        5. 激活<strong>雅格鲁斯之力</strong>减少火焰伤害</p>
+                        <p>1. 携带<strong>大量抗火药水</strong>（效果需叠加）。<br>
+                        2. 装备<strong>雾之地毕业装</strong>或顶级火焰抗性装备。<br>
+                        3. 食物选择<strong>高生命值组合</strong>，至少200+生命值。<br>
+                        4. 准备好最坚固的<strong>黑金属船</strong>，此处水域滚烫。<br>
+                        5. 激活<strong>雅格鲁斯之力</strong>以减少火焰伤害。<br>
+                        6. <strong>木质建筑会着火</strong>，使用石质或灰烬木建筑。</p>
                     </div>
 
                     <h4><i class="fas fa-crown"></i> Boss：</h4>
-                    <p><strong>法德尔 (Fader)</strong> - 灰烬之地的最终统治者</p>
+                    <p><strong>法德尔 (Fader)</strong> - 灰烬之地的最终统治者，火焰与毁灭的化身</p>
                 </div>
             </div>
 
@@ -1013,7 +1596,7 @@
         <!-- Boss攻略 -->
         <section class="section boss-section" id="bosses">
             <h2 class="section-title"><i class="fas fa-crown"></i> Boss完全攻略</h2>
-            <p style="margin-bottom: 20px; font-size: 1.1rem;">
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
                 击败 Boss 是推进游戏的关键。每个 Boss 都会掉落独特的战利品，并解锁新的制作配方和能力。
                 最终 Boss <span class="warning">法德尔</span> 需要极致的准备和团队配合。
             </p>
@@ -1213,9 +1796,10 @@
                     
                     <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
                     <ul>
-                        <li><strong>第一阶段（大地）：</strong> 召唤地刺，投掷熔岩巨石</li>
-                        <li><strong>第二阶段（天空）：</strong> 升空后召唤灰烬雨和火焰流星</li>
-                        <li><strong>第三阶段（狂怒）：</strong> 融合前两阶段技能，召唤精英焦枯战士</li>
+                        <li><strong>第一阶段（大地）：</strong> 召唤地刺，投掷熔岩巨石，地面火焰喷发</li>
+                        <li><strong>第二阶段（天空）：</strong> 升空后召唤大量灰烬雨和火焰流星，召唤焦枯仆从</li>
+                        <li><strong>第三阶段（狂怒）：</strong> 融合前两阶段技能，并召唤精英焦枯战士和法师</li>
+                        <li><strong>终极技能（末日审判）：</strong> 生命值低于20%时释放全屏火焰爆炸</li>
                     </ul>
                     
                     <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
@@ -1224,13 +1808,14 @@
                         <span class="stat-badge">镶嵌宝石的魔法武器</span>
                         <span class="stat-badge">焰心金属塔盾</span>
                         <span class="stat-badge">持久治疗蜜酒×20</span>
+                        <span class="stat-badge">超级抗火药水×15</span>
                     </p>
                     
                     <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
-                    <p>第一阶段利用堡垒柱子躲避投石。第二阶段必须快速清理"折磨纪念碑"。第三阶段优先处理小怪。<strong>全程保持抗火效果</strong>，携带双倍治疗物资。</p>
+                    <p>第一阶段利用堡垒柱子躲避投石。第二阶段必须快速清理召唤的"折磨纪念碑"减少空中压力。第三阶段优先处理小怪。<strong>全程保持抗火效果</strong>，携带双倍治疗物资。末日审判时躲到完整掩体后或使用无敌技能。</p>
                     
                     <h4><i class="fas fa-trophy"></i> 奖励：</h4>
-                    <p>🏆 <strong>法德尔战利品</strong> + <strong>传奇材料</strong> + <strong>法德尔之力</strong>（大幅提升对亡灵及火焰生物的伤害）</p>
+                    <p>🏆 <strong>法德尔战利品</strong> + <strong>传奇材料</strong> + <strong>法德尔之力</strong>（大幅提升对亡灵及火焰生物的伤害，解锁最终制作配方）</p>
                 </div>
             </div>
         </section>
@@ -1239,6 +1824,22 @@
         <section class="section" id="weapons">
             <h2 class="section-title"><i class="fas fa-shield-alt"></i> 武器与装备系统</h2>
             
+            <div class="tip-box">
+                <h4><i class="fas fa-swords"></i> 武器分类</h4>
+                <p>Valheim 中的武器分为多种类型，每种都有独特的战斗风格和伤害类型：</p>
+                <ul>
+                    <li><strong>近战武器：</strong> 包括单手和双手武器，有斩击、钝击、穿刺三种伤害类型</li>
+                    <li><strong>远程武器：</strong> 弓和弩，需要配合箭矢使用</li>
+                    <li><strong>魔法武器：</strong> 雾之地后期解锁，消耗艾特尔(Eitr)能量</li>
+                    <li><strong>盾牌：</strong> 可格挡和反击，有木质、青铜、铁、银、黑金、焰心金属等材质</li>
+                    <li><strong>传奇武器：</strong> 灰烬之地解锁，可镶嵌宝石的顶级武器</li>
+                </ul>
+            </div>
+
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 3rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-crosshairs"></i> 主要武器详解
+            </h3>
+
             <div class="weapon-grid">
                 <!-- 斧类 -->
                 <div class="weapon-card">
@@ -1320,10 +1921,40 @@
                     </ul>
                     <p><span class="stat-badge">穿刺伤害: 52+</span></p>
                 </div>
+
+                <!-- 魔法武器 -->
+                <div class="weapon-card magic">
+                    <h4 class="weapon-name"><i class="fas fa-hat-wizard"></i> 魔法武器</h4>
+                    <p><strong>伤害类型：</strong> 元素 + 钝击</p>
+                    <p><strong>特点：</strong> 需要艾特尔能量。分为元素魔法和血魔法两类。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>余烬法杖 - 发射火球</li>
+                        <li>冰霜法杖 - 发射冰晶，减速敌人</li>
+                        <li>死亡法杖 - 血魔法，消耗生命值</li>
+                        <li>闪电法杖 - 灰烬之地解锁，连锁闪电</li>
+                    </ul>
+                    <p><span class="stat-badge">需要艾特尔</span></p>
+                </div>
+
+                <!-- 焰心武器 -->
+                <div class="weapon-card ashen">
+                    <h4 class="weapon-name"><i class="fas fa-fire"></i> 焰心武器系列</h4>
+                    <p><strong>伤害类型：</strong> 斩击/钝击/穿刺 + 火焰</p>
+                    <p><strong>特点：</strong> 使用灰烬之地独有的焰心金属打造，基础伤害极高。可在<strong>宝石切割台</strong>镶嵌血石、翡翠或堇青石，将其升级为附带<strong>流血、雷电或自然</strong>效果的魔法武器。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>迪尔努因 (Dyrnwyn) - 传奇火焰剑，对燃烧目标额外伤害</li>
+                        <li>撕裂者 (Ripper) - 连弩，快速发射火焰箭</li>
+                        <li>焰心金属锤 - 砸地产生火焰冲击波</li>
+                        <li>灰烬使者 - 双手巨剑，攻击留下火焰路径</li>
+                    </ul>
+                    <p><span class="stat-badge">可魔法升级</span> <span class="stat-badge">火焰附魔</span></p>
+                </div>
             </div>
 
             <!-- 箭矢表格 -->
-            <h3 style="color: #e69c3e; font-family: 'Cinzel', serif; font-size: 1.8rem; margin: 30px 0 20px; display: flex; align-items: center; gap: 15px;">
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 3rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
                 <i class="fas fa-arrow-alt-circle-right"></i> 箭矢类型
             </h3>
             
@@ -1338,64 +1969,64 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>木箭</td>
-                        <td>穿刺: 22</td>
-                        <td>基础箭矢</td>
-                        <td>木材 + 羽毛</td>
+                        <td data-label="箭矢名称">木箭</td>
+                        <td data-label="伤害类型">穿刺: 22</td>
+                        <td data-label="特殊效果">基础箭矢</td>
+                        <td data-label="制作材料">木材 + 羽毛</td>
                     </tr>
                     <tr>
-                        <td>火箭</td>
-                        <td>穿刺: 22 + 火焰: 11</td>
-                        <td>对 The Elder 有效</td>
-                        <td>木箭 + 树脂</td>
+                        <td data-label="箭矢名称">火箭</td>
+                        <td data-label="伤害类型">穿刺: 22 + 火焰: 11</td>
+                        <td data-label="特殊效果">对 The Elder 有效</td>
+                        <td data-label="制作材料">木箭 + 树脂</td>
                     </tr>
                     <tr>
-                        <td>燧石箭</td>
-                        <td>穿刺: 32</td>
-                        <td>-</td>
-                        <td>燧石 + 羽毛 + 木材</td>
+                        <td data-label="箭矢名称">燧石箭</td>
+                        <td data-label="伤害类型">穿刺: 32</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">燧石 + 羽毛 + 木材</td>
                     </tr>
                     <tr>
-                        <td>青铜箭</td>
-                        <td>穿刺: 38</td>
-                        <td>-</td>
-                        <td>青铜 + 羽毛 + 木材</td>
+                        <td data-label="箭矢名称">青铜箭</td>
+                        <td data-label="伤害类型">穿刺: 38</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">青铜 + 羽毛 + 木材</td>
                     </tr>
                     <tr>
-                        <td>铁箭</td>
-                        <td>穿刺: 52</td>
-                        <td>-</td>
-                        <td>铁 + 羽毛 + 木材</td>
+                        <td data-label="箭矢名称">铁箭</td>
+                        <td data-label="伤害类型">穿刺: 52</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">铁 + 羽毛 + 木材</td>
                     </tr>
                     <tr>
-                        <td>霜箭</td>
-                        <td>穿刺: 52 + 霜冻: 26</td>
-                        <td>减速，对 Yagluth 有效</td>
-                        <td>铁箭 + 冻腺</td>
+                        <td data-label="箭矢名称">霜箭</td>
+                        <td data-label="伤害类型">穿刺: 52 + 霜冻: 26</td>
+                        <td data-label="特殊效果">减速，对 Yagluth 有效</td>
+                        <td data-label="制作材料">铁箭 + 冻腺</td>
                     </tr>
                     <tr>
-                        <td>毒箭</td>
-                        <td>穿刺: 52 + 毒素: 26</td>
-                        <td>持续毒伤</td>
-                        <td>铁箭 + 软泥</td>
+                        <td data-label="箭矢名称">毒箭</td>
+                        <td data-label="伤害类型">穿刺: 52 + 毒素: 26</td>
+                        <td data-label="特殊效果">持续毒伤</td>
+                        <td data-label="制作材料">铁箭 + 软泥</td>
                     </tr>
                     <tr>
-                        <td>黑曜石箭</td>
-                        <td>穿刺: 62</td>
-                        <td>高伤害</td>
-                        <td>黑曜石 + 羽毛</td>
+                        <td data-label="箭矢名称">黑曜石箭</td>
+                        <td data-label="伤害类型">穿刺: 62</td>
+                        <td data-label="特殊效果">高伤害</td>
+                        <td data-label="制作材料">黑曜石 + 羽毛</td>
                     </tr>
                     <tr>
-                        <td>针箭</td>
-                        <td>穿刺: 62</td>
-                        <td>-</td>
-                        <td>针刺 + 羽毛</td>
+                        <td data-label="箭矢名称">针箭</td>
+                        <td data-label="伤害类型">穿刺: 62</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">针刺 + 羽毛</td>
                     </tr>
                     <tr>
-                        <td>火焰箭</td>
-                        <td>穿刺: 62 + 火焰: 35</td>
-                        <td>灰烬之地专属，持续燃烧</td>
-                        <td>针箭 + 火焰精华</td>
+                        <td data-label="箭矢名称">火焰箭</td>
+                        <td data-label="伤害类型">穿刺: 62 + 火焰: 35</td>
+                        <td data-label="特殊效果">灰烬之地专属，持续燃烧</td>
+                        <td data-label="制作材料">针箭 + 火焰精华</td>
                     </tr>
                 </tbody>
             </table>
@@ -1440,6 +2071,7 @@
                     <li>传送门需要成对建造，名称相同才能连接</li>
                     <li>工作站周围放置火把可防止怪物刷新</li>
                     <li>灰烬之地建筑必须考虑防火，使用石质地基</li>
+                    <li>建造攻城器械（投石机、攻城锤）需要高级工作台</li>
                 </ul>
             </div>
         </section>
@@ -1448,11 +2080,11 @@
         <section class="section" id="food">
             <h2 class="section-title"><i class="fas fa-utensils"></i> 食物与烹饪系统</h2>
             
-            <div class="tip-box">
+            <div class="intro-text">
                 <p>在 Valheim 中，<span class="highlight">食物是生存的关键</span>。不同于其他生存游戏，Valheim 的食物不仅恢复生命，还会大幅提高最大生命值和耐力上限。你最多可以同时食用 3 种不同的食物。灰烬之地新增了多种高级食物和药水。</p>
             </div>
 
-            <h3 style="color: #e69c3e; font-family: 'Cinzel', serif; font-size: 1.8rem; margin: 25px 0 20px; display: flex; align-items: center; gap: 15px;">
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 2rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
                 <i class="fas fa-apple-alt"></i> 推荐食物组合
             </h3>
             
@@ -1466,39 +2098,39 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>早期（草地）</strong></td>
-                        <td>烤肉 + 烤颈龙尾 + 蜂蜜</td>
-                        <td>蓝莓 + 蘑菇 + 蜂蜜</td>
+                        <td data-label="阶段"><strong>早期（草地）</strong></td>
+                        <td data-label="近战组合">烤肉 + 烤颈龙尾 + 蜂蜜</td>
+                        <td data-label="远程/法师组合">蓝莓 + 蘑菇 + 蜂蜜</td>
                     </tr>
                     <tr>
-                        <td><strong>青铜期</strong></td>
-                        <td>香肠 + 蜂蜜 + 胡萝卜汤</td>
-                        <td>蜂蜜 + 胡萝卜汤 + 蓝莓</td>
+                        <td data-label="阶段"><strong>青铜期</strong></td>
+                        <td data-label="近战组合">香肠 + 蜂蜜 + 胡萝卜汤</td>
+                        <td data-label="远程/法师组合">蜂蜜 + 胡萝卜汤 + 蓝莓</td>
                     </tr>
                     <tr>
-                        <td><strong>铁器期</strong></td>
-                        <td>香肠 + 腌肉 + 萝卜炖菜</td>
-                        <td>胡萝卜汤 + 萝卜炖菜 + 蜂蜜</td>
+                        <td data-label="阶段"><strong>铁器期</strong></td>
+                        <td data-label="近战组合">香肠 + 腌肉 + 萝卜炖菜</td>
+                        <td data-label="远程/法师组合">胡萝卜汤 + 萝卜炖菜 + 蜂蜜</td>
                     </tr>
                     <tr>
-                        <td><strong>白银期</strong></td>
-                        <td>狼肉串 + 狼肉干 + 洋葱汤</td>
-                        <td>洋葱汤 + 萝卜炖菜 + 蜂蜜</td>
+                        <td data-label="阶段"><strong>白银期</strong></td>
+                        <td data-label="近战组合">狼肉串 + 狼肉干 + 洋葱汤</td>
+                        <td data-label="远程/法师组合">洋葱汤 + 萝卜炖菜 + 蜂蜜</td>
                     </tr>
                     <tr>
-                        <td><strong>黑金期</strong></td>
-                        <td>洛克斯肉饼 + 血布丁 + 面包</td>
-                        <td>面包 + 血布丁 + 洋葱汤</td>
+                        <td data-label="阶段"><strong>黑金期</strong></td>
+                        <td data-label="近战组合">洛克斯肉饼 + 血布丁 + 面包</td>
+                        <td data-label="远程/法师组合">面包 + 血布丁 + 洋葱汤</td>
                     </tr>
                     <tr>
-                        <td><strong>雾之地期</strong></td>
-                        <td>魔法肉丸 + 蜂蜜盛宴 + 皇家果冻</td>
-                        <td>皇家果冻 + 魔法肉丸 + 艾特尔汤</td>
+                        <td data-label="阶段"><strong>雾之地期</strong></td>
+                        <td data-label="近战组合">魔法肉丸 + 蜂蜜盛宴 + 皇家果冻</td>
+                        <td data-label="远程/法师组合">皇家果冻 + 魔法肉丸 + 艾特尔汤</td>
                     </tr>
                     <tr>
-                        <td><strong>灰烬之地期</strong></td>
-                        <td>焦枯盛宴 + 火焰之心 + 灰烬面包</td>
-                        <td>火焰之心 + 灰烬面包 + 熔岩饮料</td>
+                        <td data-label="阶段"><strong>灰烬之地期</strong></td>
+                        <td data-label="近战组合">焦枯盛宴 + 火焰之心 + 灰烬面包</td>
+                        <td data-label="远程/法师组合">火焰之心 + 灰烬面包 + 熔岩饮料</td>
                     </tr>
                 </tbody>
             </table>
@@ -1511,6 +2143,7 @@
                     <li>建立<span class="highlight">蜂箱</span>生产蜂蜜（可做药水和食物）</li>
                     <li>探索时随手采集浆果、蘑菇和蓟草</li>
                     <li>打 Boss 前务必吃满 3 个食物，选择适合战斗类型的组合</li>
+                    <li>灰烬之地新增<span class="warning">火焰蘑菇</span>和<span class="warning">灰烬草莓</span>，提供火焰抗性加成</li>
                 </ul>
             </div>
         </section>
@@ -1546,12 +2179,26 @@
             </div>
 
             <div class="tip-box">
+                <h4><i class="fas fa-medal"></i> 最终挑战：灰烬之地</h4>
+                <p>准备挑战 Valheim 的最终区域前，请确保：</p>
+                <ul>
+                    <li>已击败所有其他 Boss 并获得其力量</li>
+                    <li>拥有雾之地毕业装备或等效装备</li>
+                    <li>储备至少 30 个超级抗火药水</li>
+                    <li>食物组合能提供 250+ 生命值</li>
+                    <li>建造了安全的石质前哨基地</li>
+                    <li>准备了充足的焰心金属修复材料</li>
+                    <li>最好有 2-3 名队友协作（单人极其困难）</li>
+                </ul>
+            </div>
+
+            <div class="tip-box" style="background: linear-gradient(135deg, rgba(193, 120, 23, 0.2), rgba(139, 105, 20, 0.1)); border-left: 6px solid var(--accent);">
                 <h4><i class="fas fa-scroll"></i> 最后的话</h4>
-                <p style="font-size: 1.2rem; line-height: 1.8;">
+                <p style="font-size: 1.2rem; line-height: 2;">
                     Valheim 是一款奖励探索和实验的游戏。<span class="highlight">不要害怕失败</span>，每次死亡都是学习的机会。
                     建造你梦想中的维京殿堂，征服每一个生物群系，击败所有 Boss，最终在灰烬之地证明你配得上进入英灵殿！
                 </p>
-                <p style="font-size: 1.4rem; margin-top: 20px; text-align: center; color: #e69c3e; font-weight: bold; font-family: 'Cinzel', serif;">
+                <p style="font-size: 1.4rem; margin-top: 1.5rem; text-align: center; color: var(--accent-light); font-weight: bold; font-family: 'Cinzel', serif;">
                     愿奥丁赐予你力量，勇士！⚔️🛡️
                 </p>
             </div>
@@ -1560,29 +2207,29 @@
 
     <!-- 页脚 -->
     <div class="footer">
-        <div style="max-width: 800px; margin: 0 auto;">
+        <div class="footer-content">
             <h3>Valheim 完全指南</h3>
             <p>
                 本指南涵盖了从新手到精通的所有内容，包括最新更新的<span class="highlight">灰烬之地</span>。
                 持续更新以反映游戏最新变化和社区发现的最佳实践。
             </p>
-            <p style="font-style: italic; color: #b88c20; font-size: 1.2rem; margin: 25px 0; padding: 20px; border-left: 4px solid #c17817; background: rgba(0, 0, 0, 0.3);">
+            <p class="quote">
                 "恐惧是懦夫的产物，勇气是勇士的勋章。在灰烬中崛起，在火焰中加冕。"
             </p>
-            <p style="color: #b88c20; margin-top: 25px; font-size: 1.1rem;">
+            <p style="color: var(--secondary-light); margin-top: 2.5rem; font-size: 1.2rem;">
                 💀 记住：死亡只是维京人生活的一部分，英灵殿等待真正的勇士 💀
             </p>
-            <p style="margin-top: 20px; font-size: 0.95rem; opacity: 0.8;">
+            <p style="margin-top: 1.5rem; font-size: 0.95rem; opacity: 0.8;">
                 更多信息和最新更新请访问 Valheim Wiki 或官方社区 | 本指南最后更新：2024年6月
             </p>
-            <div style="margin-top: 25px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
-                <span class="stat-badge" style="background: #2d5a3d;">
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));">
                     <i class="fas fa-globe-europe"></i> 七大生物群系
                 </span>
-                <span class="stat-badge" style="background: #8b1a1a;">
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--danger-dark), var(--danger-light));">
                     <i class="fas fa-crown"></i> 七大Boss
                 </span>
-                <span class="stat-badge" style="background: #a52a2a;">
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--ashen-red-dark), var(--ashen-red-light));">
                     <i class="fas fa-fire"></i> 灰烬之地
                 </span>
             </div>
@@ -1598,6 +2245,49 @@
                     block: 'start'
                 });
             });
+            
+            // 导航点点击事件
+            document.querySelectorAll('.nav-dot').forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                });
+            });
+            
+            // 滚动时更新导航点
+            const sections = document.querySelectorAll('.section');
+            const navDots = document.querySelectorAll('.nav-dot');
+            
+            function updateNavIndicator() {
+                let currentSection = '';
+                const scrollPosition = window.scrollY + 100;
+                
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    const sectionId = section.getAttribute('id');
+                    
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        currentSection = sectionId;
+                    }
+                });
+                
+                navDots.forEach(dot => {
+                    dot.classList.remove('active');
+                    if (dot.getAttribute('data-section') === currentSection) {
+                        dot.classList.add('active');
+                    }
+                });
+            }
+            
+            // 初始调用
+            updateNavIndicator();
+            
+            // 滚动事件监听
+            window.addEventListener('scroll', updateNavIndicator);
             
             // 卡片交互动画
             const observerOptions = {
@@ -1622,52 +2312,39 @@
                 observer.observe(el);
             });
             
-            // iOS Chrome 特定修复
-            const isIOSChrome = /CriOS/.test(navigator.userAgent);
-            
-            if (isIOSChrome) {
-                // 为iOS Chrome应用额外修复
-                document.querySelectorAll('.biome-card, .boss-card, .weapon-card').forEach(card => {
-                    // 确保卡片有明确的背景色
-                    card.style.backgroundColor = 'rgba(30, 30, 30, 0.98)';
-                    // 移除可能引起问题的backdrop-filter
-                    card.style.backdropFilter = 'none';
-                    card.style.webkitBackdropFilter = 'none';
-                });
-                
-                // 确保章节背景正常
-                document.querySelectorAll('.section').forEach(section => {
-                    section.style.backgroundColor = 'rgba(26, 26, 26, 0.95)';
-                });
-                
-                // 修复英雄区域
-                document.querySelector('.hero-content').style.backgroundColor = 'rgba(18, 18, 18, 0.9)';
-            }
-            
-            // 确保页面不会水平滚动
-            function preventHorizontalScroll() {
-                document.body.style.overflowX = 'hidden';
-                document.documentElement.style.overflowX = 'hidden';
-            }
-            
-            // 初始调用
-            preventHorizontalScroll();
-            
-            // 窗口大小变化时重新检查
-            window.addEventListener('resize', preventHorizontalScroll);
-            
             // 触摸设备优化
             if ('ontouchstart' in window) {
                 document.body.classList.add('touch-device');
                 
                 // 增加点击目标尺寸
-                document.querySelectorAll('.resource-tag, .stat-badge').forEach(el => {
+                document.querySelectorAll('.resource-tag, .stat-badge, .biome-card, .boss-card, .weapon-card').forEach(el => {
                     el.style.minHeight = '44px';
-                    el.style.display = 'inline-flex';
-                    el.style.alignItems = 'center';
-                    el.style.justifyContent = 'center';
                 });
             }
+            
+            // 表格移动端优化
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                if (window.innerWidth < 768) {
+                    const headers = [];
+                    const ths = table.querySelectorAll('thead th');
+                    ths.forEach(th => {
+                        headers.push(th.textContent);
+                    });
+                    
+                    const tds = table.querySelectorAll('tbody td');
+                    tds.forEach((td, index) => {
+                        const headerIndex = index % headers.length;
+                        td.setAttribute('data-label', headers[headerIndex]);
+                    });
+                }
+            });
+            
+            // 页面加载完成后的欢迎效果
+            setTimeout(() => {
+                const heroTitle = document.querySelector('.hero h1');
+                heroTitle.style.animation = 'shimmer 4s linear infinite, float 6s ease-in-out infinite, pulse 2s infinite';
+            }, 1000);
         });
     </script>
 </body>
