@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Merriweather:wght@300;400;700&family=MedievalSharp&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* 保留之前的所有CSS变量和全局样式 */
         :root {
             --primary: #2d5a3d;
             --primary-dark: #1e4029;
@@ -73,263 +72,221 @@
             text-rendering: optimizeLegibility;
         }
 
-        /* 移动端优化 - 修复生物群系部分 */
-        @media (max-width: 767px) {
-            /* 容器优化 */
-            .container {
-                padding: 1.5rem 1rem !important;
-                max-width: 100% !important;
-                overflow-x: hidden;
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(193, 120, 23, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(45, 90, 61, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(139, 26, 26, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 自定义滚动条 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--scrollbar-track);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb);
+            border-radius: 5px;
+            background-image: var(--metal-gradient);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-light);
+        }
+
+        /* 英雄区域 */
+        .hero {
+            position: relative;
+            height: 100vh;
+            min-height: 600px;
+            max-height: 1000px;
+            background: 
+                linear-gradient(rgba(10, 10, 10, 0.85), rgba(18, 18, 18, 0.9)),
+                url('https://images.unsplash.com/photo-1546182990-dffeafbe841d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            border-bottom: 8px solid;
+            border-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger)) 1;
+            overflow: hidden;
+            padding: 1rem;
+        }
+
+        .hero-content {
+            animation: fadeInUp 1.2s ease-out 0.3s both;
+            max-width: 900px;
+            padding: 2rem;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(5px);
+            background: rgba(18, 18, 18, 0.5);
+            border-radius: var(--border-radius-lg);
+            border: 1px solid rgba(193, 120, 23, 0.2);
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        .hero h1 {
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1.5rem;
+            text-shadow: 
+                0 0 30px rgba(193, 120, 23, 0.7),
+                0 0 60px rgba(193, 120, 23, 0.4),
+                0 0 90px rgba(193, 120, 23, 0.2),
+                6px 6px 12px rgba(0, 0, 0, 0.9);
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% auto;
+            animation: shimmer 4s linear infinite, float 6s ease-in-out infinite;
+            line-height: 1.1;
+            position: relative;
+        }
+
+        .hero h1::after {
+            content: '⚔️';
+            position: absolute;
+            right: -30px;
+            top: 0;
+            font-size: 4rem;
+            opacity: 0.5;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .hero-subtitle {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 4vw, 2rem);
+            color: var(--accent-light);
+            margin-bottom: 2rem;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            line-height: 1.4;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            position: relative;
+            display: inline-block;
+            padding: 0 1rem;
+        }
+
+        .hero-subtitle::before, .hero-subtitle::after {
+            content: '❖';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary);
+            opacity: 0.7;
+        }
+
+        .hero-subtitle::before {
+            left: -10px;
+        }
+
+        .hero-subtitle::after {
+            right: -10px;
+        }
+
+        .hero p {
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+            line-height: 1.7;
+            color: var(--lighter);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--accent);
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            color: var(--accent);
+            font-size: 2.5rem;
+            cursor: pointer;
+            z-index: 10;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--accent);
+            transition: var(--transition);
+        }
+
+        .scroll-indicator:hover {
+            background: rgba(193, 120, 23, 0.2);
+            transform: translateX(-50%) scale(1.1);
+            box-shadow: 0 0 20px rgba(193, 120, 23, 0.5);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(15px); }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
             }
-            
-            /* 章节优化 */
-            .section {
-                padding: 1.2rem 0.8rem !important;
-                margin-bottom: 2.5rem !important;
-                border-radius: 12px !important;
-                margin-left: 0.5rem;
-                margin-right: 0.5rem;
-                width: calc(100% - 1rem) !important;
-            }
-            
-            /* 生物群系网格修复 */
-            .biome-grid {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 1.5rem !important;
-                width: 100% !important;
-                padding: 0 !important;
-                margin-top: 1.2rem !important;
-            }
-            
-            /* 生物群系卡片修复 */
-            .biome-card {
-                width: 100% !important;
-                max-width: 100% !important;
-                margin: 0 auto !important;
-                padding: 1.2rem !important;
-                border-radius: 12px !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important;
-                word-wrap: break-word !important;
-                word-break: break-word !important;
-                hyphens: auto !important;
-            }
-            
-            /* 标题优化 */
-            .section-title {
-                font-size: 1.6rem !important;
-                padding-left: 50px !important;
-                padding-right: 10px !important;
-                margin-bottom: 1.2rem !important;
-                line-height: 1.3 !important;
-                word-break: break-word !important;
-            }
-            
-            .section-title::before {
-                width: 40px !important;
-                height: 40px !important;
-                font-size: 1.3rem !important;
-            }
-            
-            /* 生物群系名称优化 */
-            .biome-name {
-                font-size: 1.4rem !important;
-                line-height: 1.3 !important;
-                word-break: break-word !important;
-                margin-bottom: 0.8rem !important;
-            }
-            
-            /* 资源标签优化 */
-            .resource-tag-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.3rem;
-                margin-bottom: 0.8rem;
-            }
-            
-            .resource-tag {
-                padding: 0.35rem 0.7rem !important;
-                font-size: 0.8rem !important;
-                margin: 0.1rem !important;
-                flex-shrink: 1;
-                min-width: 0;
-                max-width: 100%;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            
-            /* 难度标签优化 */
-            .biome-difficulty {
-                padding: 0.3rem 0.8rem !important;
-                font-size: 0.75rem !important;
-                margin-bottom: 0.8rem !important;
-                display: inline-block;
-            }
-            
-            /* 敌人列表优化 */
-            .enemy-list {
-                margin: 0.5rem 0 !important;
-                padding: 0 !important;
-            }
-            
-            .enemy-list li {
-                padding: 0.6rem 0.6rem 0.6rem 2.2rem !important;
-                font-size: 0.85rem !important;
-                line-height: 1.4 !important;
-                margin-bottom: 0.4rem !important;
-            }
-            
-            .enemy-list li::before {
-                left: 0.6rem !important;
-                font-size: 0.9rem !important;
-            }
-            
-            /* 提示框优化 */
-            .tip-box {
-                padding: 1rem !important;
-                margin: 1.2rem 0 !important;
-                font-size: 0.9rem !important;
-                line-height: 1.5 !important;
-            }
-            
-            .tip-box::before {
-                font-size: 1.5rem !important;
-                left: 15px !important;
-                top: -15px !important;
-            }
-            
-            /* 进度流程图优化 */
-            .progression-flow {
-                flex-direction: column !important;
-                gap: 0.8rem !important;
-                padding: 1.2rem !important;
-                margin: 1.5rem 0 !important;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .progression-step {
-                min-width: 100px !important;
-                padding: 0.8rem !important;
-                margin: 0 auto !important;
-            }
-            
-            .progression-step div:first-child {
-                font-size: 1.8rem !important;
-            }
-            
-            /* 修复图片溢出 */
-            img, .biome-name i, .section-title i {
-                max-width: 100% !important;
-                height: auto !important;
-            }
-            
-            /* 修复文本溢出 */
-            p, li, span, strong, em {
-                max-width: 100% !important;
-                overflow-wrap: break-word !important;
-                word-wrap: break-word !important;
-                word-break: break-word !important;
-            }
-            
-            /* 隐藏不需要的元素 */
-            .nav-indicator {
-                display: none !important;
-            }
-            
-            /* 英雄区域优化 */
-            .hero {
-                height: 85vh;
-                min-height: 500px;
-                padding: 0.5rem !important;
-            }
-            
-            .hero-content {
-                padding: 1rem !important;
-                margin: 0 0.5rem !important;
-            }
-            
-            .hero h1 {
-                font-size: 2.2rem !important;
-                line-height: 1.1 !important;
-                margin-bottom: 1rem !important;
-            }
-            
-            .hero-subtitle {
-                font-size: 1.1rem !important;
-                margin-bottom: 1.2rem !important;
-            }
-            
-            .hero p {
-                font-size: 0.95rem !important;
-                padding: 1rem !important;
-                line-height: 1.5 !important;
-            }
-            
-            /* 页脚优化 */
-            .footer {
-                padding: 2rem 1rem !important;
-                margin-top: 3rem !important;
-            }
-            
-            .footer h3 {
-                font-size: 1.8rem !important;
-            }
-            
-            /* 额外安全措施 */
-            * {
-                max-width: 100vw !important;
-                box-sizing: border-box !important;
-            }
-            
-            html, body {
-                overflow-x: hidden !important;
-                width: 100% !important;
-                position: relative;
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
-        /* 平板优化 */
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .container {
-                padding: 2rem 1.5rem !important;
-            }
-            
-            .biome-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 1.5rem !important;
-            }
-            
-            .biome-card {
-                padding: 1.5rem !important;
-            }
-            
-            .section-title {
-                font-size: 2rem !important;
-            }
-        }
-
-        /* 桌面端样式 */
-        @media (min-width: 1025px) {
-            .biome-grid {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-                gap: 2rem;
-                margin-top: 2rem;
-            }
-        }
-
-        /* 通用样式 */
+        /* 容器与章节 */
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 3rem 2rem;
+            padding: 3rem 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                padding: 4rem 2.5rem;
+            }
         }
 
         .section {
-            margin-bottom: 4rem;
+            margin-bottom: 5rem;
             padding: 2rem;
             background: rgba(18, 18, 18, 0.7);
             border-radius: var(--border-radius-lg);
@@ -353,16 +310,92 @@
 
         .section-title {
             font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 6vw, 3.5rem);
             font-weight: 800;
             color: var(--accent-light);
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.2rem;
             border-bottom: 3px solid var(--secondary);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
             position: relative;
+            padding-left: 70px;
             line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+
+        .section-title i {
+            margin-right: 15px;
+            color: var(--accent);
+        }
+
+        .section-title::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 60px;
+            height: 60px;
+            background: rgba(193, 120, 23, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+
+        /* 不同章节图标 */
+        .section:nth-child(1) .section-title::before { content: '🌍'; }
+        .section:nth-child(2) .section-title::before { content: '🗺️'; }
+        .section:nth-child(3) .section-title::before { content: '👑'; }
+        .section:nth-child(4) .section-title::before { content: '⚔️'; }
+        .section:nth-child(5) .section-title::before { content: '🏗️'; }
+        .section:nth-child(6) .section-title::before { content: '🍖'; }
+        .section:nth-child(7) .section-title::before { content: '💡'; }
+
+        .intro-text {
+            background: linear-gradient(135deg, rgba(45, 90, 61, 0.3), rgba(26, 26, 26, 0.5));
+            padding: 2.5rem;
+            border-left: 6px solid var(--primary);
+            margin-bottom: 3rem;
+            font-size: 1.15rem;
+            border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
+            backdrop-filter: blur(10px);
+            line-height: 1.9;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .intro-text::before {
+            content: '📜';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            font-size: 2rem;
+            background: var(--dark);
+            padding: 0 15px;
+        }
+
+        /* 生物群系网格 - 移动端优化 */
+        .biome-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .biome-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .biome-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
         }
 
         .biome-card {
@@ -376,15 +409,66 @@
             overflow: hidden;
             backdrop-filter: blur(10px);
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            box-sizing: border-box;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .biome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(193, 120, 23, 0.15), transparent);
+            transition: left 0.7s;
+        }
+
+        .biome-card:hover::before {
+            left: 100%;
+        }
+
+        @media (hover: hover) {
+            .biome-card:hover {
+                transform: translateY(-12px) scale(1.02);
+                box-shadow: 
+                    0 25px 50px rgba(193, 120, 23, 0.4),
+                    0 0 0 1px rgba(193, 120, 23, 0.2);
+                border-image: linear-gradient(135deg, var(--accent), var(--accent-light)) 1;
+            }
+        }
+
+        /* 特殊样式 - 灰烬之地 */
+        .biome-card:last-child {
+            border-image: linear-gradient(135deg, var(--ashen-red), var(--danger)) 1;
+            background: linear-gradient(145deg, rgba(40, 20, 20, 0.9), rgba(18, 10, 10, 0.95));
+        }
+
+        .biome-card:last-child:hover {
+            box-shadow: 
+                0 25px 50px rgba(165, 42, 42, 0.5),
+                0 0 0 1px rgba(165, 42, 42, 0.3);
+            border-image: linear-gradient(135deg, var(--ashen-red-light), var(--danger-light)) 1;
         }
 
         .biome-name {
             font-family: 'Cinzel', serif;
-            font-size: 1.8rem;
+            font-size: clamp(1.6rem, 4vw, 2.2rem);
             color: var(--accent);
             margin-bottom: 1rem;
             font-weight: 700;
             line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            word-break: break-word;
+        }
+
+        .biome-card:last-child .biome-name {
+            color: var(--ashen-red-light);
+            text-shadow: 0 0 10px rgba(165, 42, 42, 0.5);
         }
 
         .biome-difficulty {
@@ -422,18 +506,34 @@
             box-shadow: 0 4px 8px rgba(165, 42, 42, 0.5);
         }
 
+        .resource-tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+        }
+
         .resource-tag {
             display: inline-block;
-            padding: 0.4rem 0.9rem;
+            padding: 0.5rem 1rem;
             background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
             border-radius: 20px;
-            font-size: 0.85rem;
+            margin: 0.3rem 0.2rem;
+            font-size: 0.9rem;
             font-weight: bold;
             box-shadow: 0 3px 6px rgba(0,0,0,0.3);
             line-height: 1.4;
             transition: var(--transition);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            flex-shrink: 0;
+        }
+
+        .resource-tag:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        .biome-card:last-child .resource-tag {
+            background: linear-gradient(135deg, var(--ashen-red-dark), var(--ashen-red-light));
         }
 
         .enemy-list {
@@ -443,15 +543,17 @@
         }
 
         .enemy-list li {
-            padding: 0.7rem 0.7rem 0.7rem 2.5rem;
-            margin: 0.4rem 0;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
             background: linear-gradient(90deg, rgba(139, 26, 26, 0.2), rgba(139, 26, 26, 0.05));
-            border-left: 4px solid var(--danger);
+            border-left: 5px solid var(--danger);
             border-radius: 0 8px 8px 0;
             transition: var(--transition);
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             line-height: 1.5;
             position: relative;
+            padding-left: 2.5rem;
+            word-break: break-word;
         }
 
         .enemy-list li::before {
@@ -463,32 +565,44 @@
             font-size: 1rem;
         }
 
+        @media (hover: hover) {
+            .enemy-list li:hover {
+                background: linear-gradient(90deg, rgba(139, 26, 26, 0.4), rgba(139, 26, 26, 0.2));
+                transform: translateX(8px);
+                box-shadow: 0 4px 8px rgba(139, 26, 26, 0.3);
+            }
+        }
+
         .tip-box {
             background: linear-gradient(135deg, rgba(193, 120, 23, 0.15), rgba(139, 105, 20, 0.1));
             border: 2px solid var(--secondary);
             border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin: 1.5rem 0;
+            padding: 1.8rem;
+            margin: 2rem 0;
             position: relative;
-            padding-top: 2rem;
-            border-left: 4px solid var(--accent);
+            padding-top: 2.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-left: 6px solid var(--accent);
+            word-break: break-word;
         }
 
         .tip-box::before {
             content: '💡';
             position: absolute;
-            top: -15px;
-            left: 20px;
-            font-size: 1.8rem;
+            top: -20px;
+            left: 25px;
+            font-size: 2.2rem;
             background: var(--dark);
-            padding: 0 10px;
+            padding: 0 15px;
             border-radius: 50%;
+            border: 2px solid var(--accent);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
 
         .warning-box {
             background: linear-gradient(135deg, rgba(165, 42, 42, 0.2), rgba(128, 28, 28, 0.1));
             border: 2px solid var(--ashen-red);
-            border-left: 4px solid var(--danger);
+            border-left: 6px solid var(--danger);
         }
 
         .warning-box::before {
@@ -496,130 +610,664 @@
             border-color: var(--danger);
         }
 
+        /* 进度流程 */
         .progression-flow {
             display: flex;
-            flex-direction: row;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            margin: 2rem 0;
-            padding: 1.5rem;
+            gap: 2rem;
+            margin: 3rem 0;
+            padding: 2.5rem;
             background: linear-gradient(135deg, rgba(45, 90, 61, 0.2), rgba(26, 26, 26, 0.4));
             border-radius: var(--border-radius-lg);
             border: 2px solid var(--secondary);
             position: relative;
             overflow: hidden;
-            flex-wrap: wrap;
+        }
+
+        @media (min-width: 768px) {
+            .progression-flow {
+                flex-direction: row;
+                justify-content: space-between;
+                flex-wrap: nowrap;
+                gap: 0;
+                padding: 3rem;
+            }
         }
 
         .progression-step {
             text-align: center;
-            padding: 1rem;
+            padding: 1.5rem;
             position: relative;
-            flex: 1;
-            min-width: 120px;
+            width: 100%;
+            max-width: 180px;
             background: rgba(30, 30, 30, 0.7);
             border-radius: var(--border-radius);
             border: 1px solid rgba(193, 120, 23, 0.2);
-            margin: 0.3rem;
             transition: var(--transition);
+            z-index: 1;
+        }
+
+        .progression-step:hover {
+            background: rgba(45, 90, 61, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (min-width: 768px) {
+            .progression-step {
+                flex: 1;
+                min-width: 150px;
+                padding: 1.5rem 1rem;
+            }
+            
+            .progression-step::after {
+                content: '➤';
+                position: absolute;
+                right: -15px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 2rem;
+                color: var(--accent);
+                z-index: 0;
+            }
+        }
+
+        .progression-step:last-child::after {
+            content: '';
         }
 
         .progression-step div:first-child {
-            font-size: 2rem;
+            font-size: 2.5rem;
+            margin-bottom: 0.8rem;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .progression-step div:nth-child(2) {
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 1.2rem;
             margin-bottom: 0.5rem;
+            font-family: 'Cinzel', serif;
         }
 
-        .highlight {
-            color: var(--accent-light);
-            font-weight: bold;
-        }
-
-        .warning {
-            color: #ff6b6b;
-            font-weight: bold;
-        }
-
-        /* 英雄区域 */
-        .hero {
+        /* Boss区域 */
+        .boss-section {
+            background: linear-gradient(135deg, rgba(139, 26, 26, 0.25), rgba(26, 26, 26, 0.6));
+            padding: 2.5rem;
+            border-radius: var(--border-radius-lg);
+            border: 3px solid var(--danger);
+            margin-top: 3rem;
+            box-shadow: 
+                0 15px 35px rgba(139, 26, 26, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             position: relative;
-            height: 100vh;
-            min-height: 600px;
-            background: 
-                linear-gradient(rgba(10, 10, 10, 0.85), rgba(18, 18, 18, 0.9)),
-                url('https://images.unsplash.com/photo-1546182990-dffeafbe841d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
+        }
+
+        .boss-section::before {
+            content: '⚔️';
+            position: absolute;
+            top: -25px;
+            right: 30px;
+            font-size: 3rem;
+            color: var(--danger);
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .boss-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .boss-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .boss-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .boss-card {
+            background: linear-gradient(145deg, rgba(30, 20, 20, 0.9), rgba(18, 10, 10, 0.95));
+            border: 3px solid var(--danger);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .boss-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--danger-dark), var(--danger-light));
+        }
+
+        @media (hover: hover) {
+            .boss-card:hover {
+                transform: translateY(-10px) scale(1.03);
+                box-shadow: 
+                    0 25px 50px rgba(139, 26, 26, 0.5),
+                    0 0 0 2px rgba(139, 26, 26, 0.3);
+                border-color: var(--danger-light);
+            }
+        }
+
+        /* 最终Boss特殊样式 */
+        .boss-card:last-child {
+            border: 3px solid var(--ashen-red);
+            background: linear-gradient(145deg, rgba(40, 15, 15, 0.95), rgba(20, 5, 5, 0.98));
+        }
+
+        .boss-card:last-child::before {
+            background: linear-gradient(90deg, var(--ashen-red-dark), var(--ashen-red-light));
+        }
+
+        .boss-card:last-child:hover {
+            box-shadow: 
+                0 25px 50px rgba(165, 42, 42, 0.6),
+                0 0 0 2px rgba(165, 42, 42, 0.4);
+            border-color: var(--ashen-red-light);
+        }
+
+        .boss-name {
+            font-family: 'Cinzel', 'MedievalSharp', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: #ff6b6b;
+            margin-bottom: 0.8rem;
+            font-weight: 800;
+            line-height: 1.3;
             display: flex;
             align-items: center;
-            justify-content: center;
-            text-align: center;
-            border-bottom: 8px solid;
-            border-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger)) 1;
-            overflow: hidden;
-            padding: 1rem;
+            gap: 10px;
         }
 
-        .hero-content {
-            max-width: 900px;
+        .boss-card:last-child .boss-name {
+            color: var(--ashen-red-light);
+            text-shadow: 0 0 10px rgba(165, 42, 42, 0.7);
+        }
+
+        .stat-badge {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: linear-gradient(135deg, var(--secondary-dark), var(--secondary-light));
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.3rem;
+            font-weight: bold;
+            line-height: 1.4;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            transition: var(--transition);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-badge:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+        }
+
+        /* 武器网格 */
+        .weapon-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.8rem;
+            margin-top: 2rem;
+        }
+
+        @media (min-width: 768px) {
+            .weapon-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .weapon-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .weapon-card {
+            background: linear-gradient(145deg, rgba(30, 40, 60, 0.9), rgba(18, 25, 40, 0.95));
+            border: 2px solid var(--nordic-blue);
+            border-radius: var(--border-radius);
             padding: 2rem;
-            width: 100%;
+            transition: var(--transition);
             position: relative;
-            z-index: 2;
-            backdrop-filter: blur(5px);
-            background: rgba(18, 18, 18, 0.5);
-            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .weapon-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--nordic-blue-dark), var(--nordic-blue-light));
+        }
+
+        @media (hover: hover) {
+            .weapon-card:hover {
+                transform: translateY(-8px) scale(1.02);
+                box-shadow: 
+                    0 20px 40px rgba(74, 111, 165, 0.4),
+                    0 0 0 1px rgba(74, 111, 165, 0.3);
+                border-color: var(--nordic-blue-light);
+            }
+        }
+
+        /* 魔法武器特殊样式 */
+        .weapon-card.magic {
+            background: linear-gradient(145deg, rgba(60, 30, 70, 0.9), rgba(40, 15, 55, 0.95));
+            border: 2px solid #8e44ad;
+        }
+
+        .weapon-card.magic::before {
+            background: linear-gradient(90deg, #732d91, #9b59b6);
+        }
+
+        .weapon-card.magic:hover {
+            box-shadow: 
+                0 20px 40px rgba(142, 68, 173, 0.5),
+                0 0 0 1px rgba(142, 68, 173, 0.4);
+            border-color: #9b59b6;
+        }
+
+        /* 灰烬武器特殊样式 */
+        .weapon-card.ashen {
+            background: linear-gradient(145deg, rgba(60, 20, 20, 0.9), rgba(40, 10, 10, 0.95));
+            border: 2px solid var(--ashen-red);
+        }
+
+        .weapon-card.ashen::before {
+            background: linear-gradient(90deg, var(--ashen-red-dark), var(--ashen-red-light));
+        }
+
+        .weapon-card.ashen:hover {
+            box-shadow: 
+                0 20px 40px rgba(165, 42, 42, 0.5),
+                0 0 0 1px rgba(165, 42, 42, 0.4);
+            border-color: var(--ashen-red-light);
+        }
+
+        .weapon-name {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(1.3rem, 3.5vw, 1.6rem);
+            color: var(--nordic-blue);
+            margin-bottom: 0.8rem;
+            font-weight: 700;
+            line-height: 1.3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weapon-card.magic .weapon-name {
+            color: #9b59b6;
+        }
+
+        .weapon-card.ashen .weapon-name {
+            color: var(--ashen-red-light);
+        }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 2.5rem 0;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            font-size: 1rem;
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(193, 120, 23, 0.2);
         }
 
-        .hero h1 {
-            font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: 4rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-bottom: 1.5rem;
-            background: var(--gold-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            line-height: 1.1;
+        @media (min-width: 768px) {
+            table {
+                display: table;
+                white-space: normal;
+            }
         }
 
-        .hero-subtitle {
+        th {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));
+            color: white;
+            padding: 1.2rem;
+            text-align: left;
             font-family: 'Cinzel', serif;
-            font-size: 1.8rem;
-            color: var(--accent-light);
-            margin-bottom: 2rem;
-            line-height: 1.4;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
             letter-spacing: 0.05em;
-            font-weight: 600;
+            border-bottom: 3px solid var(--accent);
         }
 
-        .hero p {
-            font-size: 1.2rem;
-            max-width: 800px;
-            margin: 0 auto 2rem;
-            line-height: 1.7;
-            color: var(--lighter);
+        td {
+            padding: 1.2rem;
+            border-bottom: 1px solid rgba(193, 120, 23, 0.15);
+            white-space: normal;
+            transition: var(--transition);
+        }
+
+        tr:hover td {
+            background: rgba(193, 120, 23, 0.1);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
         }
 
         /* 页脚 */
         .footer {
             background: linear-gradient(135deg, rgba(18, 18, 18, 0.95), rgba(10, 10, 10, 0.98));
-            padding: 3rem 2rem;
+            padding: 4rem 2rem;
             text-align: center;
             border-top: 8px solid;
             border-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent), var(--danger), var(--ashen-red)) 1;
-            margin-top: 4rem;
+            margin-top: 6rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><pattern id="runes-footer" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M10,10 L20,20 M80,10 L90,20 M30,40 L40,50 M60,30 L70,40" stroke="%23c17817" stroke-width="1" opacity="0.05"/></pattern></defs><rect x="0" y="0" width="100" height="100" fill="url(%23runes-footer)"/></svg>');
+            opacity: 0.3;
+            z-index: 0;
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .footer h3 {
             font-family: 'Cinzel', 'MedievalSharp', serif;
-            font-size: 2.5rem;
+            font-size: clamp(2rem, 5vw, 3rem);
             margin-bottom: 1.5rem;
             color: var(--accent);
+            text-shadow: 0 0 20px rgba(193, 120, 23, 0.5);
+            background: var(--gold-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.1em;
+        }
+
+        .footer p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+            color: var(--lighter);
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .footer .quote {
+            font-style: italic;
+            color: var(--secondary-light);
+            font-size: 1.3rem;
+            margin: 2.5rem 0;
+            padding: 1.5rem;
+            border-left: 4px solid var(--accent);
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            font-family: 'Cinzel', serif;
+        }
+
+        /* 高亮和警告文本 */
+        .highlight {
+            color: var(--accent-light);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(193, 120, 23, 0.3);
+        }
+
+        .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 107, 107, 0.3);
+        }
+
+        /* 导航菜单（简单版） */
+        .nav-indicator {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .nav-indicator {
+                display: flex;
+            }
+        }
+
+        .nav-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--dark);
+            border: 2px solid var(--accent);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .nav-dot.active {
+            background: var(--accent);
+            transform: scale(1.3);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        /* 移动端优化 - 核心修复 */
+        @media (max-width: 767px) {
+            .hero {
+                height: 85vh;
+                min-height: 500px;
+            }
+            
+            .hero-content {
+                padding: 1.5rem;
+            }
+            
+            .section {
+                padding: 1.5rem;
+                margin-bottom: 3rem;
+                margin-left: 0.5rem;
+                margin-right: 0.5rem;
+                width: calc(100% - 1rem);
+            }
+            
+            .section-title {
+                padding-left: 60px;
+                font-size: 1.8rem;
+            }
+            
+            .section-title::before {
+                width: 50px;
+                height: 50px;
+                font-size: 1.5rem;
+            }
+            
+            .biome-card, .boss-card, .weapon-card {
+                padding: 1.5rem;
+                margin: 0;
+                width: 100%;
+            }
+            
+            .biome-grid, .boss-grid, .weapon-grid {
+                gap: 1.5rem;
+            }
+            
+            .intro-text, .tip-box {
+                padding: 1.5rem;
+            }
+            
+            .footer {
+                padding: 3rem 1.5rem;
+                margin-top: 3rem;
+            }
+            
+            .resource-tag, .stat-badge {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.8rem;
+            }
+            
+            /* 移动端表格优化 */
+            table {
+                border: 0;
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table thead {
+                display: none;
+            }
+            
+            table tr {
+                display: block;
+                margin-bottom: 1rem;
+                background: rgba(30, 30, 30, 0.7);
+                border-radius: var(--border-radius);
+                padding: 1rem;
+            }
+            
+            table td {
+                display: block;
+                text-align: right;
+                font-size: 0.9rem;
+                padding: 0.8rem;
+                border-bottom: 1px solid rgba(193, 120, 23, 0.15);
+                position: relative;
+                padding-left: 50%;
+            }
+            
+            table td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 1rem;
+                width: 45%;
+                text-align: left;
+                font-weight: bold;
+                text-transform: uppercase;
+                color: var(--accent);
+                font-family: 'Cinzel', serif;
+            }
+            
+            /* 确保没有水平滚动 */
+            html, body {
+                overflow-x: hidden;
+                width: 100%;
+                position: relative;
+            }
+            
+            * {
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+        }
+
+        /* 平板优化 */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .container {
+                padding: 3rem;
+            }
+            
+            .section-title {
+                font-size: 2.5rem;
+            }
+            
+            .biome-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .boss-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .weapon-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 触摸设备优化 */
+        @media (hover: none) and (pointer: coarse) {
+            button, .biome-card, .boss-card, .weapon-card, .resource-tag, .stat-badge {
+                min-height: 44px;
+            }
+            
+            .scroll-indicator {
+                width: 70px;
+                height: 70px;
+            }
+        }
+
+        /* 打印优化 */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .hero, .footer, .scroll-indicator, .nav-indicator {
+                display: none;
+            }
+            
+            .section {
+                box-shadow: none;
+                border: 1px solid #ddd;
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 导航指示器 -->
+    <div class="nav-indicator">
+        <div class="nav-dot active" data-section="overview"></div>
+        <div class="nav-dot" data-section="biomes"></div>
+        <div class="nav-dot" data-section="bosses"></div>
+        <div class="nav-dot" data-section="weapons"></div>
+        <div class="nav-dot" data-section="building"></div>
+        <div class="nav-dot" data-section="food"></div>
+        <div class="nav-dot" data-section="tips"></div>
+    </div>
+
     <!-- 英雄区域 -->
     <div class="hero">
         <div class="hero-content">
@@ -629,27 +1277,58 @@
                 在这片被诸神遗弃的第十界，你将经历从一无所有到成为传奇英雄的史诗旅程。
                 本指南涵盖所有生物群系、武器系统、Boss攻略与生存技巧，助你征服灰烬之地，成为真正的维京传奇。
             </p>
+            <div style="margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center;">
+                <span class="stat-badge">🌍 七大生物群系</span>
+                <span class="stat-badge">👑 七大Boss攻略</span>
+                <span class="stat-badge">⚔️ 完整武器系统</span>
+                <span class="stat-badge">🔥 包含灰烬之地</span>
+            </div>
+        </div>
+        <div class="scroll-indicator" onclick="document.querySelector('.container').scrollIntoView({behavior: 'smooth'})">
+            <i class="fas fa-chevron-down"></i>
         </div>
     </div>
 
     <!-- 主内容容器 -->
     <div class="container">
+        <!-- 游戏概述 -->
+        <section class="section" id="overview">
+            <h2 class="section-title"><i class="fas fa-book"></i> 游戏概述</h2>
+            <div class="intro-text">
+                <p><strong>Valheim</strong> 是一款由 Iron Gate Studio 开发的北欧神话题材生存建造游戏。玩家扮演一名维京战士，被奥丁选中来到第十界 Valheim，你的任务是征服这片土地上的强大敌人，证明自己配得上进入英灵殿。</p>
+                <br>
+                <p>游戏融合了<span class="highlight">生存、建造、探索、战斗</span>等多种元素，采用独特的低多边形美术风格，创造出既复古又现代的视觉体验。你需要收集资源、建造基地、制作装备、探索不同的生物群系，最终击败散布在世界各地的强大 Boss，包括最新更新的终极区域——<span class="warning">灰烬之地</span>。</p>
+            </div>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-lightbulb"></i> 新手生存技巧</h4>
+                <ul>
+                    <li>始终携带至少3种不同的食物以最大化生命值和耐力</li>
+                    <li>建立传送门网络，方便快速旅行（注意：金属矿石无法传送）</li>
+                    <li>在探索新区域前先沿海岸线跑一圈，标记重要位置</li>
+                    <li>建造多个前哨基地，而不是只依赖一个主基地</li>
+                    <li>倒下的树木会造成巨大伤害，砍树时要注意安全</li>
+                    <li>尽早建立农场和驯养动物，确保食物供应</li>
+                </ul>
+            </div>
+        </section>
+
         <!-- 生物群系指南 -->
         <section class="section" id="biomes">
-            <h2 class="section-title">生物群系完全指南</h2>
+            <h2 class="section-title"><i class="fas fa-mountain"></i> 生物群系完全指南</h2>
             <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
                 Valheim 世界由多个独特的生物群系组成，每个群系都有特定的资源、敌人和 Boss。
-                按照正确的顺序探索这些群系对于游戏进度至关重要。
+                按照正确的顺序探索这些群系对于游戏进度至关重要。最新更新的<span class="warning">灰烬之地</span>是游戏的终极挑战区域。
             </p>
 
             <div class="biome-grid">
                 <!-- 草地 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🌾 草地 (Meadows)</h3>
+                    <h3 class="biome-name"><i class="fas fa-seedling"></i> 草地 (Meadows)</h3>
                     <span class="biome-difficulty difficulty-easy">难度: 简单</span>
                     <p><strong>描述：</strong> 游戏的起始区域，地形平坦，环境安全。这里是建立第一个基地的理想地点。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">木材</span>
                         <span class="resource-tag">石头</span>
@@ -660,24 +1339,24 @@
                         <span class="resource-tag">蘑菇</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>灰矮人 (Greyling)</strong> - 弱小的类人生物，近战攻击</li>
                         <li><strong>野猪 (Boar)</strong> - 可驯服，提供肉和皮革</li>
                         <li><strong>颈龙 (Neck)</strong> - 小型两栖生物，掉落颈龙尾肉</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>艾克瑟尔 (Eikthyr)</strong> - 巨大的雷电之鹿</p>
                 </div>
 
                 <!-- 黑森林 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🌲 黑森林 (Black Forest)</h3>
+                    <h3 class="biome-name"><i class="fas fa-tree"></i> 黑森林 (Black Forest)</h3>
                     <span class="biome-difficulty difficulty-easy">难度: 简单-中等</span>
                     <p><strong>描述：</strong> 茂密阴暗的森林，树木高大遮天蔽日。这里是获得青铜时代材料的关键区域。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">铜矿</span>
                         <span class="resource-tag">锡矿</span>
@@ -687,7 +1366,7 @@
                         <span class="resource-tag">苏特灵核心</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>灰矮人 (Greydwarf)</strong> - 常见敌人，会投掷石头</li>
                         <li><strong>灰矮人蛮兵 (Greydwarf Brute)</strong> - 强化版灰矮人，更强壮</li>
@@ -696,21 +1375,21 @@
                         <li><strong>骷髅 (Skeleton)</strong> - 在埋骨之地出现，抗穿刺伤害</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>长者 (The Elder)</strong> - 巨大的树人，弱火焰</p>
 
                     <div class="tip-box">
-                        <p><strong>重要提示：</strong> 埋骨之地(Burial Chamber)地牢中可以找到苏特灵核心，这是建造熔炼炉的必需品。</p>
+                        <p><strong>重要提示：</strong> 埋骨之地(Burial Chamber)地牢中可以找到苏特灵核心，这是建造熔炼炉的必需品。蓟草非常重要，用于制作中期食物，看到就要收集！</p>
                     </div>
                 </div>
 
                 <!-- 沼泽 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🐸 沼泽 (Swamp)</h3>
+                    <h3 class="biome-name"><i class="fas fa-water"></i> 沼泽 (Swamp)</h3>
                     <span class="biome-difficulty difficulty-medium">难度: 中等</span>
                     <p><strong>描述：</strong> 危险的沼泽地带，充满毒素和亡灵生物。水中和陆地都有致命威胁。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">铁矿</span>
                         <span class="resource-tag">古树皮</span>
@@ -719,31 +1398,33 @@
                         <span class="resource-tag">链条</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>德拉格 (Draugr)</strong> - 亡灵战士，近战或远程弓箭攻击</li>
                         <li><strong>德拉格精英 (Draugr Elite)</strong> - 更强大的德拉格变种</li>
                         <li><strong>黏液怪 (Blob)</strong> - 会喷射毒液，抗钝击</li>
                         <li><strong>软泥怪 (Oozer)</strong> - 大型黏液怪，更危险</li>
                         <li><strong>水蛭 (Leech)</strong> - 水中生物，造成毒素伤害</li>
+                        <li><strong>幽魂 (Wraith)</strong> - 夜间出现的幽灵敌人</li>
+                        <li><strong>骸骨 (Skeleton)</strong> - 沼泽变种骷髅</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>骨块 (Bonemass)</strong> - 巨大的毒素黏液怪，只弱钝击伤害</p>
 
                     <div class="tip-box warning-box">
                         <p class="warning">⚠️ 警告：</p>
-                        <p>沼泽极其危险！务必携带<span class="highlight">抗毒药水</span>，穿着<span class="highlight">铁制装备</span>。</p>
+                        <p>沼泽极其危险！务必携带<span class="highlight">抗毒药水</span>，穿着<span class="highlight">铁制装备</span>。铁矿无法通过传送门运输，需要用船或手推车运输。在沉没墓穴(Sunken Crypt)中开采铁矿。</p>
                     </div>
                 </div>
 
                 <!-- 山脉 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">⛰️ 山脉 (Mountains)</h3>
+                    <h3 class="biome-name"><i class="fas fa-mountain"></i> 山脉 (Mountains)</h3>
                     <span class="biome-difficulty difficulty-hard">难度: 困难</span>
                     <p><strong>描述：</strong> 寒冷的雪山地带，温度会持续降低生命值。需要抗寒装备才能生存。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">银矿</span>
                         <span class="resource-tag">黑曜石</span>
@@ -752,28 +1433,28 @@
                         <span class="resource-tag">狼皮</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>狼 (Wolf)</strong> - 成群出现，攻击迅速，可驯服</li>
                         <li><strong>飞龙 (Drake)</strong> - 飞行生物，喷射冰霜弹</li>
                         <li><strong>石魔像 (Stone Golem)</strong> - 血厚防高的巨型敌人</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>莫德尔 (Moder)</strong> - 龙之母，巨大的冰霜飞龙</p>
 
                     <div class="tip-box">
-                        <p><strong>必备装备：</strong> 需要<span class="highlight">抗寒药水</span>或<span class="highlight">狼皮斗篷</span>抵御严寒。</p>
+                        <p><strong>必备装备：</strong> 需要<span class="highlight">抗寒药水</span>或<span class="highlight">狼皮斗篷</span>抵御严寒。银矿埋在地下，需要击败Bonemass获得<span class="highlight">许愿骨(Wishbone)</span>才能探测到银矿位置。龙蛋极重，每次只能携带一个。</p>
                     </div>
                 </div>
 
                 <!-- 平原 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🌾 平原 (Plains)</h3>
+                    <h3 class="biome-name"><i class="fas fa-sun"></i> 平原 (Plains)</h3>
                     <span class="biome-difficulty difficulty-extreme">难度: 极难</span>
                     <p><strong>描述：</strong> 看似平和的草原，实际是游戏中最危险的生物群系之一。敌人攻击力极高。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">黑金属</span>
                         <span class="resource-tag">亚麻</span>
@@ -782,30 +1463,31 @@
                         <span class="resource-tag">洛克斯肉</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>弗林 (Fuling)</strong> - 地精战士，装备各种武器</li>
                         <li><strong>弗林狂战士 (Fuling Berserker)</strong> - 双持武器的精英</li>
                         <li><strong>弗林萨满 (Fuling Shaman)</strong> - 会施放火球和治疗</li>
                         <li><strong>死亡蚊 (Deathsquito)</strong> - <span class="warning">极度危险！</span>一击致命的飞行昆虫</li>
+                        <li><strong>洛克斯 (Lox)</strong> - 巨大的野兽，可驯服作为坐骑</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>雅格鲁斯 (Yagluth)</strong> - 地精的骷髅王，使用强大的魔法攻击</p>
 
                     <div class="tip-box warning-box">
                         <p class="warning">⚠️ 极度危险！</p>
-                        <p>死亡蚊能一击秒杀未做好准备的玩家！建议穿着<span class="highlight">银制或更好的装备</span>。</p>
+                        <p>死亡蚊能一击秒杀未做好准备的玩家！建议穿着<span class="highlight">银制或更好的装备</span>，随时准备格挡或闪避。弗林村落中可以找到黑金属和农作物。洛克斯虽然强大但可以驯服，是优秀的守卫和坐骑。</p>
                     </div>
                 </div>
 
                 <!-- 雾之地 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🌫️ 雾之地 (Mistlands)</h3>
+                    <h3 class="biome-name"><i class="fas fa-cloud"></i> 雾之地 (Mistlands)</h3>
                     <span class="biome-difficulty difficulty-extreme">难度: 极难</span>
                     <p><strong>描述：</strong> 被浓雾笼罩的神秘森林，能见度极低。需要特殊装备才能看清周围环境。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">黑金属</span>
                         <span class="resource-tag">艾特尔</span>
@@ -813,56 +1495,61 @@
                         <span class="resource-tag">软组织</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>搜寻者 (Seeker)</strong> - 巨型昆虫类主要敌人</li>
                         <li><strong>搜寻者士兵 (Seeker Soldier)</strong> - 精英变种</li>
                         <li><strong>盖亚尔 (Gjall)</strong> - 空中飞行的水母型生物，会召唤小怪</li>
                     </ul>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
                     <p><strong>女王 (The Queen)</strong> - 搜寻者之母，速度极快伤害极高</p>
 
                     <div class="tip-box">
-                        <p><strong>能见度问题：</strong> 必须制作<span class="highlight">鬼火光源</span>才能驱散浓雾。</p>
+                        <p><strong>能见度问题：</strong> 必须制作<span class="highlight">鬼火光源(Wisplight)</span>或放置<span class="highlight">鬼火火炬</span>才能驱散浓雾。地形崎岖不平，战斗时要格外小心。</p>
                     </div>
                 </div>
 
                 <!-- 灰烬之地 -->
                 <div class="biome-card">
-                    <h3 class="biome-name">🔥 灰烬之地 (Ashlands)</h3>
+                    <h3 class="biome-name"><i class="fas fa-fire"></i> 灰烬之地 (Ashlands)</h3>
                     <span class="biome-difficulty difficulty-legend">难度: 传说</span>
-                    <p><strong>描述：</strong> 世界最南端的火焰炼狱，Valheim 的终局挑战。被熔岩分割的大地、永不停止的灰烬雨。</p>
+                    <p><strong>描述：</strong> 世界最南端的火焰炼狱，Valheim 的终局挑战。被熔岩分割的大地、永不停止的灰烬雨，以及盘踞在焦枯堡垒中的亡灵大军。</p>
                     
-                    <h4 style="color: var(--accent); margin-top: 1rem; margin-bottom: 0.5rem;">主要资源：</h4>
+                    <h4><i class="fas fa-gem"></i> 主要资源：</h4>
                     <div class="resource-tag-container">
                         <span class="resource-tag">焰心金属矿</span>
                         <span class="resource-tag">灰烬木</span>
                         <span class="resource-tag">硫磺</span>
                         <span class="resource-tag">焦枯头骨</span>
-                        <span class="resource-tag">血石</span>
-                        <span class="resource-tag">翡翠</span>
-                        <span class="resource-tag">堇青石</span>
+                        <span class="resource-tag">血石/翡翠/堇青石</span>
+                        <span class="resource-tag">燃烧之心</span>
+                        <span class="resource-tag">火焰精华</span>
+                        <span class="resource-tag">熔岩核心</span>
                     </div>
 
-                    <h4 style="color: var(--danger); margin-top: 1rem; margin-bottom: 0.5rem;">敌人：</h4>
+                    <h4><i class="fas fa-skull-crossbones"></i> 敌人：</h4>
                     <ul class="enemy-list">
                         <li><strong>焦枯战士 (Charred Warrior)</strong> - 基础近战单位，高火焰抗性</li>
                         <li><strong>焦枯法师 (Charred Warlock)</strong> - 远程火焰攻击，会施放火墙</li>
                         <li><strong>堕落瓦尔基里 (Fallen Valkyrie)</strong> - 高速空中单位，俯冲攻击</li>
                         <li><strong>骨颚海怪 (Bonemaw Serpent)</strong> - 熔岩中的巨兽，造成燃烧伤害</li>
+                        <li><strong>灰烬元素 (Ash Elemental)</strong> - 巨型元素生物，召唤火焰风暴</li>
+                        <li><strong>火焰潜伏者 (Flame Lurker)</strong> - 地下生物，突然袭击</li>
                     </ul>
 
                     <div class="tip-box warning-box">
                         <p class="warning">⚠️ 探索前准备：</p>
-                        <p>1. 携带<strong>大量抗火药水</strong><br>
-                        2. 装备<strong>雾之地毕业装</strong><br>
-                        3. 食物选择<strong>高生命值组合</strong><br>
-                        4. 准备好最坚固的<strong>黑金属船</strong></p>
+                        <p>1. 携带<strong>大量抗火药水</strong>（效果需叠加）。<br>
+                        2. 装备<strong>雾之地毕业装</strong>或顶级火焰抗性装备。<br>
+                        3. 食物选择<strong>高生命值组合</strong>，至少200+生命值。<br>
+                        4. 准备好最坚固的<strong>黑金属船</strong>，此处水域滚烫。<br>
+                        5. 激活<strong>雅格鲁斯之力</strong>以减少火焰伤害。<br>
+                        6. <strong>木质建筑会着火</strong>，使用石质或灰烬木建筑。</p>
                     </div>
 
-                    <h4 style="color: #ff6b6b; margin-top: 1rem; margin-bottom: 0.5rem;">Boss：</h4>
-                    <p><strong>法德尔 (Fader)</strong> - 灰烬之地的最终统治者</p>
+                    <h4><i class="fas fa-crown"></i> Boss：</h4>
+                    <p><strong>法德尔 (Fader)</strong> - 灰烬之地的最终统治者，火焰与毁灭的化身</p>
                 </div>
             </div>
 
@@ -905,103 +1592,759 @@
                 </div>
             </div>
         </section>
+
+        <!-- Boss攻略 -->
+        <section class="section boss-section" id="bosses">
+            <h2 class="section-title"><i class="fas fa-crown"></i> Boss完全攻略</h2>
+            <p style="margin-bottom: 1.5rem; font-size: 1.1rem;">
+                击败 Boss 是推进游戏的关键。每个 Boss 都会掉落独特的战利品，并解锁新的制作配方和能力。
+                最终 Boss <span class="warning">法德尔</span> 需要极致的准备和团队配合。
+            </p>
+
+            <div class="boss-grid">
+                <!-- 艾克瑟尔 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-bolt"></i> 艾克瑟尔 (Eikthyr)</h3>
+                    <p><strong>位置：</strong> 草地 | <strong>难度：</strong> ★☆☆☆☆</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在祭坛放置 <span class="highlight">2个鹿的战利品</span></p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>闪电打击：</strong> 远程闪电攻击，范围较大</li>
+                        <li><strong>头槌：</strong> 向前冲撞，造成高伤害</li>
+                        <li><strong>践踏：</strong> 跺脚造成AOE伤害</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">皮甲套装</span>
+                        <span class="stat-badge">粗制弓+火箭</span>
+                        <span class="stat-badge">木盾</span>
+                        <span class="stat-badge">燧石矛/斧</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p>使用柱子掩护躲避闪电，用盾牌格挡近战攻击。保持距离用弓箭射击最安全。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>艾克瑟尔战利品</strong> + <strong>硬鹿角</strong>（制作鹿角镐）+ <strong>艾克瑟尔之力</strong>（降低跑步和跳跃的耐力消耗）</p>
+                </div>
+
+                <!-- 长者 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-tree"></i> 长者 (The Elder)</h3>
+                    <p><strong>位置：</strong> 黑森林 | <strong>难度：</strong> ★★☆☆☆</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在祭坛放置 <span class="highlight">3个古代种子</span>（从灰矮人蛮兵/萨满或灰矮人巢穴获得）</p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>藤蔓攻击：</strong> 发射藤蔓弹幕，可用柱子阻挡</li>
+                        <li><strong>践踏：</strong> 近距离AOE攻击</li>
+                        <li><strong>召唤树根：</strong> 从地面召唤攻击性树根</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">青铜盔甲</span>
+                        <span class="stat-badge">精制弓+火箭</span>
+                        <span class="stat-badge">青铜盾</span>
+                        <span class="stat-badge">青铜斧</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p class="highlight">弱点：火焰！</p>
+                    <p>使用火箭是最有效的方法。利用祭坛周围的石柱阻挡藤蔓攻击，在柱子后方输出。也可以在附近放置篝火，引诱 Boss 踩上去造成持续火焰伤害。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>长者战利品</strong> + <strong>沼泽钥匙</strong>（开启沼泽地穴）+ <strong>长者之力</strong>（提高砍树速度）</p>
+                </div>
+
+                <!-- 骨块 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-skull"></i> 骨块 (Bonemass)</h3>
+                    <p><strong>位置：</strong> 沼泽 | <strong>难度：</strong> ★★★★☆</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在祭坛放置 <span class="highlight">10个枯骨</span>（在沼泽地穴中获得）</p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>近战拍击：</strong> 缓慢但威力巨大的物理攻击</li>
+                        <li><strong>毒雾喷射：</strong> 喷射大范围毒云，持续伤害</li>
+                        <li><strong>召唤小怪：</strong> 召唤骷髅和黏液怪</li>
+                        <li><strong>自我治疗：</strong> 会定期恢复生命值</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">铁制盔甲</span>
+                        <span class="stat-badge">铁锤/狼牙棒</span>
+                        <span class="stat-badge">铁盾</span>
+                        <span class="stat-badge">抗毒药水×10</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p class="warning">⚠️ 关键：</p>
+                    <p>Bonemass <span class="highlight">只弱钝击伤害！</span> 必须使用锤子或狼牙棒。抗毒药水是必需品！优先清理召唤的小怪，防止被围攻。可以建造石头平台站在上面远程攻击，或使用霜箭打断其治疗。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>骨块战利品</strong> + <strong>许愿骨</strong>（探测银矿和宝藏）+ <strong>骨块之力</strong>（大幅减少物理伤害）</p>
+                </div>
+
+                <!-- 莫德尔 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-dragon"></i> 莫德尔 (Moder)</h3>
+                    <p><strong>位置：</strong> 山脉 | <strong>难度：</strong> ★★★☆☆</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在祭坛放置 <span class="highlight">3个龙蛋</span>（在山脉中寻找，每个重量200）</p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>俯冲攻击：</strong> 飞行时用爪子抓击</li>
+                        <li><strong>冰霜吐息：</strong> 喷射冰霜，减缓移动速度</li>
+                        <li><strong>冰晶弹幕：</strong> 空中发射多个冰晶</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">狼皮盔甲</span>
+                        <span class="stat-badge">德拉格之牙弓</span>
+                        <span class="stat-badge">黑曜石/毒箭</span>
+                        <span class="stat-badge">银剑（备用）</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p>在召唤点建造石头掩体，顶部开口。Moder 飞行时用弓箭攻击，降落后可近战。冰霜吐息范围大，要及时躲避。准备充足的箭矢（200+支）。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>莫德尔战利品</strong> + <strong>龙之泪</strong>（制作工匠桌）+ <strong>莫德尔之力</strong>（航海时获得顺风加成）</p>
+                </div>
+
+                <!-- 雅格鲁斯 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-fire"></i> 雅格鲁斯 (Yagluth)</h3>
+                    <p><strong>位置：</strong> 平原 | <strong>难度：</strong> ★★★★★</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在祭坛放置 <span class="highlight">5个弗林图腾</span>（击败弗林获得）</p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>火焰吐息：</strong> 扫射范围极大的火焰</li>
+                        <li><strong>流星打击：</strong> 召唤流星雨轰炸区域</li>
+                        <li><strong>拳击：</strong> 近战重击和AOE地面拍击</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">帕蒂尔盔甲</span>
+                        <span class="stat-badge">霜之杖/银剑</span>
+                        <span class="stat-badge">黑金盾</span>
+                        <span class="stat-badge">霜箭</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p class="highlight">弱点：冰霜！</p>
+                    <p>建造石头掩体很重要，因为流星攻击会摧毁木质建筑。霜之杖和霜箭效果最佳。保持距离，利用掩体躲避火焰吐息。携带大量治疗食物。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>雅格鲁斯战利品</strong> + <strong>撕裂之灵</strong>（制作鬼火喷泉）+ <strong>雅格鲁斯之力</strong>（降低元素伤害）</p>
+                </div>
+
+                <!-- 女王 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-spider"></i> 女王 (The Queen)</h3>
+                    <p><strong>位置：</strong> 雾之地 - 被感染的城堡 | <strong>难度：</strong> ★★★★★</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在被感染的城堡祭坛放置 <span class="highlight">3个搜寻者士兵战利品</span></p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>快速连击：</strong> 四只爪子的迅速攻击</li>
+                        <li><strong>尾部横扫：</strong> 大范围横扫攻击</li>
+                        <li><strong>跳跃砸地：</strong> 跳起后砸地造成AOE和击退</li>
+                        <li><strong>召唤搜寻者：</strong> 召唤小型搜寻者</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">精炼艾特尔盔甲</span>
+                        <span class="stat-badge">魔法武器</span>
+                        <span class="stat-badge">黑金盾</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p>女王速度极快！需要掌握完美的格挡和闪避时机。优先使用魔法攻击。注意她的连击模式，找准反击时机。保持高艾特尔食物补给。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>女王战利品</strong> + <strong>女王掉落物</strong> + <strong>女王之力</strong>（提高挖矿速度和艾特尔恢复100%）</p>
+                </div>
+
+                <!-- 法德尔 -->
+                <div class="boss-card">
+                    <h3 class="boss-name"><i class="fas fa-crown"></i> 法德尔 (Fader)</h3>
+                    <p><strong>位置：</strong> 灰烬之地 - 焦枯堡垒深处 | <strong>难度：</strong> ★★★★★★</p>
+                    
+                    <h4><i class="fas fa-magic"></i> 召唤方式：</h4>
+                    <p>在焦枯堡垒深处的祭坛使用 <span class="highlight">法德尔遗物</span>（由灰烬之地Boss掉落材料合成）</p>
+                    
+                    <h4><i class="fas fa-fist-raised"></i> 攻击模式：</h4>
+                    <ul>
+                        <li><strong>第一阶段（大地）：</strong> 召唤地刺，投掷熔岩巨石，地面火焰喷发</li>
+                        <li><strong>第二阶段（天空）：</strong> 升空后召唤大量灰烬雨和火焰流星，召唤焦枯仆从</li>
+                        <li><strong>第三阶段（狂怒）：</strong> 融合前两阶段技能，并召唤精英焦枯战士和法师</li>
+                        <li><strong>终极技能（末日审判）：</strong> 生命值低于20%时释放全屏火焰爆炸</li>
+                    </ul>
+                    
+                    <h4><i class="fas fa-helmet-battle"></i> 推荐装备：</h4>
+                    <p>
+                        <span class="stat-badge">焰心金属盔甲</span>
+                        <span class="stat-badge">镶嵌宝石的魔法武器</span>
+                        <span class="stat-badge">焰心金属塔盾</span>
+                        <span class="stat-badge">持久治疗蜜酒×20</span>
+                        <span class="stat-badge">超级抗火药水×15</span>
+                    </p>
+                    
+                    <h4><i class="fas fa-tactics"></i> 战斗策略：</h4>
+                    <p>第一阶段利用堡垒柱子躲避投石。第二阶段必须快速清理召唤的"折磨纪念碑"减少空中压力。第三阶段优先处理小怪。<strong>全程保持抗火效果</strong>，携带双倍治疗物资。末日审判时躲到完整掩体后或使用无敌技能。</p>
+                    
+                    <h4><i class="fas fa-trophy"></i> 奖励：</h4>
+                    <p>🏆 <strong>法德尔战利品</strong> + <strong>传奇材料</strong> + <strong>法德尔之力</strong>（大幅提升对亡灵及火焰生物的伤害，解锁最终制作配方）</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 武器与装备系统 -->
+        <section class="section" id="weapons">
+            <h2 class="section-title"><i class="fas fa-shield-alt"></i> 武器与装备系统</h2>
+            
+            <div class="tip-box">
+                <h4><i class="fas fa-swords"></i> 武器分类</h4>
+                <p>Valheim 中的武器分为多种类型，每种都有独特的战斗风格和伤害类型：</p>
+                <ul>
+                    <li><strong>近战武器：</strong> 包括单手和双手武器，有斩击、钝击、穿刺三种伤害类型</li>
+                    <li><strong>远程武器：</strong> 弓和弩，需要配合箭矢使用</li>
+                    <li><strong>魔法武器：</strong> 雾之地后期解锁，消耗艾特尔(Eitr)能量</li>
+                    <li><strong>盾牌：</strong> 可格挡和反击，有木质、青铜、铁、银、黑金、焰心金属等材质</li>
+                    <li><strong>传奇武器：</strong> 灰烬之地解锁，可镶嵌宝石的顶级武器</li>
+                </ul>
+            </div>
+
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 3rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-crosshairs"></i> 主要武器详解
+            </h3>
+
+            <div class="weapon-grid">
+                <!-- 斧类 -->
+                <div class="weapon-card">
+                    <h4 class="weapon-name"><i class="fas fa-axe"></i> 斧类 (Axes)</h4>
+                    <p><strong>伤害类型：</strong> 斩击</p>
+                    <p><strong>特点：</strong> 既能作为工具砍树，也能作为武器战斗。单手斧可配盾牌，双手斧伤害更高。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>石斧 - 最初的工具和武器</li>
+                        <li>青铜斧 - 第一把金属斧</li>
+                        <li>铁制战斧 - 双手，高伤害</li>
+                        <li>黑金斧 - 顶级单手斧</li>
+                        <li>焰心战斧 - 传奇武器，附带火焰伤害</li>
+                    </ul>
+                    <p><span class="stat-badge">最大伤害: 88+</span></p>
+                </div>
+
+                <!-- 剑类 -->
+                <div class="weapon-card">
+                    <h4 class="weapon-name"><i class="fas fa-sword"></i> 剑类 (Swords)</h4>
+                    <p><strong>伤害类型：</strong> 斩击</p>
+                    <p><strong>特点：</strong> 速度快，连击流畅。单手持握可配盾牌，是最平衡的武器类型。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>青铜剑 - 第一把真正的剑</li>
+                        <li>铁剑 - 中期主力武器</li>
+                        <li>银剑 - 对未死生物额外伤害</li>
+                        <li>黑金剑 - 最强单手剑</li>
+                        <li>迪尔努因 - 传奇火焰剑，灰烬之地终极武器</li>
+                    </ul>
+                    <p><span class="stat-badge">最大伤害: 95+</span></p>
+                </div>
+
+                <!-- 锤类 -->
+                <div class="weapon-card">
+                    <h4 class="weapon-name"><i class="fas fa-hammer"></i> 锤类 (Maces)</h4>
+                    <p><strong>伤害类型：</strong> 钝击</p>
+                    <p><strong>特点：</strong> 对骷髅和黏液怪效果极佳。Bonemass 只弱钝击！</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>木棒 - 早期钝器</li>
+                        <li>青铜锤 - 第一把金属锤</li>
+                        <li>铁锤 - 打 Bonemass 必备</li>
+                        <li>狼牙棒 - 钝击+穿刺</li>
+                        <li>焰心金属锤 - 附带爆炸效果</li>
+                    </ul>
+                    <p><span class="stat-badge">最大伤害: 120+</span></p>
+                </div>
+
+                <!-- 矛类 -->
+                <div class="weapon-card">
+                    <h4 class="weapon-name"><i class="fas fa-bullseye"></i> 矛类 (Spears)</h4>
+                    <p><strong>伤害类型：</strong> 穿刺</p>
+                    <p><strong>特点：</strong> 可近战可投掷，攻击距离远。注意骷髅抗穿刺！</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>燧石矛 - 早期投掷武器</li>
+                        <li>青铜矛 - 第一把金属矛</li>
+                        <li>铁矛 - 穿刺伤害: 55</li>
+                        <li>黑金三叉戟 - 最强矛</li>
+                        <li>焰心三叉戟 - 可远程投掷的火焰武器</li>
+                    </ul>
+                    <p><span class="stat-badge">穿刺伤害: 80+</span></p>
+                </div>
+
+                <!-- 弓类 -->
+                <div class="weapon-card">
+                    <h4 class="weapon-name"><i class="fas fa-bow-arrow"></i> 弓类 (Bows)</h4>
+                    <p><strong>伤害类型：</strong> 穿刺（视箭矢而定）</p>
+                    <p><strong>特点：</strong> 远程主力，打 Boss 必备。蓄力越久伤害越高。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>粗制弓 - 最初的弓</li>
+                        <li>精制弓 - 用精致木材制作</li>
+                        <li>猎人弓 - 铁器时代，穿刺: 42</li>
+                        <li>德拉格之牙 - 附带毒素，穿刺: 47</li>
+                        <li>黑金弓 - 最强弓，穿刺: 52</li>
+                        <li>焰心连弩 - 灰烬之地武器，快速射击</li>
+                    </ul>
+                    <p><span class="stat-badge">穿刺伤害: 52+</span></p>
+                </div>
+
+                <!-- 魔法武器 -->
+                <div class="weapon-card magic">
+                    <h4 class="weapon-name"><i class="fas fa-hat-wizard"></i> 魔法武器</h4>
+                    <p><strong>伤害类型：</strong> 元素 + 钝击</p>
+                    <p><strong>特点：</strong> 需要艾特尔能量。分为元素魔法和血魔法两类。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>余烬法杖 - 发射火球</li>
+                        <li>冰霜法杖 - 发射冰晶，减速敌人</li>
+                        <li>死亡法杖 - 血魔法，消耗生命值</li>
+                        <li>闪电法杖 - 灰烬之地解锁，连锁闪电</li>
+                    </ul>
+                    <p><span class="stat-badge">需要艾特尔</span></p>
+                </div>
+
+                <!-- 焰心武器 -->
+                <div class="weapon-card ashen">
+                    <h4 class="weapon-name"><i class="fas fa-fire"></i> 焰心武器系列</h4>
+                    <p><strong>伤害类型：</strong> 斩击/钝击/穿刺 + 火焰</p>
+                    <p><strong>特点：</strong> 使用灰烬之地独有的焰心金属打造，基础伤害极高。可在<strong>宝石切割台</strong>镶嵌血石、翡翠或堇青石，将其升级为附带<strong>流血、雷电或自然</strong>效果的魔法武器。</p>
+                    <p><strong>代表武器：</strong></p>
+                    <ul>
+                        <li>迪尔努因 (Dyrnwyn) - 传奇火焰剑，对燃烧目标额外伤害</li>
+                        <li>撕裂者 (Ripper) - 连弩，快速发射火焰箭</li>
+                        <li>焰心金属锤 - 砸地产生火焰冲击波</li>
+                        <li>灰烬使者 - 双手巨剑，攻击留下火焰路径</li>
+                    </ul>
+                    <p><span class="stat-badge">可魔法升级</span> <span class="stat-badge">火焰附魔</span></p>
+                </div>
+            </div>
+
+            <!-- 箭矢表格 -->
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 3rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-arrow-alt-circle-right"></i> 箭矢类型
+            </h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>箭矢名称</th>
+                        <th>伤害类型</th>
+                        <th>特殊效果</th>
+                        <th>制作材料</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="箭矢名称">木箭</td>
+                        <td data-label="伤害类型">穿刺: 22</td>
+                        <td data-label="特殊效果">基础箭矢</td>
+                        <td data-label="制作材料">木材 + 羽毛</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">火箭</td>
+                        <td data-label="伤害类型">穿刺: 22 + 火焰: 11</td>
+                        <td data-label="特殊效果">对 The Elder 有效</td>
+                        <td data-label="制作材料">木箭 + 树脂</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">燧石箭</td>
+                        <td data-label="伤害类型">穿刺: 32</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">燧石 + 羽毛 + 木材</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">青铜箭</td>
+                        <td data-label="伤害类型">穿刺: 38</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">青铜 + 羽毛 + 木材</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">铁箭</td>
+                        <td data-label="伤害类型">穿刺: 52</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">铁 + 羽毛 + 木材</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">霜箭</td>
+                        <td data-label="伤害类型">穿刺: 52 + 霜冻: 26</td>
+                        <td data-label="特殊效果">减速，对 Yagluth 有效</td>
+                        <td data-label="制作材料">铁箭 + 冻腺</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">毒箭</td>
+                        <td data-label="伤害类型">穿刺: 52 + 毒素: 26</td>
+                        <td data-label="特殊效果">持续毒伤</td>
+                        <td data-label="制作材料">铁箭 + 软泥</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">黑曜石箭</td>
+                        <td data-label="伤害类型">穿刺: 62</td>
+                        <td data-label="特殊效果">高伤害</td>
+                        <td data-label="制作材料">黑曜石 + 羽毛</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">针箭</td>
+                        <td data-label="伤害类型">穿刺: 62</td>
+                        <td data-label="特殊效果">-</td>
+                        <td data-label="制作材料">针刺 + 羽毛</td>
+                    </tr>
+                    <tr>
+                        <td data-label="箭矢名称">火焰箭</td>
+                        <td data-label="伤害类型">穿刺: 62 + 火焰: 35</td>
+                        <td data-label="特殊效果">灰烬之地专属，持续燃烧</td>
+                        <td data-label="制作材料">针箭 + 火焰精华</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-tips"></i> 武器选择建议</h4>
+                <ul>
+                    <li><strong>新手：</strong> 剑+盾组合最安全，攻守兼备</li>
+                    <li><strong>对付灰矮人：</strong> 斧或剑，克制斩击弱点</li>
+                    <li><strong>对付骷髅：</strong> 锤类钝击武器，避免用矛（抗穿刺）</li>
+                    <li><strong>对付黏液怪：</strong> 锤类最佳，弓箭次之</li>
+                    <li><strong>打 Boss：</strong> 根据弱点选择，准备多种武器备用</li>
+                    <li><strong>探索平原：</strong> 随时准备弓箭对付死亡蚊！</li>
+                    <li><strong>灰烬之地：</strong> 必须使用焰心武器或高级魔法武器</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 建造系统 -->
+        <section class="section" id="building">
+            <h2 class="section-title"><i class="fas fa-hammer"></i> 建造系统</h2>
+            
+            <div class="tip-box">
+                <h4><i class="fas fa-drafting-compass"></i> 结构完整性</h4>
+                <p>Valheim 的建筑系统基于真实的物理规则：</p>
+                <ul>
+                    <li><strong>支撑系统：</strong> 建筑部件从地面或支柱获得支撑，颜色表示稳定性</li>
+                    <li><strong>颜色代码：</strong> 蓝色（最稳固） → 绿色 → 黄色 → 橙色 → 红色（即将倒塌）</li>
+                    <li><strong>材料强度：</strong> 石头 > 铁木 > 核心木 > 普通木材 > 灰烬木（防火）</li>
+                    <li><strong>横梁支撑：</strong> 使用铁木横梁可以延伸建筑范围</li>
+                    <li><strong>防火设计：</strong> 灰烬之地建筑必须使用石质或灰烬木材料，否则会着火</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-tips"></i> 建造技巧</h4>
+                <ul>
+                    <li>先建地基和支柱，再建墙壁和屋顶</li>
+                    <li>使用 26 度和 45 度屋顶拼接实现复杂造型</li>
+                    <li>在基地周围挖壕沟可防止敌人入侵</li>
+                    <li>建造多层建筑时使用铁木加固</li>
+                    <li>传送门需要成对建造，名称相同才能连接</li>
+                    <li>工作站周围放置火把可防止怪物刷新</li>
+                    <li>灰烬之地建筑必须考虑防火，使用石质地基</li>
+                    <li>建造攻城器械（投石机、攻城锤）需要高级工作台</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 食物与烹饪系统 -->
+        <section class="section" id="food">
+            <h2 class="section-title"><i class="fas fa-utensils"></i> 食物与烹饪系统</h2>
+            
+            <div class="intro-text">
+                <p>在 Valheim 中，<span class="highlight">食物是生存的关键</span>。不同于其他生存游戏，Valheim 的食物不仅恢复生命，还会大幅提高最大生命值和耐力上限。你最多可以同时食用 3 种不同的食物。灰烬之地新增了多种高级食物和药水。</p>
+            </div>
+
+            <h3 style="color: var(--accent-light); font-family: 'Cinzel', serif; font-size: clamp(1.8rem, 4vw, 2.5rem); margin: 2rem 0 1.5rem 0; display: flex; align-items: center; gap: 15px;">
+                <i class="fas fa-apple-alt"></i> 推荐食物组合
+            </h3>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>阶段</th>
+                        <th>近战组合</th>
+                        <th>远程/法师组合</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="阶段"><strong>早期（草地）</strong></td>
+                        <td data-label="近战组合">烤肉 + 烤颈龙尾 + 蜂蜜</td>
+                        <td data-label="远程/法师组合">蓝莓 + 蘑菇 + 蜂蜜</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>青铜期</strong></td>
+                        <td data-label="近战组合">香肠 + 蜂蜜 + 胡萝卜汤</td>
+                        <td data-label="远程/法师组合">蜂蜜 + 胡萝卜汤 + 蓝莓</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>铁器期</strong></td>
+                        <td data-label="近战组合">香肠 + 腌肉 + 萝卜炖菜</td>
+                        <td data-label="远程/法师组合">胡萝卜汤 + 萝卜炖菜 + 蜂蜜</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>白银期</strong></td>
+                        <td data-label="近战组合">狼肉串 + 狼肉干 + 洋葱汤</td>
+                        <td data-label="远程/法师组合">洋葱汤 + 萝卜炖菜 + 蜂蜜</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>黑金期</strong></td>
+                        <td data-label="近战组合">洛克斯肉饼 + 血布丁 + 面包</td>
+                        <td data-label="远程/法师组合">面包 + 血布丁 + 洋葱汤</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>雾之地期</strong></td>
+                        <td data-label="近战组合">魔法肉丸 + 蜂蜜盛宴 + 皇家果冻</td>
+                        <td data-label="远程/法师组合">皇家果冻 + 魔法肉丸 + 艾特尔汤</td>
+                    </tr>
+                    <tr>
+                        <td data-label="阶段"><strong>灰烬之地期</strong></td>
+                        <td data-label="近战组合">焦枯盛宴 + 火焰之心 + 灰烬面包</td>
+                        <td data-label="远程/法师组合">火焰之心 + 灰烬面包 + 熔岩饮料</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-tips"></i> 食物获取建议</h4>
+                <ul>
+                    <li>尽早建立<span class="highlight">农田</span>，种植胡萝卜、萝卜、大麦、亚麻</li>
+                    <li>驯养<span class="highlight">野猪和洛克斯</span>获取稳定肉源</li>
+                    <li>建立<span class="highlight">蜂箱</span>生产蜂蜜（可做药水和食物）</li>
+                    <li>探索时随手采集浆果、蘑菇和蓟草</li>
+                    <li>打 Boss 前务必吃满 3 个食物，选择适合战斗类型的组合</li>
+                    <li>灰烬之地新增<span class="warning">火焰蘑菇</span>和<span class="warning">灰烬草莓</span>，提供火焰抗性加成</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 终极建议 -->
+        <section class="section" id="tips">
+            <h2 class="section-title"><i class="fas fa-graduation-cap"></i> 给新玩家的终极建议</h2>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-gamepad"></i> 游戏节奏</h4>
+                <p>Valheim 是一款节奏较慢的游戏，不要急于推进。花时间：</p>
+                <ul>
+                    <li>探索和标记地图</li>
+                    <li>建造美观舒适的基地</li>
+                    <li>收集和储备资源</li>
+                    <li>提升技能等级</li>
+                    <li>准备充分再挑战 Boss</li>
+                    <li>享受维京生活的每一刻</li>
+                </ul>
+            </div>
+
+            <div class="tip-box warning-box">
+                <h4><i class="fas fa-exclamation-triangle"></i> 常见错误</h4>
+                <ul>
+                    <li class="warning">不要在未准备好时进入高级生物群系</li>
+                    <li class="warning">不要在夜间或恶劣天气出海</li>
+                    <li class="warning">不要忽视食物的重要性</li>
+                    <li class="warning">不要在基地附近砍大树（会损坏建筑）</li>
+                    <li class="warning">不要带着贵重物品随意探险</li>
+                    <li class="warning">不要低估平原的死亡蚊！</li>
+                    <li class="warning">不要在灰烬之地使用木质建筑</li>
+                </ul>
+            </div>
+
+            <div class="tip-box">
+                <h4><i class="fas fa-medal"></i> 最终挑战：灰烬之地</h4>
+                <p>准备挑战 Valheim 的最终区域前，请确保：</p>
+                <ul>
+                    <li>已击败所有其他 Boss 并获得其力量</li>
+                    <li>拥有雾之地毕业装备或等效装备</li>
+                    <li>储备至少 30 个超级抗火药水</li>
+                    <li>食物组合能提供 250+ 生命值</li>
+                    <li>建造了安全的石质前哨基地</li>
+                    <li>准备了充足的焰心金属修复材料</li>
+                    <li>最好有 2-3 名队友协作（单人极其困难）</li>
+                </ul>
+            </div>
+
+            <div class="tip-box" style="background: linear-gradient(135deg, rgba(193, 120, 23, 0.2), rgba(139, 105, 20, 0.1)); border-left: 6px solid var(--accent);">
+                <h4><i class="fas fa-scroll"></i> 最后的话</h4>
+                <p style="font-size: 1.2rem; line-height: 2;">
+                    Valheim 是一款奖励探索和实验的游戏。<span class="highlight">不要害怕失败</span>，每次死亡都是学习的机会。
+                    建造你梦想中的维京殿堂，征服每一个生物群系，击败所有 Boss，最终在灰烬之地证明你配得上进入英灵殿！
+                </p>
+                <p style="font-size: 1.4rem; margin-top: 1.5rem; text-align: center; color: var(--accent-light); font-weight: bold; font-family: 'Cinzel', serif;">
+                    愿奥丁赐予你力量，勇士！⚔️🛡️
+                </p>
+            </div>
+        </section>
     </div>
 
     <!-- 页脚 -->
     <div class="footer">
-        <h3>Valheim 完全指南</h3>
-        <p>
-            本指南涵盖了从新手到精通的所有内容，包括最新更新的<span class="highlight">灰烬之地</span>。
-        </p>
-        <p style="color: var(--secondary-light); margin-top: 1.5rem;">
-            💀 记住：死亡只是维京人生活的一部分 💀
-        </p>
+        <div class="footer-content">
+            <h3>Valheim 完全指南</h3>
+            <p>
+                本指南涵盖了从新手到精通的所有内容，包括最新更新的<span class="highlight">灰烬之地</span>。
+                持续更新以反映游戏最新变化和社区发现的最佳实践。
+            </p>
+            <p class="quote">
+                "恐惧是懦夫的产物，勇气是勇士的勋章。在灰烬中崛起，在火焰中加冕。"
+            </p>
+            <p style="color: var(--secondary-light); margin-top: 2.5rem; font-size: 1.2rem;">
+                💀 记住：死亡只是维京人生活的一部分，英灵殿等待真正的勇士 💀
+            </p>
+            <p style="margin-top: 1.5rem; font-size: 0.95rem; opacity: 0.8;">
+                更多信息和最新更新请访问 Valheim Wiki 或官方社区 | 本指南最后更新：2024年6月
+            </p>
+            <div style="margin-top: 2rem; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--primary-dark), var(--primary-light));">
+                    <i class="fas fa-globe-europe"></i> 七大生物群系
+                </span>
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--danger-dark), var(--danger-light));">
+                    <i class="fas fa-crown"></i> 七大Boss
+                </span>
+                <span class="stat-badge" style="background: linear-gradient(135deg, var(--ashen-red-dark), var(--ashen-red-light));">
+                    <i class="fas fa-fire"></i> 灰烬之地
+                </span>
+            </div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 移动端检测和优化
-            function isMobile() {
-                return window.innerWidth <= 767;
-            }
-            
-            // 为资源标签添加容器（如果不存在）
-            document.querySelectorAll('.biome-card').forEach(card => {
-                const resourceTags = card.querySelectorAll('.resource-tag');
-                if (resourceTags.length > 0) {
-                    const firstTag = resourceTags[0];
-                    const parent = firstTag.parentElement;
-                    
-                    // 检查是否已有容器
-                    if (!parent.classList.contains('resource-tag-container')) {
-                        // 创建新容器
-                        const container = document.createElement('div');
-                        container.className = 'resource-tag-container';
-                        
-                        // 将标签移动到容器中
-                        resourceTags.forEach(tag => {
-                            container.appendChild(tag.cloneNode(true));
-                            tag.remove();
-                        });
-                        
-                        // 将容器插入到原来的位置
-                        const heading = card.querySelector('h4');
-                        if (heading) {
-                            heading.parentNode.insertBefore(container, heading.nextSibling);
-                        }
-                    }
-                }
+            // 滚动到指定章节
+            document.querySelector('.scroll-indicator').addEventListener('click', () => {
+                document.querySelector('.container').scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             });
             
-            // 确保页面不会水平滚动
-            function preventHorizontalScroll() {
-                document.body.style.overflowX = 'hidden';
-                document.documentElement.style.overflowX = 'hidden';
+            // 导航点点击事件
+            document.querySelectorAll('.nav-dot').forEach(dot => {
+                dot.addEventListener('click', function() {
+                    const sectionId = this.getAttribute('data-section');
+                    document.getElementById(sectionId).scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                });
+            });
+            
+            // 滚动时更新导航点
+            const sections = document.querySelectorAll('.section');
+            const navDots = document.querySelectorAll('.nav-dot');
+            
+            function updateNavIndicator() {
+                let currentSection = '';
+                const scrollPosition = window.scrollY + 100;
                 
-                // 检查是否有元素导致水平滚动
-                const elements = document.querySelectorAll('*');
-                elements.forEach(el => {
-                    const rect = el.getBoundingClientRect();
-                    if (rect.right > window.innerWidth + 10) {
-                        console.log('宽元素:', el);
-                        el.style.maxWidth = '100%';
-                        el.style.overflow = 'hidden';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    const sectionId = section.getAttribute('id');
+                    
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        currentSection = sectionId;
+                    }
+                });
+                
+                navDots.forEach(dot => {
+                    dot.classList.remove('active');
+                    if (dot.getAttribute('data-section') === currentSection) {
+                        dot.classList.add('active');
                     }
                 });
             }
             
             // 初始调用
-            preventHorizontalScroll();
+            updateNavIndicator();
             
-            // 窗口大小变化时重新检查
-            window.addEventListener('resize', function() {
-                preventHorizontalScroll();
+            // 滚动事件监听
+            window.addEventListener('scroll', updateNavIndicator);
+            
+            // 卡片交互动画
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // 观察所有卡片和章节
+            document.querySelectorAll('.section, .biome-card, .boss-card, .weapon-card, .progression-step').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(30px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+            
+            // 触摸设备优化
+            if ('ontouchstart' in window) {
+                document.body.classList.add('touch-device');
                 
-                // 如果是移动端，进一步优化
-                if (isMobile()) {
-                    document.querySelectorAll('.biome-card').forEach(card => {
-                        card.style.width = '100%';
-                        card.style.margin = '0 auto';
+                // 增加点击目标尺寸
+                document.querySelectorAll('.resource-tag, .stat-badge, .biome-card, .boss-card, .weapon-card').forEach(el => {
+                    el.style.minHeight = '44px';
+                });
+            }
+            
+            // 表格移动端优化
+            const tables = document.querySelectorAll('table');
+            tables.forEach(table => {
+                if (window.innerWidth < 768) {
+                    const headers = [];
+                    const ths = table.querySelectorAll('thead th');
+                    ths.forEach(th => {
+                        headers.push(th.textContent);
+                    });
+                    
+                    const tds = table.querySelectorAll('tbody td');
+                    tds.forEach((td, index) => {
+                        const headerIndex = index % headers.length;
+                        td.setAttribute('data-label', headers[headerIndex]);
                     });
                 }
             });
             
-            // 平滑滚动
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    if (targetId === '#') return;
-                    
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        window.scrollTo({
-                            top: targetElement.offsetTop - 80,
-                            behavior: 'smooth'
-                        });
-                    }
-                });
-            });
+            // 页面加载完成后的欢迎效果
+            setTimeout(() => {
+                const heroTitle = document.querySelector('.hero h1');
+                heroTitle.style.animation = 'shimmer 4s linear infinite, float 6s ease-in-out infinite, pulse 2s infinite';
+            }, 1000);
         });
     </script>
 </body>
