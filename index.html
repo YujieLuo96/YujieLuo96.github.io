@@ -4,25 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
-    <title>Yujie Luo</title>
+    <title>Yujie Luo - Personal Homepage</title>
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-responsive.min.css">
     <style>
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
-            background-color: #87cefa;
             color: #333;
             line-height: 1.6;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+            background-color: #0a192f; /* 深色背景增强粒子效果 */
+        }
+        
+        /* 动态粒子背景容器 */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* 置于内容下方 */
+            background: linear-gradient(to bottom, #0a192f, #112240, #1d3557);
         }
         
         .container {
-            background-color: #f5fffa;
+            background-color: rgba(255, 255, 255, 0.92);
             padding: 30px;
             margin-top: 20px;
             margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            position: relative; /* 为绝对定位的统计容器提供参考 */
+            border: 1px solid rgba(221, 221, 221, 0.5);
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px); /* 背景模糊效果 */
         }
         
         .content {
@@ -33,7 +49,7 @@
         .hit-counter {
             position: absolute;
             top: 10px;
-            left: 30px; /* 与容器padding相同 */
+            left: 30px;
             z-index: 100;
         }
         
@@ -44,7 +60,7 @@
         
         /* 简洁导航样式 - 靠左排列 */
         .nav-menu {
-            margin: 15px 0 25px 0; /* 减小上下边距 */
+            margin: 15px 0 25px 0;
             text-align: left;
         }
         
@@ -81,24 +97,24 @@
         }
         
         .header {
-            padding-bottom: 10px; /* 减小底部内边距 */
-            padding-top: 50px; /* 为统计留出空间 */
+            padding-bottom: 10px;
+            padding-top: 50px;
         }
         
         h2 {
             color: #2c3e50;
             margin-top: 0;
-            margin-bottom: 5px; /* 减小底部边距 */
+            margin-bottom: 5px;
             font-weight: 600;
             font-size: 28px;
         }
         
         .profile-text {
-            text-align: left; /* 保持左对齐 */
+            text-align: left;
         }
         
         .profile-links {
-            margin-top: 5px; /* 减小顶部边距 */
+            margin-top: 5px;
         }
         
         h4 {
@@ -111,6 +127,11 @@
             position: relative;
             font-weight: 600;
             font-size: 20px;
+            transition: color 0.3s ease;
+        }
+        
+        h4:hover {
+            color: #0066cc;
         }
         
         h4:after {
@@ -143,6 +164,7 @@
         a {
             color: #0066cc;
             text-decoration: none;
+            transition: color 0.2s ease;
         }
         
         a:hover {
@@ -179,14 +201,40 @@
         }
         
         .profile-row {
-            margin-bottom: 5px; /* 减小行间距 */
+            margin-bottom: 5px;
+        }
+        
+        /* 交互按钮样式 */
+        .controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .control-btn:hover {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
         }
         
         /* 宽页面下的布局 - 确保所有元素左侧对齐 */
         @media (min-width: 992px) {
-            /* 创建统一的左侧对齐线 */
             .header-content {
-                margin-left: 0; /* 重置左边距 */
+                margin-left: 0;
             }
             
             .profile-text, .nav-menu {
@@ -194,12 +242,10 @@
                 left: 0;
             }
             
-            /* 确保所有内容从相同位置开始 */
             .header-content > div {
                 padding-left: 0;
             }
             
-            /* 确保内容区域与统计对齐 */
             .main-content-wrapper {
                 margin-left: 0;
             }
@@ -236,10 +282,28 @@
             .profile-row {
                 margin-bottom: 10px;
             }
+            
+            .controls {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 15px;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 动态粒子背景容器 -->
+    <div id="particles-js"></div>
+    
+    <!-- 交互控制按钮 -->
+    <div class="controls">
+        <button class="control-btn" id="toggleParticles">暂停粒子</button>
+        <button class="control-btn" id="changeColor">更换背景</button>
+        <button class="control-btn" id="resetParticles">重置粒子</button>
+    </div>
+    
     <div class="container">
         <!-- 访问统计放在容器内部的左上角 -->
         <div class="hit-counter">
@@ -408,18 +472,185 @@
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     
+    <!-- 粒子效果库 -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
     <script>
-        // 修改折叠功能，只有Biography和Research Interests初始展开
-        $(document).ready(function() {
-            // Biography和Research Interests保持展开状态
-            $('#biography').addClass('in');
-            $('#research').addClass('in');
+        // 粒子系统初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化粒子系统
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 80,
+                        density: {
+                            enable: true,
+                            value_area: 800
+                        }
+                    },
+                    color: {
+                        value: "#ffffff"
+                    },
+                    shape: {
+                        type: "circle",
+                        stroke: {
+                            width: 0,
+                            color: "#000000"
+                        }
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 1,
+                            opacity_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: {
+                            enable: true,
+                            speed: 2,
+                            size_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: "#4fc3f7",
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: "none",
+                        random: true,
+                        straight: false,
+                        out_mode: "out",
+                        bounce: false,
+                        attract: {
+                            enable: true,
+                            rotateX: 600,
+                            rotateY: 1200
+                        }
+                    }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: "grab"
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: "push"
+                        },
+                        resize: true
+                    },
+                    modes: {
+                        grab: {
+                            distance: 200,
+                            line_linked: {
+                                opacity: 1
+                            }
+                        },
+                        push: {
+                            particles_nb: 4
+                        }
+                    }
+                },
+                retina_detect: true
+            });
             
-            // 其他部分保持合上状态（在HTML中已设置）
+            // 控制按钮功能
+            let particlesActive = true;
+            const toggleBtn = document.getElementById('toggleParticles');
+            const colorBtn = document.getElementById('changeColor');
+            const resetBtn = document.getElementById('resetParticles');
             
-            // 点击标题时切换折叠状态和图标
-            $('h4[data-toggle="collapse"]').click(function() {
-                $(this).toggleClass('collapsed');
+            // 切换粒子动画
+            toggleBtn.addEventListener('click', function() {
+                particlesActive = !particlesActive;
+                if (particlesActive) {
+                    particlesJS.resume();
+                    toggleBtn.textContent = "暂停粒子";
+                } else {
+                    particlesJS.pause();
+                    toggleBtn.textContent = "启动粒子";
+                }
+            });
+            
+            // 更换背景颜色
+            const colorSchemes = [
+                {bg: "#0a192f", particle: "#4fc3f7"},
+                {bg: "#1a1a2e", particle: "#ff6b6b"},
+                {bg: "#16213e", particle: "#00d2d3"},
+                {bg: "#1d2d50", particle: "#feca57"},
+                {bg: "#0c2461", particle: "#5f27cd"}
+            ];
+            let colorIndex = 0;
+            
+            colorBtn.addEventListener('click', function() {
+                colorIndex = (colorIndex + 1) % colorSchemes.length;
+                const scheme = colorSchemes[colorIndex];
+                
+                // 更新背景
+                document.getElementById('particles-js').style.background = scheme.bg;
+                
+                // 更新粒子颜色
+                particlesJS('particles-js', {
+                    particles: {
+                        color: {
+                            value: scheme.particle
+                        },
+                        line_linked: {
+                            color: scheme.particle
+                        }
+                    }
+                });
+            });
+            
+            // 重置粒子
+            resetBtn.addEventListener('click', function() {
+                particlesJS('particles-js', {
+                    particles: {
+                        number: {
+                            value: 80,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: "#ffffff"
+                        },
+                        line_linked: {
+                            color: "#4fc3f7"
+                        }
+                    }
+                });
+                
+                // 重置背景
+                document.getElementById('particles-js').style.background = "#0a192f";
+                colorIndex = 0;
+            });
+            
+            // 修改折叠功能，只有Biography和Research Interests初始展开
+            $(document).ready(function() {
+                // Biography和Research Interests保持展开状态
+                $('#biography').addClass('in');
+                $('#research').addClass('in');
+                
+                // 点击标题时切换折叠状态和图标
+                $('h4[data-toggle="collapse"]').click(function() {
+                    $(this).toggleClass('collapsed');
+                });
             });
         });
     </script>
