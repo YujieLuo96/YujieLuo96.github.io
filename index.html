@@ -275,7 +275,6 @@
 
             <!-- 简洁导航菜单 - 靠左排列，减小与上方内容的间距 -->
             <div class="nav-menu">
-                <a href="index.html" class="nav-link">Homepage</a>
                 <a href="google 404.html" class="nav-link">Google 404</a>
             </div>
         </header>
@@ -309,10 +308,10 @@
             </div>
 
             <!-- Publications & Preprints -->
-            <h4 data-toggle="collapse" data-target="#publications" aria-expanded="true">
+            <h4 data-toggle="collapse" data-target="#publications" aria-expanded="false" class="collapsed">
                 Publications & Preprints
             </h4>
-            <div id="publications" class="section-content collapse in">
+            <div id="publications" class="section-content collapse">
                 <ul>
                     <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em> (joint with Keiji Oguiso and De-Qi Zhang). Preprint. [<a href="https://arxiv.org/abs/2512.04942" target="_blank">arXiv</a>]</li>
                     <li><em>Morphisms from a very general hypersurface</em> (joint with Yongnam Lee and De-Qi Zhang). <a href="https://link.intlpress.com/JFirstDetail/1942307988947648514" target="_blank">Pure Appl. Math. Q.</a> (special issue in honor of James McKernan's 60th birthday).</li>
@@ -327,10 +326,10 @@
             </div>
 
             <!-- Invited Talks -->
-            <h4 data-toggle="collapse" data-target="#talks" aria-expanded="true">
+            <h4 data-toggle="collapse" data-target="#talks" aria-expanded="false" class="collapsed">
                 Invited Talks
             </h4>
-            <div id="talks" class="section-content collapse in">
+            <div id="talks" class="section-content collapse">
                 <ul>
                     <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://sites.google.com/ncts.ntu.edu.tw/2025-algebraic-geometry-in/2025-agea" target="_blank">Algebraic Geometry in East Asia</a>, November 13, 2025.</li>
                     <li><em>Boundedness of divisors computing minimal log discrepancies and ACC conjecture for MLDs</em>, <a href="http://events.kias.re.kr/h/AGEA23/?pageNo=4999" target="_blank">Algebraic Geometry in East Asia</a>, November 9, 2023.</li>
@@ -345,10 +344,10 @@
             </div>
 
             <!-- Lectures and Seminar Talks -->
-            <h4 data-toggle="collapse" data-target="#lectures" aria-expanded="true">
+            <h4 data-toggle="collapse" data-target="#lectures" aria-expanded="false" class="collapsed">
                 Lectures and Seminar Talks
             </h4>
-            <div id="lectures" class="section-content collapse in">
+            <div id="lectures" class="section-content collapse">
                 <ul>
                     <li><em>Negative curves on $\mathbf{P}^2$ blowing up some points</em>, <a href="https://www.math.nus.edu.sg/category/events/colloquia-seminars/topology-geometry-dynamics/page/9/" target="_blank">National University of Singapore Geometry and Topology Seminar</a>.</li>
                     <li><em>Four lectures on the resolution of singularities</em>, <a href="https://chenjiangfudan.github.io/home/2021-summer-reading.html" target="_blank">Reading Workshop: Boundedness and Resolution at SCMS Fudan, 2021 summer</a>.</li>
@@ -357,10 +356,10 @@
             </div>
 
             <!-- Visitings -->
-            <h4 data-toggle="collapse" data-target="#visitings" aria-expanded="true">
+            <h4 data-toggle="collapse" data-target="#visitings" aria-expanded="false" class="collapsed">
                 Visitings
             </h4>
-            <div id="visitings" class="section-content collapse in">
+            <div id="visitings" class="section-content collapse">
                 <ul>
                     <li><a href="https://math.ecnu.edu.cn/" target="_blank">Department of Mathematics at East China Normal University</a>, visiting scholar, Nov 2023--Dec 2023</li>
                     <li><a href="https://www.math.princeton.edu/" target="_blank">Department of Mathematics at Princeton University</a>, visiting scholar, Jan 2022--Feb 2023</li>
@@ -372,10 +371,10 @@
             </div>
 
             <!-- Teaching Experience -->
-            <h4 data-toggle="collapse" data-target="#teaching" aria-expanded="true">
+            <h4 data-toggle="collapse" data-target="#teaching" aria-expanded="false" class="collapsed">
                 Teaching Experience
             </h4>
-            <div id="teaching" class="section-content collapse in">
+            <div id="teaching" class="section-content collapse">
                 <div class="teaching-section">
                     <h5>National University of Singapore</h5>
                     <ul>
@@ -410,10 +409,13 @@
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     
     <script>
-        // 简单的折叠功能
+        // 修改折叠功能，只有Biography和Research Interests初始展开
         $(document).ready(function() {
-            // 所有区域默认展开
-            $('.collapse').addClass('in');
+            // Biography和Research Interests保持展开状态
+            $('#biography').addClass('in');
+            $('#research').addClass('in');
+            
+            // 其他部分保持合上状态（在HTML中已设置）
             
             // 点击标题时切换折叠状态和图标
             $('h4[data-toggle="collapse"]').click(function() {
