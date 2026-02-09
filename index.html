@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
     <title>Yujie Luo - Personal Homepage</title>
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
@@ -17,6 +17,7 @@
             position: relative;
             background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
             min-height: 100vh;
+            -webkit-text-size-adjust: 100%; /* 防止移动端字体缩放 */
         }
         
         /* 动态星空背景容器 */
@@ -28,7 +29,7 @@
             height: 100%;
             z-index: -1;
             background: transparent;
-            pointer-events: auto;
+            pointer-events: none; /* 禁止粒子层交互 */
         }
         
         /* 添加一层微弱的星星闪烁层 */
@@ -54,6 +55,9 @@
             box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
             pointer-events: auto;
             backdrop-filter: blur(5px);
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .content {
@@ -243,59 +247,6 @@
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
-        /* 宽页面下的布局 - 确保所有元素左侧对齐 */
-        @media (min-width: 992px) {
-            .header-content {
-                margin-left: 0;
-            }
-            
-            .profile-text, .nav-menu {
-                position: relative;
-                left: 0;
-            }
-            
-            .header-content > div {
-                padding-left: 0;
-            }
-            
-            .main-content-wrapper {
-                margin-left: 0;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .nav-link {
-                display: block;
-                margin: 8px 0;
-                padding: 8px 0;
-            }
-            
-            .nav-menu {
-                margin: 10px 0 20px 0;
-            }
-            
-            .hit-counter {
-                position: relative;
-                top: auto;
-                left: auto;
-                margin-bottom: 15px;
-                text-align: left;
-            }
-            
-            .header {
-                padding-top: 20px;
-                padding-left: 0;
-            }
-            
-            .profile-row {
-                margin-bottom: 10px;
-            }
-        }
-        
         /* 确保图片在深色背景下可见 */
         .hit-counter img {
             background-color: rgba(255, 255, 255, 0.1);
@@ -314,6 +265,151 @@
             background-color: white;
             border-radius: 50%;
             animation: twinkle 3s infinite ease-in-out;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+                color: #f0f0f0;
+                overflow-x: hidden;
+            }
+            
+            .container {
+                padding: 20px 15px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+                border: 1px solid rgba(120, 170, 220, 0.3);
+                border-radius: 8px;
+                box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
+                backdrop-filter: blur(5px);
+                width: 95%;
+            }
+            
+            .header {
+                padding-top: 30px;
+                padding-bottom: 5px;
+            }
+            
+            h2 {
+                font-size: 24px;
+                color: #ffffff;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+                margin-top: 10px;
+            }
+            
+            .hit-counter {
+                position: relative;
+                top: auto;
+                left: auto;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            
+            .hit-counter a {
+                display: inline-block;
+                margin: 0 5px 10px;
+            }
+            
+            .nav-menu {
+                margin: 10px 0 20px 0;
+                text-align: center;
+            }
+            
+            .nav-link {
+                display: inline-block;
+                margin: 0 10px 10px;
+                font-size: 16px;
+                color: #b0d0ff;
+                padding: 8px 0;
+            }
+            
+            h4 {
+                font-size: 18px;
+                color: #d0e4ff;
+                margin-top: 25px;
+                margin-bottom: 12px;
+                border-bottom: 1px solid rgba(120, 170, 220, 0.4);
+            }
+            
+            p, li, .profile-info, .profile-row span, .section-content, .teaching-section h5 {
+                color: #e8f0ff;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+                font-size: 15px;
+                line-height: 1.6;
+            }
+            
+            .profile-text {
+                text-align: center;
+            }
+            
+            .profile-row {
+                margin-bottom: 8px;
+            }
+            
+            .teaching-section {
+                margin-left: 10px;
+            }
+            
+            .teaching-section h5 {
+                font-size: 16px;
+                color: #c0d5ff;
+            }
+            
+            ul {
+                padding-left: 18px;
+            }
+            
+            a {
+                color: #8bc5ff;
+                text-decoration: none;
+            }
+            
+            a:hover {
+                color: #6eb5ff;
+                text-decoration: underline;
+            }
+        }
+        
+        /* 小屏幕手机适配 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px 10px;
+            }
+            
+            h2 {
+                font-size: 22px;
+            }
+            
+            .nav-link {
+                font-size: 15px;
+                margin: 0 8px 8px;
+            }
+            
+            h4 {
+                font-size: 17px;
+            }
+            
+            p, li, .profile-info, .profile-row span, .section-content {
+                font-size: 14px;
+            }
+            
+            .hit-counter img {
+                max-width: 120px;
+            }
+        }
+        
+        /* 平板设备适配 */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                padding: 25px 20px;
+                width: 90%;
+            }
+            
+            .hit-counter {
+                top: 15px;
+                left: 20px;
+            }
         }
     </style>
 </head>
@@ -499,7 +595,7 @@
         // 创建静态闪烁星星
         function createStaticStars() {
             const starsContainer = document.getElementById('stars-overlay');
-            const starCount = 100;
+            const starCount = window.innerWidth < 768 ? 50 : 100; // 移动端减少星星数量
             
             for (let i = 0; i < starCount; i++) {
                 const star = document.createElement('div');
@@ -536,14 +632,17 @@
             // 创建静态星星
             createStaticStars();
             
+            // 根据设备类型调整粒子数量
+            const isMobile = window.innerWidth < 768;
+            
             // 初始化粒子系统
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: 180,
+                        value: isMobile ? 80 : 180, // 移动端减少粒子数量
                         density: {
                             enable: true,
-                            value_area: 1500
+                            value_area: isMobile ? 800 : 1500
                         }
                     },
                     color: {
@@ -563,7 +662,7 @@
                         }
                     },
                     size: {
-                        value: 3.5,
+                        value: isMobile ? 2.5 : 3.5, // 移动端减小粒子大小
                         random: true,
                         anim: {
                             enable: true,
@@ -573,7 +672,7 @@
                         }
                     },
                     line_linked: {
-                        enable: true,
+                        enable: !isMobile, // 移动端禁用连接线
                         distance: 120,
                         color: "#8bc5ff",
                         opacity: 0.4,
@@ -581,7 +680,7 @@
                     },
                     move: {
                         enable: true,
-                        speed: 2,
+                        speed: isMobile ? 1.5 : 2, // 移动端减慢粒子速度
                         direction: "none",
                         random: true,
                         straight: false,
@@ -598,11 +697,11 @@
                     detect_on: "window",
                     events: {
                         onhover: {
-                            enable: true,
+                            enable: !isMobile, // 移动端禁用悬停效果
                             mode: "grab"
                         },
                         onclick: {
-                            enable: true,
+                            enable: false, // 完全禁用点击生成粒子功能
                             mode: "push"
                         },
                         resize: true
@@ -632,41 +731,30 @@
                 $('h4[data-toggle="collapse"]').click(function() {
                     $(this).toggleClass('collapsed');
                 });
-            });
-            
-            // 添加一个功能：在页面任何位置点击都会在点击位置生成粒子
-            document.addEventListener('click', function(e) {
-                // 检查点击是否在内容区域内
-                const container = document.querySelector('.container');
-                const rect = container.getBoundingClientRect();
-                const isClickInContainer = 
-                    e.clientX >= rect.left && 
-                    e.clientX <= rect.right && 
-                    e.clientY >= rect.top && 
-                    e.clientY <= rect.bottom;
                 
-                // 即使在内容区域内点击，也会触发粒子效果
-                if (isClickInContainer) {
-                    container.style.boxShadow = '0 5px 30px rgba(100, 180, 255, 0.7)';
-                    setTimeout(() => {
-                        container.style.boxShadow = '0 5px 25px rgba(0, 20, 40, 0.4)';
-                    }, 300);
+                // 移动端优化：触摸滚动更平滑
+                if ('ontouchstart' in window) {
+                    document.body.style.webkitOverflowScrolling = 'touch';
                 }
             });
             
-            // 添加一个简单的动画效果：内容区域轻微浮动
-            let floatOffset = 0;
-            const container = document.querySelector('.container');
+            // 移除点击生成粒子的功能（已通过配置禁用）
             
-            function floatAnimation() {
-                floatOffset += 0.005;
-                const floatAmount = Math.sin(floatOffset) * 1.5;
-                container.style.transform = `translateY(${floatAmount}px)`;
-                requestAnimationFrame(floatAnimation);
+            // 添加一个简单的动画效果：内容区域轻微浮动（仅在非移动端）
+            if (!isMobile) {
+                let floatOffset = 0;
+                const container = document.querySelector('.container');
+                
+                function floatAnimation() {
+                    floatOffset += 0.005;
+                    const floatAmount = Math.sin(floatOffset) * 1.5;
+                    container.style.transform = `translateY(${floatAmount}px)`;
+                    requestAnimationFrame(floatAnimation);
+                }
+                
+                // 开始浮动动画
+                floatAnimation();
             }
-            
-            // 开始浮动动画
-            floatAnimation();
             
             // 添加星星闪烁效果增强
             setInterval(() => {
@@ -678,6 +766,17 @@
                     }
                 });
             }, 1000);
+            
+            // 窗口大小调整时重新初始化粒子（优化移动端）
+            let resizeTimer;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    // 重新创建静态星星
+                    document.getElementById('stars-overlay').innerHTML = '';
+                    createStaticStars();
+                }, 250);
+            });
         });
     </script>
 </body>
