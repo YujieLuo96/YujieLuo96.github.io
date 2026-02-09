@@ -10,35 +10,50 @@
     <style>
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
-            color: #333;
+            color: #f0f0f0;
             line-height: 1.6;
             margin: 0;
             overflow-x: hidden;
             position: relative;
-            background-color: #0a192f; /* 深色背景增强粒子效果 */
+            background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+            min-height: 100vh;
         }
         
-        /* 动态粒子背景容器 */
+        /* 动态星空背景容器 */
         #particles-js {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1; /* 置于内容下方 */
-            background: linear-gradient(to bottom, #0a192f, #112240, #1d3557);
+            z-index: -1;
+            background: transparent;
+            pointer-events: auto;
+        }
+        
+        /* 添加一层微弱的星星闪烁层 */
+        #stars-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: transparent;
+            pointer-events: none;
         }
         
         .container {
-            background-color: rgba(255, 255, 255, 0.92);
+            background-color: rgba(10, 20, 40, 0.7);
             padding: 30px;
             margin-top: 20px;
             margin-bottom: 20px;
-            border: 1px solid rgba(221, 221, 221, 0.5);
+            border: 1px solid rgba(120, 170, 220, 0.3);
             border-radius: 8px;
             position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            backdrop-filter: blur(5px); /* 背景模糊效果 */
+            box-shadow: 0 5px 25px rgba(0, 20, 40, 0.4);
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
         }
         
         .content {
@@ -68,16 +83,18 @@
             display: inline-block;
             margin-right: 25px;
             text-decoration: none;
-            color: #2c3e50;
+            color: #b0d0ff;
             font-size: 17px;
             font-weight: 500;
             padding: 5px 0;
             position: relative;
-            transition: color 0.2s ease;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
         
         .nav-link:hover {
-            color: #0066cc;
+            color: #8bc5ff;
+            text-shadow: 0 0 10px rgba(139, 197, 255, 0.8);
             text-decoration: none;
         }
         
@@ -88,7 +105,7 @@
             left: 0;
             width: 0;
             height: 2px;
-            background-color: #0066cc;
+            background-color: #8bc5ff;
             transition: width 0.3s ease;
         }
         
@@ -102,11 +119,12 @@
         }
         
         h2 {
-            color: #2c3e50;
+            color: #ffffff;
             margin-top: 0;
             margin-bottom: 5px;
             font-weight: 600;
             font-size: 28px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
         }
         
         .profile-text {
@@ -118,20 +136,22 @@
         }
         
         h4 {
-            color: #2c3e50;
+            color: #d0e4ff;
             margin-top: 30px;
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 1px solid #e0e0e0;
+            border-bottom: 1px solid rgba(120, 170, 220, 0.4);
             cursor: pointer;
             position: relative;
             font-weight: 600;
             font-size: 20px;
-            transition: color 0.3s ease;
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
         
         h4:hover {
-            color: #0066cc;
+            color: #8bc5ff;
+            text-shadow: 0 0 8px rgba(139, 197, 255, 0.6);
         }
         
         h4:after {
@@ -139,7 +159,7 @@
             position: absolute;
             right: 0;
             font-weight: bold;
-            color: #666;
+            color: #b0d0ff;
         }
         
         h4.collapsed:after {
@@ -147,7 +167,7 @@
         }
         
         hr {
-            border-top: 1px solid #ddd;
+            border-top: 1px solid rgba(120, 170, 220, 0.3);
             margin: 25px 0;
         }
         
@@ -159,16 +179,20 @@
         li {
             margin-bottom: 10px;
             line-height: 1.5;
+            color: #e8f0ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         a {
-            color: #0066cc;
+            color: #8bc5ff;
             text-decoration: none;
-            transition: color 0.2s ease;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         a:hover {
-            color: #004499;
+            color: #6eb5ff;
+            text-shadow: 0 0 8px rgba(110, 181, 255, 0.8);
             text-decoration: underline;
         }
         
@@ -180,6 +204,8 @@
         
         .section-content {
             margin-bottom: 10px;
+            color: #e8f0ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         .teaching-section {
@@ -191,44 +217,30 @@
             font-size: 17px;
             margin-top: 15px;
             margin-bottom: 8px;
-            color: #444;
+            color: #c0d5ff;
             font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         .profile-info {
             margin-top: 15px;
             margin-bottom: 15px;
+            color: #d8e8ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         .profile-row {
             margin-bottom: 5px;
         }
         
-        /* 交互按钮样式 */
-        .controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            gap: 10px;
+        .profile-row span {
+            color: #d8e8ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
-        .control-btn {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 8px 15px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .control-btn:hover {
-            background: #0066cc;
-            color: white;
-            border-color: #0066cc;
+        p {
+            color: #e8f0ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         /* 宽页面下的布局 - 确保所有元素左侧对齐 */
@@ -282,27 +294,35 @@
             .profile-row {
                 margin-bottom: 10px;
             }
-            
-            .controls {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-bottom: 15px;
-                justify-content: center;
-            }
+        }
+        
+        /* 确保图片在深色背景下可见 */
+        .hit-counter img {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 5px;
+        }
+        
+        /* 添加星空闪烁动画 */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .twinkling-star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
         }
     </style>
 </head>
 <body>
-    <!-- 动态粒子背景容器 -->
+    <!-- 动态粒子背景容器 - 作为底层画布 -->
     <div id="particles-js"></div>
     
-    <!-- 交互控制按钮 -->
-    <div class="controls">
-        <button class="control-btn" id="toggleParticles">暂停粒子</button>
-        <button class="control-btn" id="changeColor">更换背景</button>
-        <button class="control-btn" id="resetParticles">重置粒子</button>
-    </div>
+    <!-- 静态星星闪烁层 -->
+    <div id="stars-overlay"></div>
     
     <div class="container">
         <!-- 访问统计放在容器内部的左上角 -->
@@ -476,52 +496,86 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     
     <script>
+        // 创建静态闪烁星星
+        function createStaticStars() {
+            const starsContainer = document.getElementById('stars-overlay');
+            const starCount = 100;
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'twinkling-star';
+                
+                // 随机位置
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                // 随机大小
+                const size = Math.random() * 3 + 1;
+                
+                // 随机颜色
+                const colors = ['#ffffff', '#b0d0ff', '#8bc5ff', '#ffdd99', '#ffccaa'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机动画延迟
+                const delay = Math.random() * 5;
+                
+                star.style.left = left + '%';
+                star.style.top = top + '%';
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.backgroundColor = color;
+                star.style.animationDelay = delay + 's';
+                star.style.opacity = Math.random() * 0.5 + 0.3;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
         // 粒子系统初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 创建静态星星
+            createStaticStars();
+            
             // 初始化粒子系统
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: 80,
+                        value: 180,
                         density: {
                             enable: true,
-                            value_area: 800
+                            value_area: 1500
                         }
                     },
                     color: {
-                        value: "#ffffff"
+                        value: ["#ffffff", "#b0d0ff", "#8bc5ff", "#a8e6cf", "#ffccaa", "#ffdd99"]
                     },
                     shape: {
-                        type: "circle",
-                        stroke: {
-                            width: 0,
-                            color: "#000000"
-                        }
+                        type: "circle"
                     },
                     opacity: {
-                        value: 0.5,
+                        value: 0.9,
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 1,
-                            opacity_min: 0.1,
+                            speed: 1.5,
+                            opacity_min: 0.2,
                             sync: false
                         }
                     },
                     size: {
-                        value: 3,
+                        value: 3.5,
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 2,
-                            size_min: 0.1,
+                            speed: 3,
+                            size_min: 0.5,
                             sync: false
                         }
                     },
                     line_linked: {
                         enable: true,
-                        distance: 150,
-                        color: "#4fc3f7",
+                        distance: 120,
+                        color: "#8bc5ff",
                         opacity: 0.4,
                         width: 1
                     },
@@ -535,13 +589,13 @@
                         bounce: false,
                         attract: {
                             enable: true,
-                            rotateX: 600,
-                            rotateY: 1200
+                            rotateX: 800,
+                            rotateY: 1600
                         }
                     }
                 },
                 interactivity: {
-                    detect_on: "canvas",
+                    detect_on: "window",
                     events: {
                         onhover: {
                             enable: true,
@@ -555,90 +609,17 @@
                     },
                     modes: {
                         grab: {
-                            distance: 200,
+                            distance: 180,
                             line_linked: {
-                                opacity: 1
+                                opacity: 0.8
                             }
                         },
                         push: {
-                            particles_nb: 4
+                            particles_nb: 10
                         }
                     }
                 },
                 retina_detect: true
-            });
-            
-            // 控制按钮功能
-            let particlesActive = true;
-            const toggleBtn = document.getElementById('toggleParticles');
-            const colorBtn = document.getElementById('changeColor');
-            const resetBtn = document.getElementById('resetParticles');
-            
-            // 切换粒子动画
-            toggleBtn.addEventListener('click', function() {
-                particlesActive = !particlesActive;
-                if (particlesActive) {
-                    particlesJS.resume();
-                    toggleBtn.textContent = "暂停粒子";
-                } else {
-                    particlesJS.pause();
-                    toggleBtn.textContent = "启动粒子";
-                }
-            });
-            
-            // 更换背景颜色
-            const colorSchemes = [
-                {bg: "#0a192f", particle: "#4fc3f7"},
-                {bg: "#1a1a2e", particle: "#ff6b6b"},
-                {bg: "#16213e", particle: "#00d2d3"},
-                {bg: "#1d2d50", particle: "#feca57"},
-                {bg: "#0c2461", particle: "#5f27cd"}
-            ];
-            let colorIndex = 0;
-            
-            colorBtn.addEventListener('click', function() {
-                colorIndex = (colorIndex + 1) % colorSchemes.length;
-                const scheme = colorSchemes[colorIndex];
-                
-                // 更新背景
-                document.getElementById('particles-js').style.background = scheme.bg;
-                
-                // 更新粒子颜色
-                particlesJS('particles-js', {
-                    particles: {
-                        color: {
-                            value: scheme.particle
-                        },
-                        line_linked: {
-                            color: scheme.particle
-                        }
-                    }
-                });
-            });
-            
-            // 重置粒子
-            resetBtn.addEventListener('click', function() {
-                particlesJS('particles-js', {
-                    particles: {
-                        number: {
-                            value: 80,
-                            density: {
-                                enable: true,
-                                value_area: 800
-                            }
-                        },
-                        color: {
-                            value: "#ffffff"
-                        },
-                        line_linked: {
-                            color: "#4fc3f7"
-                        }
-                    }
-                });
-                
-                // 重置背景
-                document.getElementById('particles-js').style.background = "#0a192f";
-                colorIndex = 0;
             });
             
             // 修改折叠功能，只有Biography和Research Interests初始展开
@@ -652,6 +633,51 @@
                     $(this).toggleClass('collapsed');
                 });
             });
+            
+            // 添加一个功能：在页面任何位置点击都会在点击位置生成粒子
+            document.addEventListener('click', function(e) {
+                // 检查点击是否在内容区域内
+                const container = document.querySelector('.container');
+                const rect = container.getBoundingClientRect();
+                const isClickInContainer = 
+                    e.clientX >= rect.left && 
+                    e.clientX <= rect.right && 
+                    e.clientY >= rect.top && 
+                    e.clientY <= rect.bottom;
+                
+                // 即使在内容区域内点击，也会触发粒子效果
+                if (isClickInContainer) {
+                    container.style.boxShadow = '0 5px 30px rgba(100, 180, 255, 0.7)';
+                    setTimeout(() => {
+                        container.style.boxShadow = '0 5px 25px rgba(0, 20, 40, 0.4)';
+                    }, 300);
+                }
+            });
+            
+            // 添加一个简单的动画效果：内容区域轻微浮动
+            let floatOffset = 0;
+            const container = document.querySelector('.container');
+            
+            function floatAnimation() {
+                floatOffset += 0.005;
+                const floatAmount = Math.sin(floatOffset) * 1.5;
+                container.style.transform = `translateY(${floatAmount}px)`;
+                requestAnimationFrame(floatAnimation);
+            }
+            
+            // 开始浮动动画
+            floatAnimation();
+            
+            // 添加星星闪烁效果增强
+            setInterval(() => {
+                const stars = document.querySelectorAll('.twinkling-star');
+                stars.forEach(star => {
+                    // 随机改变一些星星的亮度
+                    if (Math.random() > 0.7) {
+                        star.style.opacity = Math.random() * 0.7 + 0.3;
+                    }
+                });
+            }, 1000);
         });
     </script>
 </body>
