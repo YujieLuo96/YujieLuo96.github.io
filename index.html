@@ -22,13 +22,14 @@
             margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            position: relative; /* 为绝对定位的统计容器提供参考 */
         }
         
         .content {
             padding: 20px 0;
         }
         
-        /* 访问统计放在左上角 */
+        /* 访问统计放在容器内部的左上角 */
         .hit-counter {
             position: absolute;
             top: 10px;
@@ -81,12 +82,12 @@
         
         .header {
             padding-bottom: 20px;
-            position: relative;
+            padding-top: 40px; /* 为统计留出空间 */
         }
         
         h2 {
             color: #2c3e50;
-            margin-top: 30px;
+            margin-top: 0;
             font-weight: 600;
             font-size: 28px;
         }
@@ -168,10 +169,6 @@
             margin-bottom: 15px;
         }
         
-        .profile-header {
-            padding-top: 40px; /* 为统计留出空间 */
-        }
-        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -195,7 +192,7 @@
                 text-align: left;
             }
             
-            .profile-header {
+            .header {
                 padding-top: 20px;
             }
         }
@@ -203,7 +200,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- 访问统计放在左上角 -->
+        <!-- 访问统计放在容器内部的左上角 -->
         <div class="hit-counter">
             <a href="https://www.hitwebcounter.com" target="_blank">
                 <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0" 
@@ -217,7 +214,7 @@
 
         <header class="header">
             <!-- Profile Header -->
-            <div class="row profile-header">
+            <div class="row">
                 <div class="col-md-10">
                     <div class="row">   
                         <div class="col-md-12"><h2>Yujie Luo</h2></div>
