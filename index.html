@@ -33,7 +33,7 @@
         .hit-counter {
             position: absolute;
             top: 10px;
-            left: 10px;
+            left: 30px; /* 与容器padding相同 */
             z-index: 100;
         }
         
@@ -182,14 +182,31 @@
             margin-bottom: 5px; /* 减小行间距 */
         }
         
-        /* 调整宽页面下的布局 */
+        /* 宽页面下的布局 - 确保所有元素左侧对齐 */
         @media (min-width: 992px) {
-            .header {
-                padding-left: 120px; /* 为统计数值留出空间，使其与标题左对齐 */
+            /* 创建统一的左侧对齐线 */
+            .header-content {
+                margin-left: 0; /* 重置左边距 */
             }
             
-            .profile-text {
+            .profile-text, .nav-menu {
+                position: relative;
+                left: 0;
+            }
+            
+            /* 确保所有内容从相同位置开始 */
+            .header-content > div {
                 padding-left: 0;
+            }
+            
+            /* 图片保持在右侧 */
+            .col-md-2 {
+                padding-right: 0;
+            }
+            
+            /* 确保内容区域与统计对齐 */
+            .main-content-wrapper {
+                margin-left: 0;
             }
         }
         
@@ -242,8 +259,8 @@
         </div>
 
         <header class="header">
-            <!-- Profile Header - 调整布局使内容左对齐 -->
-            <div class="row">
+            <!-- Profile Header - 调整布局使所有内容左对齐 -->
+            <div class="row header-content">
                 <div class="col-md-10">
                     <div class="profile-text">
                         <div class="profile-row">
@@ -272,7 +289,7 @@
         </header>
 
         <!-- Main Content -->
-        <div class="content">
+        <div class="content main-content-wrapper">
             <!-- Biography -->
             <h4 data-toggle="collapse" data-target="#biography" aria-expanded="true">
                 Biography
