@@ -8,12 +8,6 @@
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-responsive.min.css">
     <style>
-        /* ==================== 性能优化：硬件加速 ==================== */
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
             color: #f0f0f0;
@@ -22,15 +16,11 @@
             overflow-x: hidden;
             position: relative;
             background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
-            background-attachment: fixed; /* 固定背景，避免滚动重绘 */
             min-height: 100vh;
-            -webkit-text-size-adjust: 100%;
-            /* 性能优化：启用GPU加速 */
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+            -webkit-text-size-adjust: 100%; /* 防止移动端字体缩放 */
         }
         
-        /* 动态星空背景容器 - 性能优化 */
+        /* 动态星空背景容器 */
         #particles-js {
             position: fixed;
             top: 0;
@@ -39,54 +29,42 @@
             height: 100%;
             z-index: -1;
             background: transparent;
+            pointer-events: none; /* 禁止粒子层交互 */
+        }
+        
+        /* 添加一层微弱的星星闪烁层 */
+        #stars-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: transparent;
             pointer-events: none;
-            /* 性能优化 */
-            will-change: transform;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
         }
         
-        /* 粒子光晕效果 - 通过Canvas滤镜实现 */
-        #particles-js canvas {
-            filter: blur(0.3px) brightness(1.1);
-            -webkit-filter: blur(0.3px) brightness(1.1);
-        }
-        
-        /* ==================== 优化container边框和背景 ==================== */
         .container {
             background-color: transparent;
             padding: 30px;
             margin-top: 20px;
             margin-bottom: 20px;
-            /* 边框弱化：降低透明度和亮度 */
-            border: 1px solid rgba(100, 140, 180, 0.15);
+            border: 1px solid rgba(120, 170, 220, 0.3);
             border-radius: 8px;
             position: relative;
-            /* 柔和阴影 */
-            box-shadow: 0 5px 30px rgba(0, 20, 40, 0.15),
-                        0 2px 10px rgba(0, 10, 20, 0.1);
+            box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
             pointer-events: auto;
-            /* 优化背景模糊 */
-            backdrop-filter: blur(1px) saturate(1.1);
-            -webkit-backdrop-filter: blur(1px) saturate(1.1);
-            background: linear-gradient(135deg, 
-                rgba(15, 25, 45, 0.35) 0%, 
-                rgba(10, 20, 40, 0.25) 50%,
-                rgba(15, 25, 45, 0.3) 100%);
+            backdrop-filter: blur(0.8px); /* 调整模糊效果到最小 */
             max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
-            /* 性能优化 */
-            will-change: transform;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
         }
         
         .content {
             padding: 20px 0;
         }
         
-        /* 访问统计 */
+        /* 访问统计放在容器内部的左上角 */
         .hit-counter {
             position: absolute;
             top: 10px;
@@ -99,7 +77,7 @@
             margin-bottom: 5px;
         }
         
-        /* ==================== 优化导航样式 - 增强立体感 ==================== */
+        /* 简洁导航样式 - 靠左排列 */
         .nav-menu {
             margin: 15px 0 25px 0;
             text-align: left;
@@ -109,32 +87,27 @@
             display: inline-block;
             margin-right: 25px;
             text-decoration: none;
-            color: #b8dcff;
+            color: #b0d0ff;
             font-size: 17px;
             font-weight: 600;
             padding: 5px 0;
             position: relative;
-            transition: all 0.3s ease;
-            /* 优化立体阴影 - 更自然的层次感 */
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.8),
-                0 2px 2px rgba(0, 0, 0, 0.6),
-                0 3px 4px rgba(0, 0, 0, 0.4),
-                0 5px 8px rgba(0, 0, 0, 0.2),
-                0 0 12px rgba(184, 220, 255, 0.25);
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+            /* 增强立体阴影效果 - 3D凸起感 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                         0 2px 1px rgba(0, 0, 0, 0.5),
+                         0 3px 3px rgba(0, 0, 0, 0.4),
+                         0 0 10px rgba(176, 208, 255, 0.3);
         }
         
         .nav-link:hover {
             color: #ffffff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.9),
-                0 2px 3px rgba(0, 0, 0, 0.7),
-                0 4px 6px rgba(0, 0, 0, 0.5),
-                0 6px 10px rgba(0, 0, 0, 0.3),
-                0 0 15px rgba(139, 197, 255, 0.6),
-                0 0 25px rgba(139, 197, 255, 0.35);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                         0 2px 3px rgba(0, 0, 0, 0.6),
+                         0 3px 6px rgba(0, 0, 0, 0.5),
+                         0 0 15px rgba(139, 197, 255, 0.7),
+                         0 0 25px rgba(139, 197, 255, 0.4);
             text-decoration: none;
-            transform: translateY(-1px);
         }
         
         .nav-link:after {
@@ -144,9 +117,8 @@
             left: 0;
             width: 0;
             height: 2px;
-            background: linear-gradient(90deg, #8bc5ff 0%, #a8d8ff 100%);
+            background-color: #8bc5ff;
             transition: width 0.3s ease;
-            box-shadow: 0 1px 4px rgba(139, 197, 255, 0.4);
         }
         
         .nav-link:hover:after {
@@ -158,22 +130,20 @@
             padding-top: 50px;
         }
         
-        /* ==================== 优化标题字体 - 增强立体感 ==================== */
         h2 {
             color: #ffffff;
             margin-top: 0;
             margin-bottom: 5px;
             font-weight: 700;
             font-size: 28px;
+            /* 增强立体阴影效果 - 3D凸起感 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
+                         0 2px 2px rgba(0, 0, 0, 0.7),
+                         0 3px 5px rgba(0, 0, 0, 0.6),
+                         0 4px 8px rgba(0, 0, 0, 0.4),
+                         0 0 15px rgba(0, 30, 60, 0.5),
+                         0 0 25px rgba(0, 40, 80, 0.3);
             letter-spacing: 0.5px;
-            /* 优化立体阴影 - 更深层次的3D效果 */
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.95),
-                0 2px 2px rgba(0, 0, 0, 0.8),
-                0 3px 5px rgba(0, 0, 0, 0.65),
-                0 5px 10px rgba(0, 0, 0, 0.45),
-                0 8px 15px rgba(0, 0, 0, 0.25),
-                0 0 20px rgba(20, 60, 100, 0.3);
         }
         
         .profile-text {
@@ -184,37 +154,31 @@
             margin-top: 5px;
         }
         
-        /* ==================== 优化小标题 - 增强立体感 ==================== */
         h4 {
-            color: #e8f4ff;
+            color: #e0f0ff;
             margin-top: 30px;
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 1px solid rgba(100, 150, 200, 0.25);
+            border-bottom: 1px solid rgba(120, 170, 220, 0.4);
             cursor: pointer;
             position: relative;
             font-weight: 700;
             font-size: 20px;
-            transition: all 0.3s ease;
-            /* 优化立体阴影 */
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.85),
-                0 2px 3px rgba(0, 0, 0, 0.7),
-                0 3px 5px rgba(0, 0, 0, 0.5),
-                0 5px 8px rgba(0, 0, 0, 0.3),
-                0 0 15px rgba(30, 70, 110, 0.25);
+            transition: color 0.3s ease, text-shadow 0.3s ease;
+            /* 增强立体阴影效果 - 3D凸起感 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                         0 2px 2px rgba(0, 0, 0, 0.6),
+                         0 3px 4px rgba(0, 0, 0, 0.5),
+                         0 0 12px rgba(0, 30, 60, 0.4);
         }
         
         h4:hover {
             color: #ffffff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.9),
-                0 2px 4px rgba(0, 0, 0, 0.75),
-                0 4px 7px rgba(0, 0, 0, 0.55),
-                0 6px 12px rgba(0, 0, 0, 0.35),
-                0 0 18px rgba(139, 197, 255, 0.5),
-                0 0 25px rgba(139, 197, 255, 0.3);
-            transform: translateX(2px);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
+                         0 2px 3px rgba(0, 0, 0, 0.7),
+                         0 3px 6px rgba(0, 0, 0, 0.6),
+                         0 0 15px rgba(139, 197, 255, 0.6),
+                         0 0 20px rgba(139, 197, 255, 0.4);
         }
         
         h4:after {
@@ -222,8 +186,8 @@
             position: absolute;
             right: 0;
             font-weight: bold;
-            color: #b8dcff;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+            color: #b0d0ff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
         
         h4.collapsed:after {
@@ -231,7 +195,7 @@
         }
         
         hr {
-            border-top: 1px solid rgba(100, 150, 200, 0.2);
+            border-top: 1px solid rgba(120, 170, 220, 0.3);
             margin: 25px 0;
         }
         
@@ -240,37 +204,33 @@
             margin-bottom: 20px;
         }
         
-        /* ==================== 优化文本字体 - 增强可读性和立体感 ==================== */
         li {
             margin-bottom: 10px;
             line-height: 1.5;
-            color: #f4f8ff;
-            /* 优化文本阴影 - 更柔和的立体感 */
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.7),
-                0 1px 2px rgba(0, 0, 0, 0.5),
-                0 2px 4px rgba(0, 0, 0, 0.25);
+            color: #f0f8ff;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.5),
+                         0 2px 3px rgba(0, 0, 0, 0.3);
         }
         
         a {
-            color: #a8d8ff;
+            color: #a0d5ff;
             text-decoration: none;
-            transition: all 0.25s ease;
-            /* 优化链接阴影 */
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.65),
-                0 1px 2px rgba(0, 0, 0, 0.45),
-                0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.4),
+                         0 2px 3px rgba(0, 0, 0, 0.2);
         }
         
         a:hover {
             color: #ffffff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.85),
-                0 2px 4px rgba(0, 0, 0, 0.6),
-                0 3px 6px rgba(0, 0, 0, 0.4),
-                0 0 12px rgba(110, 181, 255, 0.5),
-                0 0 18px rgba(110, 181, 255, 0.3);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                         0 2px 3px rgba(0, 0, 0, 0.6),
+                         0 3px 5px rgba(0, 0, 0, 0.4),
+                         0 0 12px rgba(110, 181, 255, 0.6),
+                         0 0 18px rgba(110, 181, 255, 0.4);
             text-decoration: underline;
         }
         
@@ -282,11 +242,11 @@
         
         .section-content {
             margin-bottom: 10px;
-            color: #f4f8ff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.65),
-                0 1px 2px rgba(0, 0, 0, 0.45),
-                0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #f0f8ff;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.4),
+                         0 2px 3px rgba(0, 0, 0, 0.2);
         }
         
         .teaching-section {
@@ -298,22 +258,22 @@
             font-size: 17px;
             margin-top: 15px;
             margin-bottom: 8px;
-            color: #d8e8ff;
+            color: #d0e5ff;
             font-weight: 700;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.75),
-                0 2px 3px rgba(0, 0, 0, 0.55),
-                0 3px 5px rgba(0, 0, 0, 0.3);
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                         0 2px 2px rgba(0, 0, 0, 0.5),
+                         0 3px 4px rgba(0, 0, 0, 0.3);
         }
         
         .profile-info {
             margin-top: 15px;
             margin-bottom: 15px;
-            color: #ecf4ff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.65),
-                0 1px 2px rgba(0, 0, 0, 0.45),
-                0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #e8f8ff;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.4),
+                         0 2px 3px rgba(0, 0, 0, 0.2);
         }
         
         .profile-row {
@@ -321,43 +281,57 @@
         }
         
         .profile-row span {
-            color: #ecf4ff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.65),
-                0 1px 2px rgba(0, 0, 0, 0.45),
-                0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #e8f8ff;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.4),
+                         0 2px 3px rgba(0, 0, 0, 0.2);
         }
         
         p {
-            color: #f4f8ff;
-            text-shadow: 
-                0 1px 0 rgba(0, 0, 0, 0.65),
-                0 1px 2px rgba(0, 0, 0, 0.45),
-                0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #f0f8ff;
+            /* 增强立体阴影效果 */
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                         0 1px 2px rgba(0, 0, 0, 0.4),
+                         0 2px 3px rgba(0, 0, 0, 0.2);
         }
         
+        /* 确保图片在深色背景下可见 */
         .hit-counter img {
-            background-color: rgba(255, 255, 255, 0.08);
+            background-color: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
             padding: 5px;
         }
         
-        /* ==================== 移动端优化 ==================== */
+        /* 添加星空闪烁动画 */
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        .twinkling-star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        
+        /* 移动端适配 - 保持立体阴影效果一致 */
         @media (max-width: 768px) {
             body {
-                background-attachment: scroll; /* 移动端使用scroll避免性能问题 */
+                background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+                color: #f0f0f0;
+                overflow-x: hidden;
             }
             
             .container {
                 padding: 20px 15px;
                 margin-top: 10px;
                 margin-bottom: 10px;
-                border: 1px solid rgba(100, 140, 180, 0.12);
+                border: 1px solid rgba(120, 170, 220, 0.3);
                 border-radius: 8px;
-                box-shadow: 0 4px 20px rgba(0, 20, 40, 0.12),
-                            0 2px 8px rgba(0, 10, 20, 0.08);
-                backdrop-filter: blur(0.5px) saturate(1.05);
-                -webkit-backdrop-filter: blur(0.5px) saturate(1.05);
+                box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
+                backdrop-filter: blur(0.8px); /* 移动端也使用相同的模糊效果 */
                 width: 95%;
             }
             
@@ -369,12 +343,13 @@
             h2 {
                 font-size: 24px;
                 color: #ffffff;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.9),
-                    0 2px 2px rgba(0, 0, 0, 0.75),
-                    0 3px 4px rgba(0, 0, 0, 0.6),
-                    0 4px 8px rgba(0, 0, 0, 0.4),
-                    0 0 15px rgba(20, 60, 100, 0.25);
+                /* 保持立体阴影效果，稍微减小阴影大小以适应小屏幕 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
+                             0 1px 2px rgba(0, 0, 0, 0.7),
+                             0 2px 4px rgba(0, 0, 0, 0.6),
+                             0 3px 6px rgba(0, 0, 0, 0.4),
+                             0 0 12px rgba(0, 30, 60, 0.5),
+                             0 0 20px rgba(0, 40, 80, 0.3);
                 margin-top: 10px;
             }
             
@@ -400,36 +375,36 @@
                 display: inline-block;
                 margin: 0 10px 10px;
                 font-size: 16px;
-                color: #b8dcff;
+                color: #b0d0ff;
                 padding: 8px 0;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.75),
-                    0 2px 2px rgba(0, 0, 0, 0.55),
-                    0 3px 4px rgba(0, 0, 0, 0.35),
-                    0 0 10px rgba(184, 220, 255, 0.2);
+                /* 保持立体阴影效果，稍微减小阴影大小 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                             0 1px 2px rgba(0, 0, 0, 0.5),
+                             0 2px 3px rgba(0, 0, 0, 0.4),
+                             0 0 8px rgba(176, 208, 255, 0.3);
             }
             
             h4 {
                 font-size: 18px;
-                color: #e8f4ff;
+                color: #e0f0ff;
                 margin-top: 25px;
                 margin-bottom: 12px;
-                border-bottom: 1px solid rgba(100, 150, 200, 0.22);
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.8),
-                    0 2px 2px rgba(0, 0, 0, 0.65),
-                    0 3px 4px rgba(0, 0, 0, 0.45),
-                    0 0 12px rgba(30, 70, 110, 0.2);
+                border-bottom: 1px solid rgba(120, 170, 220, 0.4);
+                /* 保持立体阴影效果，稍微减小阴影大小 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                             0 1px 2px rgba(0, 0, 0, 0.6),
+                             0 2px 3px rgba(0, 0, 0, 0.5),
+                             0 0 10px rgba(0, 30, 60, 0.4);
             }
             
             p, li, .profile-info, .profile-row span, .section-content, .teaching-section h5 {
-                color: #f4f8ff;
+                color: #f0f8ff;
                 font-size: 15px;
                 line-height: 1.6;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.6),
-                    0 1px 2px rgba(0, 0, 0, 0.45),
-                    0 2px 3px rgba(0, 0, 0, 0.2);
+                /* 保持立体阴影效果 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                             0 1px 1px rgba(0, 0, 0, 0.5),
+                             0 2px 2px rgba(0, 0, 0, 0.3);
             }
             
             .profile-text {
@@ -446,7 +421,11 @@
             
             .teaching-section h5 {
                 font-size: 16px;
-                color: #d8e8ff;
+                color: #d0e5ff;
+                /* 保持立体阴影效果 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                             0 1px 2px rgba(0, 0, 0, 0.5),
+                             0 2px 3px rgba(0, 0, 0, 0.3);
             }
             
             ul {
@@ -454,44 +433,60 @@
             }
             
             a {
-                color: #a8d8ff;
+                color: #a0d5ff;
+                text-decoration: none;
+                /* 保持立体阴影效果 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
+                             0 1px 1px rgba(0, 0, 0, 0.4),
+                             0 2px 2px rgba(0, 0, 0, 0.2);
+            }
+            
+            a:hover {
+                color: #ffffff;
+                /* 保持立体阴影效果 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                             0 1px 3px rgba(0, 0, 0, 0.6),
+                             0 2px 5px rgba(0, 0, 0, 0.4),
+                             0 0 10px rgba(110, 181, 255, 0.6),
+                             0 0 15px rgba(110, 181, 255, 0.4);
+                text-decoration: underline;
             }
         }
         
-        /* 小屏幕手机优化 */
+        /* 小屏幕手机适配 */
         @media (max-width: 480px) {
             .container {
                 padding: 15px 10px;
-                border: 1px solid rgba(100, 140, 180, 0.1);
             }
             
             h2 {
                 font-size: 22px;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.85),
-                    0 2px 2px rgba(0, 0, 0, 0.7),
-                    0 3px 4px rgba(0, 0, 0, 0.55),
-                    0 4px 7px rgba(0, 0, 0, 0.35),
-                    0 0 12px rgba(20, 60, 100, 0.2);
+                /* 进一步调整小屏幕的立体阴影 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
+                             0 1px 1px rgba(0, 0, 0, 0.7),
+                             0 2px 3px rgba(0, 0, 0, 0.6),
+                             0 3px 5px rgba(0, 0, 0, 0.4),
+                             0 0 10px rgba(0, 30, 60, 0.5),
+                             0 0 15px rgba(0, 40, 80, 0.3);
             }
             
             .nav-link {
                 font-size: 15px;
                 margin: 0 8px 8px;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.7),
-                    0 2px 2px rgba(0, 0, 0, 0.5),
-                    0 3px 3px rgba(0, 0, 0, 0.3),
-                    0 0 8px rgba(184, 220, 255, 0.18);
+                /* 进一步调整小屏幕的立体阴影 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
+                             0 1px 1px rgba(0, 0, 0, 0.5),
+                             0 2px 2px rgba(0, 0, 0, 0.4),
+                             0 0 6px rgba(176, 208, 255, 0.3);
             }
             
             h4 {
                 font-size: 17px;
-                text-shadow: 
-                    0 1px 0 rgba(0, 0, 0, 0.75),
-                    0 2px 2px rgba(0, 0, 0, 0.6),
-                    0 3px 3px rgba(0, 0, 0, 0.4),
-                    0 0 10px rgba(30, 70, 110, 0.18);
+                /* 进一步调整小屏幕的立体阴影 */
+                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
+                             0 1px 1px rgba(0, 0, 0, 0.6),
+                             0 2px 2px rgba(0, 0, 0, 0.5),
+                             0 0 8px rgba(0, 30, 60, 0.4);
             }
             
             p, li, .profile-info, .profile-row span, .section-content {
@@ -503,7 +498,7 @@
             }
         }
         
-        /* 平板设备优化 */
+        /* 平板设备适配 */
         @media (min-width: 769px) and (max-width: 1024px) {
             .container {
                 padding: 25px 20px;
@@ -518,11 +513,14 @@
     </style>
 </head>
 <body>
-    <!-- 统一粒子背景容器 -->
+    <!-- 动态粒子背景容器 - 作为底层画布 -->
     <div id="particles-js"></div>
     
+    <!-- 静态星星闪烁层 -->
+    <div id="stars-overlay"></div>
+    
     <div class="container">
-        <!-- 访问统计 -->
+        <!-- 访问统计放在容器内部的左上角 -->
         <div class="hit-counter">
             <a href="https://www.hitwebcounter.com" target="_blank">
                 <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0" 
@@ -535,7 +533,7 @@
         </div>
 
         <header class="header">
-            <!-- Profile Header -->
+            <!-- Profile Header - 移除照片后调整布局 -->
             <div class="row header-content">
                 <div class="col-md-12">
                     <div class="profile-text">
@@ -548,13 +546,13 @@
                             </span>
                         </div>
                         <div class="profile-row">
-                            <span>Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ef2e7f4a7a8def0ebedb0fbfaebb0edf9">[email&#160;protected]</a> or <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cfb6baa5a6aaa3baa0f6f98fa8a2aea6a3e1aca0a2">[email&#160;protected]</a></span>
+                            <span>Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 导航菜单 -->
+            <!-- 简洁导航菜单 - 靠左排列，减小与上方内容的间距 -->
             <div class="nav-menu">
                 <a href="google 404.html" class="nav-link">Google 404</a>
             </div>
@@ -686,13 +684,6 @@
     </div>
 
     <!-- Bootstrap JS and jQuery -->
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-    
-    <!-- 粒子效果库 -->
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-    
-    <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     
@@ -700,75 +691,96 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     
     <script>
-        // ==================== 统一粒子系统配置 ==================== 
+        // 创建静态闪烁星星
+        function createStaticStars() {
+            const starsContainer = document.getElementById('stars-overlay');
+            const starCount = window.innerWidth < 768 ? 50 : 100; // 移动端减少星星数量
+            
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'twinkling-star';
+                
+                // 随机位置
+                const left = Math.random() * 100;
+                const top = Math.random() * 100;
+                
+                // 随机大小
+                const size = Math.random() * 3 + 1;
+                
+                // 随机颜色
+                const colors = ['#ffffff', '#b0d0ff', '#8bc5ff', '#ffdd99', '#ffccaa'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                // 随机动画延迟
+                const delay = Math.random() * 5;
+                
+                star.style.left = left + '%';
+                star.style.top = top + '%';
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.backgroundColor = color;
+                star.style.animationDelay = delay + 's';
+                star.style.opacity = Math.random() * 0.5 + 0.3;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 粒子系统初始化
         document.addEventListener('DOMContentLoaded', function() {
+            // 创建静态星星
+            createStaticStars();
+            
+            // 根据设备类型调整粒子数量
             const isMobile = window.innerWidth < 768;
             const isSmallMobile = window.innerWidth < 480;
             
-            // 统一粒子配置 - 替代静态和动态两层
-            const particleConfig = {
+            // 初始化粒子系统 - 修复移动端连接线问题
+            particlesJS('particles-js', {
                 particles: {
                     number: {
-                        // 增加粒子数量以包含所有星空效果
-                        value: isSmallMobile ? 120 : (isMobile ? 200 : 300),
+                        value: isSmallMobile ? 60 : (isMobile ? 100 : 180), // 调整移动端粒子数量
                         density: {
                             enable: true,
-                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1200)
+                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
                         }
                     },
                     color: {
-                        // 丰富的星光颜色
-                        value: [
-                            "#ffffff",  // 纯白
-                            "#b8dcff",  // 浅蓝
-                            "#8bc5ff",  // 天蓝
-                            "#ffeaa7",  // 淡黄
-                            "#ffd7a8",  // 橙黄
-                            "#e8f4ff",  // 冰蓝
-                            "#fff5e1",  // 象牙白
-                            "#a8e6cf",  // 淡绿
-                            "#ffccaa"   // 粉橙
-                        ]
+                        value: ["#ffffff", "#b0d0ff", "#8bc5ff", "#a8e6cf", "#ffccaa", "#ffdd99"]
                     },
                     shape: {
-                        type: "circle",
-                        stroke: {
-                            width: 0,
-                            color: "#000000"
-                        }
+                        type: "circle"
                     },
                     opacity: {
-                        value: 0.8,
+                        value: 0.9,
                         random: true,
                         anim: {
                             enable: true,
                             speed: 1.5,
-                            opacity_min: 0.1,
+                            opacity_min: 0.2,
                             sync: false
                         }
                     },
                     size: {
-                        // 更大的尺寸变化范围
-                        value: isSmallMobile ? 3 : (isMobile ? 3.5 : 4),
+                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.5),
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 4,
-                            size_min: 0.3,
+                            speed: 3,
+                            size_min: 0.5,
                             sync: false
                         }
                     },
                     line_linked: {
-                        enable: true,
-                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140),
-                        // 稍浅的连接线颜色
-                        color: "#7aacdb",
-                        opacity: isSmallMobile ? 0.25 : (isMobile ? 0.3 : 0.35),
-                        width: 1
+                        enable: true, // 确保连接线启用
+                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120), // 调整连接距离
+                        color: "#8bc5ff",
+                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
+                        width: isSmallMobile ? 1 : 1.2 // 稍微增加线宽
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 0.8 : (isMobile ? 1.2 : 1.5),
+                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2),
                         direction: "none",
                         random: true,
                         straight: false,
@@ -786,135 +798,85 @@
                     events: {
                         onhover: {
                             enable: !isMobile,
-                            mode: ["grab", "bubble"]
+                            mode: "grab"
                         },
                         onclick: {
-                            enable: false
+                            enable: false,
+                            mode: "push"
                         },
                         resize: true
                     },
                     modes: {
                         grab: {
-                            distance: 160,
+                            distance: 150,
                             line_linked: {
-                                opacity: 0.6
+                                opacity: 0.8
                             }
                         },
-                        bubble: {
-                            distance: 200,
-                            size: 6,
-                            duration: 2,
-                            opacity: 0.9,
-                            speed: 3
+                        push: {
+                            particles_nb: 10
                         }
                     }
                 },
                 retina_detect: true
-            };
+            });
             
-            particlesJS('particles-js', particleConfig);
-            
-            // 添加粒子光晕效果
-            setTimeout(function() {
-                const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
-                if (pJS && pJS.particles && pJS.particles.array) {
-                    // 为每个粒子添加随机光晕属性
-                    pJS.particles.array.forEach(function(particle) {
-                        // 30% 的粒子有光晕
-                        particle.hasGlow = Math.random() < 0.3;
-                        // 随机光晕强度
-                        particle.glowIntensity = 2 + Math.random() * 4;
-                        // 随机脉冲速度
-                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
-                        particle.glowPhase = Math.random() * Math.PI * 2;
-                    });
-                    
-                    // 自定义绘制函数以添加光晕
-                    const originalDraw = pJS.fn.particlesDraw;
-                    pJS.fn.particlesDraw = function() {
-                        // 先绘制原始粒子
-                        originalDraw.call(pJS);
-                        
-                        const ctx = pJS.canvas.ctx;
-                        
-                        // 再绘制光晕层
-                        pJS.particles.array.forEach(function(particle) {
-                            if (particle.hasGlow) {
-                                // 计算脉冲效果
-                                particle.glowPhase += particle.glowSpeed;
-                                const glowAlpha = 0.3 + Math.sin(particle.glowPhase) * 0.2;
-                                const glowRadius = particle.radius * particle.glowIntensity;
-                                
-                                // 绘制光晕
-                                const gradient = ctx.createRadialGradient(
-                                    particle.x, particle.y, 0,
-                                    particle.x, particle.y, glowRadius
-                                );
-                                
-                                gradient.addColorStop(0, 'rgba(139, 197, 255, ' + glowAlpha + ')');
-                                gradient.addColorStop(0.4, 'rgba(139, 197, 255, ' + (glowAlpha * 0.4) + ')');
-                                gradient.addColorStop(1, 'rgba(139, 197, 255, 0)');
-                                
-                                ctx.fillStyle = gradient;
-                                ctx.beginPath();
-                                ctx.arc(particle.x, particle.y, glowRadius, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        });
-                    };
-                }
-            }, 100);
-            
-            // Bootstrap折叠功能
+            // 修改折叠功能，只有Biography和Research Interests初始展开
             $(document).ready(function() {
+                // Biography和Research Interests保持展开状态
                 $('#biography').addClass('in');
                 $('#research').addClass('in');
                 
+                // 点击标题时切换折叠状态和图标
                 $('h4[data-toggle="collapse"]').click(function() {
                     $(this).toggleClass('collapsed');
                 });
                 
-                // 移动端优化
+                // 移动端优化：触摸滚动更平滑
                 if ('ontouchstart' in window) {
                     document.body.style.webkitOverflowScrolling = 'touch';
                 }
             });
             
-            // 防抖resize事件
-            let resizeTimeout;
+            // 添加星星闪烁效果增强
+            setInterval(() => {
+                const stars = document.querySelectorAll('.twinkling-star');
+                stars.forEach(star => {
+                    // 随机改变一些星星的亮度
+                    if (Math.random() > 0.7) {
+                        star.style.opacity = Math.random() * 0.7 + 0.3;
+                    }
+                });
+            }, 1000);
+            
+            // 窗口大小调整时重新初始化粒子（优化移动端）
+            let resizeTimer;
             window.addEventListener('resize', function() {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    // 重新创建静态星星
+                    document.getElementById('stars-overlay').innerHTML = '';
+                    createStaticStars();
+                    
+                    // 重新初始化粒子系统以适应新的屏幕尺寸
                     const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
                     if (pJS) {
                         const isMobileNow = window.innerWidth < 768;
                         const isSmallMobileNow = window.innerWidth < 480;
                         
-                        // 更新粒子配置
-                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 200 : 300);
-                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1200);
-                        pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
-                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.25 : (isMobileNow ? 0.3 : 0.35);
-                        pJS.particles.move.speed = isSmallMobileNow ? 0.8 : (isMobileNow ? 1.2 : 1.5);
-                        pJS.particles.size.value = isSmallMobileNow ? 3 : (isMobileNow ? 3.5 : 4);
+                        // 更新粒子数量
+                        pJS.particles.number.value = isSmallMobileNow ? 60 : (isMobileNow ? 100 : 180);
+                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
                         
+                        // 更新连接线参数
+                        pJS.particles.line_linked.distance = isSmallMobileNow ? 90 : (isMobileNow ? 110 : 120);
+                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
+                        pJS.particles.line_linked.width = isSmallMobileNow ? 1 : 1.2;
+                        
+                        // 刷新粒子系统
                         pJS.fn.particlesRefresh();
-                        
-                        // 重新添加光晕属性
-                        setTimeout(function() {
-                            if (pJS.particles && pJS.particles.array) {
-                                pJS.particles.array.forEach(function(particle) {
-                                    if (!particle.hasOwnProperty('hasGlow')) {
-                                        particle.hasGlow = Math.random() < 0.3;
-                                        particle.glowIntensity = 2 + Math.random() * 4;
-                                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
-                                        particle.glowPhase = Math.random() * Math.PI * 2;
-                                    }
-                                });
-                            }
-                        }, 100);
                     }
-                }, 300);
+                }, 250);
             });
         });
     </script>
