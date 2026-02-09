@@ -46,20 +46,10 @@
             -webkit-transform: translateZ(0);
         }
         
-        /* 静态星星闪烁层 - 性能优化 */
-        #stars-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: transparent;
-            pointer-events: none;
-            /* 性能优化 */
-            will-change: opacity;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
+        /* 粒子光晕效果 - 通过Canvas滤镜实现 */
+        #particles-js canvas {
+            filter: blur(0.3px) brightness(1.1);
+            -webkit-filter: blur(0.3px) brightness(1.1);
         }
         
         /* ==================== 优化container边框和背景 ==================== */
@@ -352,23 +342,6 @@
             padding: 5px;
         }
         
-        /* ==================== 优化星空闪烁动画 - 使用CSS动画提升性能 ==================== */
-        @keyframes twinkle {
-            0%, 100% { opacity: 0.25; }
-            50% { opacity: 0.95; }
-        }
-        
-        .twinkling-star {
-            position: absolute;
-            background-color: white;
-            border-radius: 50%;
-            animation: twinkle 3s infinite ease-in-out;
-            /* 性能优化 */
-            will-change: opacity;
-            transform: translateZ(0);
-            -webkit-transform: translateZ(0);
-        }
-        
         /* ==================== 移动端优化 ==================== */
         @media (max-width: 768px) {
             body {
@@ -545,11 +518,8 @@
     </style>
 </head>
 <body>
-    <!-- 动态粒子背景容器 -->
+    <!-- 统一粒子背景容器 -->
     <div id="particles-js"></div>
-    
-    <!-- 静态星星闪烁层 -->
-    <div id="stars-overlay"></div>
     
     <div class="container">
         <!-- 访问统计 -->
@@ -578,7 +548,7 @@
                             </span>
                         </div>
                         <div class="profile-row">
-                            <span>Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
+                            <span>Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="9ef2e7f4a7a8def0ebedb0fbfaebb0edf9">[email&#160;protected]</a> or <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cfb6baa5a6aaa3baa0f6f98fa8a2aea6a3e1aca0a2">[email&#160;protected]</a></span>
                         </div>
                     </div>
                 </div>
@@ -716,6 +686,13 @@
     </div>
 
     <!-- Bootstrap JS and jQuery -->
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    
+    <!-- 粒子效果库 -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     
@@ -723,108 +700,82 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     
     <script>
-        // ==================== 性能优化：使用requestAnimationFrame ==================== 
-        
-        // 创建静态闪烁星星 - 优化版本
-        function createStaticStars() {
-            const starsContainer = document.getElementById('stars-overlay');
-            const isMobile = window.innerWidth < 768;
-            const isSmallMobile = window.innerWidth < 480;
-            const starCount = isSmallMobile ? 40 : (isMobile ? 60 : 100);
-            
-            // 清空现有星星
-            starsContainer.innerHTML = '';
-            
-            // 创建文档片段以减少DOM操作
-            const fragment = document.createDocumentFragment();
-            
-            for (let i = 0; i < starCount; i++) {
-                const star = document.createElement('div');
-                star.className = 'twinkling-star';
-                
-                const left = Math.random() * 100;
-                const top = Math.random() * 100;
-                const size = Math.random() * (isMobile ? 2.5 : 3) + 1;
-                const colors = ['#ffffff', '#b8dcff', '#8bc5ff', '#ffeaa7', '#ffd7a8'];
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                const delay = Math.random() * 5;
-                
-                star.style.cssText = `
-                    left: ${left}%;
-                    top: ${top}%;
-                    width: ${size}px;
-                    height: ${size}px;
-                    background-color: ${color};
-                    animation-delay: ${delay}s;
-                    opacity: ${Math.random() * 0.5 + 0.3};
-                `;
-                
-                fragment.appendChild(star);
-            }
-            
-            starsContainer.appendChild(fragment);
-        }
-        
-        // 粒子系统初始化 - 优化版本
+        // ==================== 统一粒子系统配置 ==================== 
         document.addEventListener('DOMContentLoaded', function() {
-            createStaticStars();
-            
             const isMobile = window.innerWidth < 768;
             const isSmallMobile = window.innerWidth < 480;
             
-            // 粒子配置 - 移动端大幅简化
+            // 统一粒子配置 - 替代静态和动态两层
             const particleConfig = {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 50 : (isMobile ? 80 : 150),
+                        // 增加粒子数量以包含所有星空效果
+                        value: isSmallMobile ? 120 : (isMobile ? 200 : 300),
                         density: {
                             enable: true,
-                            value_area: isSmallMobile ? 800 : (isMobile ? 1000 : 1500)
+                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1200)
                         }
                     },
                     color: {
-                        value: ["#ffffff", "#b8dcff", "#8bc5ff", "#a8e6cf", "#ffd7a8"]
+                        // 丰富的星光颜色
+                        value: [
+                            "#ffffff",  // 纯白
+                            "#b8dcff",  // 浅蓝
+                            "#8bc5ff",  // 天蓝
+                            "#ffeaa7",  // 淡黄
+                            "#ffd7a8",  // 橙黄
+                            "#e8f4ff",  // 冰蓝
+                            "#fff5e1",  // 象牙白
+                            "#a8e6cf",  // 淡绿
+                            "#ffccaa"   // 粉橙
+                        ]
                     },
                     shape: {
-                        type: "circle"
+                        type: "circle",
+                        stroke: {
+                            width: 0,
+                            color: "#000000"
+                        }
                     },
                     opacity: {
-                        value: 0.85,
+                        value: 0.8,
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 1.2,
-                            opacity_min: 0.2,
+                            speed: 1.5,
+                            opacity_min: 0.1,
                             sync: false
                         }
                     },
                     size: {
-                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.2),
+                        // 更大的尺寸变化范围
+                        value: isSmallMobile ? 3 : (isMobile ? 3.5 : 4),
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 2.5,
-                            size_min: 0.5,
+                            speed: 4,
+                            size_min: 0.3,
                             sync: false
                         }
                     },
                     line_linked: {
                         enable: true,
                         distance: isSmallMobile ? 100 : (isMobile ? 120 : 140),
-                        color: "#8bc5ff",
-                        opacity: isSmallMobile ? 0.35 : (isMobile ? 0.45 : 0.55),
-                        width: isSmallMobile ? 0.8 : 1
+                        // 稍浅的连接线颜色
+                        color: "#7aacdb",
+                        opacity: isSmallMobile ? 0.25 : (isMobile ? 0.3 : 0.35),
+                        width: 1
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 0.8 : (isMobile ? 1.2 : 1.8),
+                        speed: isSmallMobile ? 0.8 : (isMobile ? 1.2 : 1.5),
                         direction: "none",
                         random: true,
                         straight: false,
                         out_mode: "out",
                         bounce: false,
                         attract: {
-                            enable: !isMobile,
+                            enable: true,
                             rotateX: 600,
                             rotateY: 1200
                         }
@@ -835,7 +786,7 @@
                     events: {
                         onhover: {
                             enable: !isMobile,
-                            mode: "grab"
+                            mode: ["grab", "bubble"]
                         },
                         onclick: {
                             enable: false
@@ -844,10 +795,17 @@
                     },
                     modes: {
                         grab: {
-                            distance: 140,
+                            distance: 160,
                             line_linked: {
-                                opacity: 0.75
+                                opacity: 0.6
                             }
+                        },
+                        bubble: {
+                            distance: 200,
+                            size: 6,
+                            duration: 2,
+                            opacity: 0.9,
+                            speed: 3
                         }
                     }
                 },
@@ -855,6 +813,57 @@
             };
             
             particlesJS('particles-js', particleConfig);
+            
+            // 添加粒子光晕效果
+            setTimeout(function() {
+                const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
+                if (pJS && pJS.particles && pJS.particles.array) {
+                    // 为每个粒子添加随机光晕属性
+                    pJS.particles.array.forEach(function(particle) {
+                        // 30% 的粒子有光晕
+                        particle.hasGlow = Math.random() < 0.3;
+                        // 随机光晕强度
+                        particle.glowIntensity = 2 + Math.random() * 4;
+                        // 随机脉冲速度
+                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
+                        particle.glowPhase = Math.random() * Math.PI * 2;
+                    });
+                    
+                    // 自定义绘制函数以添加光晕
+                    const originalDraw = pJS.fn.particlesDraw;
+                    pJS.fn.particlesDraw = function() {
+                        // 先绘制原始粒子
+                        originalDraw.call(pJS);
+                        
+                        const ctx = pJS.canvas.ctx;
+                        
+                        // 再绘制光晕层
+                        pJS.particles.array.forEach(function(particle) {
+                            if (particle.hasGlow) {
+                                // 计算脉冲效果
+                                particle.glowPhase += particle.glowSpeed;
+                                const glowAlpha = 0.3 + Math.sin(particle.glowPhase) * 0.2;
+                                const glowRadius = particle.radius * particle.glowIntensity;
+                                
+                                // 绘制光晕
+                                const gradient = ctx.createRadialGradient(
+                                    particle.x, particle.y, 0,
+                                    particle.x, particle.y, glowRadius
+                                );
+                                
+                                gradient.addColorStop(0, 'rgba(139, 197, 255, ' + glowAlpha + ')');
+                                gradient.addColorStop(0.4, 'rgba(139, 197, 255, ' + (glowAlpha * 0.4) + ')');
+                                gradient.addColorStop(1, 'rgba(139, 197, 255, 0)');
+                                
+                                ctx.fillStyle = gradient;
+                                ctx.beginPath();
+                                ctx.arc(particle.x, particle.y, glowRadius, 0, Math.PI * 2);
+                                ctx.fill();
+                            }
+                        });
+                    };
+                }
+            }, 100);
             
             // Bootstrap折叠功能
             $(document).ready(function() {
@@ -871,30 +880,39 @@
                 }
             });
             
-            // ==================== 性能优化：防抖resize事件 ==================== 
+            // 防抖resize事件
             let resizeTimeout;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(function() {
-                    const wasSmallMobile = window.innerWidth < 480;
-                    const wasMobile = window.innerWidth < 768;
-                    
-                    // 重新创建星星
-                    createStaticStars();
-                    
-                    // 更新粒子配置
                     const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
                     if (pJS) {
                         const isMobileNow = window.innerWidth < 768;
                         const isSmallMobileNow = window.innerWidth < 480;
                         
-                        pJS.particles.number.value = isSmallMobileNow ? 50 : (isMobileNow ? 80 : 150);
-                        pJS.particles.number.density.value_area = isSmallMobileNow ? 800 : (isMobileNow ? 1000 : 1500);
+                        // 更新粒子配置
+                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 200 : 300);
+                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1200);
                         pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
-                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.35 : (isMobileNow ? 0.45 : 0.55);
-                        pJS.particles.move.speed = isSmallMobileNow ? 0.8 : (isMobileNow ? 1.2 : 1.8);
+                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.25 : (isMobileNow ? 0.3 : 0.35);
+                        pJS.particles.move.speed = isSmallMobileNow ? 0.8 : (isMobileNow ? 1.2 : 1.5);
+                        pJS.particles.size.value = isSmallMobileNow ? 3 : (isMobileNow ? 3.5 : 4);
                         
                         pJS.fn.particlesRefresh();
+                        
+                        // 重新添加光晕属性
+                        setTimeout(function() {
+                            if (pJS.particles && pJS.particles.array) {
+                                pJS.particles.array.forEach(function(particle) {
+                                    if (!particle.hasOwnProperty('hasGlow')) {
+                                        particle.hasGlow = Math.random() < 0.3;
+                                        particle.glowIntensity = 2 + Math.random() * 4;
+                                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
+                                        particle.glowPhase = Math.random() * Math.PI * 2;
+                                    }
+                                });
+                            }
+                        }, 100);
                     }
                 }, 300);
             });
