@@ -44,7 +44,7 @@
         
         /* 简洁导航样式 - 靠左排列 */
         .nav-menu {
-            margin: 20px 0 30px 0;
+            margin: 15px 0 25px 0; /* 减小上下边距 */
             text-align: left;
         }
         
@@ -81,15 +81,24 @@
         }
         
         .header {
-            padding-bottom: 20px;
-            padding-top: 40px; /* 为统计留出空间 */
+            padding-bottom: 10px; /* 减小底部内边距 */
+            padding-top: 50px; /* 为统计留出空间 */
         }
         
         h2 {
             color: #2c3e50;
             margin-top: 0;
+            margin-bottom: 5px; /* 减小底部边距 */
             font-weight: 600;
             font-size: 28px;
+        }
+        
+        .profile-text {
+            text-align: left; /* 保持左对齐 */
+        }
+        
+        .profile-links {
+            margin-top: 5px; /* 减小顶部边距 */
         }
         
         h4 {
@@ -169,6 +178,21 @@
             margin-bottom: 15px;
         }
         
+        .profile-row {
+            margin-bottom: 5px; /* 减小行间距 */
+        }
+        
+        /* 调整宽页面下的布局 */
+        @media (min-width: 992px) {
+            .header {
+                padding-left: 120px; /* 为统计数值留出空间，使其与标题左对齐 */
+            }
+            
+            .profile-text {
+                padding-left: 0;
+            }
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
@@ -181,7 +205,7 @@
             }
             
             .nav-menu {
-                margin: 15px 0;
+                margin: 10px 0 20px 0;
             }
             
             .hit-counter {
@@ -194,6 +218,11 @@
             
             .header {
                 padding-top: 20px;
+                padding-left: 0;
+            }
+            
+            .profile-row {
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -213,22 +242,20 @@
         </div>
 
         <header class="header">
-            <!-- Profile Header -->
+            <!-- Profile Header - 调整布局使内容左对齐 -->
             <div class="row">
                 <div class="col-md-10">
-                    <div class="row">   
-                        <div class="col-md-12"><h2>Yujie Luo</h2></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
+                    <div class="profile-text">
+                        <div class="profile-row">
+                            <h2>Yujie Luo</h2>
+                        </div>
+                        <div class="profile-row profile-links">
                             <span>
                                 <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank">Google Scholar</a>
                             </span>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <span><strong>Email:</strong> lyj96 at nus dot edu dot sg &nbsp; or &nbsp; yujieluo96 at gmail dot com</span>
+                        <div class="profile-row">
+                            <span>Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
                         </div>
                     </div>
                 </div>
@@ -237,7 +264,7 @@
                 </div>
             </div>
 
-            <!-- 简洁导航菜单 - 靠左排列 -->
+            <!-- 简洁导航菜单 - 靠左排列，减小与上方内容的间距 -->
             <div class="nav-menu">
                 <a href="index.html" class="nav-link">Homepage</a>
                 <a href="google 404.html" class="nav-link">Google 404</a>
@@ -259,6 +286,9 @@
                     I received my B.Sc. in Mathematics from the University of Science and Technology of China (USTC) in 2018. 
                     You can find my <a href="CV.pdf">CV</a> here.
                 </p>
+                <div class="profile-info">
+                    <strong>Email:</strong> lyj96 at nus dot edu dot sg &nbsp; or &nbsp; yujieluo96 at gmail dot com
+                </div>
             </div>
 
             <!-- Research Interests -->
