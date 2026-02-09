@@ -28,52 +28,79 @@
             padding: 20px 0;
         }
         
-        /* 简洁导航样式 */
+        /* 访问统计放在左上角 */
+        .hit-counter {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+        }
+        
+        .hit-counter a {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* 简洁导航样式 - 靠左排列 */
         .nav-menu {
-            margin: 25px 0 30px 0;
-            text-align: center;
+            margin: 20px 0 30px 0;
+            text-align: left;
         }
         
         .nav-link {
             display: inline-block;
-            padding: 10px 25px;
-            margin: 0 10px;
+            margin-right: 25px;
             text-decoration: none;
             color: #2c3e50;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 500;
-            border-radius: 20px;
-            background-color: #f0f8ff;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
+            padding: 5px 0;
+            position: relative;
+            transition: color 0.2s ease;
         }
         
         .nav-link:hover {
-            background-color: #e0f0ff;
-            color: #1a5276;
-            border-color: #b0d0ff;
+            color: #0066cc;
             text-decoration: none;
+        }
+        
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: #0066cc;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover:after {
+            width: 100%;
         }
         
         .header {
             padding-bottom: 20px;
+            position: relative;
         }
         
         h2 {
             color: #2c3e50;
-            margin-top: 10px;
+            margin-top: 30px;
             font-weight: 600;
-            letter-spacing: 0.5px;
+            font-size: 28px;
         }
         
         h4 {
             color: #2c3e50;
-            margin-top: 25px;
+            margin-top: 30px;
             margin-bottom: 15px;
             padding-bottom: 8px;
             border-bottom: 1px solid #e0e0e0;
             cursor: pointer;
             position: relative;
+            font-weight: 600;
+            font-size: 20px;
         }
         
         h4:after {
@@ -90,7 +117,7 @@
         
         hr {
             border-top: 1px solid #ddd;
-            margin: 20px 0;
+            margin: 25px 0;
         }
         
         ul {
@@ -99,31 +126,18 @@
         }
         
         li {
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            line-height: 1.5;
         }
         
         a {
             color: #0066cc;
+            text-decoration: none;
         }
         
         a:hover {
             color: #004499;
             text-decoration: underline;
-        }
-        
-        /* 访问统计上下排列 */
-        .hit-counter {
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .hit-counter a {
-            display: block;
-            margin-bottom: 8px;
-        }
-        
-        .hit-counter img {
-            margin: 0;
         }
         
         .clearfix::after {
@@ -142,18 +156,20 @@
         }
         
         .teaching-section h5 {
-            font-size: 16px;
+            font-size: 17px;
             margin-top: 15px;
             margin-bottom: 8px;
             color: #444;
+            font-weight: 600;
         }
         
         .profile-info {
-            background-color: #f8fdff;
-            padding: 15px;
-            border-radius: 5px;
+            margin-top: 15px;
             margin-bottom: 15px;
-            border-left: 3px solid #4dabf7;
+        }
+        
+        .profile-header {
+            padding-top: 40px; /* 为统计留出空间 */
         }
         
         @media (max-width: 768px) {
@@ -163,61 +179,68 @@
             
             .nav-link {
                 display: block;
-                margin: 5px 0;
-                padding: 12px 20px;
+                margin: 8px 0;
+                padding: 8px 0;
             }
             
             .nav-menu {
                 margin: 15px 0;
             }
             
-            .hit-counter a {
-                margin-bottom: 10px;
+            .hit-counter {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 15px;
+                text-align: left;
+            }
+            
+            .profile-header {
+                padding-top: 20px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <!-- 访问统计上下排列 -->
-            <div class="hit-counter">
-                <a href="https://www.hitwebcounter.com" target="_blank">
-                    <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0" 
-                         alt="Page Views" border="0" title="Page Views">
-                </a>
-                <a href="https://www.hitwebcounter.com" target="_blank">
-                    <img src="https://hitwebcounter.com/counter/counter.php?page=8049030&style=0038&nbdigits=9&type=ip&initCount=0" 
-                         alt="Unique Visitors" border="0" title="Unique Visitors">
-                </a>
-            </div>
+        <!-- 访问统计放在左上角 -->
+        <div class="hit-counter">
+            <a href="https://www.hitwebcounter.com" target="_blank">
+                <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0" 
+                     alt="Page Views" border="0" title="Page Views">
+            </a>
+            <a href="https://www.hitwebcounter.com" target="_blank">
+                <img src="https://hitwebcounter.com/counter/counter.php?page=8049030&style=0038&nbdigits=9&type=ip&initCount=0" 
+                     alt="Unique Visitors" border="0" title="Unique Visitors">
+            </a>
+        </div>
 
+        <header class="header">
             <!-- Profile Header -->
-            <div class="row">
-                <div style="padding-top: 30px" class="col-md-10">
+            <div class="row profile-header">
+                <div class="col-md-10">
                     <div class="row">   
-                        <div class="col-md-12"><h2 class="pull-right">Yujie Luo</h2></div>
+                        <div class="col-md-12"><h2>Yujie Luo</h2></div>
                     </div>
-                    <p></p>
                     <div class="row">
                         <div class="col-md-12">
-                            <span class="pull-right">
+                            <span>
                                 <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank">Google Scholar</a>
                             </span>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
-                            <span class="pull-right">Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
+                            <span>Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <img class="pull-right img-responsive img-thumbnail" src="yujie_luo.jpg" alt="Yujie Luo">
+                    <img class="img-responsive img-thumbnail" src="yujie_luo.jpg" alt="Yujie Luo">
                 </div>
             </div>
 
-            <!-- 简洁导航菜单 -->
+            <!-- 简洁导航菜单 - 靠左排列 -->
             <div class="nav-menu">
                 <a href="index.html" class="nav-link">Homepage</a>
                 <a href="google 404.html" class="nav-link">Google 404</a>
