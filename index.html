@@ -733,15 +733,16 @@
             
             // 根据设备类型调整粒子数量
             const isMobile = window.innerWidth < 768;
+            const isSmallMobile = window.innerWidth < 480;
             
-            // 初始化粒子系统
+            // 初始化粒子系统 - 修复移动端连接线问题
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isMobile ? 80 : 180, // 移动端减少粒子数量
+                        value: isSmallMobile ? 60 : (isMobile ? 100 : 180), // 调整移动端粒子数量
                         density: {
                             enable: true,
-                            value_area: isMobile ? 800 : 1500
+                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
                         }
                     },
                     color: {
@@ -761,7 +762,7 @@
                         }
                     },
                     size: {
-                        value: isMobile ? 2.5 : 3.5, // 移动端减小粒子大小
+                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.5),
                         random: true,
                         anim: {
                             enable: true,
@@ -771,15 +772,15 @@
                         }
                     },
                     line_linked: {
-                        enable: true, // 移动端和电脑端都启用连接线
-                        distance: isMobile ? 100 : 120, // 移动端稍微减小连接距离
+                        enable: true, // 确保连接线启用
+                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120), // 调整连接距离
                         color: "#8bc5ff",
-                        opacity: isMobile ? 0.3 : 0.4, // 移动端稍微减小透明度
-                        width: 1
+                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
+                        width: isSmallMobile ? 1 : 1.2 // 稍微增加线宽
                     },
                     move: {
                         enable: true,
-                        speed: isMobile ? 1.5 : 2, // 移动端减慢粒子速度
+                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2),
                         direction: "none",
                         random: true,
                         straight: false,
@@ -787,8 +788,8 @@
                         bounce: false,
                         attract: {
                             enable: true,
-                            rotateX: 800,
-                            rotateY: 1600
+                            rotateX: 600,
+                            rotateY: 1200
                         }
                     }
                 },
@@ -796,18 +797,18 @@
                     detect_on: "window",
                     events: {
                         onhover: {
-                            enable: !isMobile, // 移动端禁用悬停效果
+                            enable: !isMobile,
                             mode: "grab"
                         },
                         onclick: {
-                            enable: false, // 完全禁用点击生成粒子功能
+                            enable: false,
                             mode: "push"
                         },
                         resize: true
                     },
                     modes: {
                         grab: {
-                            distance: 180,
+                            distance: 150,
                             line_linked: {
                                 opacity: 0.8
                             }
@@ -837,8 +838,6 @@
                 }
             });
             
-           
-            
             // 添加星星闪烁效果增强
             setInterval(() => {
                 const stars = document.querySelectorAll('.twinkling-star');
@@ -858,6 +857,25 @@
                     // 重新创建静态星星
                     document.getElementById('stars-overlay').innerHTML = '';
                     createStaticStars();
+                    
+                    // 重新初始化粒子系统以适应新的屏幕尺寸
+                    const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
+                    if (pJS) {
+                        const isMobileNow = window.innerWidth < 768;
+                        const isSmallMobileNow = window.innerWidth < 480;
+                        
+                        // 更新粒子数量
+                        pJS.particles.number.value = isSmallMobileNow ? 60 : (isMobileNow ? 100 : 180);
+                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
+                        
+                        // 更新连接线参数
+                        pJS.particles.line_linked.distance = isSmallMobileNow ? 90 : (isMobileNow ? 110 : 120);
+                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
+                        pJS.particles.line_linked.width = isSmallMobileNow ? 1 : 1.2;
+                        
+                        // 刷新粒子系统
+                        pJS.fn.particlesRefresh();
+                    }
                 }, 250);
             });
         });
