@@ -6,8 +6,7 @@
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
     <title>Yujie Luo</title>
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-responsive.min.css">
     <style>
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
@@ -19,11 +18,10 @@
         .container {
             background-color: #f5fffa;
             padding: 30px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
             margin-top: 20px;
             margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         
         .content {
@@ -31,123 +29,64 @@
         }
         
         .nav {
-            margin: 0;
+            margin: 20px 0;
             padding: 0;
-            list-style: none;
-            background-color: #f0f8ff;
-            border-radius: 6px;
-            overflow: hidden;
-            margin-bottom: 25px;
-            border: 1px solid #b0e0e6;
         }
         
         .nav li {
             float: left;
-            width: 50%;
+            width: 110px;
+            list-style: none;
         }
         
         .nav a {
             display: block;
-            padding: 14px 15px;
+            padding: 8px 15px;
             text-decoration: none;
-            color: #2c3e50;
-            background-color: #e6f7ff;
-            border-right: 1px solid #b0e0e6;
+            color: #333;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
             text-align: center;
-            font-weight: 600;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            font-size: 13px;
-            letter-spacing: 0.5px;
-        }
-        
-        .nav li:last-child a {
-            border-right: none;
         }
         
         .nav a:hover {
-            background-color: #cceeff;
-            color: #1a5276;
-            text-decoration: none;
+            background-color: #e0e0e0;
         }
         
         .header {
             padding-bottom: 20px;
-            border-bottom: 2px solid #e0f7ff;
-            margin-bottom: 25px;
-        }
-        
-        .profile-header {
-            margin-bottom: 25px;
-            background: linear-gradient(to right, #f0f8ff, #e6f7ff);
-            padding: 20px;
-            border-radius: 8px;
-            border-left: 5px solid #3498db;
-        }
-        
-        .profile-img {
-            border: 3px solid #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: transform 0.3s;
-        }
-        
-        .profile-img:hover {
-            transform: scale(1.03);
         }
         
         h2 {
             color: #2c3e50;
-            margin-top: 0;
-            font-weight: 700;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.05);
-            letter-spacing: 0.5px;
+            margin-top: 10px;
         }
         
         h4 {
-            color: #2980b9;
-            background-color: #e8f4fc;
-            padding: 12px 20px;
-            margin-top: 30px;
-            margin-bottom: 0;
-            font-weight: 700;
-            border-left: 5px solid #3498db;
-            border-radius: 4px 0 0 4px;
+            color: #2c3e50;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e0e0e0;
             cursor: pointer;
             position: relative;
-            transition: all 0.3s;
         }
         
-        h4:hover {
-            background-color: #d4eaf7;
-            padding-left: 25px;
-        }
-        
-        h4 i {
+        h4:after {
+            content: '−';
             position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            transition: transform 0.3s;
+            right: 0;
+            font-weight: bold;
+            color: #666;
         }
         
-        h4.collapsed i {
-            transform: translateY(-50%) rotate(-90deg);
-        }
-        
-        .section-content {
-            padding: 20px;
-            background-color: #fff;
-            border-left: 5px solid #a8d8ff;
-            border-right: 1px solid #e0e0e0;
-            border-bottom: 1px solid #e0e0e0;
-            border-radius: 0 0 4px 4px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        h4.collapsed:after {
+            content: '+';
         }
         
         hr {
-            border-top: 2px solid #b0e0e6;
-            margin: 30px 0;
+            border-top: 1px solid #ddd;
+            margin: 20px 0;
         }
         
         ul {
@@ -156,55 +95,24 @@
         }
         
         li {
-            margin-bottom: 12px;
-            line-height: 1.5;
-            position: relative;
-            padding-left: 10px;
-        }
-        
-        li:before {
-            content: "•";
-            color: #3498db;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1em;
+            margin-bottom: 8px;
         }
         
         a {
-            color: #2980b9;
-            text-decoration: none;
-            border-bottom: 1px dotted #a8d8ff;
-            transition: all 0.2s;
+            color: #0066cc;
         }
         
         a:hover {
-            color: #1a5276;
-            text-decoration: none;
-            border-bottom: 1px solid #3498db;
+            color: #004499;
+            text-decoration: underline;
         }
         
         .hit-counter {
             margin-bottom: 15px;
-            text-align: center;
-            padding: 10px;
-            background-color: #e8f4fc;
-            border-radius: 6px;
-            border: 1px solid #b0e0e6;
         }
         
         .hit-counter img {
             margin: 0 5px;
-        }
-        
-        .email-info {
-            background: linear-gradient(to right, #e8f4fc, #f0f8ff);
-            padding: 15px;
-            border-radius: 6px;
-            border-left: 4px solid #3498db;
-            margin: 20px 0;
-            font-weight: 500;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
         .clearfix::after {
@@ -213,80 +121,36 @@
             display: table;
         }
         
-        .publication-item, .talk-item, .lecture-item, .visit-item, .teaching-item {
-            margin-bottom: 14px;
-            padding-bottom: 14px;
-            border-bottom: 1px dashed #e0e0e0;
-            transition: background-color 0.2s;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        
-        .publication-item:hover, .talk-item:hover, .lecture-item:hover, .visit-item:hover, .teaching-item:hover {
-            background-color: #f9fdff;
-        }
-        
-        .publication-item:last-child, .talk-item:last-child, .lecture-item:last-child, .visit-item:last-child, .teaching-item:last-child {
-            border-bottom: none;
-            margin-bottom: 0;
-            padding-bottom: 0;
-        }
-        
-        .sub-section {
-            margin-left: 20px;
-            margin-top: 15px;
-            margin-bottom: 15px;
-            padding-left: 15px;
-            border-left: 3px solid #d0e8ff;
-        }
-        
-        .sub-section h5 {
-            color: #2c3e50;
-            font-weight: 600;
-            margin-top: 15px;
+        .section-content {
             margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .teaching-section {
+            margin-left: 15px;
+            margin-top: 10px;
+        }
+        
+        .teaching-section h5 {
+            font-size: 16px;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: #444;
         }
         
         @media (max-width: 768px) {
-            .nav li {
-                width: 100%;
-                float: none;
-            }
-            
-            .nav a {
-                border-right: none;
-                border-bottom: 1px solid #b0e0e6;
-            }
-            
-            .nav li:last-child a {
-                border-bottom: none;
-            }
-            
             .container {
                 padding: 15px;
             }
             
-            h4 {
-                font-size: 16px;
-                padding: 10px 15px;
+            .nav li {
+                width: 100%;
+                float: none;
+                margin-bottom: 5px;
             }
             
-            .section-content {
-                padding: 15px;
+            .nav a {
+                border: 1px solid #ddd;
             }
-        }
-        
-        .badge-new {
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: bold;
-            margin-left: 5px;
-            vertical-align: middle;
         }
     </style>
 </head>
@@ -306,32 +170,27 @@
             </div>
 
             <!-- Profile Header -->
-            <div class="row profile-header">
-                <div class="col-md-10">
+            <div class="row">
+                <div style="padding-top: 30px" class="col-md-10">
+                    <div class="row">   
+                        <div class="col-md-12"><h2 class="pull-right">Yujie Luo</h2></div>
+                    </div>
+                    <p></p>
                     <div class="row">
                         <div class="col-md-12">
-                            <h2>Yujie Luo</h2>
+                            <span class="pull-right">
+                                <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank">Google Scholar</a>
+                            </span>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
-                            <div class="pull-right">
-                                <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank">
-                                    <i class="fa fa-graduation-cap"></i> <strong>Google Scholar</strong>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="pull-right">
-                                <span><i class="fa fa-envelope"></i> Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
-                            </div>
+                            <span class="pull-right">Email: lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <img class="pull-right img-responsive img-thumbnail profile-img" src="yujie_luo.jpg" alt="Yujie Luo">
+                    <img class="pull-right img-responsive img-thumbnail" src="yujie_luo.jpg" alt="Yujie Luo">
                 </div>
             </div>
 
@@ -339,8 +198,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <ul class="nav clearfix">
-                        <li><a href="index.html"><i class="fa fa-home"></i> Homepage</a></li>
-                        <li><a href="google 404.html"><i class="fa fa-google"></i> Google 404</a></li>
+                        <li><a href="index.html">Homepage</a></li>
+                        <li><a href="google 404.html">Google 404</a></li>
                     </ul>
                 </div>
             </div>
@@ -348,27 +207,25 @@
 
         <!-- Main Content -->
         <div class="content">
-            <!-- Biography Section -->
+            <!-- Biography -->
             <h4 data-toggle="collapse" data-target="#biography" aria-expanded="true">
-                Biography <i class="fa fa-chevron-down"></i>
+                Biography
             </h4>
             <div id="biography" class="section-content collapse in">
                 <p>
                     I am currently a Peng Tsu Ann Assistant Professor at the Department of Mathematics, National University of Singapore. 
-                    I obtained my Ph.D. at the <a href="https://mathematics.jhu.edu/" target="_blank">Department of Mathematics at Johns Hopkins University</a> 
-                    (August 2018 - February 2023). My advisor was Professor <a href="https://web.math.princeton.edu/~chenyang/" target="_blank">Chenyang Xu</a> 
-                    and my co-advisor was Professor <a href="https://jingjunhan.github.io/" target="_blank">Jingjun Han</a>. 
+                    I obtained my Ph.D. at the <a href="https://mathematics.jhu.edu/">Department of Mathematics at Johns Hopkins University</a> 
+                    (August 2018 - February 2023). My advisor was Professor <a href="https://web.math.princeton.edu/~chenyang/">Chenyang Xu</a> 
+                    and my co-advisor was Professor <a href="https://jingjunhan.github.io/">Jingjun Han</a>. 
                     I received my B.Sc. in Mathematics from the University of Science and Technology of China (USTC) in 2018. 
-                    You can find my <a href="CV.pdf"><i class="fa fa-file-pdf-o"></i> CV</a> here.
+                    You can find my <a href="CV.pdf">CV</a> here.
                 </p>
-                <div class="email-info">
-                    <i class="fa fa-envelope-o"></i> <strong>Email:</strong> lyj96 at nus dot edu dot sg &nbsp; | &nbsp; yujieluo96 at gmail dot com
-                </div>
+                <p>Email: lyj96 at nus dot edu dot sg or yujieluo96 at gmail dot com</p>
             </div>
 
             <!-- Research Interests -->
             <h4 data-toggle="collapse" data-target="#research" aria-expanded="true">
-                Research Interests <i class="fa fa-chevron-down"></i>
+                Research Interests
             </h4>
             <div id="research" class="section-content collapse in">
                 <p>I am interested in several areas of algebraic geometry, including birational geometry, algebraic dynamics, and minimal model program.</p>
@@ -376,193 +233,95 @@
 
             <!-- Publications & Preprints -->
             <h4 data-toggle="collapse" data-target="#publications" aria-expanded="true">
-                Publications & Preprints <span class="badge-new">9</span> <i class="fa fa-chevron-down"></i>
+                Publications & Preprints
             </h4>
             <div id="publications" class="section-content collapse in">
-                <ul class="list-unstyled">
-                    <li class="publication-item">
-                        <em>Essential dimensions of polarized endomorphisms of abelian varieties</em> (joint with Keiji Oguiso and De-Qi Zhang). Preprint. 
-                        [<a href="https://arxiv.org/abs/2512.04942" target="_blank">arXiv</a>]
-                    </li>
-                    <li class="publication-item">
-                        <em>Morphisms from a very general hypersurface</em> (joint with Yongnam Lee and De-Qi Zhang). 
-                        <a href="https://link.intlpress.com/JFirstDetail/1942307988947648514" target="_blank">Pure Appl. Math. Q.</a> 
-                        (special issue in honor of James McKernan's 60th birthday).
-                    </li>
-                    <li class="publication-item">
-                        <em>Jordan property for automorphism groups of compact varieties</em> (joint with Sheng Meng and De-Qi Zhang). 
-                        <a href="https://ems.press/journals/emss/articles/14298864" target="_blank">EM Surv. Math. Sci.</a> (to appear).
-                    </li>
-                    <li class="publication-item">
-                        <em>ACC for minimal log discrepancies of terminal threefolds</em> (joint with Jingjun Han and Jihao Liu). 
-                        <a href="https://www.sciencedirect.com/science/article/abs/pii/S000187082500355X" target="_blank">Adv. in Math.</a>, 
-                        <strong>480</strong> (2025), Part A.
-                    </li>
-                    <li class="publication-item">
-                        <em>On boundedness of divisors computing minimal log discrepancies for surfaces</em> (joint with Jingjun Han). 
-                        <a href="https://www.cambridge.org/core/journals/journal-of-the-institute-of-mathematics-of-jussieu/article/on-boundedness-of-divisors-computing-minimal-log-discrepancies-for-surfaces/FD39003AD587E4711097363175E6F966" target="_blank">J. Inst. Math. Jussieu</a>, 
-                        <strong>22</strong>(6) (2023), 2907-2930.
-                    </li>
-                    <li class="publication-item">
-                        <em>Shokurov's conjecture on conic bundles with canonical singularities</em> (joint with Jingjun Han and Chen Jiang). 
-                        <a href="https://www.cambridge.org/core/journals/forum-of-mathematics-sigma/article/shokurovs-conjecture-on-conic-bundles-with-canonical-singularities/EC15D79B29D794C1637A2C80EC13DBA8" target="_blank">Forum Math. Sigma</a>, 
-                        <strong>10</strong>, E38.
-                    </li>
-                    <li class="publication-item">
-                        <em>Global ACC for foliated threefolds</em> (joint with Jihao Liu and Fanjun Meng). 
-                        <a href="https://www.ams.org/journals/tran/2023-376-12/S0002-9947-2023-09053-5/" target="_blank">Trans. Amer. Math. Soc.</a>, 
-                        <strong>376</strong> (2023), 8939-8972.
-                    </li>
-                    <li class="publication-item">
-                        <em>A simple proof of ACC for MLD's for surfaces</em> (joint with Jingjun Han). 
-                        <a href="https://link.springer.com/article/10.1007/s10114-023-2094-x" target="_blank">Acta Math. Sin. (Engl. Ser.)</a>, 
-                        <strong>40</strong> (2024), 425-434.
-                    </li>
-                    <li class="publication-item">
-                        <em>Second largest accumulation point of minimal log discrepancies in dimension 3</em> (joint with Jihao Liu). 
-                        Preprint, to appear in J. Pure. Appl. Algebra. [<a href="https://arxiv.org/abs/2104.15072" target="_blank">arXiv</a>]
-                    </li>
+                <ul>
+                    <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em> (joint with Keiji Oguiso and De-Qi Zhang). Preprint. [<a href="https://arxiv.org/abs/2512.04942" target="_blank">arXiv</a>]</li>
+                    <li><em>Morphisms from a very general hypersurface</em> (joint with Yongnam Lee and De-Qi Zhang). <a href="https://link.intlpress.com/JFirstDetail/1942307988947648514" target="_blank">Pure Appl. Math. Q.</a> (special issue in honor of James McKernan's 60th birthday).</li>
+                    <li><em>Jordan property for automorphism groups of compact varieties</em> (joint with Sheng Meng and De-Qi Zhang). <a href="https://ems.press/journals/emss/articles/14298864" target="_blank">EM Surv. Math. Sci.</a> (to appear).</li>
+                    <li><em>ACC for minimal log discrepancies of terminal threefolds</em> (joint with Jingjun Han and Jihao Liu). <a href="https://www.sciencedirect.com/science/article/abs/pii/S000187082500355X" target="_blank">Adv. in Math.</a>, <strong>480</strong> (2025), Part A.</li>
+                    <li><em>On boundedness of divisors computing minimal log discrepancies for surfaces</em> (joint with Jingjun Han). <a href="https://www.cambridge.org/core/journals/journal-of-the-institute-of-mathematics-of-jussieu/article/on-boundedness-of-divisors-computing-minimal-log-discrepancies-for-surfaces/FD39003AD587E4711097363175E6F966" target="_blank">J. Inst. Math. Jussieu</a>, <strong>22</strong>(6) (2023), 2907-2930.</li>
+                    <li><em>Shokurov's conjecture on conic bundles with canonical singularities</em> (joint with Jingjun Han and Chen Jiang). <a href="https://www.cambridge.org/core/journals/forum-of-mathematics-sigma/article/shokurovs-conjecture-on-conic-bundles-with-canonical-singularities/EC15D79B29D794C1637A2C80EC13DBA8" target="_blank">Forum Math. Sigma</a>, <strong>10</strong>, E38.</li>
+                    <li><em>Global ACC for foliated threefolds</em> (joint with Jihao Liu and Fanjun Meng). <a href="https://www.ams.org/journals/tran/2023-376-12/S0002-9947-2023-09053-5/" target="_blank">Trans. Amer. Math. Soc.</a>, <strong>376</strong> (2023), 8939-8972.</li>
+                    <li><em>A simple proof of ACC for MLD's for surfaces</em> (joint with Jingjun Han). <a href="https://link.springer.com/article/10.1007/s10114-023-2094-x" target="_blank">Acta Math. Sin. (Engl. Ser.)</a>, <strong>40</strong> (2024), 425-434.</li>
+                    <li><em>Second largest accumulation point of minimal log discrepancies in dimension 3</em> (joint with Jihao Liu). Preprint, to appear in J. Pure. Appl. Algebra. [<a href="https://arxiv.org/abs/2104.15072" target="_blank">arXiv</a>]</li>
                 </ul>
             </div>
 
             <!-- Invited Talks -->
             <h4 data-toggle="collapse" data-target="#talks" aria-expanded="true">
-                Invited Talks <span class="badge-new">9</span> <i class="fa fa-chevron-down"></i>
+                Invited Talks
             </h4>
             <div id="talks" class="section-content collapse in">
-                <ul class="list-unstyled">
-                    <li class="talk-item">
-                        <em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, 
-                        <a href="https://sites.google.com/ncts.ntu.edu.tw/2025-algebraic-geometry-in/2025-agea" target="_blank">Algebraic Geometry in East Asia</a>, 
-                        November 13, 2025.
-                    </li>
-                    <li class="talk-item">
-                        <em>Boundedness of divisors computing minimal log discrepancies and ACC conjecture for MLDs</em>, 
-                        <a href="http://events.kias.re.kr/h/AGEA23/?pageNo=4999" target="_blank">Algebraic Geometry in East Asia</a>, 
-                        November 9, 2023.
-                    </li>
-                    <li class="talk-item">
-                        <em>Shokurov's conjecture on conic bundles with canonical singularities</em>, 
-                        <a href="https://mathematics.jhu.edu/event/algebraic-geometry-seminar-yujie-luo-johns-hopkins/" target="_blank">Algebraic Geometry seminar at Johns Hopkins University</a>, 
-                        October 11, 2022.
-                    </li>
-                    <li class="talk-item">
-                        <em>ACC conjecture for minimal log discrepancies and its applications in birational geometry</em>, 
-                        <a href="https://faculty.wcas.northwestern.edu/yuchenl/AG_Seminar.html#yujie" target="_blank">Algebraic Geometry seminar at Northwestern University</a>, 
-                        October 5, 2022.
-                    </li>
-                    <li class="talk-item">
-                        <em>Second largest accumulation point of minimal log discrepancies of threefolds</em>, 
-                        Short talk at <a href="https://www.simonsfoundation.org/event/mps-conference-on-higher-dimensional-geometry-august-22-26-2022/" target="_blank">MPS Conference on Higher Dimensional Geometry</a>, 
-                        August 22-26, 2022.
-                    </li>
-                    <li class="talk-item">
-                        <em>Shokurov's conjecture on conic bundles with canonical singularities</em>, 
-                        <a href="http://staff.ustc.edu.cn/~yqliang/files/NTAG-1st.htm" target="_blank">USTC NTAG 1-st</a>, 
-                        April 13, 2021.
-                    </li>
-                    <li class="talk-item">
-                        <em>Shokurov's conjecture on conic bundles with canonical singularities</em>, 
-                        <a href="http://math.amss.cas.cn/xshd/xsbg/202101/t20210108_609547.html" target="_blank">Morningside Center of Mathematics</a>, 
-                        January 13, 2021.
-                    </li>
-                    <li class="talk-item">
-                        <em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, 
-                        Short talk at <a href="https://drive.google.com/file/d/1PuJ-Cmk3_-zPJLMf07lxQDFjc4as6bVJ/view" target="_blank">Simons conference-Rationality</a>, 
-                        July 30, 2020.
-                    </li>
-                    <li class="talk-item">
-                        <em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, 
-                        Algebraic Geometry Seminar (Online), The University of Tokyo, July 26, 2020.
-                    </li>
+                <ul>
+                    <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://sites.google.com/ncts.ntu.edu.tw/2025-algebraic-geometry-in/2025-agea" target="_blank">Algebraic Geometry in East Asia</a>, November 13, 2025.</li>
+                    <li><em>Boundedness of divisors computing minimal log discrepancies and ACC conjecture for MLDs</em>, <a href="http://events.kias.re.kr/h/AGEA23/?pageNo=4999" target="_blank">Algebraic Geometry in East Asia</a>, November 9, 2023.</li>
+                    <li><em>Shokurov's conjecture on conic bundles with canonical singularities</em>, <a href="https://mathematics.jhu.edu/event/algebraic-geometry-seminar-yujie-luo-johns-hopkins/" target="_blank">Algebraic Geometry seminar at Johns Hopkins University</a>, October 11, 2022.</li>
+                    <li><em>ACC conjecture for minimal log discrepancies and its applications in birational geometry</em>, <a href="https://faculty.wcas.northwestern.edu/yuchenl/AG_Seminar.html#yujie" target="_blank">Algebraic Geometry seminar at Northwestern University</a>, October 5, 2022.</li>
+                    <li><em>Second largest accumulation point of minimal log discrepancies of threefolds</em>, Short talk at <a href="https://www.simonsfoundation.org/event/mps-conference-on-higher-dimensional-geometry-august-22-26-2022/" target="_blank">MPS Conference on Higher Dimensional Geometry</a>, August 22-26, 2022.</li>
+                    <li><em>Shokurov's conjecture on conic bundles with canonical singularities</em>, <a href="http://staff.ustc.edu.cn/~yqliang/files/NTAG-1st.htm" target="_blank">USTC NTAG 1-st</a>, April 13, 2021.</li>
+                    <li><em>Shokurov's conjecture on conic bundles with canonical singularities</em>, <a href="http://math.amss.cas.cn/xshd/xsbg/202101/t20210108_609547.html" target="_blank">Morningside Center of Mathematics</a>, January 13, 2021.</li>
+                    <li><em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, Short talk at <a href="https://drive.google.com/file/d/1PuJ-Cmk3_-zPJLMf07lxQDFjc4as6bVJ/view" target="_blank">Simons conference-Rationality</a>, July 30, 2020.</li>
+                    <li><em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, Algebraic Geometry Seminar (Online), The University of Tokyo, July 26, 2020.</li>
                 </ul>
             </div>
 
             <!-- Lectures and Seminar Talks -->
             <h4 data-toggle="collapse" data-target="#lectures" aria-expanded="true">
-                Lectures and Seminar Talks <i class="fa fa-chevron-down"></i>
+                Lectures and Seminar Talks
             </h4>
             <div id="lectures" class="section-content collapse in">
-                <ul class="list-unstyled">
-                    <li class="lecture-item">
-                        <em>Negative curves on $\mathbf{P}^2$ blowing up some points</em>, 
-                        <a href="https://www.math.nus.edu.sg/category/events/colloquia-seminars/topology-geometry-dynamics/page/9/" target="_blank">National University of Singapore Geometry and Topology Seminar</a>.
-                    </li>
-                    <li class="lecture-item">
-                        <em>Four lectures on the resolution of singularities</em>, 
-                        <a href="https://chenjiangfudan.github.io/home/2021-summer-reading.html" target="_blank">Reading Workshop: Boundedness and Resolution at SCMS Fudan, 2021 summer</a>.
-                    </li>
-                    <li class="lecture-item">
-                        <em>Logarithmic base change theorem and smooth descent of positivity of log canonical divisor</em>, 
-                        <a href="https://web.math.princeton.edu/~le3339/preprint" target="_blank">Princeton preprint seminar</a>.
-                    </li>
+                <ul>
+                    <li><em>Negative curves on $\mathbf{P}^2$ blowing up some points</em>, <a href="https://www.math.nus.edu.sg/category/events/colloquia-seminars/topology-geometry-dynamics/page/9/" target="_blank">National University of Singapore Geometry and Topology Seminar</a>.</li>
+                    <li><em>Four lectures on the resolution of singularities</em>, <a href="https://chenjiangfudan.github.io/home/2021-summer-reading.html" target="_blank">Reading Workshop: Boundedness and Resolution at SCMS Fudan, 2021 summer</a>.</li>
+                    <li><em>Logarithmic base change theorem and smooth descent of positivity of log canonical divisor</em>, <a href="https://web.math.princeton.edu/~le3339/preprint" target="_blank">Princeton preprint seminar</a>.</li>
                 </ul>
             </div>
 
             <!-- Visitings -->
             <h4 data-toggle="collapse" data-target="#visitings" aria-expanded="true">
-                Visitings <i class="fa fa-chevron-down"></i>
+                Visitings
             </h4>
             <div id="visitings" class="section-content collapse in">
-                <ul class="list-unstyled">
-                    <li class="visit-item">
-                        <a href="https://math.ecnu.edu.cn/" target="_blank">Department of Mathematics at East China Normal University</a>, 
-                        visiting scholar, Nov 2023 – Dec 2023
-                    </li>
-                    <li class="visit-item">
-                        <a href="https://www.math.princeton.edu/" target="_blank">Department of Mathematics at Princeton University</a>, 
-                        visiting scholar, Jan 2022 – Feb 2023
-                    </li>
-                    <li class="visit-item">
-                        <a href="https://scms.fudan.edu.cn/" target="_blank">SCMS at Fudan University</a>, 
-                        visiting scholar, July 2021 – August 2021
-                    </li>
-                    <li class="visit-item">
-                        <a href="https://bicmr.pku.edu.cn/" target="_blank">BICMR at Peking University</a>, 
-                        visiting scholar, October 2020 – July 2021
-                    </li>
-                    <li class="visit-item">
-                        <a href="http://english.amss.cas.cn/" target="_blank">Chinese Academy of Sciences</a>, 
-                        visiting student, October 2017 – May 2018
-                    </li>
-                    <li class="visit-item">
-                        <a href="https://ww3.math.ucla.edu/" target="_blank">University of California, Los Angeles</a>, 
-                        visiting student, July 2017 – October 2017
-                    </li>
+                <ul>
+                    <li><a href="https://math.ecnu.edu.cn/" target="_blank">Department of Mathematics at East China Normal University</a>, visiting scholar, Nov 2023--Dec 2023</li>
+                    <li><a href="https://www.math.princeton.edu/" target="_blank">Department of Mathematics at Princeton University</a>, visiting scholar, Jan 2022--Feb 2023</li>
+                    <li><a href="https://scms.fudan.edu.cn/" target="_blank">SCMS at Fudan University</a>, visiting scholar, July 2021--August 2021</li>
+                    <li><a href="https://bicmr.pku.edu.cn/" target="_blank">BICMR at Peking University</a>, visiting scholar, October 2020--July 2021</li>
+                    <li><a href="http://english.amss.cas.cn/">Chinese Academy of Sciences</a>, visiting student, October 2017--May 2018</li>
+                    <li><a href="https://ww3.math.ucla.edu/" target="_blank">University of California, Los Angeles</a>, visiting student, July 2017--October 2017</li>
                 </ul>
             </div>
 
             <!-- Teaching Experience -->
             <h4 data-toggle="collapse" data-target="#teaching" aria-expanded="true">
-                Teaching Experience <i class="fa fa-chevron-down"></i>
+                Teaching Experience
             </h4>
             <div id="teaching" class="section-content collapse in">
-                <!-- National University of Singapore -->
-                <div class="sub-section">
+                <div class="teaching-section">
                     <h5>National University of Singapore</h5>
-                    <ul class="list-unstyled">
-                        <li class="teaching-item">2025 Spring: Instructor, Algebraic Geometry of Curves and Surfaces MA4273</li>
-                        <li class="teaching-item">2024 Spring & Fall: Instructor, Multivariable Calculus MA2104</li>
-                        <li class="teaching-item">2023 Fall: Instructor, Algebraic Geometry MA5208 (Graduate Course)</li>
+                    <ul>
+                        <li>2025 Spring: Instructor, Algebraic Geometry of Curves and Surfaces MA4273</li>
+                        <li>2024 Spring & Fall: Instructor, Multivariable Calculus MA2104</li>
+                        <li>2023 Fall: Instructor, Algebraic Geometry MA5208 (Graduate Course)</li>
                     </ul>
                 </div>
                 
-                <!-- Johns Hopkins University -->
-                <div class="sub-section">
+                <div class="teaching-section">
                     <h5>Johns Hopkins University</h5>
-                    <ul class="list-unstyled">
-                        <li class="teaching-item">2022 Summer: Teaching assistant, Calculus III</li>
-                        <li class="teaching-item">2020 Fall - 2021 Fall: Teaching assistant, Linear Algebra</li>
-                        <li class="teaching-item">2020 Spring: Teaching assistant, Calculus II</li>
-                        <li class="teaching-item">2019 Fall: Teaching assistant, Linear Algebra</li>
+                    <ul>
+                        <li>2022 Summer: Teaching assistant, Calculus III</li>
+                        <li>2020 Fall - 2021 Fall: Teaching assistant, Linear Algebra</li>
+                        <li>2020 Spring: Teaching assistant, Calculus II</li>
+                        <li>2019 Fall: Teaching assistant, Linear Algebra</li>
                     </ul>
                 </div>
                 
-                <!-- University of Science and Technology of China -->
-                <div class="sub-section">
+                <div class="teaching-section">
                     <h5>University of Science and Technology of China</h5>
-                    <ul class="list-unstyled">
-                        <li class="teaching-item">2017 Fall: Teaching assistant, Functional Analysis</li>
+                    <ul>
+                        <li>2017 Fall: Teaching assistant, Functional Analysis</li>
                     </ul>
                 </div>
             </div>
@@ -574,22 +333,14 @@
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     
     <script>
-        // 为所有可折叠区域添加动画效果
+        // 简单的折叠功能
         $(document).ready(function() {
-            // 初始化所有区域为展开状态
+            // 所有区域默认展开
             $('.collapse').addClass('in');
             
-            // 为标题添加点击事件，切换图标
+            // 点击标题时切换折叠状态和图标
             $('h4[data-toggle="collapse"]').click(function() {
-                $(this).find('i').toggleClass('fa-chevron-down fa-chevron-up');
                 $(this).toggleClass('collapsed');
-            });
-            
-            // 为所有链接添加点击外部链接图标
-            $('a[target="_blank"]').each(function() {
-                if (!$(this).find('i.fa-external-link').length) {
-                    $(this).append(' <i class="fa fa-external-link" style="font-size: 0.8em;"></i>');
-                }
             });
         });
     </script>
