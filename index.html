@@ -28,29 +28,31 @@
             padding: 20px 0;
         }
         
-        .nav {
-            margin: 20px 0;
-            padding: 0;
-        }
-        
-        .nav li {
-            float: left;
-            width: 110px;
-            list-style: none;
-        }
-        
-        .nav a {
-            display: block;
-            padding: 8px 15px;
-            text-decoration: none;
-            color: #333;
-            background-color: #f0f0f0;
-            border: 1px solid #ddd;
+        /* 简洁导航样式 */
+        .nav-menu {
+            margin: 25px 0 30px 0;
             text-align: center;
         }
         
-        .nav a:hover {
-            background-color: #e0e0e0;
+        .nav-link {
+            display: inline-block;
+            padding: 10px 25px;
+            margin: 0 10px;
+            text-decoration: none;
+            color: #2c3e50;
+            font-size: 16px;
+            font-weight: 500;
+            border-radius: 20px;
+            background-color: #f0f8ff;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .nav-link:hover {
+            background-color: #e0f0ff;
+            color: #1a5276;
+            border-color: #b0d0ff;
+            text-decoration: none;
         }
         
         .header {
@@ -60,6 +62,8 @@
         h2 {
             color: #2c3e50;
             margin-top: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         
         h4 {
@@ -107,12 +111,19 @@
             text-decoration: underline;
         }
         
+        /* 访问统计上下排列 */
         .hit-counter {
             margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .hit-counter a {
+            display: block;
+            margin-bottom: 8px;
         }
         
         .hit-counter img {
-            margin: 0 5px;
+            margin: 0;
         }
         
         .clearfix::after {
@@ -137,19 +148,31 @@
             color: #444;
         }
         
+        .profile-info {
+            background-color: #f8fdff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 3px solid #4dabf7;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
             }
             
-            .nav li {
-                width: 100%;
-                float: none;
-                margin-bottom: 5px;
+            .nav-link {
+                display: block;
+                margin: 5px 0;
+                padding: 12px 20px;
             }
             
-            .nav a {
-                border: 1px solid #ddd;
+            .nav-menu {
+                margin: 15px 0;
+            }
+            
+            .hit-counter a {
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -157,15 +180,15 @@
 <body>
     <div class="container">
         <header class="header">
-            <!-- Hit Counters -->
+            <!-- 访问统计上下排列 -->
             <div class="hit-counter">
                 <a href="https://www.hitwebcounter.com" target="_blank">
                     <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0" 
-                         alt="Free Counter" border="0" title="Free Counter">
+                         alt="Page Views" border="0" title="Page Views">
                 </a>
                 <a href="https://www.hitwebcounter.com" target="_blank">
                     <img src="https://hitwebcounter.com/counter/counter.php?page=8049030&style=0038&nbdigits=9&type=ip&initCount=0" 
-                         alt="Free Counter" border="0" title="Free Counter">
+                         alt="Unique Visitors" border="0" title="Unique Visitors">
                 </a>
             </div>
 
@@ -194,14 +217,10 @@
                 </div>
             </div>
 
-            <!-- Navigation -->
-            <div class="row">
-                <div class="col-md-12">
-                    <ul class="nav clearfix">
-                        <li><a href="index.html">Homepage</a></li>
-                        <li><a href="google 404.html">Google 404</a></li>
-                    </ul>
-                </div>
+            <!-- 简洁导航菜单 -->
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Homepage</a>
+                <a href="google 404.html" class="nav-link">Google 404</a>
             </div>
         </header>
 
@@ -220,7 +239,9 @@
                     I received my B.Sc. in Mathematics from the University of Science and Technology of China (USTC) in 2018. 
                     You can find my <a href="CV.pdf">CV</a> here.
                 </p>
-                <p>Email: lyj96 at nus dot edu dot sg or yujieluo96 at gmail dot com</p>
+                <div class="profile-info">
+                    <strong>Email:</strong> lyj96 at nus dot edu dot sg &nbsp; or &nbsp; yujieluo96 at gmail dot com
+                </div>
             </div>
 
             <!-- Research Interests -->
