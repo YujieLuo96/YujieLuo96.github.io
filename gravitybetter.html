@@ -856,7 +856,7 @@
             
             // 计算粒子之间的万有引力
             calculateGravity() {
-                const G = 5; // 引力常数，保持较小以避免过度吸引
+                const G = 2; // 引力常数，保持较小以避免过度吸引
                 const minDistance = 5; // 最小距离，防止力过大
                 
                 for (let i = 0; i < this.particles.length; i++) {
@@ -891,7 +891,7 @@
                     p1.vy += ay * 0.5;
                     
                     // 保持原始的速度限制
-                    const maxSpeed = this.config.particles.move.speed * 2 * 0.5; // 同样降低最大速度
+                    const maxSpeed = this.config.particles.move.speed * 5; // 同样降低最大速度
                     const speed = Math.sqrt(p1.vx * p1.vx + p1.vy * p1.vy);
                     if (speed > maxSpeed) {
                         p1.vx = (p1.vx / speed) * maxSpeed;
