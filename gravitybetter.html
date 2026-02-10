@@ -1109,7 +1109,7 @@
                         }
                     },
                     size: {
-                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.5),
+                        value: isSmallMobile ? 1.8 : (isMobile ? 2.2 : 3.5),
                         random: true,
                         anim: {
                             enable: true,
@@ -1120,14 +1120,14 @@
                     },
                     line_linked: {
                         enable: true, // 修复：还原为 true，启用连接线
-                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120),
+                        distance: isSmallMobile ? 85 : (isMobile ? 100 : 120),
                         color: "#8bc5ff",
                         opacity: isSmallMobile ? 0.3 : (isMobile ? 0.4 : 0.6),
-                        width: isSmallMobile ? 0.6 : 1.2
+                        width: isSmallMobile ? 0.3 : 1.2
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 1.8 : (isMobile ? 1.9 : 2), // 这个速度值会在创建粒子时减半
+                        speed: isSmallMobile ? 1.6 : (isMobile ? 1.8 : 2), // 这个速度值会在创建粒子时减半
                         direction: "none",
                         random: true,
                         straight: false,
