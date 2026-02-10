@@ -555,7 +555,7 @@
             <!-- 简洁导航菜单 - 靠左排列，减小与上方内容的间距 -->
             <div class="nav-menu">
                 <a href="google 404.html" class="nav-link">Google 404</a>
-                <a href="gravitybetter.html" class="nav-link">Gravity</a>
+                <a href="index.html" class="nav-link">Random</a>
             </div>
         </header>
 
@@ -728,20 +728,367 @@
             }
         }
         
+        // 增强的粒子系统，在原始参数基础上添加质量和引力
+        class EnhancedParticleSystem {
+            constructor(containerId, config) {
+                this.container = document.getElementById(containerId);
+                this.config = config;
+                this.particles = [];
+                this.canvas = null;
+                this.ctx = null;
+                this.animationId = null;
+                this.mouse = { x: 0, y: 0, isHovering: false };
+                
+                this.init();
+            }
+            
+            init() {
+                // 清除原容器内容
+                this.container.innerHTML = '';
+                
+                // 创建Canvas
+                this.canvas = document.createElement('canvas');
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                this.canvas.style.position = 'absolute';
+                this.canvas.style.top = '0';
+                this.canvas.style.left = '0';
+                this.canvas.style.width = '100%';
+                this.canvas.style.height = '100%';
+                this.container.appendChild(this.canvas);
+                
+                this.ctx = this.canvas.getContext('2d');
+                
+                // 创建粒子
+                this.createParticles();
+                
+                // 设置鼠标交互
+                this.setupMouseEvents();
+                
+                // 开始动画
+                this.animate();
+            }
+            
+            createParticles() {
+                const isMobile = window.innerWidth < 768;
+                const isSmallMobile = window.innerWidth < 480;
+                
+                // 完全使用原始配置的粒子数量
+                const particleCount = this.config.particles.number.value;
+                
+                // 完全使用原始配置的颜色数组
+                const colors = this.config.particles.color.value;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    // 随机位置
+                    const x = Math.random() * this.canvas.width;
+                    const y = Math.random() * this.canvas.height;
+                    
+                    // 修改：粒子大小减小为原来的1/3
+                    let size;
+                    if (typeof this.config.particles.size.value === 'object') {
+                        const sizeValue = this.config.particles.size.value;
+                        size = (Math.random() * (sizeValue.max - sizeValue.min) + sizeValue.min) * 0.33; // 减小为1/3
+                    } else {
+                        size = this.config.particles.size.value * 0.33; // 减小为1/3
+                        if (this.config.particles.size.random) {
+                            size = size * (0.5 + Math.random() * 0.5);
+                        }
+                    }
+                    
+                    // 完全保持原始的透明度参数
+                    let opacity;
+                    if (typeof this.config.particles.opacity.value === 'object') {
+                        const opacityValue = this.config.particles.opacity.value;
+                        opacity = Math.random() * (opacityValue.max - opacityValue.min) + opacityValue.min;
+                    } else {
+                        opacity = this.config.particles.opacity.value;
+                        if (this.config.particles.opacity.random) {
+                            opacity = opacity * (0.5 + Math.random() * 0.5);
+                        }
+                    }
+                    
+                    // 随机颜色
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    // 修改：初始速度降低为原来的1/2
+                    const speed = this.config.particles.move.speed * 0.5; // 降低为1/2
+                    const angle = Math.random() * Math.PI * 2;
+                    const vx = Math.cos(angle) * speed * (isSmallMobile ? 0.8 : (isMobile ? 0.9 : 1));
+                    const vy = Math.sin(angle) * speed * (isSmallMobile ? 0.8 : (isMobile ? 0.9 : 1));
+                    
+                    // 添加随机质量（基于大小，但不影响视觉）
+                    const mass = size * 0.3 + Math.random() * 0.2;
+                    
+                    // 添加闪烁效果参数
+                    const twinkleSpeed = Math.random() * 0.05 + 0.02; // 闪烁速度
+                    const twinkleOffset = Math.random() * Math.PI * 2; // 闪烁偏移
+                    
+                    this.particles.push({
+                        x, y,
+                        vx, vy,
+                        size,
+                        mass,
+                        color,
+                        opacity,
+                        originalSize: size,
+                        originalOpacity: opacity,
+                        twinkleSpeed,
+                        twinkleOffset,
+                        time: Math.random() * 100 // 随机时间起始点
+                    });
+                }
+            }
+            
+            setupMouseEvents() {
+                // 鼠标移动事件
+                window.addEventListener('mousemove', (e) => {
+                    this.mouse.x = e.clientX;
+                    this.mouse.y = e.clientY;
+                    this.mouse.isHovering = true;
+                });
+                
+                // 鼠标离开事件
+                window.addEventListener('mouseout', () => {
+                    this.mouse.isHovering = false;
+                });
+            }
+            
+            // 计算粒子之间的万有引力
+            calculateGravity() {
+                const G = 0.618; // 引力常数，保持较小以避免过度吸引
+                const minDistance = 0.5; // 最小距离，防止力过大
+                
+                for (let i = 0; i < this.particles.length; i++) {
+                    const p1 = this.particles[i];
+                    let fx = 0, fy = 0;
+                    
+                    // 计算与其他粒子的引力
+                    for (let j = 0; j < this.particles.length; j++) {
+                        if (i === j) continue;
+                        
+                        const p2 = this.particles[j];
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // 避免距离过小
+                        if (distance < minDistance) continue;
+                        
+                        // 万有引力公式: F = G * (m1 * m2) / r^2
+                        const force = G * (p1.mass * p2.mass) / (distance * distance);
+                        
+                        // 力的方向分量
+                        fx += force * dx / distance;
+                        fy += force * dy / distance;
+                    }
+                    
+                    // 更新速度 (F = m * a => a = F / m)
+                    const ax = fx / p1.mass;
+                    const ay = fy / p1.mass;
+                    
+                    p1.vx += ax * 0.5;
+                    p1.vy += ay * 0.5;
+                    
+                    // 保持原始的速度限制
+                    const maxSpeed = this.config.particles.move.speed * 2 * 0.5; // 同样降低最大速度
+                    const speed = Math.sqrt(p1.vx * p1.vx + p1.vy * p1.vy);
+                    if (speed > maxSpeed) {
+                        p1.vx = (p1.vx / speed) * maxSpeed;
+                        p1.vy = (p1.vy / speed) * maxSpeed;
+                    }
+                }
+            }
+            
+            // 更新粒子位置
+            updateParticles() {
+                // 计算万有引力
+                this.calculateGravity();
+                
+                // 更新每个粒子的位置和闪烁效果
+                for (const p of this.particles) {
+                    // 更新时间用于闪烁效果
+                    p.time += 0.05;
+                    
+                    // 应用闪烁效果 - 使用正弦波改变透明度
+                    p.opacity = p.originalOpacity * (0.7 + 0.3 * Math.sin(p.time * p.twinkleSpeed + p.twinkleOffset));
+                    
+                    // 应用速度
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    
+                    // 边界处理 - 保持原始代码的out_mode: "out"行为
+                    if (this.config.particles.move.out_mode === "out") {
+                        if (p.x < -p.size) p.x = this.canvas.width + p.size;
+                        if (p.x > this.canvas.width + p.size) p.x = -p.size;
+                        if (p.y < -p.size) p.y = this.canvas.height + p.size;
+                        if (p.y > this.canvas.height + p.size) p.y = -p.size;
+                    }
+                    
+                    // 保持原始代码的random运动
+                    if (this.config.particles.move.random) {
+                        p.vx += (Math.random() - 0.5) * 0.05;
+                        p.vy += (Math.random() - 0.5) * 0.05;
+                    }
+                    
+                    // 保持原始代码的attract效果
+                    if (this.config.particles.move.attract.enable) {
+                        const dx = this.canvas.width/2 - p.x;
+                        const dy = this.canvas.height/2 - p.y;
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        const forceX = dx / distance * 0.01;
+                        const forceY = dy / distance * 0.01;
+                        
+                        p.vx += forceX;
+                        p.vy += forceY;
+                    }
+                }
+            }
+            
+            // 修复：恢复绘制粒子轨迹（连接线），亮度调整为0.3倍
+            drawConnections() {
+                const lineDistance = this.config.particles.line_linked.distance;
+                const lineColor = this.config.particles.line_linked.color;
+                const lineOpacity = this.config.particles.line_linked.opacity;
+                const lineWidth = 0.1*this.config.particles.line_linked.width;
+                
+                // 绘制所有粒子之间的连接线
+                for (let i = 0; i < this.particles.length; i++) {
+                    for (let j = i + 1; j < this.particles.length; j++) {
+                        const p1 = this.particles[i];
+                        const p2 = this.particles[j];
+                        
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // 如果距离小于连接距离，绘制连接线
+                        if (distance < lineDistance) {
+                            // 距离越近，连线越不透明（保持原始效果）
+                            const opacity = lineOpacity * (1 - distance / lineDistance) * 0.3; // 亮度调整为0.3倍
+                            
+                            // 应用粒子的闪烁效果到连接线
+                            const combinedOpacity = opacity * (p1.opacity + p2.opacity) / 2;
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p1.x, p1.y);
+                            this.ctx.lineTo(p2.x, p2.y);
+                            this.ctx.strokeStyle = lineColor.replace(')', `, ${combinedOpacity})`).replace('rgb', 'rgba');
+                            this.ctx.lineWidth = lineWidth;
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+                
+                // 鼠标交互效果（保持原始配置）
+                if (this.config.interactivity.events.onhover.enable && this.mouse.isHovering) {
+                    const mode = this.config.interactivity.events.onhover.mode;
+                    const grabDistance = this.config.interactivity.modes.grab.distance;
+                    
+                    if (mode === "grab") {
+                        // 绘制与鼠标的连接线
+                        for (const p of this.particles) {
+                            const dx = this.mouse.x - p.x;
+                            const dy = this.mouse.y - p.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            if (distance < grabDistance) {
+                                // 鼠标吸引效果
+                                const forceX = dx / distance * 0.02;
+                                const forceY = dy / distance * 0.02;
+                                p.vx += forceX;
+                                p.vy += forceY;
+                                
+                                // 绘制与鼠标的连接线，亮度调整为0.3倍
+                                this.ctx.beginPath();
+                                this.ctx.moveTo(p.x, p.y);
+                                this.ctx.lineTo(this.mouse.x, this.mouse.y);
+                                this.ctx.strokeStyle = lineColor.replace(')', `, ${this.config.interactivity.modes.grab.line_linked.opacity * p.opacity * 0.3})`).replace('rgb', 'rgba');
+                                this.ctx.lineWidth = lineWidth;
+                                this.ctx.stroke();
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 绘制粒子
+            drawParticles() {
+                for (const p of this.particles) {
+                    // 绘制粒子本体
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fillStyle = p.color.replace(')', `, ${p.opacity})`).replace('rgb', 'rgba');
+                    this.ctx.fill();
+                    
+                    // 添加轻微的发光效果（保持原始视觉效果）
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
+                    const gradient = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.5);
+                    gradient.addColorStop(0, p.color.replace(')', `, ${p.opacity * 0.5})`).replace('rgb', 'rgba'));
+                    gradient.addColorStop(1, p.color.replace(')', ', 0)').replace('rgb', 'rgba'));
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                }
+            }
+            
+            // 动画循环
+            animate() {
+                // 清除画布，使用半透明填充创建拖尾效果（保持残影效果）
+                this.ctx.fillStyle = 'rgba(10, 20, 40, 0.618)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 更新粒子
+                this.updateParticles();
+                
+                // 绘制连接线 - 修复：现在连接线已启用
+                if (this.config.particles.line_linked.enable) {
+                    this.drawConnections();
+                }
+                
+                // 绘制粒子
+                this.drawParticles();
+                
+                // 继续动画循环
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            // 调整画布大小
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+                
+                // 确保粒子不会跑到画布外太远
+                for (const p of this.particles) {
+                    if (p.x > this.canvas.width + 100) p.x = this.canvas.width - 100;
+                    if (p.y > this.canvas.height + 100) p.y = this.canvas.height - 100;
+                    if (p.x < -100) p.x = 100;
+                    if (p.y < -100) p.y = 100;
+                }
+            }
+            
+            // 销毁动画
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+        }
+        
         // 粒子系统初始化
         document.addEventListener('DOMContentLoaded', function() {
             // 创建静态星星
             createStaticStars();
             
-            // 根据设备类型调整粒子数量
+            // 根据设备类型调整粒子数量（完全保持原始参数）
             const isMobile = window.innerWidth < 768;
             const isSmallMobile = window.innerWidth < 480;
             
-            // 初始化粒子系统 - 修复移动端连接线问题
-            particlesJS('particles-js', {
+            // 修复：还原 line_linked.enable 为 true，修复动态粒子闪烁效果
+            const particlesConfig = {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 60 : (isMobile ? 100 : 180), // 调整移动端粒子数量
+                        value: isSmallMobile ? 60 : (isMobile ? 100 : 180),
                         density: {
                             enable: true,
                             value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
@@ -774,15 +1121,15 @@
                         }
                     },
                     line_linked: {
-                        enable: true, // 确保连接线启用
-                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120), // 调整连接距离
+                        enable: true, // 修复：还原为 true，启用连接线
+                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120),
                         color: "#8bc5ff",
-                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
-                        width: isSmallMobile ? 1 : 1.2 // 稍微增加线宽
+                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6),
+                        width: isSmallMobile ? 1 : 1.2
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2),
+                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2), // 这个速度值会在创建粒子时减半
                         direction: "none",
                         random: true,
                         straight: false,
@@ -821,7 +1168,10 @@
                     }
                 },
                 retina_detect: true
-            });
+            };
+            
+            // 创建增强的粒子系统（保持原始参数，只添加质量和引力）
+            let particleSystem = new EnhancedParticleSystem('particles-js', particlesConfig);
             
             // 修改折叠功能，只有Biography和Research Interests初始展开
             $(document).ready(function() {
@@ -860,23 +1210,9 @@
                     document.getElementById('stars-overlay').innerHTML = '';
                     createStaticStars();
                     
-                    // 重新初始化粒子系统以适应新的屏幕尺寸
-                    const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
-                    if (pJS) {
-                        const isMobileNow = window.innerWidth < 768;
-                        const isSmallMobileNow = window.innerWidth < 480;
-                        
-                        // 更新粒子数量
-                        pJS.particles.number.value = isSmallMobileNow ? 60 : (isMobileNow ? 100 : 180);
-                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
-                        
-                        // 更新连接线参数
-                        pJS.particles.line_linked.distance = isSmallMobileNow ? 90 : (isMobileNow ? 110 : 120);
-                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
-                        pJS.particles.line_linked.width = isSmallMobileNow ? 1 : 1.2;
-                        
-                        // 刷新粒子系统
-                        pJS.fn.particlesRefresh();
+                    // 调整粒子系统大小
+                    if (particleSystem) {
+                        particleSystem.resize();
                     }
                 }, 250);
             });
