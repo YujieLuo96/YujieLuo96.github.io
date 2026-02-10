@@ -856,7 +856,7 @@
             
             // 计算粒子之间的万有引力
             calculateGravity() {
-                const G = 0.618; // 引力常数，保持较小以避免过度吸引
+                const G = 0.3; // 引力常数，保持较小以避免过度吸引
                 const minDistance = 0.618; // 最小距离，防止力过大
                 
                 for (let i = 0; i < this.particles.length; i++) {
@@ -1091,7 +1091,7 @@
                         value: isSmallMobile ? 80 : (isMobile ? 120 : 200),
                         density: {
                             enable: true,
-                            value_area: isSmallMobile ? 500 : (isMobile ? 1000 : 1500)
+                            value_area: isSmallMobile ? 600 : (isMobile ? 900 : 1500)
                         }
                     },
                     color: {
@@ -1125,7 +1125,7 @@
                         distance: isSmallMobile ? 90 : (isMobile ? 110 : 120),
                         color: "#8bc5ff",
                         opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6),
-                        width: isSmallMobile ? 0.5 : 0.6
+                        width: isSmallMobile ? 0.8 : 1.2
                     },
                     move: {
                         enable: true,
