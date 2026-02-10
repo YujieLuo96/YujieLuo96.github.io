@@ -93,7 +93,6 @@
             padding: 5px 0;
             position: relative;
             transition: color 0.2s ease, text-shadow 0.2s ease;
-            /* 增强立体阴影效果 - 3D凸起感 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                          0 2px 1px rgba(0, 0, 0, 0.5),
                          0 3px 3px rgba(0, 0, 0, 0.4),
@@ -136,7 +135,6 @@
             margin-bottom: 5px;
             font-weight: 700;
             font-size: 28px;
-            /* 增强立体阴影效果 - 3D凸起感 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
                          0 2px 2px rgba(0, 0, 0, 0.7),
                          0 3px 5px rgba(0, 0, 0, 0.6),
@@ -891,7 +889,7 @@
                     p1.vy += ay * 0.5;
                     
                     // 保持原始的速度限制
-                    const maxSpeed = this.config.particles.move.speed * 4; // 同样降低最大速度
+                    const maxSpeed = this.config.particles.move.speed * 1.5; // 同样降低最大速度
                     const speed = Math.sqrt(p1.vx * p1.vx + p1.vy * p1.vy);
                     if (speed > maxSpeed) {
                         p1.vx = (p1.vx / speed) * maxSpeed;
