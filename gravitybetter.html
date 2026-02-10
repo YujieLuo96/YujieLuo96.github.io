@@ -889,7 +889,7 @@
                     p1.vy += ay * 0.5;
                     
                     // 保持原始的速度限制
-                    const maxSpeed = this.config.particles.move.speed * 1.5; // 同样降低最大速度
+                    const maxSpeed = this.config.particles.move.speed * 3; // 同样降低最大速度
                     const speed = Math.sqrt(p1.vx * p1.vx + p1.vy * p1.vy);
                     if (speed > maxSpeed) {
                         p1.vx = (p1.vx / speed) * maxSpeed;
@@ -934,8 +934,8 @@
                         const dx = this.canvas.width/2 - p.x;
                         const dy = this.canvas.height/2 - p.y;
                         const distance = Math.sqrt(dx*dx + dy*dy);
-                        const forceX = dx / distance * 0.01;
-                        const forceY = dy / distance * 0.01;
+                        const forceX = dx / (distance*distance) * 6;
+                        const forceY = dy / (distance*distance) * 6;
                         
                         p.vx += forceX;
                         p.vy += forceY;
