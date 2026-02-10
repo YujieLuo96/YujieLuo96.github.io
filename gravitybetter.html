@@ -856,8 +856,8 @@
             
             // 计算粒子之间的万有引力
             calculateGravity() {
-                const G = 2; // 引力常数，保持较小以避免过度吸引
-                const minDistance = 5; // 最小距离，防止力过大
+                const G = 4; // 引力常数，保持较小以避免过度吸引
+                const minDistance = 0.6; // 最小距离，防止力过大
                 
                 for (let i = 0; i < this.particles.length; i++) {
                     const p1 = this.particles[i];
@@ -936,8 +936,8 @@
                         const dx = this.canvas.width/2 - p.x;
                         const dy = this.canvas.height/2 - p.y;
                         const distance = Math.sqrt(dx*dx + dy*dy);
-                        const forceX = dx / distance * 0.003;
-                        const forceY = dy / distance * 0.003;
+                        const forceX = dx / distance * 0.01;
+                        const forceY = dy / distance * 0.01;
                         
                         p.vx += forceX;
                         p.vy += forceY;
