@@ -741,7 +741,7 @@
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 60 : (isMobile ? 100 : 180), // 调整移动端粒子数量
+                        value: isSmallMobile ? 120 : (isMobile ? 180 : 300), // 调整移动端粒子数量
                         density: {
                             enable: true,
                             value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
@@ -775,10 +775,10 @@
                     },
                     line_linked: {
                         enable: true, // 确保连接线启用
-                        distance: isSmallMobile ? 90 : (isMobile ? 110 : 120), // 调整连接距离
+                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140), // 调整连接距离
                         color: "#8bc5ff",
                         opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
-                        width: isSmallMobile ? 1 : 1.2 // 稍微增加线宽
+                        width: isSmallMobile ? 0.6 : 0.8 // 稍微增加线宽
                     },
                     move: {
                         enable: true,
@@ -867,13 +867,13 @@
                         const isSmallMobileNow = window.innerWidth < 480;
                         
                         // 更新粒子数量
-                        pJS.particles.number.value = isSmallMobileNow ? 60 : (isMobileNow ? 100 : 180);
+                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 180 : 300);
                         pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
                         
                         // 更新连接线参数
-                        pJS.particles.line_linked.distance = isSmallMobileNow ? 90 : (isMobileNow ? 110 : 120);
+                        pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
                         pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
-                        pJS.particles.line_linked.width = isSmallMobileNow ? 1 : 1.2;
+                        pJS.particles.line_linked.width = isSmallMobileNow ? 0.6 : 0.8;
                         
                         // 刷新粒子系统
                         pJS.fn.particlesRefresh();
