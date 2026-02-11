@@ -741,7 +741,7 @@
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 120 : (isMobile ? 180 : 300), // 调整移动端粒子数量
+                        value: isSmallMobile ? 160 : (isMobile ? 200 : 300), // 调整移动端粒子数量
                         density: {
                             enable: true,
                             value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
@@ -867,7 +867,7 @@
                         const isSmallMobileNow = window.innerWidth < 480;
 
                         // 更新粒子数量
-                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 180 : 300);
+                        pJS.particles.number.value = isSmallMobileNow ? 160 : (isMobileNow ? 200 : 300);
                         pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
 
                         // 更新连接线参数
