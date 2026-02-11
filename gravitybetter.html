@@ -948,7 +948,7 @@
                 const lineDistance = this.config.particles.line_linked.distance;
                 const lineColor = this.config.particles.line_linked.color;
                 const lineOpacity = this.config.particles.line_linked.opacity;
-                const lineWidth = 0.1*this.config.particles.line_linked.width;
+                const lineWidth = 0.15*this.config.particles.line_linked.width;
                 
                 // 绘制所有粒子之间的连接线
                 for (let i = 0; i < this.particles.length; i++) {
@@ -1123,7 +1123,7 @@
                         distance: isSmallMobile ? 85 : (isMobile ? 90 : 120),
                         color: "#8bc5ff",
                         opacity: isSmallMobile ? 0.3 : (isMobile ? 0.4 : 0.6),
-                        width: isSmallMobile ? 0.1 : (isMobile ? 0.1 : 0.85)
+                        width: isSmallMobile ? 0.5 : (isMobile ? 0.6 : 0.85)
                     },
                     move: {
                         enable: true,
