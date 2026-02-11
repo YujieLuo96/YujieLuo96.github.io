@@ -19,7 +19,7 @@
             min-height: 100vh;
             -webkit-text-size-adjust: 100%; /* 防止移动端字体缩放 */
         }
-        
+
         /* 动态星空背景容器 */
         #particles-js {
             position: fixed;
@@ -30,12 +30,6 @@
             z-index: -1;
             background: transparent;
             pointer-events: none; /* 禁止粒子层交互 */
-        }
-        
-        /* 为粒子画布添加光晕滤镜效果 */
-        #particles-js canvas {
-            filter: blur(0.3px) brightness(1.1);
-            -webkit-filter: blur(0.3px) brightness(1.1);
         }
 
         /* 添加一层微弱的星星闪烁层 */
@@ -311,23 +305,15 @@
 
         /* 添加星空闪烁动画 */
         @keyframes twinkle {
-            0%, 100% { opacity: 0.1; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.1); }
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 1; }
         }
 
-        /* 添加光晕效果动画 */
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 3px rgba(255, 255, 255, 0.1), 0 0 6px rgba(176, 208, 255, 0.1); }
-            50% { box-shadow: 0 0 8px rgba(255, 255, 255, 0.3), 0 0 15px rgba(176, 208, 255, 0.3), 0 0 25px rgba(139, 197, 255, 0.2); }
-        }
-
-        /* 静态星星样式 - 添加光晕效果 */
         .twinkling-star {
             position: absolute;
             background-color: white;
             border-radius: 50%;
-            animation: twinkle 3s infinite ease-in-out, glow 4s infinite ease-in-out;
-            box-shadow: 0 0 5px rgba(255, 255, 255, 0.2), 0 0 10px rgba(176, 208, 255, 0.2);
+            animation: twinkle 3s infinite ease-in-out;
         }
 
         /* 移动端适配 - 保持立体阴影效果一致 */
@@ -738,18 +724,6 @@
                 star.style.animationDelay = delay + 's';
                 star.style.opacity = Math.random() * 0.5 + 0.3;
 
-                // 为每个星星添加自定义光晕颜色
-                const glowColors = {
-                    '#ffffff': 'rgba(255, 255, 255, 0.3)',
-                    '#b0d0ff': 'rgba(176, 208, 255, 0.4)',
-                    '#8bc5ff': 'rgba(139, 197, 255, 0.5)',
-                    '#ffdd99': 'rgba(255, 221, 153, 0.4)',
-                    '#ffccaa': 'rgba(255, 204, 170, 0.4)'
-                };
-
-                const glowColor = glowColors[color] || 'rgba(255, 255, 255, 0.3)';
-                star.style.boxShadow = `0 0 5px ${glowColor}, 0 0 10px ${glowColor}`;
-
                 starsContainer.appendChild(star);
             }
         }
@@ -763,39 +737,24 @@
             const isMobile = window.innerWidth < 768;
             const isSmallMobile = window.innerWidth < 480;
 
-            // 初始化粒子系统 - 添加光晕效果
+            // 初始化粒子系统 - 修复移动端连接线问题
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 120 : (isMobile ? 200 : 300),
+                        value: isSmallMobile ? 120 : (isMobile ? 180 : 300), // 调整移动端粒子数量
                         density: {
                             enable: true,
-                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1200)
+                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
                         }
                     },
                     color: {
-                        // 丰富的星光颜色
-                        value: [
-                            "#ffffff",  // 纯白
-                            "#b0d0ff",  // 浅蓝
-                            "#8bc5ff",  // 天蓝
-                            "#ffeaa7",  // 淡黄
-                            "#ffd7a8",  // 橙黄
-                            "#e8f4ff",  // 冰蓝
-                            "#fff5e1",  // 象牙白
-                            "#a8e6cf",  // 淡绿
-                            "#ffccaa"   // 粉橙
-                        ]
+                        value: ["#ffffff", "#b0d0ff", "#8bc5ff", "#a8e6cf", "#ffccaa", "#ffdd99"]
                     },
                     shape: {
-                        type: "circle",
-                        stroke: {
-                            width: 0,
-                            color: "#000000"
-                        }
+                        type: "circle"
                     },
                     opacity: {
-                        value: 0.8,
+                        value: 0.9,
                         random: true,
                         anim: {
                             enable: true,
@@ -805,33 +764,25 @@
                         }
                     },
                     size: {
-                        // 更大的尺寸变化范围
-                        value: isSmallMobile ? 3 : (isMobile ? 3.5 : 4),
+                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.5),
                         random: true,
                         anim: {
                             enable: true,
-                            speed: 4,
-                            size_min: 0.3,
+                            speed: 3,
+                            size_min: 0.5,
                             sync: false
                         }
                     },
                     line_linked: {
-                        enable: true,
-                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140),
-                        // 稍浅的连接线颜色
-                        color: "#7aacdb",
-                        opacity: isSmallMobile ? 0.25 : (isMobile ? 0.3 : 0.35),
-                        width: 1,
-                        // 连接线光晕效果
-                        shadow: {
-                            enable: true,
-                            color: "rgba(139, 197, 255, 0.3)",
-                            blur: 5
-                        }
+                        enable: true, // 确保连接线启用
+                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140), // 调整连接距离
+                        color: "#8bc5ff",
+                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
+                        width: isSmallMobile ? 0.6 : 0.8 // 稍微增加线宽
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 0.8 : (isMobile ? 1.2 : 1.5),
+                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2),
                         direction: "none",
                         random: true,
                         straight: false,
@@ -849,87 +800,28 @@
                     events: {
                         onhover: {
                             enable: !isMobile,
-                            mode: ["grab", "bubble"]
+                            mode: "grab"
                         },
                         onclick: {
-                            enable: false
+                            enable: false,
+                            mode: "push"
                         },
                         resize: true
                     },
                     modes: {
                         grab: {
-                            distance: 160,
+                            distance: 150,
                             line_linked: {
-                                opacity: 0.6,
-                                shadow: {
-                                    enable: true,
-                                    color: "rgba(255, 255, 255, 0.5)",
-                                    blur: 10
-                                }
+                                opacity: 0.8
                             }
                         },
-                        bubble: {
-                            distance: 200,
-                            size: 6,
-                            duration: 2,
-                            opacity: 0.9,
-                            speed: 3
+                        push: {
+                            particles_nb: 10
                         }
                     }
                 },
                 retina_detect: true
             });
-
-            // 添加粒子光晕效果
-            setTimeout(function() {
-                const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
-                if (pJS && pJS.particles && pJS.particles.array) {
-                    // 为每个粒子添加随机光晕属性
-                    pJS.particles.array.forEach(function(particle) {
-                        // 30% 的粒子有光晕
-                        particle.hasGlow = Math.random() < 0.3;
-                        // 随机光晕强度
-                        particle.glowIntensity = 2 + Math.random() * 4;
-                        // 随机脉冲速度
-                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
-                        particle.glowPhase = Math.random() * Math.PI * 2;
-                    });
-
-                    // 自定义绘制函数以添加光晕
-                    const originalDraw = pJS.fn.particlesDraw;
-                    pJS.fn.particlesDraw = function() {
-                        // 先绘制原始粒子
-                        originalDraw.call(pJS);
-
-                        const ctx = pJS.canvas.ctx;
-
-                        // 再绘制光晕层
-                        pJS.particles.array.forEach(function(particle) {
-                            if (particle.hasGlow) {
-                                // 计算脉冲效果
-                                particle.glowPhase += particle.glowSpeed;
-                                const glowAlpha = 0.3 + Math.sin(particle.glowPhase) * 0.2;
-                                const glowRadius = particle.radius * particle.glowIntensity;
-
-                                // 绘制光晕
-                                const gradient = ctx.createRadialGradient(
-                                    particle.x, particle.y, 0,
-                                    particle.x, particle.y, glowRadius
-                                );
-
-                                gradient.addColorStop(0, 'rgba(139, 197, 255, ' + glowAlpha + ')');
-                                gradient.addColorStop(0.4, 'rgba(139, 197, 255, ' + (glowAlpha * 0.4) + ')');
-                                gradient.addColorStop(1, 'rgba(139, 197, 255, 0)');
-
-                                ctx.fillStyle = gradient;
-                                ctx.beginPath();
-                                ctx.arc(particle.x, particle.y, glowRadius, 0, Math.PI * 2);
-                                ctx.fill();
-                            }
-                        });
-                    };
-                }
-            }, 100);
 
             // 修改折叠功能，只有Biography和Research Interests初始展开
             $(document).ready(function() {
@@ -954,27 +846,12 @@
                 stars.forEach(star => {
                     // 随机改变一些星星的亮度
                     if (Math.random() > 0.7) {
-                        const currentOpacity = parseFloat(star.style.opacity) || 0.5;
-                        const newOpacity = Math.random() * Math.random() * 0.8 + 0.2;
-                        star.style.opacity = newOpacity;
-
-                        // 同时增强光晕效果
-                        const currentBoxShadow = star.style.boxShadow;
-                        if (currentBoxShadow.includes('rgba')) {
-                            // 提取颜色并调整透明度
-                            const matches = currentBoxShadow.match(/rgba\([^)]+\)/g);
-                            if (matches) {
-                                matches.forEach(match => {
-                                    const newMatch = match.replace(/[\d\.]+(?=\))/, newOpacity * 0.8);
-                                    star.style.boxShadow = currentBoxShadow.replace(match, newMatch);
-                                });
-                            }
-                        }
+                        star.style.opacity = Math.random() * Math.random()*0.8+0.2;
                     }
                 });
             }, 1000);
 
-            // 窗口大小调整时重新初始化粒子
+            // 窗口大小调整时重新初始化粒子（优化移动端）
             let resizeTimer;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimer);
@@ -989,31 +866,19 @@
                         const isMobileNow = window.innerWidth < 768;
                         const isSmallMobileNow = window.innerWidth < 480;
 
-                        // 更新粒子配置
-                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 200 : 300);
-                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1200);
+                        // 更新粒子数量
+                        pJS.particles.number.value = isSmallMobileNow ? 120 : (isMobileNow ? 180 : 300);
+                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
+
+                        // 更新连接线参数
                         pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
-                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.25 : (isMobileNow ? 0.3 : 0.35);
-                        pJS.particles.move.speed = isSmallMobileNow ? 0.8 : (isMobileNow ? 1.2 : 1.5);
-                        pJS.particles.size.value = isSmallMobileNow ? 3 : (isMobileNow ? 3.5 : 4);
+                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
+                        pJS.particles.line_linked.width = isSmallMobileNow ? 0.6 : 0.8;
 
+                        // 刷新粒子系统
                         pJS.fn.particlesRefresh();
-
-                        // 重新添加光晕属性
-                        setTimeout(function() {
-                            if (pJS.particles && pJS.particles.array) {
-                                pJS.particles.array.forEach(function(particle) {
-                                    if (!particle.hasOwnProperty('hasGlow')) {
-                                        particle.hasGlow = Math.random() < 0.3;
-                                        particle.glowIntensity = 2 + Math.random() * 4;
-                                        particle.glowSpeed = 0.02 + Math.random() * 0.03;
-                                        particle.glowPhase = Math.random() * Math.PI * 2;
-                                    }
-                                });
-                            }
-                        }, 100);
                     }
-                }, 300);
+                }, 250);
             });
         });
     </script>
