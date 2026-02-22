@@ -183,71 +183,72 @@
 </head>
 <body>
     <div id="particles-js"></div>
-    <div id="explosion-indicator">⚠️ 黑洞预警 ... 即将爆炸 ⚠️</div>
+    <div id="explosion-indicator">⚠️ Black hole warning ... imminent explosion ⚠️</div>
 
-    <!-- 参数按钮及面板 (新增爆炸半径倍率 r) -->
-    <div id="params-toggle" title="引力参数设置 (无界输入)">⚙️</div>
+    <!-- 参数按钮及面板 (全英文界面) -->
+    <div id="params-toggle" title="Gravity parameters (unbounded input)">⚙️</div>
     <div id="params-panel">
-        <h3>⚡ 引力参数 (≥0 无上限)</h3>
-        
-        <!-- G 常数 -->
+        <h3>⚡ Gravity Parameters (≥0 no upper limit)</h3>
+
+        <!-- G constant -->
         <div class="param-row">
-            <label>引力常数 G</label>
+            <label>Gravitational constant G</label>
             <div class="param-control">
                 <input type="range" id="g-slider" min="0.5" max="20.0" value="6.0" step="0.1">
                 <input type="number" id="g-input" value="6.0" step="0.1">
             </div>
         </div>
-        
-        <!-- 中心吸引强度 -->
+
+        <!-- Center attraction strength -->
         <div class="param-row">
-            <label>中心吸引强度</label>
+            <label>Center attraction strength</label>
             <div class="param-control">
                 <input type="range" id="attract-slider" min="0.0" max="10.0" value="3.0" step="0.1">
                 <input type="number" id="attract-input" value="3.0" step="0.1">
             </div>
         </div>
 
-        <!-- 粒子数量倍率 (实时生效) -->
+        <!-- Particle count multiplier (实时生效) -->
         <div class="param-row">
-            <label>粒子数量倍率 <span class="actual-count" id="actual-count">(实际: 400)</span></label>
+            <label>Particle count multiplier <span class="actual-count" id="actual-count">(Actual: 600)</span></label>
             <div class="param-control">
-                <input type="range" id="factor-slider" min="0.2" max="4.0" value="1.0" step="0.1">
-                <input type="number" id="factor-input" value="1.0" step="0.1">
+                <input type="range" id="factor-slider" min="0.2" max="4.0" value="1.5" step="0.1">
+                <input type="number" id="factor-input" value="1.5" step="0.1">
             </div>
         </div>
 
-        <!-- 坍缩阈值 m 和牵引力强度 F -->
+        <!-- Collapse threshold m and traction force F -->
         <div class="param-row">
-            <label>坍缩阈值 m (粒子数小于此值施加牵引力)</label>
+            <label>Collapse threshold m (apply traction when particles &lt; m)</label>
             <div class="param-control">
                 <input type="range" id="m-slider" min="1" max="20" value="3" step="1">
                 <input type="number" id="m-input" value="3" step="0.1">
             </div>
         </div>
         <div class="param-row">
-            <label>牵引力强度 F</label>
+            <label>Traction force F</label>
             <div class="param-control">
                 <input type="range" id="f-slider" min="0.0" max="5.0" value="0.5" step="0.1">
                 <input type="number" id="f-input" value="0.5" step="0.1">
             </div>
         </div>
 
-        <!-- 新增：爆炸半径倍率 r (初始2.5) -->
+        <!-- Explosion radius factor r (new default 0.5) -->
         <div class="param-row">
-            <label>爆炸半径倍率 r (相对于画布较小边)</label>
+            <label>Explosion radius factor r (relative to smaller canvas side)</label>
             <div class="param-control">
-                <input type="range" id="r-slider" min="0.0" max="5.0" value="2.5" step="0.1">
-                <input type="number" id="r-input" value="2.5" step="0.1">
+                <input type="range" id="r-slider" min="0.0" max="5.0" value="0.5" step="0.1">
+                <input type="number" id="r-input" value="0.5" step="0.1">
             </div>
         </div>
 
-        <!-- 按钮组 -->
+        <!-- Button group (English) -->
         <div class="button-row">
-            <div class="param-btn" id="apply-params">应用参数</div>
-            <div class="param-btn refresh" id="refresh-particles">刷新粒子</div>
-            <div class="param-btn reset" id="reset-params">重置默认</div>
+            <div class="param-btn" id="apply-params">Apply</div>
+            <div class="param-btn refresh" id="refresh-particles">Refresh</div>
+            <div class="param-btn reset" id="reset-params">Reset</div>
         </div>
+        <div class="note"></div>
     </div>
 
     <script>
@@ -273,7 +274,7 @@
 
         // ==================== 引力粒子系统 ====================
         class GravityParticleSystem {
-            constructor(containerId, baseConfig, initialFactor = 1.0) {
+            constructor(containerId, baseConfig, initialFactor = 1.5) {  // 默认倍率改为1.5
                 this.container = document.getElementById(containerId);
                 this.baseConfig = baseConfig;
                 this.factor = initialFactor;               // 粒子数量倍率
@@ -283,13 +284,13 @@
                 this.ctx = null;
                 this.animationId = null;
                 this.mouse = { x: 0, y: 0, isHovering: false };
-                
+
                 // 可调节参数 (初始默认值)
                 this.G = 6.0;
                 this.attractStrength = 3.0;
                 this.m = 3;          // 牵引力触发阈值 (允许小数)
                 this.F = 0.5;         // 牵引力强度
-                this.explosionRadiusFactor = 0.5;   // 新增爆炸半径倍率，默认0.5
+                this.explosionRadiusFactor = 0.5;   // 爆炸半径倍率默认0.5 (原2.5改为0.5)
 
                 // 黑洞爆炸状态
                 this.state = 'normal';
@@ -813,12 +814,12 @@
                             const rayLength = baseLength * lengthFactor;
                             const endX = p.x + dx * rayLength;
                             const endY = p.y + dy * rayLength;
-                            
+
                             const startOpacity = 0.5 + 0.5 * (glowScale / 10) + Math.random() * 0.3;
                             const gradient = this.ctx.createLinearGradient(p.x, p.y, endX, endY);
                             gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');
                             gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-                            
+
                             this.ctx.beginPath();
                             this.ctx.moveTo(p.x, p.y);
                             this.ctx.lineTo(endX, endY);
@@ -879,7 +880,7 @@
                 if (this.animationId) cancelAnimationFrame(this.animationId);
             }
 
-            // 更新参数（增加爆炸半径倍率 r）
+            // 更新参数（爆炸半径倍率 r 默认已改为0.5）
             updateParams(newG, newAttract, newM, newF, newR) {
                 this.G = newG;
                 this.attractStrength = newAttract;
@@ -923,12 +924,13 @@
                 }
             };
 
-            window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.0);
+            // 创建系统，初始倍率1.5
+            window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.5);
 
             // ---------- UI 绑定 (无界输入: 仅校验 >=0, 滑块边界跟随) ----------
             const toggleBtn = document.getElementById('params-toggle');
             const panel = document.getElementById('params-panel');
-            
+
             const gSlider = document.getElementById('g-slider');
             const gInput = document.getElementById('g-input');
             const attractSlider = document.getElementById('attract-slider');
@@ -951,11 +953,11 @@
                 if (window.particleSystem) {
                     const base = window.particleSystem.baseCount;
                     const factor = window.particleSystem.factor;
-                    actualCountSpan.innerText = `(实际: ${Math.floor(base * factor)})`;
+                    actualCountSpan.innerText = `(Actual: ${Math.floor(base * factor)})`;
                 } else {
                     const base = baseConfig.particles.number.value;
-                    const factor = parseFloat(factorInput.value) || 1.0;
-                    actualCountSpan.innerText = `(实际: ${Math.floor(base * factor)})`;
+                    const factor = parseFloat(factorInput.value) || 1.5;
+                    actualCountSpan.innerText = `(Actual: ${Math.floor(base * factor)})`;
                 }
             }
 
@@ -1054,16 +1056,16 @@
                 if (window.particleSystem) window.particleSystem.refreshParticles();
             });
 
-            // 重置默认 (G=6, attract=3, factor=1, m=3, F=0.5, r=2.5)
+            // 重置默认 (G=6, attract=3, factor=1.5, m=3, F=0.5, r=0.5)
             resetBtn.addEventListener('click', function() {
-                gInput.value = '6.0'; attractInput.value = '3.0'; factorInput.value = '1.0';
-                mInput.value = '3'; fInput.value = '0.5'; rInput.value = '2.5';
+                gInput.value = '6.0'; attractInput.value = '3.0'; factorInput.value = '1.5';
+                mInput.value = '3'; fInput.value = '0.5'; rInput.value = '0.5';
                 // 同步滑块
-                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput(); 
+                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput();
                 syncMFromInput(); syncFFromInput(); syncRFromInput();
                 // 更新系统参数 (factor已经实时更新)
                 if (window.particleSystem) {
-                    window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 2.5);
+                    window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 0.5);
                 }
                 updateActualCount();
             });
@@ -1125,7 +1127,7 @@
                         window.particleSystem.destroy();
                         window.particleSystem = new GravityParticleSystem('particles-js', newBaseConfig, currentFactor);
                         window.particleSystem.updateParams(currentG, currentAttract, currentM, currentF, currentR);
-                        
+
                         updateActualCount();
                     } else {
                         if (window.particleSystem) window.particleSystem.resize();
