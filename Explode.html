@@ -233,7 +233,7 @@
             </div>
         </div>
 
-        <!-- Explosion radius factor r (new default 0.5) -->
+        <!-- Explosion radius factor r (default 0.5) -->
         <div class="param-row">
             <label>Explosion radius factor r (relative to smaller canvas side)</label>
             <div class="param-control">
@@ -274,7 +274,7 @@
 
         // ==================== 引力粒子系统 ====================
         class GravityParticleSystem {
-            constructor(containerId, baseConfig, initialFactor = 1.5) {  // 默认倍率改为1.5
+            constructor(containerId, baseConfig, initialFactor = 1.5) {  // 默认倍率1.5
                 this.container = document.getElementById(containerId);
                 this.baseConfig = baseConfig;
                 this.factor = initialFactor;               // 粒子数量倍率
@@ -290,7 +290,7 @@
                 this.attractStrength = 3.0;
                 this.m = 3;          // 牵引力触发阈值 (允许小数)
                 this.F = 0.5;         // 牵引力强度
-                this.explosionRadiusFactor = 0.5;   // 爆炸半径倍率默认0.5 (原2.5改为0.5)
+                this.explosionRadiusFactor = 0.5;   // 爆炸半径倍率默认0.5
 
                 // 黑洞爆炸状态
                 this.state = 'normal';
@@ -802,29 +802,47 @@
                     this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
                     this.ctx.fill();
 
+                    // ========== 改进的金色放射光线（更细、更慢、更生动，频率调高） ==========
                     if (this.state === 'warning' && i === maxMassIdx) {
-                        const numRays = 12;
+                        const numRays = 24;                      // 增加光线数量，更密集
                         const baseLength = p.size * 15 * glowScale;
-                        const now = performance.now() / 800;
+                        const now = performance.now() / 1000;     // 秒为单位
+                        const baseAngle = now * 0.06;             // 旋转速度大幅降低 (原0.2)
+
                         for (let r = 0; r < numRays; r++) {
-                            const angle = (r / numRays) * Math.PI * 2 + (now * 0.2) + (Math.random() * 0.5 - 0.25);
+                            // 角度：均匀分布 + 缓慢旋转 + 微小随机扰动 (减小扰动使移动更平滑)
+                            const angle = (r / numRays) * Math.PI * 2 + baseAngle + (Math.random() * 0.2 - 0.1);
+
+                            // 方向向量
                             const dx = Math.cos(angle);
                             const dy = Math.sin(angle);
-                            const lengthFactor = 0.8 + Math.random() * 0.8;
-                            const rayLength = baseLength * lengthFactor;
+
+                            // 长度因子：加入正弦波动，使光线像呼吸一样伸缩 (更生动)
+                            // 频率从3增加到5，使伸缩更快
+                            const lengthPulse = 0.7 + 0.3 * Math.sin(angle * 7 + now * 0.8);
+                            const randomFactor = 0.8 + Math.random() * 0.5;
+                            const rayLength = baseLength * lengthPulse * randomFactor;
+
                             const endX = p.x + dx * rayLength;
                             const endY = p.y + dy * rayLength;
 
-                            const startOpacity = 0.5 + 0.5 * (glowScale / 10) + Math.random() * 0.3;
+                            // 透明度随glowScale和随机变化
+                            const startOpacity = 0.4 + 0.4 * (glowScale / 10) + Math.random() * 0.2;
+
+                            // 金色渐变
                             const gradient = this.ctx.createLinearGradient(p.x, p.y, endX, endY);
-                            gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');
-                            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                            gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');      // 亮金
+                            gradient.addColorStop(0.6, 'rgba(255, 180, 0, ' + startOpacity * 0.4 + ')');
+                            gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+
+                            // 线宽：比原来更细 (原为 2 + 3*(glowScale/10) + random*2)
+                            const lineWidth = 1.0 + 1.2 * (glowScale / 10) + Math.random() * 0.8;
 
                             this.ctx.beginPath();
                             this.ctx.moveTo(p.x, p.y);
                             this.ctx.lineTo(endX, endY);
                             this.ctx.strokeStyle = gradient;
-                            this.ctx.lineWidth = 2 + 3 * (glowScale / 10) + Math.random() * 2;
+                            this.ctx.lineWidth = lineWidth;
                             this.ctx.stroke();
                         }
                     }
@@ -880,7 +898,7 @@
                 if (this.animationId) cancelAnimationFrame(this.animationId);
             }
 
-            // 更新参数（爆炸半径倍率 r 默认已改为0.5）
+            // 更新参数（爆炸半径倍率 r 默认0.5）
             updateParams(newG, newAttract, newM, newF, newR) {
                 this.G = newG;
                 this.attractStrength = newAttract;
