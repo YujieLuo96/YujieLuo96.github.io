@@ -189,7 +189,7 @@
     <div id="params-toggle" title="Gravity parameters (unbounded input)">⚙️</div>
     <div id="params-panel">
         <h3>⚡ Gravity Parameters (≥0 no upper limit)</h3>
-
+        
         <!-- G constant -->
         <div class="param-row">
             <label>Gravitational constant G</label>
@@ -198,7 +198,7 @@
                 <input type="number" id="g-input" value="6.0" step="0.1">
             </div>
         </div>
-
+        
         <!-- Center attraction strength -->
         <div class="param-row">
             <label>Center attraction strength</label>
@@ -242,6 +242,15 @@
             </div>
         </div>
 
+        <!-- Max speed factor (新增) -->
+        <div class="param-row">
+            <label>Max speed factor (multiplier of base speed)</label>
+            <div class="param-control">
+                <input type="range" id="speedfactor-slider" min="0.5" max="20.0" value="2.7" step="0.1">
+                <input type="number" id="speedfactor-input" value="2.7" step="0.1">
+            </div>
+        </div>
+
         <!-- Button group (English) -->
         <div class="button-row">
             <div class="param-btn" id="apply-params">Apply</div>
@@ -274,29 +283,33 @@
 
         // ==================== 引力粒子系统 ====================
         class GravityParticleSystem {
-            constructor(containerId, baseConfig, initialFactor = 1.5) {  // 默认倍率1.5
+            constructor(containerId, baseConfig, initialFactor = 1.5) {
                 this.container = document.getElementById(containerId);
                 this.baseConfig = baseConfig;
-                this.factor = initialFactor;               // 粒子数量倍率
-                this.baseCount = baseConfig.particles.number.value; // 基础数量
+                this.factor = initialFactor;
+                this.baseCount = baseConfig.particles.number.value;
                 this.particles = [];
                 this.canvas = null;
                 this.ctx = null;
                 this.animationId = null;
                 this.mouse = { x: 0, y: 0, isHovering: false };
-
-                // 可调节参数 (初始默认值)
+                
+                // 可调节参数
                 this.G = 6.0;
                 this.attractStrength = 3.0;
-                this.m = 3;          // 牵引力触发阈值 (允许小数)
-                this.F = 0.5;         // 牵引力强度
-                this.explosionRadiusFactor = 0.5;   // 爆炸半径倍率默认0.5
+                this.m = 3;
+                this.F = 0.5;
+                this.explosionRadiusFactor = 0.5;
+                this.maxSpeedFactor = 2.7;
 
                 // 黑洞爆炸状态
                 this.state = 'normal';
                 this.warningStartTime = 0;
                 this.targetGlowScale = 10.0;
                 this.glowScale = 1.0;
+
+                // 初始平均质量（用于大质量粒子判断）
+                this.initialAvgMass = 1.0;
 
                 this.init();
             }
@@ -313,7 +326,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.resizeCanvas();
 
-                this.createParticles();   // 根据当前 factor 生成粒子
+                this.createParticles();   // 会根据当前 factor 生成粒子，并设置 initialAvgMass
                 this.setupMouseEvents();
 
                 this.state = 'normal';
@@ -363,10 +376,15 @@
                     });
                 }
                 this.particles = newParticles;
+
+                // 计算初始平均质量（用于大质量粒子判断）
+                let totalMass = 0;
+                for (let p of this.particles) totalMass += p.mass;
+                this.initialAvgMass = this.particles.length > 0 ? totalMass / this.particles.length : 1.0;
             }
 
             refreshParticles() {
-                this.createParticles();
+                this.createParticles(); // 重新生成并更新 initialAvgMass
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -374,7 +392,7 @@
 
             setFactor(newFactor) {
                 this.factor = newFactor;
-                this.createParticles();
+                this.createParticles(); // 重新生成并更新 initialAvgMass
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -417,7 +435,6 @@
                             const threshold = (p1.size + p2.size) * thresholdFactor;
                             if (dist < threshold) {
                                 if (p1.mass > p2.mass * 50) {
-                                    // big = p1, small = p2
                                     const totalMass = p1.mass + p2.mass;
                                     p1.x = (p1.x * p1.mass + p2.x * p2.mass) / totalMass;
                                     p1.y = (p1.y * p1.mass + p2.y * p2.mass) / totalMass;
@@ -534,9 +551,8 @@
                 this.particles = remaining.concat(newParticles);
             }
 
-            // ========== 爆炸函数：使用平方根分布实现均匀圆盘 ==========
+            // ========== 爆炸函数 ==========
             explode() {
-                // 获取最后一个粒子的位置作为爆炸中心 (预警状态下只有一个粒子)
                 const lastParticle = this.particles[0];
                 const centerX = lastParticle.x;
                 const centerY = lastParticle.y;
@@ -550,29 +566,27 @@
                 const avgMass = totalMass / targetCount;
                 const baseSpeed = this.baseConfig.particles.move.speed;
 
-                // 使用爆炸半径倍率计算爆炸半径
                 const explosionRadius = Math.min(this.canvas.width, this.canvas.height) * this.explosionRadiusFactor;
+                const outerSpeedMultiplier = this.maxSpeedFactor * 0.9;
 
                 const newParticles = [];
                 for (let i = 0; i < targetCount; i++) {
-                    // 在爆炸中心周围生成均匀圆盘分布的点：半径采用平方根分布，角度均匀
                     const angle = Math.random() * Math.PI * 2;
-                    const r = explosionRadius * Math.sqrt(Math.random()); // 平方根分布 -> 面积均匀
+                    const r = explosionRadius * Math.sqrt(Math.random());
                     const x = centerX + Math.cos(angle) * r;
                     const y = centerY + Math.sin(angle) * r;
 
                     const mass = avgMass * (0.8 + 0.4 * Math.random());
                     const size = maxRadius * (0.2 + 0.8 * Math.random());
 
-                    // 速度方向从中心向外，大小随机
-                    const dx = x - centerX;
-                    const dy = y - centerY;
-                    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-                    const normX = dx / dist;
-                    const normY = dy / dist;
-                    const speedScale = 0.5 + 2.0 * Math.random();
-                    const vx = normX * baseSpeed * speedScale;
-                    const vy = normY * baseSpeed * speedScale;
+                    const speedFactor = outerSpeedMultiplier * (r / explosionRadius) + 0.3 * (Math.random() - 0.5);
+                    const speed = baseSpeed * Math.max(0.2, speedFactor);
+                    
+                    const normX = Math.cos(angle);
+                    const normY = Math.sin(angle);
+                    
+                    const vx = normX * speed;
+                    const vy = normY * speed;
 
                     const _jitter = randJitter();
                     const _phase = Math.random() * Math.PI * 2;
@@ -595,7 +609,6 @@
 
                 if (this.particles.length === 0) return;
 
-                // 状态机 (m 可以是小数，比较时直接数值比较)
                 if (this.state === 'normal') {
                     if (this.particles.length < this.m && this.particles.length > 1) {
                         this.state = 'attracting';
@@ -711,7 +724,7 @@
                     p1.vx += fx / p1.mass * 0.5;
                     p1.vy += fy / p1.mass * 0.5;
 
-                    const maxSpeed = this.baseConfig.particles.move.speed * 2.5;
+                    const maxSpeed = this.baseConfig.particles.move.speed * this.maxSpeedFactor;
                     const sp = Math.sqrt(p1.vx*p1.vx + p1.vy*p1.vy);
                     if (sp > maxSpeed) {
                         p1.vx = (p1.vx / sp) * maxSpeed;
@@ -785,9 +798,95 @@
                         glowScale = this.glowScale;
                     }
 
-                    const glowR = p.size * (3.5 + pulse * 2.5) * glowScale;
-                    const glowA = 0.18 + pulse * 0.22;
+                    // 黑洞预警状态（特殊效果）
+                    if (this.state === 'warning' && i === maxMassIdx) {
+                        const glowR = p.size * (5.0 + pulse * 3.0) * glowScale;
+                        const glowA = 0.18 + pulse * 0.22;
+                        const rainbowGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+                        const stops = [
+                            { pos: 0.0, hue: 0 },
+                            { pos: 0.1, hue: 30 },
+                            { pos: 0.2, hue: 60 },
+                            { pos: 0.3, hue: 120 },
+                            { pos: 0.4, hue: 180 },
+                            { pos: 0.5, hue: 240 },
+                            { pos: 0.55, hue: 300 },
+                            { pos: 1.0, hue: 300 }
+                        ];
+                        for (let s of stops) {
+                            const alpha = glowA * (1 - s.pos);
+                            rainbowGrad.addColorStop(s.pos, `hsla(${s.hue}, 80%, 65%, ${alpha})`);
+                        }
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+                        this.ctx.fillStyle = rainbowGrad;
+                        this.ctx.fill();
 
+                        // 绘制粒子核心
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
+                        this.ctx.fill();
+
+                        // 黑洞预警光线
+                        const numRays = 36;
+                        const baseLength = p.size * 15 * glowScale;
+                        const now = performance.now() / 1000;
+                        const baseAngle = now * 0.06;
+                        
+                        for (let r = 0; r < numRays; r++) {
+                            const angle = (r / numRays) * Math.PI * 2 + baseAngle + (Math.random() * 0.2 - 0.1);
+                            const dx = Math.cos(angle);
+                            const dy = Math.sin(angle);
+                            const lengthPulse = 0.7 + 0.3 * Math.sin(angle * 17 + now * 0.8);
+                            const randomFactor = 0.8 + Math.random() * 0.5;
+                            const rayLength = baseLength * lengthPulse * randomFactor;
+                            const endX = p.x + dx * rayLength;
+                            const endY = p.y + dy * rayLength;
+                            const startOpacity = 0.4 + 0.4 * (glowScale / 10) + Math.random() * 0.2;
+                            const gradient = this.ctx.createLinearGradient(p.x, p.y, endX, endY);
+                            gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');
+                            gradient.addColorStop(0.6, 'rgba(255, 180, 0, ' + startOpacity * 0.4 + ')');
+                            gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
+                            const lineWidth = 1.0 + 1.2 * (glowScale / 10) + Math.random() * 0.8;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p.x, p.y);
+                            this.ctx.lineTo(endX, endY);
+                            this.ctx.strokeStyle = gradient;
+                            this.ctx.lineWidth = lineWidth;
+                            this.ctx.stroke();
+                        }
+                        continue;
+                    }
+
+                    // 大质量粒子（质量 > 50倍初始平均质量）且非预警状态，增强绘制（黑洞质感，尺寸减半，青蓝紫色调，变淡）
+                    if (p.mass > this.initialAvgMass * 50) {
+                        // 增强光晕半径缩小为原来的0.8倍左右（原为 5.0 + pulse*2.5）
+                        const enhancedGlowR = p.size * (4.0 + pulse * 2.0); // 缩小约0.8倍
+                        const enhancedGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, enhancedGlowR);
+                        // 青蓝紫色调渐变，透明度降低（变淡）
+                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.85)');        // 中心黑色稍淡
+                        enhancedGrad.addColorStop(0.3, 'rgba(20,40,80,0.5)');   // 深蓝
+                        enhancedGrad.addColorStop(0.6, 'rgba(60,40,120,0.3)');  // 紫罗兰
+                        enhancedGrad.addColorStop(0.8, 'rgba(120,80,180,0.2)'); // 淡紫
+                        enhancedGrad.addColorStop(1, 'rgba(180,160,255,0)');    // 透明
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, enhancedGlowR, 0, Math.PI * 2);
+                        this.ctx.fillStyle = enhancedGrad;
+                        this.ctx.fill();
+
+                        // 绘制暗核（事件视界）尺寸减半（原为 p.size*0.9）
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size * 0.45, 0, Math.PI * 2);
+                        this.ctx.fillStyle = 'rgba(0,0,0,0.98)';
+                        this.ctx.fill();
+
+                        continue;
+                    }
+
+                    // 普通粒子绘制
+                    const glowR = p.size * (5.0 + pulse * 3.0) * glowScale;
+                    const glowA = 0.18 + pulse * 0.22;
                     const grad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
                     grad.addColorStop(0,    'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + glowA + ')');
                     grad.addColorStop(0.45, 'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + (glowA * 0.35) + ')');
@@ -797,55 +896,11 @@
                     this.ctx.fillStyle = grad;
                     this.ctx.fill();
 
+                    // 绘制粒子核心
                     this.ctx.beginPath();
                     this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
                     this.ctx.fill();
-
-                    // ========== 改进的金色放射光线（更细、更慢、更生动，频率调高） ==========
-                    if (this.state === 'warning' && i === maxMassIdx) {
-                        const numRays = 24;                      // 增加光线数量，更密集
-                        const baseLength = p.size * 15 * glowScale;
-                        const now = performance.now() / 1000;     // 秒为单位
-                        const baseAngle = now * 0.06;             // 旋转速度大幅降低 (原0.2)
-
-                        for (let r = 0; r < numRays; r++) {
-                            // 角度：均匀分布 + 缓慢旋转 + 微小随机扰动 (减小扰动使移动更平滑)
-                            const angle = (r / numRays) * Math.PI * 2 + baseAngle + (Math.random() * 0.2 - 0.1);
-
-                            // 方向向量
-                            const dx = Math.cos(angle);
-                            const dy = Math.sin(angle);
-
-                            // 长度因子：加入正弦波动，使光线像呼吸一样伸缩 (更生动)
-                            // 频率从3增加到5，使伸缩更快
-                            const lengthPulse = 0.7 + 0.3 * Math.sin(angle * 17 + now * 0.8);
-                            const randomFactor = 0.8 + Math.random() * 0.5;
-                            const rayLength = baseLength * lengthPulse * randomFactor;
-
-                            const endX = p.x + dx * rayLength;
-                            const endY = p.y + dy * rayLength;
-
-                            // 透明度随glowScale和随机变化
-                            const startOpacity = 0.4 + 0.4 * (glowScale / 10) + Math.random() * 0.2;
-
-                            // 金色渐变
-                            const gradient = this.ctx.createLinearGradient(p.x, p.y, endX, endY);
-                            gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');      // 亮金
-                            gradient.addColorStop(0.6, 'rgba(255, 180, 0, ' + startOpacity * 0.4 + ')');
-                            gradient.addColorStop(1, 'rgba(255, 140, 0, 0)');
-
-                            // 线宽：比原来更细 (原为 2 + 3*(glowScale/10) + random*2)
-                            const lineWidth = 1.0 + 1.2 * (glowScale / 10) + Math.random() * 0.8;
-
-                            this.ctx.beginPath();
-                            this.ctx.moveTo(p.x, p.y);
-                            this.ctx.lineTo(endX, endY);
-                            this.ctx.strokeStyle = gradient;
-                            this.ctx.lineWidth = lineWidth;
-                            this.ctx.stroke();
-                        }
-                    }
                 }
             }
 
@@ -898,13 +953,13 @@
                 if (this.animationId) cancelAnimationFrame(this.animationId);
             }
 
-            // 更新参数（爆炸半径倍率 r 默认0.5）
-            updateParams(newG, newAttract, newM, newF, newR) {
+            updateParams(newG, newAttract, newM, newF, newR, newSpeedFactor) {
                 this.G = newG;
                 this.attractStrength = newAttract;
                 this.m = newM;
                 this.F = newF;
                 this.explosionRadiusFactor = newR;
+                this.maxSpeedFactor = newSpeedFactor;
             }
         }
 
@@ -942,13 +997,12 @@
                 }
             };
 
-            // 创建系统，初始倍率1.5
             window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.5);
 
-            // ---------- UI 绑定 (无界输入: 仅校验 >=0, 滑块边界跟随) ----------
+            // ---------- UI 绑定 ----------
             const toggleBtn = document.getElementById('params-toggle');
             const panel = document.getElementById('params-panel');
-
+            
             const gSlider = document.getElementById('g-slider');
             const gInput = document.getElementById('g-input');
             const attractSlider = document.getElementById('attract-slider');
@@ -961,6 +1015,8 @@
             const fInput = document.getElementById('f-input');
             const rSlider = document.getElementById('r-slider');
             const rInput = document.getElementById('r-input');
+            const speedfactorSlider = document.getElementById('speedfactor-slider');
+            const speedfactorInput = document.getElementById('speedfactor-input');
             const actualCountSpan = document.getElementById('actual-count');
 
             const applyBtn = document.getElementById('apply-params');
@@ -979,11 +1035,10 @@
                 }
             }
 
-            // ----- 通用: 将输入框的值同步到滑块(考虑边界), 只做非负校验 -----
             function syncNumberToSlider(inputEl, sliderEl, isInteger = false) {
                 let val = parseFloat(inputEl.value);
                 if (isNaN(val) || val < 0) val = 0;
-                inputEl.value = val;  // 回写非负
+                inputEl.value = val;
                 const min = parseFloat(sliderEl.min);
                 const max = parseFloat(sliderEl.max);
                 if (val < min) sliderEl.value = min;
@@ -994,21 +1049,18 @@
                 }
             }
 
-            // G
             function syncGFromInput() { syncNumberToSlider(gInput, gSlider, false); }
             function syncGFromSlider() { gInput.value = gSlider.value; }
             gSlider.addEventListener('input', syncGFromSlider);
             gInput.addEventListener('input', syncGFromInput);
             gInput.addEventListener('blur', syncGFromInput);
 
-            // attract
             function syncAttractFromInput() { syncNumberToSlider(attractInput, attractSlider, false); }
             function syncAttractFromSlider() { attractInput.value = attractSlider.value; }
             attractSlider.addEventListener('input', syncAttractFromSlider);
             attractInput.addEventListener('input', syncAttractFromInput);
             attractInput.addEventListener('blur', syncAttractFromInput);
 
-            // factor (实时生效)
             function syncFactorFromInput() {
                 let val = parseFloat(factorInput.value);
                 if (isNaN(val) || val < 0) val = 0;
@@ -1030,28 +1082,30 @@
             factorInput.addEventListener('input', syncFactorFromInput);
             factorInput.addEventListener('blur', syncFactorFromInput);
 
-            // m (滑块为整数, 但输入可为小数)
             function syncMFromInput() { syncNumberToSlider(mInput, mSlider, true); }
             function syncMFromSlider() { mInput.value = mSlider.value; }
             mSlider.addEventListener('input', syncMFromSlider);
             mInput.addEventListener('input', syncMFromInput);
             mInput.addEventListener('blur', syncMFromInput);
 
-            // F
             function syncFFromInput() { syncNumberToSlider(fInput, fSlider, false); }
             function syncFFromSlider() { fInput.value = fSlider.value; }
             fSlider.addEventListener('input', syncFFromSlider);
             fInput.addEventListener('input', syncFFromInput);
             fInput.addEventListener('blur', syncFFromInput);
 
-            // r (爆炸半径倍率)
             function syncRFromInput() { syncNumberToSlider(rInput, rSlider, false); }
             function syncRFromSlider() { rInput.value = rSlider.value; }
             rSlider.addEventListener('input', syncRFromSlider);
             rInput.addEventListener('input', syncRFromInput);
             rInput.addEventListener('blur', syncRFromInput);
 
-            // 应用参数 (使用输入框的原始值)
+            function syncSpeedFactorFromInput() { syncNumberToSlider(speedfactorInput, speedfactorSlider, false); }
+            function syncSpeedFactorFromSlider() { speedfactorInput.value = speedfactorSlider.value; }
+            speedfactorSlider.addEventListener('input', syncSpeedFactorFromSlider);
+            speedfactorInput.addEventListener('input', syncSpeedFactorFromInput);
+            speedfactorInput.addEventListener('blur', syncSpeedFactorFromInput);
+
             applyBtn.addEventListener('click', function() {
                 if (window.particleSystem) {
                     const newG = parseFloat(gInput.value);
@@ -1059,36 +1113,34 @@
                     const newM = parseFloat(mInput.value);
                     const newF = parseFloat(fInput.value);
                     const newR = parseFloat(rInput.value);
+                    const newSpeedFactor = parseFloat(speedfactorInput.value);
                     window.particleSystem.updateParams(
                         isNaN(newG) || newG<0 ? 0 : newG,
                         isNaN(newAttract) || newAttract<0 ? 0 : newAttract,
                         isNaN(newM) || newM<0 ? 0 : newM,
                         isNaN(newF) || newF<0 ? 0 : newF,
-                        isNaN(newR) || newR<0 ? 0 : newR
+                        isNaN(newR) || newR<0 ? 0 : newR,
+                        isNaN(newSpeedFactor) || newSpeedFactor<0 ? 0 : newSpeedFactor
                     );
                 }
             });
 
-            // 刷新粒子
             refreshBtn.addEventListener('click', function() {
                 if (window.particleSystem) window.particleSystem.refreshParticles();
             });
 
-            // 重置默认 (G=6, attract=3, factor=1.5, m=3, F=0.5, r=0.5)
             resetBtn.addEventListener('click', function() {
                 gInput.value = '6.0'; attractInput.value = '3.0'; factorInput.value = '1.5';
                 mInput.value = '3'; fInput.value = '0.5'; rInput.value = '0.5';
-                // 同步滑块
-                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput();
-                syncMFromInput(); syncFFromInput(); syncRFromInput();
-                // 更新系统参数 (factor已经实时更新)
+                speedfactorInput.value = '2.7';
+                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput(); 
+                syncMFromInput(); syncFFromInput(); syncRFromInput(); syncSpeedFactorFromInput();
                 if (window.particleSystem) {
-                    window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 0.5);
+                    window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 0.5, 2.7);
                 }
                 updateActualCount();
             });
 
-            // 面板开关
             toggleBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 panel.classList.toggle('show');
@@ -1097,7 +1149,6 @@
 
             updateActualCount();
 
-            // 窗口resize (保留原有逻辑)
             let resizeTimer;
             window.addEventListener('resize', function () {
                 clearTimeout(resizeTimer);
@@ -1141,11 +1192,12 @@
                         const currentM = parseFloat(mInput.value);
                         const currentF = parseFloat(fInput.value);
                         const currentR = parseFloat(rInput.value);
+                        const currentSpeedFactor = parseFloat(speedfactorInput.value);
 
                         window.particleSystem.destroy();
                         window.particleSystem = new GravityParticleSystem('particles-js', newBaseConfig, currentFactor);
-                        window.particleSystem.updateParams(currentG, currentAttract, currentM, currentF, currentR);
-
+                        window.particleSystem.updateParams(currentG, currentAttract, currentM, currentF, currentR, currentSpeedFactor);
+                        
                         updateActualCount();
                     } else {
                         if (window.particleSystem) window.particleSystem.resize();
