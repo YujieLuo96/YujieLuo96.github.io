@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
+    <title>Yujie Luo · 引力粒子 (爆炸均匀分布)</title>
+    <style>
+        body {
+            font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
+            color: #f0f0f0;
+            line-height: 1.6;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+            background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+        }
+        #particles-js {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            background: transparent;
+            pointer-events: none;
+        }
+        #particles-js canvas {
+            filter: blur(0.3px) brightness(1.1);
+            -webkit-filter: blur(0.3px) brightness(1.1);
+        }
+
+        /* 参数按钮与面板 */
+        #params-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(30, 40, 60, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(120, 170, 220, 0.5);
+            border-radius: 50%;
+            color: #b0d0ff;
+            font-size: 28px;
+            line-height: 48px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            transition: 0.2s;
+            user-select: none;
+        }
+        #params-toggle:hover {
+            background: rgba(50, 70, 100, 0.9);
+            color: white;
+            border-color: #8bc5ff;
+            transform: scale(1.05);
+        }
+        #params-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 340px;
+            background: rgba(20, 30, 45, 0.95);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(120, 170, 220, 0.6);
+            border-radius: 16px;
+            padding: 20px 18px;
+            color: #e0f0ff;
+            font-size: 14px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+        }
+        #params-panel.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        #params-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            text-align: center;
+            color: #b0d0ff;
+            border-bottom: 1px solid #3a506e;
+            padding-bottom: 8px;
+        }
+        .param-row {
+            margin-bottom: 18px;
+        }
+        .param-row label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #c0d8ff;
+        }
+        .param-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .param-control input[type=range] {
+            flex: 1;
+            background: transparent;
+            accent-color: #7aacdb;
+        }
+        .param-control input[type=number] {
+            width: 85px;
+            background: #1e2a3a;
+            border: 1px solid #4f7eb3;
+            border-radius: 20px;
+            color: white;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: 500;
+            text-align: center;
+            outline: none;
+        }
+        .param-control input[type=number]:focus {
+            border-color: #8bc5ff;
+            box-shadow: 0 0 0 2px rgba(139, 197, 255, 0.3);
+        }
+        .button-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .param-btn {
+            background: #1e3a5f;
+            border: 1px solid #4f7eb3;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            flex: 1;
+            text-align: center;
+            min-width: 80px;
+        }
+        .param-btn:hover {
+            background: #2b4f7a;
+            border-color: #7aacdb;
+        }
+        .param-btn.reset {
+            background: #3a2e4a;
+            border-color: #8a6fa0;
+        }
+        .param-btn.reset:hover {
+            background: #4f3e63;
+        }
+        .param-btn.refresh {
+            background: #2a4f4f;
+            border-color: #3f8f8f;
+        }
+        .param-btn.refresh:hover {
+            background: #3a6f6f;
+        }
+        #params-panel .note {
+            font-size: 12px;
+            color: #a0b0c0;
+            margin-top: 12px;
+            text-align: center;
+            border-top: 1px dashed #3a506e;
+            padding-top: 10px;
+        }
+        .actual-count {
+            color: #8bc5ff;
+            font-weight: normal;
+            margin-left: 8px;
+        }
+        #explosion-indicator {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+    <div id="explosion-indicator">⚠️ 黑洞预警 ... 即将爆炸 ⚠️</div>
+
+    <!-- 参数按钮及面板 (新增爆炸半径倍率 r) -->
+    <div id="params-toggle" title="引力参数设置 (无界输入)">⚙️</div>
+    <div id="params-panel">
+        <h3>⚡ 引力参数 (≥0 无上限)</h3>
+        
+        <!-- G 常数 -->
+        <div class="param-row">
+            <label>引力常数 G</label>
+            <div class="param-control">
+                <input type="range" id="g-slider" min="0.5" max="20.0" value="6.0" step="0.1">
+                <input type="number" id="g-input" value="6.0" step="0.1">
+            </div>
+        </div>
+        
+        <!-- 中心吸引强度 -->
+        <div class="param-row">
+            <label>中心吸引强度</label>
+            <div class="param-control">
+                <input type="range" id="attract-slider" min="0.0" max="10.0" value="3.0" step="0.1">
+                <input type="number" id="attract-input" value="3.0" step="0.1">
+            </div>
+        </div>
+
+        <!-- 粒子数量倍率 (实时生效) -->
+        <div class="param-row">
+            <label>粒子数量倍率 <span class="actual-count" id="actual-count">(实际: 400)</span></label>
+            <div class="param-control">
+                <input type="range" id="factor-slider" min="0.2" max="3.0" value="1.0" step="0.1">
+                <input type="number" id="factor-input" value="1.0" step="0.1">
+            </div>
+        </div>
+
+        <!-- 坍缩阈值 m 和牵引力强度 F -->
+        <div class="param-row">
+            <label>坍缩阈值 m (粒子数小于此值施加牵引力)</label>
+            <div class="param-control">
+                <input type="range" id="m-slider" min="1" max="20" value="3" step="1">
+                <input type="number" id="m-input" value="3" step="0.1">
+            </div>
+        </div>
+        <div class="param-row">
+            <label>牵引力强度 F</label>
+            <div class="param-control">
+                <input type="range" id="f-slider" min="0.0" max="5.0" value="0.5" step="0.1">
+                <input type="number" id="f-input" value="0.5" step="0.1">
+            </div>
+        </div>
+
+        <!-- 新增：爆炸半径倍率 r (初始2.5) -->
+        <div class="param-row">
+            <label>爆炸半径倍率 r (相对于画布较小边)</label>
+            <div class="param-control">
+                <input type="range" id="r-slider" min="0.0" max="5.0" value="2.5" step="0.1">
+                <input type="number" id="r-input" value="2.5" step="0.1">
+            </div>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="button-row">
+            <div class="param-btn" id="apply-params">应用参数</div>
+            <div class="param-btn refresh" id="refresh-particles">刷新粒子</div>
+            <div class="param-btn reset" id="reset-params">重置默认</div>
+        </div>
+        <div class="note">倍率实时生效；点击「刷新粒子」重置位置速度；「应用参数」更新所有参数。</div>
+        <div class="note" style="border-top-color:#5a6e8a;">
+            ✨ 合并规则：质量比≥50吞噬；动态阈值合并：≥1+floor(n/10)个紧密粒子合并<br>
+            💥 牵引力：粒子数＜m时受指向最大粒子的恒力F；只剩1个时预警2.5秒后爆炸（光晕扩大10倍+渐变金色光痕）<br>
+            <span style="color:#ffaa70;">★ 爆炸半径倍率 r 可调；爆炸后粒子均匀分布在圆盘内（中心密度低，边缘密度高）★</span>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ==================== 辅助函数 ====================
+        function connectionColor(t, jitter) {
+            var hue = Math.max(0, Math.min(360, t * 270 + (jitter || 0)));
+            var sat = 80 + t * 18;
+            var lit = 72 - t * 18;
+            return { hue: hue, sat: sat, lit: lit };
+        }
+
+        function randJitter() { return (Math.random() - 0.5) * 28; }
+
+        // ==================== 获取屏幕类别 ====================
+        function getScreenClass() {
+            var w = window.innerWidth;
+            return {
+                isMobile: w < 768,
+                isSmallMobile: w < 480
+            };
+        }
+
+        // ==================== 引力粒子系统 ====================
+        class GravityParticleSystem {
+            constructor(containerId, baseConfig, initialFactor = 1.0) {
+                this.container = document.getElementById(containerId);
+                this.baseConfig = baseConfig;
+                this.factor = initialFactor;               // 粒子数量倍率
+                this.baseCount = baseConfig.particles.number.value; // 基础数量
+                this.particles = [];
+                this.canvas = null;
+                this.ctx = null;
+                this.animationId = null;
+                this.mouse = { x: 0, y: 0, isHovering: false };
+                
+                // 可调节参数 (初始默认值)
+                this.G = 6.0;
+                this.attractStrength = 3.0;
+                this.m = 3;          // 牵引力触发阈值 (允许小数)
+                this.F = 0.5;         // 牵引力强度
+                this.explosionRadiusFactor = 2.5;   // 新增爆炸半径倍率，默认2.5
+
+                // 黑洞爆炸状态
+                this.state = 'normal';
+                this.warningStartTime = 0;
+                this.targetGlowScale = 10.0;
+                this.glowScale = 1.0;
+
+                this.init();
+            }
+
+            init() {
+                this.container.innerHTML = '';
+                this.canvas = document.createElement('canvas');
+                this.canvas.style.position = 'absolute';
+                this.canvas.style.top = '0';
+                this.canvas.style.left = '0';
+                this.canvas.style.width = '100%';
+                this.canvas.style.height = '100%';
+                this.container.appendChild(this.canvas);
+                this.ctx = this.canvas.getContext('2d');
+                this.resizeCanvas();
+
+                this.createParticles();   // 根据当前 factor 生成粒子
+                this.setupMouseEvents();
+
+                this.state = 'normal';
+                this.glowScale = 1.0;
+                document.getElementById('explosion-indicator').classList.remove('show');
+
+                this.animate();
+            }
+
+            resizeCanvas() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            createParticles() {
+                const actualCount = Math.max(1, Math.floor(this.baseCount * this.factor));
+                const baseSpeed = this.baseConfig.particles.move.speed;
+
+                const newParticles = [];
+                for (let i = 0; i < actualCount; i++) {
+                    const x = Math.random() * this.canvas.width;
+                    const y = Math.random() * this.canvas.height;
+
+                    let size = this.baseConfig.particles.size.value;
+                    if (this.baseConfig.particles.size.random) {
+                        size = size * (0.6 + Math.random() * 0.8);
+                    }
+
+                    const angle = Math.random() * Math.PI * 2;
+                    const sp = baseSpeed * 0.5;
+                    const vx = Math.cos(angle) * sp;
+                    const vy = Math.sin(angle) * sp;
+
+                    const mass = size * 0.3 + 0.2;
+
+                    const _jitter = randJitter();
+                    const _phase = Math.random() * Math.PI * 2;
+                    const _speed = 0.015 + Math.random() * 0.03;
+
+                    newParticles.push({
+                        x, y, vx, vy,
+                        size,
+                        mass,
+                        _jitter, _phase, _speed,
+                        baseOpacity: 0.9,
+                        connCount: 0,
+                    });
+                }
+                this.particles = newParticles;
+            }
+
+            refreshParticles() {
+                this.createParticles();
+                this.state = 'normal';
+                this.glowScale = 1.0;
+                document.getElementById('explosion-indicator').classList.remove('show');
+            }
+
+            setFactor(newFactor) {
+                this.factor = newFactor;
+                this.createParticles();
+                this.state = 'normal';
+                this.glowScale = 1.0;
+                document.getElementById('explosion-indicator').classList.remove('show');
+            }
+
+            setupMouseEvents() {
+                window.addEventListener('mousemove', (e) => {
+                    this.mouse.x = e.clientX;
+                    this.mouse.y = e.clientY;
+                    this.mouse.isHovering = true;
+                });
+                window.addEventListener('mouseout', () => {
+                    this.mouse.isHovering = false;
+                });
+            }
+
+            // ========== 合并规则 ==========
+            mergeParticles() {
+                if (this.particles.length < 2) return;
+                this.mergeByMassRatio();
+                this.mergeByDynamicThreshold();
+            }
+
+            mergeByMassRatio() {
+                const thresholdFactor = 0.8;
+                let anyMerged = true;
+                let maxIter = 50;
+                let iter = 0;
+                while (anyMerged && iter < maxIter) {
+                    anyMerged = false;
+                    const particles = this.particles;
+                    const n = particles.length;
+                    for (let i = 0; i < n; i++) {
+                        for (let j = i + 1; j < n; j++) {
+                            const p1 = particles[i];
+                            const p2 = particles[j];
+                            const dx = p1.x - p2.x;
+                            const dy = p1.y - p2.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            const threshold = (p1.size + p2.size) * thresholdFactor;
+                            if (dist < threshold) {
+                                if (p1.mass > p2.mass * 50) {
+                                    // big = p1, small = p2
+                                    const totalMass = p1.mass + p2.mass;
+                                    p1.x = (p1.x * p1.mass + p2.x * p2.mass) / totalMass;
+                                    p1.y = (p1.y * p1.mass + p2.y * p2.mass) / totalMass;
+                                    p1.vx = (p1.vx * p1.mass + p2.vx * p2.mass) / totalMass;
+                                    p1.vy = (p1.vy * p1.mass + p2.vy * p2.mass) / totalMass;
+                                    p1.mass = totalMass;
+                                    if (p2.size > p1.size) p1.size = p2.size;
+                                    this.particles.splice(j, 1);
+                                    anyMerged = true;
+                                    break;
+                                } else if (p2.mass > p1.mass * 50) {
+                                    const totalMass = p1.mass + p2.mass;
+                                    p2.x = (p1.x * p1.mass + p2.x * p2.mass) / totalMass;
+                                    p2.y = (p1.y * p1.mass + p2.y * p2.mass) / totalMass;
+                                    p2.vx = (p1.vx * p1.mass + p2.vx * p2.mass) / totalMass;
+                                    p2.vy = (p1.vy * p1.mass + p2.vy * p2.mass) / totalMass;
+                                    p2.mass = totalMass;
+                                    if (p1.size > p2.size) p2.size = p1.size;
+                                    this.particles.splice(i, 1);
+                                    anyMerged = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (anyMerged) break;
+                    }
+                    iter++;
+                }
+            }
+
+            mergeByDynamicThreshold() {
+                const thresholdFactor = 0.8;
+                const particles = this.particles;
+                const n = particles.length;
+                if (n < 2) return;
+
+                const dynamicThreshold = 1 + Math.floor(n / 10);
+
+                const parent = new Array(n).fill(0).map((_, i) => i);
+                const find = (x) => {
+                    while (parent[x] !== x) {
+                        parent[x] = parent[parent[x]];
+                        x = parent[x];
+                    }
+                    return x;
+                };
+                const union = (x, y) => {
+                    const rx = find(x), ry = find(y);
+                    if (rx !== ry) parent[ry] = rx;
+                };
+
+                for (let i = 0; i < n; i++) {
+                    const p1 = particles[i];
+                    for (let j = i + 1; j < n; j++) {
+                        const p2 = particles[j];
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        const threshold = (p1.size + p2.size) * thresholdFactor;
+                        if (dist < threshold) union(i, j);
+                    }
+                }
+
+                const groups = new Map();
+                for (let i = 0; i < n; i++) {
+                    const root = find(i);
+                    if (!groups.has(root)) groups.set(root, []);
+                    groups.get(root).push(i);
+                }
+
+                const toMergeGroups = [];
+                for (let indices of groups.values()) {
+                    if (indices.length >= dynamicThreshold) toMergeGroups.push(indices);
+                }
+                if (toMergeGroups.length === 0) return;
+
+                const toDelete = new Set();
+                const newParticles = [];
+
+                for (let group of toMergeGroups) {
+                    let sumMass = 0, sumMassX = 0, sumMassY = 0, sumMassVx = 0, sumMassVy = 0;
+                    let maxSize = 0;
+                    const firstIdx = group[0];
+                    const firstP = particles[firstIdx];
+
+                    for (let idx of group) {
+                        const p = particles[idx];
+                        sumMass += p.mass;
+                        sumMassX += p.x * p.mass;
+                        sumMassY += p.y * p.mass;
+                        sumMassVx += p.vx * p.mass;
+                        sumMassVy += p.vy * p.mass;
+                        if (p.size > maxSize) maxSize = p.size;
+                        toDelete.add(idx);
+                    }
+
+                    const newP = {
+                        x: sumMassX / sumMass,
+                        y: sumMassY / sumMass,
+                        vx: sumMassVx / sumMass,
+                        vy: sumMassVy / sumMass,
+                        mass: sumMass,
+                        size: maxSize,
+                        _jitter: firstP._jitter,
+                        _phase: firstP._phase,
+                        _speed: firstP._speed,
+                        baseOpacity: 0.9,
+                        connCount: 0
+                    };
+                    newParticles.push(newP);
+                }
+
+                const remaining = particles.filter((_, idx) => !toDelete.has(idx));
+                this.particles = remaining.concat(newParticles);
+            }
+
+            // ========== 爆炸函数：使用平方根分布实现均匀圆盘 ==========
+            explode() {
+                // 获取最后一个粒子的位置作为爆炸中心 (预警状态下只有一个粒子)
+                const lastParticle = this.particles[0];
+                const centerX = lastParticle.x;
+                const centerY = lastParticle.y;
+
+                let totalMass = 0, maxRadius = 0;
+                for (let p of this.particles) {
+                    totalMass += p.mass;
+                    if (p.size > maxRadius) maxRadius = p.size;
+                }
+                const targetCount = Math.max(1, Math.floor(this.baseCount * this.factor));
+                const avgMass = totalMass / targetCount;
+                const baseSpeed = this.baseConfig.particles.move.speed;
+
+                // 使用爆炸半径倍率计算爆炸半径
+                const explosionRadius = Math.min(this.canvas.width, this.canvas.height) * this.explosionRadiusFactor;
+
+                const newParticles = [];
+                for (let i = 0; i < targetCount; i++) {
+                    // 在爆炸中心周围生成均匀圆盘分布的点：半径采用平方根分布，角度均匀
+                    const angle = Math.random() * Math.PI * 2;
+                    const r = explosionRadius * Math.sqrt(Math.random()); // 平方根分布 -> 面积均匀
+                    const x = centerX + Math.cos(angle) * r;
+                    const y = centerY + Math.sin(angle) * r;
+
+                    const mass = avgMass * (0.8 + 0.4 * Math.random());
+                    const size = maxRadius * (0.2 + 0.8 * Math.random());
+
+                    // 速度方向从中心向外，大小随机
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const normX = dx / dist;
+                    const normY = dy / dist;
+                    const speedScale = 0.5 + 2.0 * Math.random();
+                    const vx = normX * baseSpeed * speedScale;
+                    const vy = normY * baseSpeed * speedScale;
+
+                    const _jitter = randJitter();
+                    const _phase = Math.random() * Math.PI * 2;
+                    const _speed = 0.015 + Math.random() * 0.03;
+
+                    newParticles.push({
+                        x, y, vx, vy, size, mass,
+                        _jitter, _phase, _speed,
+                        baseOpacity: 0.9, connCount: 0
+                    });
+                }
+                this.particles = newParticles;
+                this.state = 'normal';
+                this.glowScale = 1.0;
+                document.getElementById('explosion-indicator').classList.remove('show');
+            }
+
+            updateParticles() {
+                const now = performance.now();
+
+                if (this.particles.length === 0) return;
+
+                // 状态机 (m 可以是小数，比较时直接数值比较)
+                if (this.state === 'normal') {
+                    if (this.particles.length < this.m && this.particles.length > 1) {
+                        this.state = 'attracting';
+                    } else if (this.particles.length === 1) {
+                        this.state = 'warning';
+                        this.warningStartTime = now;
+                        this.targetGlowScale = 10.0;
+                        this.glowScale = 1.0;
+                        document.getElementById('explosion-indicator').classList.add('show');
+                    }
+                } else if (this.state === 'attracting') {
+                    if (this.particles.length >= this.m) {
+                        this.state = 'normal';
+                    } else if (this.particles.length === 1) {
+                        this.state = 'warning';
+                        this.warningStartTime = now;
+                        this.targetGlowScale = 10.0;
+                        this.glowScale = 1.0;
+                        document.getElementById('explosion-indicator').classList.add('show');
+                    }
+                } else if (this.state === 'warning') {
+                    if (this.particles.length !== 1) {
+                        this.state = 'normal';
+                        this.glowScale = 1.0;
+                        document.getElementById('explosion-indicator').classList.remove('show');
+                    }
+                }
+
+                if (this.state === 'warning') {
+                    const elapsed = now - this.warningStartTime;
+                    if (elapsed >= 2500) {
+                        this.explode();
+                    } else {
+                        const t = elapsed / 2500;
+                        this.glowScale = 1.0 + (this.targetGlowScale - 1.0) * t;
+                    }
+                }
+
+                this.calculateGravity();
+
+                if (this.state === 'attracting' && this.particles.length > 1) {
+                    let maxIdx = 0;
+                    for (let i = 1; i < this.particles.length; i++) {
+                        if (this.particles[i].mass > this.particles[maxIdx].mass) maxIdx = i;
+                    }
+                    const target = this.particles[maxIdx];
+                    for (let i = 0; i < this.particles.length; i++) {
+                        if (i === maxIdx) continue;
+                        const p = this.particles[i];
+                        const dx = target.x - p.x;
+                        const dy = target.y - p.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist > 0.1) {
+                            p.vx += (dx / dist) * this.F;
+                            p.vy += (dy / dist) * this.F;
+                        }
+                    }
+                }
+
+                this.mergeParticles();
+
+                for (let p of this.particles) {
+                    p._phase += p._speed;
+
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    if (p.x < -p.size) p.x = this.canvas.width + p.size;
+                    if (p.x > this.canvas.width + p.size) p.x = -p.size;
+                    if (p.y < -p.size) p.y = this.canvas.height + p.size;
+                    if (p.y > this.canvas.height + p.size) p.y = -p.size;
+
+                    if (this.baseConfig.particles.move.random) {
+                        p.vx += (Math.random() - 0.5) * 0.05;
+                        p.vy += (Math.random() - 0.5) * 0.05;
+                    }
+
+                    if (this.baseConfig.particles.move.attract.enable) {
+                        const dx = this.canvas.width/2 - p.x;
+                        const dy = this.canvas.height/2 - p.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist > 1) {
+                            const forceX = dx / (dist * dist) * this.attractStrength;
+                            const forceY = dy / (dist * dist) * this.attractStrength;
+                            p.vx += forceX;
+                            p.vy += forceY;
+                        }
+                    }
+                }
+            }
+
+            calculateGravity() {
+                const G = this.G;
+                const minDist = 0.6;
+
+                for (let i = 0; i < this.particles.length; i++) {
+                    const p1 = this.particles[i];
+                    let fx = 0, fy = 0;
+
+                    for (let j = 0; j < this.particles.length; j++) {
+                        if (i === j) continue;
+                        const p2 = this.particles[j];
+                        const dx = p2.x - p1.x;
+                        const dy = p2.y - p1.y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < minDist) continue;
+
+                        const force = G * (p1.mass * p2.mass) / (dist * dist);
+                        fx += force * dx / dist;
+                        fy += force * dy / dist;
+                    }
+
+                    p1.vx += fx / p1.mass * 0.5;
+                    p1.vy += fy / p1.mass * 0.5;
+
+                    const maxSpeed = this.baseConfig.particles.move.speed * 2.5;
+                    const sp = Math.sqrt(p1.vx*p1.vx + p1.vy*p1.vy);
+                    if (sp > maxSpeed) {
+                        p1.vx = (p1.vx / sp) * maxSpeed;
+                        p1.vy = (p1.vy / sp) * maxSpeed;
+                    }
+                }
+            }
+
+            drawConnectionsAndCount() {
+                const linkDist = this.baseConfig.particles.line_linked.distance;
+                const ldSq = linkDist * linkDist;
+                const linkBaseOpacity = this.baseConfig.particles.line_linked.opacity;
+
+                for (let p of this.particles) p.connCount = 0;
+
+                let edges = [];
+                for (let i = 0; i < this.particles.length; i++) {
+                    for (let j = i + 1; j < this.particles.length; j++) {
+                        const dx = this.particles[i].x - this.particles[j].x;
+                        const dy = this.particles[i].y - this.particles[j].y;
+                        const dSq = dx*dx + dy*dy;
+                        if (dSq < ldSq) {
+                            this.particles[i].connCount++;
+                            this.particles[j].connCount++;
+                            edges.push(i, j, Math.sqrt(dSq));
+                        }
+                    }
+                }
+
+                let realMaxConn = 0;
+                for (let p of this.particles) if (p.connCount > realMaxConn) realMaxConn = p.connCount;
+                if (realMaxConn === 0) realMaxConn = 1;
+
+                for (let k = 0; k < edges.length; k += 3) {
+                    const i = edges[k], j = edges[k+1];
+                    const dist = edges[k+2];
+                    const p1 = this.particles[i], p2 = this.particles[j];
+                    const tMid = Math.min((p1.connCount + p2.connCount) * 0.5 / realMaxConn, 1);
+                    const hue = tMid * 270;
+                    const a = linkBaseOpacity * (1 - dist / linkDist) * 0.8;
+
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(p1.x, p1.y);
+                    this.ctx.lineTo(p2.x, p2.y);
+                    this.ctx.strokeStyle = 'hsla(' + hue + ',75%,65%,' + a + ')';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.stroke();
+                }
+
+                return realMaxConn;
+            }
+
+            drawParticles(realMaxConn) {
+                let maxMass = 0;
+                for (let p of this.particles) if (p.mass > maxMass) maxMass = p.mass;
+                if (maxMass === 0) maxMass = 1;
+
+                let maxMassIdx = 0;
+                for (let i = 1; i < this.particles.length; i++) {
+                    if (this.particles[i].mass > this.particles[maxMassIdx].mass) maxMassIdx = i;
+                }
+
+                for (let i = 0; i < this.particles.length; i++) {
+                    const p = this.particles[i];
+                    const t = Math.min(p.mass / maxMass, 1);
+                    const c = connectionColor(t, p._jitter);
+                    const pulse = 0.5 + Math.sin(p._phase) * 0.5;
+
+                    let glowScale = 1.0;
+                    if (this.state === 'warning' && i === maxMassIdx) {
+                        glowScale = this.glowScale;
+                    }
+
+                    const glowR = p.size * (3.5 + pulse * 2.5) * glowScale;
+                    const glowA = 0.18 + pulse * 0.22;
+
+                    const grad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+                    grad.addColorStop(0,    'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + glowA + ')');
+                    grad.addColorStop(0.45, 'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + (glowA * 0.35) + ')');
+                    grad.addColorStop(1,    'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,0)');
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+                    this.ctx.fillStyle = grad;
+                    this.ctx.fill();
+
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
+                    this.ctx.fill();
+
+                    if (this.state === 'warning' && i === maxMassIdx) {
+                        const numRays = 12;
+                        const baseLength = p.size * 15 * glowScale;
+                        const now = performance.now() / 800;
+                        for (let r = 0; r < numRays; r++) {
+                            const angle = (r / numRays) * Math.PI * 2 + (now * 0.2) + (Math.random() * 0.5 - 0.25);
+                            const dx = Math.cos(angle);
+                            const dy = Math.sin(angle);
+                            const lengthFactor = 0.8 + Math.random() * 0.8;
+                            const rayLength = baseLength * lengthFactor;
+                            const endX = p.x + dx * rayLength;
+                            const endY = p.y + dy * rayLength;
+                            
+                            const startOpacity = 0.5 + 0.5 * (glowScale / 10) + Math.random() * 0.3;
+                            const gradient = this.ctx.createLinearGradient(p.x, p.y, endX, endY);
+                            gradient.addColorStop(0, 'rgba(255, 215, 0, ' + startOpacity + ')');
+                            gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                            
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p.x, p.y);
+                            this.ctx.lineTo(endX, endY);
+                            this.ctx.strokeStyle = gradient;
+                            this.ctx.lineWidth = 2 + 3 * (glowScale / 10) + Math.random() * 2;
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            handleMouseInteraction() {
+                if (!this.baseConfig.interactivity.events.onhover.enable || !this.mouse.isHovering) return;
+
+                const grabDist = this.baseConfig.interactivity.modes.grab.distance;
+                const lineLinkedOpacity = this.baseConfig.interactivity.modes.grab.line_linked.opacity;
+
+                for (let p of this.particles) {
+                    const dx = this.mouse.x - p.x;
+                    const dy = this.mouse.y - p.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < grabDist) {
+                        const forceX = dx / dist * 0.02;
+                        const forceY = dy / dist * 0.02;
+                        p.vx += forceX;
+                        p.vy += forceY;
+
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(p.x, p.y);
+                        this.ctx.lineTo(this.mouse.x, this.mouse.y);
+                        const alpha = lineLinkedOpacity * (1 - dist / grabDist) * 0.4;
+                        this.ctx.strokeStyle = 'rgba(160, 200, 255, ' + alpha + ')';
+                        this.ctx.lineWidth = 0.8;
+                        this.ctx.stroke();
+                    }
+                }
+            }
+
+            animate() {
+                this.ctx.fillStyle = 'rgba(10, 20, 40, 0.618)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.updateParticles();
+                const realMaxConn = this.drawConnectionsAndCount();
+                this.drawParticles(realMaxConn);
+                this.handleMouseInteraction();
+
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+
+            resize() {
+                this.resizeCanvas();
+                if (this.animationId) cancelAnimationFrame(this.animationId);
+                this.init();
+            }
+
+            destroy() {
+                if (this.animationId) cancelAnimationFrame(this.animationId);
+            }
+
+            // 更新参数（增加爆炸半径倍率 r）
+            updateParams(newG, newAttract, newM, newF, newR) {
+                this.G = newG;
+                this.attractStrength = newAttract;
+                this.m = newM;
+                this.F = newF;
+                this.explosionRadiusFactor = newR;
+            }
+        }
+
+        // ==================== 页面初始化 ====================
+        document.addEventListener('DOMContentLoaded', function () {
+            const screen = getScreenClass();
+
+            const baseConfig = {
+                particles: {
+                    number: {
+                        value: screen.isSmallMobile ? 120 : (screen.isMobile ? 200 : 400),
+                        density: { enable: true, value_area: screen.isSmallMobile ? 700 : (screen.isMobile ? 900 : 1200) }
+                    },
+                    size: {
+                        value: screen.isSmallMobile ? 2.8 : (screen.isMobile ? 3.2 : 3.8),
+                        random: true
+                    },
+                    move: {
+                        speed: screen.isSmallMobile ? 0.8 : (screen.isMobile ? 1.1 : 1.4),
+                        random: true,
+                        attract: { enable: true, rotateX: 600, rotateY: 1200 }
+                    },
+                    line_linked: {
+                        distance: screen.isSmallMobile ? 100 : (screen.isMobile ? 120 : 145),
+                        opacity: screen.isSmallMobile ? 0.22 : (screen.isMobile ? 0.28 : 0.32)
+                    }
+                },
+                interactivity: {
+                    events: {
+                        onhover: { enable: !screen.isMobile, mode: 'grab' }
+                    },
+                    modes: {
+                        grab: { distance: 160, line_linked: { opacity: 0.6 } }
+                    }
+                }
+            };
+
+            window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.0);
+
+            // ---------- UI 绑定 (无界输入: 仅校验 >=0, 滑块边界跟随) ----------
+            const toggleBtn = document.getElementById('params-toggle');
+            const panel = document.getElementById('params-panel');
+            
+            const gSlider = document.getElementById('g-slider');
+            const gInput = document.getElementById('g-input');
+            const attractSlider = document.getElementById('attract-slider');
+            const attractInput = document.getElementById('attract-input');
+            const factorSlider = document.getElementById('factor-slider');
+            const factorInput = document.getElementById('factor-input');
+            const mSlider = document.getElementById('m-slider');
+            const mInput = document.getElementById('m-input');
+            const fSlider = document.getElementById('f-slider');
+            const fInput = document.getElementById('f-input');
+            const rSlider = document.getElementById('r-slider');
+            const rInput = document.getElementById('r-input');
+            const actualCountSpan = document.getElementById('actual-count');
+
+            const applyBtn = document.getElementById('apply-params');
+            const refreshBtn = document.getElementById('refresh-particles');
+            const resetBtn = document.getElementById('reset-params');
+
+            function updateActualCount() {
+                if (window.particleSystem) {
+                    const base = window.particleSystem.baseCount;
+                    const factor = window.particleSystem.factor;
+                    actualCountSpan.innerText = `(实际: ${Math.floor(base * factor)})`;
+                } else {
+                    const base = baseConfig.particles.number.value;
+                    const factor = parseFloat(factorInput.value) || 1.0;
+                    actualCountSpan.innerText = `(实际: ${Math.floor(base * factor)})`;
+                }
+            }
+
+            // ----- 通用: 将输入框的值同步到滑块(考虑边界), 只做非负校验 -----
+            function syncNumberToSlider(inputEl, sliderEl, isInteger = false) {
+                let val = parseFloat(inputEl.value);
+                if (isNaN(val) || val < 0) val = 0;
+                inputEl.value = val;  // 回写非负
+                const min = parseFloat(sliderEl.min);
+                const max = parseFloat(sliderEl.max);
+                if (val < min) sliderEl.value = min;
+                else if (val > max) sliderEl.value = max;
+                else {
+                    if (isInteger) sliderEl.value = Math.round(val);
+                    else sliderEl.value = val;
+                }
+            }
+
+            // G
+            function syncGFromInput() { syncNumberToSlider(gInput, gSlider, false); }
+            function syncGFromSlider() { gInput.value = gSlider.value; }
+            gSlider.addEventListener('input', syncGFromSlider);
+            gInput.addEventListener('input', syncGFromInput);
+            gInput.addEventListener('blur', syncGFromInput);
+
+            // attract
+            function syncAttractFromInput() { syncNumberToSlider(attractInput, attractSlider, false); }
+            function syncAttractFromSlider() { attractInput.value = attractSlider.value; }
+            attractSlider.addEventListener('input', syncAttractFromSlider);
+            attractInput.addEventListener('input', syncAttractFromInput);
+            attractInput.addEventListener('blur', syncAttractFromInput);
+
+            // factor (实时生效)
+            function syncFactorFromInput() {
+                let val = parseFloat(factorInput.value);
+                if (isNaN(val) || val < 0) val = 0;
+                factorInput.value = val;
+                const min = parseFloat(factorSlider.min);
+                const max = parseFloat(factorSlider.max);
+                if (val < min) factorSlider.value = min;
+                else if (val > max) factorSlider.value = max;
+                else factorSlider.value = val;
+                updateActualCount();
+                if (window.particleSystem) window.particleSystem.setFactor(val);
+            }
+            function syncFactorFromSlider() {
+                factorInput.value = factorSlider.value;
+                updateActualCount();
+                if (window.particleSystem) window.particleSystem.setFactor(parseFloat(factorSlider.value));
+            }
+            factorSlider.addEventListener('input', syncFactorFromSlider);
+            factorInput.addEventListener('input', syncFactorFromInput);
+            factorInput.addEventListener('blur', syncFactorFromInput);
+
+            // m (滑块为整数, 但输入可为小数)
+            function syncMFromInput() { syncNumberToSlider(mInput, mSlider, true); }
+            function syncMFromSlider() { mInput.value = mSlider.value; }
+            mSlider.addEventListener('input', syncMFromSlider);
+            mInput.addEventListener('input', syncMFromInput);
+            mInput.addEventListener('blur', syncMFromInput);
+
+            // F
+            function syncFFromInput() { syncNumberToSlider(fInput, fSlider, false); }
+            function syncFFromSlider() { fInput.value = fSlider.value; }
+            fSlider.addEventListener('input', syncFFromSlider);
+            fInput.addEventListener('input', syncFFromInput);
+            fInput.addEventListener('blur', syncFFromInput);
+
+            // r (爆炸半径倍率)
+            function syncRFromInput() { syncNumberToSlider(rInput, rSlider, false); }
+            function syncRFromSlider() { rInput.value = rSlider.value; }
+            rSlider.addEventListener('input', syncRFromSlider);
+            rInput.addEventListener('input', syncRFromInput);
+            rInput.addEventListener('blur', syncRFromInput);
+
+            // 应用参数 (使用输入框的原始值)
+            applyBtn.addEventListener('click', function() {
+                if (window.particleSystem) {
+                    const newG = parseFloat(gInput.value);
+                    const newAttract = parseFloat(attractInput.value);
+                    const newM = parseFloat(mInput.value);
+                    const newF = parseFloat(fInput.value);
+                    const newR = parseFloat(rInput.value);
+                    window.particleSystem.updateParams(
+                        isNaN(newG) || newG<0 ? 0 : newG,
+                        isNaN(newAttract) || newAttract<0 ? 0 : newAttract,
+                        isNaN(newM) || newM<0 ? 0 : newM,
+                        isNaN(newF) || newF<0 ? 0 : newF,
+                        isNaN(newR) || newR<0 ? 0 : newR
+                    );
+                }
+            });
+
+            // 刷新粒子
+            refreshBtn.addEventListener('click', function() {
+                if (window.particleSystem) window.particleSystem.refreshParticles();
+            });
+
+            // 重置默认 (G=6, attract=3, factor=1, m=3, F=0.5, r=2.5)
+            resetBtn.addEventListener('click', function() {
+                gInput.value = '6.0'; attractInput.value = '3.0'; factorInput.value = '1.0';
+                mInput.value = '3'; fInput.value = '0.5'; rInput.value = '2.5';
+                // 同步滑块
+                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput(); 
+                syncMFromInput(); syncFFromInput(); syncRFromInput();
+                // 更新系统参数 (factor已经实时更新)
+                if (window.particleSystem) {
+                    window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 2.5);
+                }
+                updateActualCount();
+            });
+
+            // 面板开关
+            toggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                panel.classList.toggle('show');
+            });
+            panel.addEventListener('click', function(e) { e.stopPropagation(); });
+
+            updateActualCount();
+
+            // 窗口resize (保留原有逻辑)
+            let resizeTimer;
+            window.addEventListener('resize', function () {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function () {
+                    const newScreen = getScreenClass();
+                    if (newScreen.isMobile !== screen.isMobile || newScreen.isSmallMobile !== screen.isSmallMobile) {
+                        const updatedScreen = getScreenClass();
+                        const newBaseConfig = {
+                            particles: {
+                                number: {
+                                    value: updatedScreen.isSmallMobile ? 120 : (updatedScreen.isMobile ? 200 : 400),
+                                    density: { enable: true, value_area: updatedScreen.isSmallMobile ? 700 : (updatedScreen.isMobile ? 900 : 1200) }
+                                },
+                                size: {
+                                    value: updatedScreen.isSmallMobile ? 2.8 : (updatedScreen.isMobile ? 3.2 : 3.8),
+                                    random: true
+                                },
+                                move: {
+                                    speed: updatedScreen.isSmallMobile ? 0.8 : (updatedScreen.isMobile ? 1.1 : 1.4),
+                                    random: true,
+                                    attract: { enable: true, rotateX: 600, rotateY: 1200 }
+                                },
+                                line_linked: {
+                                    distance: updatedScreen.isSmallMobile ? 100 : (updatedScreen.isMobile ? 120 : 145),
+                                    opacity: updatedScreen.isSmallMobile ? 0.22 : (updatedScreen.isMobile ? 0.28 : 0.32)
+                                }
+                            },
+                            interactivity: {
+                                events: {
+                                    onhover: { enable: !updatedScreen.isMobile, mode: 'grab' }
+                                },
+                                modes: {
+                                    grab: { distance: 160, line_linked: { opacity: 0.6 } }
+                                }
+                            }
+                        };
+
+                        const currentFactor = parseFloat(factorInput.value);
+                        const currentG = parseFloat(gInput.value);
+                        const currentAttract = parseFloat(attractInput.value);
+                        const currentM = parseFloat(mInput.value);
+                        const currentF = parseFloat(fInput.value);
+                        const currentR = parseFloat(rInput.value);
+
+                        window.particleSystem.destroy();
+                        window.particleSystem = new GravityParticleSystem('particles-js', newBaseConfig, currentFactor);
+                        window.particleSystem.updateParams(currentG, currentAttract, currentM, currentF, currentR);
+                        
+                        updateActualCount();
+                    } else {
+                        if (window.particleSystem) window.particleSystem.resize();
+                    }
+                }, 250);
+            });
+        });
+    })();
+    </script>
+</body>
+</html>
