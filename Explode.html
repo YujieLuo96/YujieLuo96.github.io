@@ -36,14 +36,14 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 44px;               /* 稍微缩小 */
+            width: 44px;
             height: 44px;
             background: rgba(30, 40, 60, 0.8);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(120, 170, 220, 0.5);
             border-radius: 50%;
             color: #b0d0ff;
-            font-size: 26px;            /* 适应小按钮 */
+            font-size: 26px;
             line-height: 44px;
             text-align: center;
             cursor: pointer;
@@ -61,17 +61,17 @@
 
         #params-panel {
             position: fixed;
-            top: 75px;                  /* 稍微上移 */
+            top: 75px;
             right: 20px;
-            width: 360px;                /* 稍微加宽以便容纳紧凑内容 */
-            max-width: calc(100vw - 40px); /* 移动端适配 */
+            width: 360px;
+            max-width: calc(100vw - 40px);
             background: rgba(20, 30, 45, 0.96);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(120, 170, 220, 0.6);
             border-radius: 18px;
-            padding: 16px 16px 18px;     /* 内边距统一减小 */
+            padding: 16px 16px 18px;
             color: #e0f0ff;
-            font-size: 13px;              /* 基础字体稍小 */
+            font-size: 13px;
             z-index: 1000;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             transition: opacity 0.25s ease, transform 0.25s ease;
@@ -86,7 +86,7 @@
         }
 
         #params-panel h3 {
-            margin: 0 0 12px 0;          /* 紧凑 */
+            margin: 0 0 12px 0;
             font-size: 17px;
             text-align: center;
             color: #b0d0ff;
@@ -95,16 +95,15 @@
             letter-spacing: 0.3px;
         }
 
-        /* 每一行改为flex row，标签和控件同一行 */
         .param-row {
             display: flex;
             align-items: center;
-            margin-bottom: 12px;          /* 原18px -> 12px */
+            margin-bottom: 12px;
             gap: 8px;
         }
 
         .param-row label {
-            width: 110px;                 /* 固定宽度，保证对齐 */
+            width: 110px;
             flex-shrink: 0;
             font-weight: 600;
             color: #c0d8ff;
@@ -117,30 +116,30 @@
             flex: 1;
             display: flex;
             align-items: center;
-            gap: 6px;                     /* 内部间距紧凑 */
-            min-width: 0;                  /* 防止flex溢出 */
+            gap: 6px;
+            min-width: 0;
         }
 
         .param-control input[type=range] {
-            flex: 1 1 80px;                /* 允许缩小 */
+            flex: 1 1 80px;
             min-width: 50px;
             background: transparent;
             accent-color: #7aacdb;
-            height: 6px;                   /* 稍微扁平 */
+            height: 6px;
         }
 
         .param-control input[type=number] {
-            width: 70px;                    /* 原85px -> 70px */
+            width: 70px;
             background: #1e2a3a;
             border: 1px solid #4f7eb3;
             border-radius: 30px;
             color: white;
-            padding: 5px 6px;               /* 垂直内边距减小 */
+            padding: 5px 6px;
             font-size: 12px;
             font-weight: 500;
             text-align: center;
             outline: none;
-            flex-shrink: 0;                  /* 防止被挤压 */
+            flex-shrink: 0;
         }
 
         .param-control input[type=number]:focus {
@@ -148,7 +147,6 @@
             box-shadow: 0 0 0 2px rgba(139, 197, 255, 0.3);
         }
 
-        /* 实际数量标签 (移到控件内) */
         .actual-count {
             font-size: 11px;
             color: #8bc5ff;
@@ -161,12 +159,11 @@
             flex-shrink: 0;
         }
 
-        /* 按钮行：强制一行，更紧凑 */
         .button-row {
             display: flex;
-            flex-wrap: nowrap;               /* 禁止换行 */
+            flex-wrap: nowrap;
             gap: 6px;
-            margin-top: 16px;                /* 适当减少顶部间距 */
+            margin-top: 16px;
             justify-content: space-between;
         }
 
@@ -174,16 +171,16 @@
             background: #1e3a5f;
             border: 1px solid #4f7eb3;
             color: white;
-            padding: 6px 6px;                /* 水平内边距减小 */
+            padding: 6px 6px;
             border-radius: 40px;
-            font-size: 12px;                  /* 小字 */
+            font-size: 12px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.15s;
-            flex: 1 1 0;                      /* 等分剩余宽度 */
+            flex: 1 1 0;
             text-align: center;
-            white-space: nowrap;               /* 强制不换行 */
-            min-width: 0;                      /* 允许缩小到内容宽度以下 */
+            white-space: nowrap;
+            min-width: 0;
             line-height: 1.4;
         }
 
@@ -210,12 +207,10 @@
             background: #3a6f6f;
         }
 
-        /* 隐藏原有note，或保留但精简 */
         #params-panel .note {
-            display: none;   /* 原note空白，直接隐藏 */
+            display: none;
         }
 
-        /* 移动端微调 (保持一致性) */
         @media (max-width: 480px) {
             #params-panel {
                 right: 10px;
@@ -225,7 +220,7 @@
                 padding: 14px;
             }
             .param-row label {
-                width: 95px;                /* 手机屏稍窄，标签宽度减小 */
+                width: 95px;
                 font-size: 12px;
             }
             .param-control input[type=number] {
@@ -245,7 +240,6 @@
             }
         }
 
-        /* 更小屏 (小于360) 进一步压缩 */
         @media (max-width: 360px) {
             .param-row label {
                 width: 85px;
@@ -266,7 +260,6 @@
             }
         }
 
-        /* 爆炸指示器样式不变 */
         #explosion-indicator {
             display: none;
         }
@@ -281,7 +274,7 @@
     <div id="params-panel">
         <h3>⚡ Gravity parameters (≥0)</h3>
 
-        <!-- G constant (原Gravitational constant G 缩写) -->
+        <!-- G constant -->
         <div class="param-row">
             <label>G constant</label>
             <div class="param-control">
@@ -290,7 +283,7 @@
             </div>
         </div>
 
-        <!-- Center attraction strength 缩写 -->
+        <!-- Center attraction strength -->
         <div class="param-row">
             <label>Center attract</label>
             <div class="param-control">
@@ -299,7 +292,7 @@
             </div>
         </div>
 
-        <!-- 粒子数量：标签简洁，实际数量移到控件行 -->
+        <!-- 粒子数量 -->
         <div class="param-row">
             <label>Count multiplier</label>
             <div class="param-control">
@@ -345,13 +338,12 @@
             </div>
         </div>
 
-        <!-- 三个按钮同一行，强制不换行，已通过CSS实现 -->
+        <!-- 三个按钮同一行 -->
         <div class="button-row">
             <div class="param-btn" id="apply-params">Apply</div>
             <div class="param-btn refresh" id="refresh-particles">Refresh</div>
             <div class="param-btn reset" id="reset-params">Reset</div>
         </div>
-        <!-- 移除空白note，保持极简 -->
     </div>
 
     <script>
@@ -404,6 +396,8 @@
 
                 // 初始平均质量（用于大质量粒子判断）
                 this.initialAvgMass = 1.0;
+                // 初始平均半径（用于颜色映射）
+                this.initialAvgSize = 1.0;
 
                 this.init();
             }
@@ -420,7 +414,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.resizeCanvas();
 
-                this.createParticles();   // 会根据当前 factor 生成粒子，并设置 initialAvgMass
+                this.createParticles();   // 会根据当前 factor 生成粒子，并设置 initialAvgMass 和 initialAvgSize
                 this.setupMouseEvents();
 
                 this.state = 'normal';
@@ -465,20 +459,24 @@
                         size,
                         mass,
                         _jitter, _phase, _speed,
-                        baseOpacity: 0.9,
-                        connCount: 0,
+                        connCount: 0  // 移除未使用的 baseOpacity
                     });
                 }
                 this.particles = newParticles;
 
                 // 计算初始平均质量（用于大质量粒子判断）
                 let totalMass = 0;
-                for (let p of this.particles) totalMass += p.mass;
+                let totalSize = 0;
+                for (let p of this.particles) {
+                    totalMass += p.mass;
+                    totalSize += p.size;
+                }
                 this.initialAvgMass = this.particles.length > 0 ? totalMass / this.particles.length : 1.0;
+                this.initialAvgSize = this.particles.length > 0 ? totalSize / this.particles.length : 1.0;
             }
 
             refreshParticles() {
-                this.createParticles(); // 重新生成并更新 initialAvgMass
+                this.createParticles(); // 重新生成并更新 initialAvgMass 和 initialAvgSize
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -486,7 +484,7 @@
 
             setFactor(newFactor) {
                 this.factor = newFactor;
-                this.createParticles(); // 重新生成并更新 initialAvgMass
+                this.createParticles(); // 重新生成并更新 initialAvgMass 和 initialAvgSize
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -635,7 +633,6 @@
                         _jitter: firstP._jitter,
                         _phase: firstP._phase,
                         _speed: firstP._speed,
-                        baseOpacity: 0.9,
                         connCount: 0
                     };
                     newParticles.push(newP);
@@ -689,7 +686,7 @@
                     newParticles.push({
                         x, y, vx, vy, size, mass,
                         _jitter, _phase, _speed,
-                        baseOpacity: 0.9, connCount: 0
+                        connCount: 0
                     });
                 }
                 this.particles = newParticles;
@@ -871,7 +868,7 @@
                 return realMaxConn;
             }
 
-            drawParticles(realMaxConn) {
+            drawParticles() {  // 移除未使用的参数 realMaxConn
                 let maxMass = 0;
                 for (let p of this.particles) if (p.mass > maxMass) maxMass = p.mass;
                 if (maxMass === 0) maxMass = 1;
@@ -881,19 +878,24 @@
                     if (this.particles[i].mass > this.particles[maxMassIdx].mass) maxMassIdx = i;
                 }
 
+                // 预计算的常量（基于固定范围 0.9 ~ 1.5）
+                const MIN_RATIO = 0.9;
+                const MAX_RATIO = 1.5;
+                const MIN_LOG = Math.log10(MIN_RATIO);
+                const MAX_LOG = Math.log10(MAX_RATIO);
+                const RANGE_LOG = MAX_LOG - MIN_LOG;
+
                 for (let i = 0; i < this.particles.length; i++) {
                     const p = this.particles[i];
-                    const t = Math.min(p.mass / maxMass, 1);
-                    const c = connectionColor(t, p._jitter);
                     const pulse = 0.5 + Math.sin(p._phase) * 0.5;
 
-                    let glowScale = 1.0;
+                    // 黑洞预警粒子（保持原样）
                     if (this.state === 'warning' && i === maxMassIdx) {
-                        glowScale = this.glowScale;
-                    }
+                        const t = p.mass / maxMass;
+                        const c = connectionColor(t, p._jitter);
+                        const glowScale = this.glowScale;
 
-                    // 黑洞预警状态（特殊效果）—— 光晕和内核半径已调整为原来的1.5倍（之前修改）
-                    if (this.state === 'warning' && i === maxMassIdx) {
+                        // 彩虹光晕
                         const glowR = p.size * (7.5 + pulse * 4.5) * glowScale;
                         const glowA = 0.18 + pulse * 0.22;
                         const rainbowGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
@@ -916,13 +918,13 @@
                         this.ctx.fillStyle = rainbowGrad;
                         this.ctx.fill();
 
-                        // 绘制粒子核心 —— 半径增大1.5倍
+                        // 粒子核心
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
                         this.ctx.fill();
 
-                        // 黑洞预警光线 —— 长度增大1.5倍 (原15 -> 22.5)
+                        // 射线
                         const numRays = 36;
                         const baseLength = p.size * 22.5 * glowScale;
                         const now = performance.now() / 1000;
@@ -953,26 +955,21 @@
                         continue;
                     }
 
-                    // ========== 大质量粒子（质量 > 50倍初始平均质量）且非预警状态 ==========
-                    // 修改：光晕和内核半径放大至1.5倍，颜色以蓝、紫、青为主，更深融入背景
+                    // 超大质量粒子（非预警状态）—— 保持原深色渐变
                     if (p.mass > this.initialAvgMass * 50) {
-                        // 降低震动频率：使用慢速脉冲 (频率降低为原来的0.3)
                         const slowPulse = 0.5 + 0.5 * Math.sin(p._phase * 0.3);
-                        // 光晕半径放大1.5倍: 原系数(4.0 + slowPulse * 2.0) -> (6.0 + slowPulse * 3.0)
                         const enhancedGlowR = p.size * (6.0 + slowPulse * 3.0);
-                        // 内核半径放大1.5倍: 原0.45 -> 0.675
                         const coreR = p.size * 0.675;
-                        // 外圈光晕以蓝、紫、青为主，色调稍深，透明度渐变自然
                         const enhancedGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, enhancedGlowR);
-                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.95)');          // 核心深黑
-                        enhancedGrad.addColorStop(0.1, 'rgba(25,20,60,0.7)');     // 深紫
-                        enhancedGrad.addColorStop(0.2, 'rgba(20,30,80,0.6)');     // 深蓝紫
-                        enhancedGrad.addColorStop(0.3, 'rgba(10,40,90,0.5)');     // 深蓝
-                        enhancedGrad.addColorStop(0.4, 'rgba(0,50,100,0.4)');     // 靛青
-                        enhancedGrad.addColorStop(0.5, 'rgba(20,60,110,0.3)');    // 蓝青
-                        enhancedGrad.addColorStop(0.6, 'rgba(40,70,120,0.2)');    // 亮蓝
-                        enhancedGrad.addColorStop(0.8, 'rgba(60,80,130,0.1)');    // 淡蓝紫
-                        enhancedGrad.addColorStop(1, 'rgba(80,100,150,0)');       // 完全透明
+                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.95)');
+                        enhancedGrad.addColorStop(0.1, 'rgba(25,20,60,0.7)');
+                        enhancedGrad.addColorStop(0.2, 'rgba(20,30,80,0.6)');
+                        enhancedGrad.addColorStop(0.3, 'rgba(10,40,90,0.5)');
+                        enhancedGrad.addColorStop(0.4, 'rgba(0,50,100,0.4)');
+                        enhancedGrad.addColorStop(0.5, 'rgba(20,60,110,0.3)');
+                        enhancedGrad.addColorStop(0.6, 'rgba(40,70,120,0.2)');
+                        enhancedGrad.addColorStop(0.8, 'rgba(60,80,130,0.1)');
+                        enhancedGrad.addColorStop(1, 'rgba(80,100,150,0)');
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, enhancedGlowR, 0, Math.PI * 2);
                         this.ctx.fillStyle = enhancedGrad;
@@ -982,26 +979,41 @@
                         this.ctx.arc(p.x, p.y, coreR, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'rgba(0,0,0,0.98)';
                         this.ctx.fill();
-
                         continue;
                     }
 
-                    // 普通粒子绘制
-                    const glowR = p.size * (5.0 + pulse * 3.0) * glowScale;
+                    // ========== 普通粒子：基于半径的对数颜色映射，增加黄色占比 ==========
+                    const ratio = p.size / this.initialAvgSize;
+                    let f;
+                    if (ratio <= MIN_RATIO) {
+                        f = 0;
+                    } else if (ratio >= MAX_RATIO) {
+                        f = 1;
+                    } else {
+                        f = (Math.log10(ratio) - MIN_LOG) / RANGE_LOG;
+                    }
+                    // 色调从红 (0°) 到紫 (300°)
+                    const hue = f * 300 + p._jitter;
+                    const sat = 80 + f * 18;
+                    const lit = 72 - f * 18;
+
+                    // 光晕半径随 f 增大而略有增加
+                    const glowR = p.size * (5.0 + pulse * 3.0) * (1 + 0.3 * f);
                     const glowA = 0.18 + pulse * 0.22;
+
                     const grad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-                    grad.addColorStop(0,    'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + glowA + ')');
-                    grad.addColorStop(0.45, 'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,' + (glowA * 0.35) + ')');
-                    grad.addColorStop(1,    'hsla(' + c.hue + ',' + c.sat + '%,' + c.lit + '%,0)');
+                    grad.addColorStop(0,    `hsla(${hue}, ${sat}%, ${lit}%, ${glowA})`);
+                    grad.addColorStop(0.45, `hsla(${hue}, ${sat}%, ${lit}%, ${glowA * 0.35})`);
+                    grad.addColorStop(1,    `hsla(${hue}, ${sat}%, ${lit}%, 0)`);
                     this.ctx.beginPath();
                     this.ctx.arc(p.x, p.y, glowR, 0, Math.PI * 2);
                     this.ctx.fillStyle = grad;
                     this.ctx.fill();
 
-                    // 绘制粒子核心
+                    // 绘制粒子核心（亮度稍高）
                     this.ctx.beginPath();
                     this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
+                    this.ctx.fillStyle = `hsl(${hue}, ${sat}%, ${lit + 14}%)`;
                     this.ctx.fill();
                 }
             }
@@ -1038,8 +1050,8 @@
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
                 this.updateParticles();
-                const realMaxConn = this.drawConnectionsAndCount();
-                this.drawParticles(realMaxConn);
+                this.drawConnectionsAndCount();  // 返回值未使用，所以不需要接收
+                this.drawParticles();            // 移除参数
                 this.handleMouseInteraction();
 
                 this.animationId = requestAnimationFrame(() => this.animate());
