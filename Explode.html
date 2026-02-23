@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
-    <title>Gravity</title>
+    <title>Gravity · compact panel</title>
     <style>
+        /* 基础样式与原版保持一致，只修改/增强参数面板相关部分 */
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
             color: #f0f0f0;
@@ -30,24 +31,24 @@
             -webkit-filter: blur(0.3px) brightness(1.1);
         }
 
-        /* 参数按钮与面板 */
+        /* 参数按钮与面板 —— 重构为紧凑布局 */
         #params-toggle {
             position: fixed;
             top: 20px;
             right: 20px;
-            width: 48px;
-            height: 48px;
+            width: 44px;               /* 稍微缩小 */
+            height: 44px;
             background: rgba(30, 40, 60, 0.8);
             backdrop-filter: blur(4px);
             border: 1px solid rgba(120, 170, 220, 0.5);
             border-radius: 50%;
             color: #b0d0ff;
-            font-size: 28px;
-            line-height: 48px;
+            font-size: 26px;            /* 适应小按钮 */
+            line-height: 44px;
             text-align: center;
             cursor: pointer;
             z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             transition: 0.2s;
             user-select: none;
         }
@@ -57,18 +58,20 @@
             border-color: #8bc5ff;
             transform: scale(1.05);
         }
+
         #params-panel {
             position: fixed;
-            top: 80px;
+            top: 75px;                  /* 稍微上移 */
             right: 20px;
-            width: 340px;
-            background: rgba(20, 30, 45, 0.95);
+            width: 360px;                /* 稍微加宽以便容纳紧凑内容 */
+            max-width: calc(100vw - 40px); /* 移动端适配 */
+            background: rgba(20, 30, 45, 0.96);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(120, 170, 220, 0.6);
-            border-radius: 16px;
-            padding: 20px 18px;
+            border-radius: 18px;
+            padding: 16px 16px 18px;     /* 内边距统一减小 */
             color: #e0f0ff;
-            font-size: 14px;
+            font-size: 13px;              /* 基础字体稍小 */
             z-index: 1000;
             box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             transition: opacity 0.25s ease, transform 0.25s ease;
@@ -81,101 +84,189 @@
             transform: translateY(0);
             pointer-events: auto;
         }
+
         #params-panel h3 {
-            margin: 0 0 15px 0;
-            font-size: 18px;
+            margin: 0 0 12px 0;          /* 紧凑 */
+            font-size: 17px;
             text-align: center;
             color: #b0d0ff;
             border-bottom: 1px solid #3a506e;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
+            letter-spacing: 0.3px;
         }
+
+        /* 每一行改为flex row，标签和控件同一行 */
         .param-row {
-            margin-bottom: 18px;
-        }
-        .param-row label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #c0d8ff;
-        }
-        .param-control {
             display: flex;
             align-items: center;
+            margin-bottom: 12px;          /* 原18px -> 12px */
             gap: 8px;
         }
-        .param-control input[type=range] {
+
+        .param-row label {
+            width: 110px;                 /* 固定宽度，保证对齐 */
+            flex-shrink: 0;
+            font-weight: 600;
+            color: #c0d8ff;
+            font-size: 13px;
+            word-break: break-word;
+            line-height: 1.3;
+        }
+
+        .param-control {
             flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;                     /* 内部间距紧凑 */
+            min-width: 0;                  /* 防止flex溢出 */
+        }
+
+        .param-control input[type=range] {
+            flex: 1 1 80px;                /* 允许缩小 */
+            min-width: 50px;
             background: transparent;
             accent-color: #7aacdb;
+            height: 6px;                   /* 稍微扁平 */
         }
+
         .param-control input[type=number] {
-            width: 85px;
+            width: 70px;                    /* 原85px -> 70px */
             background: #1e2a3a;
             border: 1px solid #4f7eb3;
-            border-radius: 20px;
+            border-radius: 30px;
             color: white;
-            padding: 6px 10px;
-            font-size: 13px;
+            padding: 5px 6px;               /* 垂直内边距减小 */
+            font-size: 12px;
             font-weight: 500;
             text-align: center;
             outline: none;
+            flex-shrink: 0;                  /* 防止被挤压 */
         }
+
         .param-control input[type=number]:focus {
             border-color: #8bc5ff;
             box-shadow: 0 0 0 2px rgba(139, 197, 255, 0.3);
         }
+
+        /* 实际数量标签 (移到控件内) */
+        .actual-count {
+            font-size: 11px;
+            color: #8bc5ff;
+            white-space: nowrap;
+            background: rgba(0,0,0,0.25);
+            padding: 2px 6px;
+            border-radius: 30px;
+            border: 1px solid #3f6080;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        /* 按钮行：强制一行，更紧凑 */
         .button-row {
             display: flex;
+            flex-wrap: nowrap;               /* 禁止换行 */
+            gap: 6px;
+            margin-top: 16px;                /* 适当减少顶部间距 */
             justify-content: space-between;
-            margin-top: 20px;
-            gap: 10px;
-            flex-wrap: wrap;
         }
+
         .param-btn {
             background: #1e3a5f;
             border: 1px solid #4f7eb3;
             color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-size: 14px;
+            padding: 6px 6px;                /* 水平内边距减小 */
+            border-radius: 40px;
+            font-size: 12px;                  /* 小字 */
             font-weight: bold;
             cursor: pointer;
-            transition: 0.2s;
-            flex: 1;
+            transition: 0.15s;
+            flex: 1 1 0;                      /* 等分剩余宽度 */
             text-align: center;
-            min-width: 80px;
+            white-space: nowrap;               /* 强制不换行 */
+            min-width: 0;                      /* 允许缩小到内容宽度以下 */
+            line-height: 1.4;
         }
+
         .param-btn:hover {
             background: #2b4f7a;
             border-color: #7aacdb;
         }
+
         .param-btn.reset {
             background: #3a2e4a;
             border-color: #8a6fa0;
         }
+
         .param-btn.reset:hover {
             background: #4f3e63;
         }
+
         .param-btn.refresh {
             background: #2a4f4f;
             border-color: #3f8f8f;
         }
+
         .param-btn.refresh:hover {
             background: #3a6f6f;
         }
+
+        /* 隐藏原有note，或保留但精简 */
         #params-panel .note {
-            font-size: 12px;
-            color: #a0b0c0;
-            margin-top: 12px;
-            text-align: center;
-            border-top: 1px dashed #3a506e;
-            padding-top: 10px;
+            display: none;   /* 原note空白，直接隐藏 */
         }
-        .actual-count {
-            color: #8bc5ff;
-            font-weight: normal;
-            margin-left: 8px;
+
+        /* 移动端微调 (保持一致性) */
+        @media (max-width: 480px) {
+            #params-panel {
+                right: 10px;
+                left: 10px;
+                width: auto;
+                max-width: none;
+                padding: 14px;
+            }
+            .param-row label {
+                width: 95px;                /* 手机屏稍窄，标签宽度减小 */
+                font-size: 12px;
+            }
+            .param-control input[type=number] {
+                width: 60px;
+                padding: 4px 4px;
+            }
+            .actual-count {
+                font-size: 10px;
+                padding: 2px 4px;
+            }
+            .button-row {
+                gap: 4px;
+            }
+            .param-btn {
+                font-size: 11px;
+                padding: 5px 4px;
+            }
         }
+
+        /* 更小屏 (小于360) 进一步压缩 */
+        @media (max-width: 360px) {
+            .param-row label {
+                width: 85px;
+            }
+            .param-control {
+                gap: 3px;
+            }
+            .param-control input[type=number] {
+                width: 50px;
+                font-size: 11px;
+            }
+            .actual-count {
+                font-size: 9px;
+                padding: 2px 3px;
+            }
+            .param-btn {
+                font-size: 10px;
+            }
+        }
+
+        /* 爆炸指示器样式不变 */
         #explosion-indicator {
             display: none;
         }
@@ -185,79 +276,82 @@
     <div id="particles-js"></div>
     <div id="explosion-indicator">⚠️ Black hole warning ... imminent explosion ⚠️</div>
 
-    <!-- 参数按钮及面板 (全英文界面) -->
-    <div id="params-toggle" title="Gravity parameters (unbounded input)">⚙️</div>
+    <!-- 参数面板 - 紧凑英文界面，标签精简，控件同一行，三按钮同行 -->
+    <div id="params-toggle" title="Gravity parameters">⚙️</div>
     <div id="params-panel">
-        <h3>⚡ Gravity Parameters (≥0 no upper limit)</h3>
-        
-        <!-- G constant -->
+        <h3>⚡ Gravity parameters (≥0)</h3>
+
+        <!-- G constant (原Gravitational constant G 缩写) -->
         <div class="param-row">
-            <label>Gravitational constant G</label>
+            <label>G constant</label>
             <div class="param-control">
                 <input type="range" id="g-slider" min="0.5" max="20.0" value="6.0" step="0.1">
                 <input type="number" id="g-input" value="6.0" step="0.1">
             </div>
         </div>
-        
-        <!-- Center attraction strength -->
+
+        <!-- Center attraction strength 缩写 -->
         <div class="param-row">
-            <label>Center attraction strength</label>
+            <label>Center attract</label>
             <div class="param-control">
                 <input type="range" id="attract-slider" min="0.0" max="10.0" value="3.0" step="0.1">
                 <input type="number" id="attract-input" value="3.0" step="0.1">
             </div>
         </div>
 
-        <!-- Particle count multiplier (实时生效) -->
+        <!-- 粒子数量：标签简洁，实际数量移到控件行 -->
         <div class="param-row">
-            <label>Particle count multiplier <span class="actual-count" id="actual-count">(Actual: 600)</span></label>
+            <label>Count multiplier</label>
             <div class="param-control">
                 <input type="range" id="factor-slider" min="0.2" max="4.0" value="1.5" step="0.1">
                 <input type="number" id="factor-input" value="1.5" step="0.1">
+                <span class="actual-count" id="actual-count">(Actual: 600)</span>
             </div>
         </div>
 
-        <!-- Collapse threshold m and traction force F -->
+        <!-- 坍缩阈值 m -->
         <div class="param-row">
-            <label>Collapse threshold m (apply traction when particles &lt; m)</label>
+            <label>Threshold m</label>
             <div class="param-control">
                 <input type="range" id="m-slider" min="1" max="20" value="3" step="1">
                 <input type="number" id="m-input" value="3" step="0.1">
             </div>
         </div>
+
+        <!-- 牵引力 F -->
         <div class="param-row">
-            <label>Traction force F</label>
+            <label>Traction F</label>
             <div class="param-control">
                 <input type="range" id="f-slider" min="0.0" max="5.0" value="0.5" step="0.1">
                 <input type="number" id="f-input" value="0.5" step="0.1">
             </div>
         </div>
 
-        <!-- Explosion radius factor r (default 0.5) -->
+        <!-- 爆炸半径因子 r -->
         <div class="param-row">
-            <label>Explosion radius factor r (relative to smaller canvas side)</label>
+            <label>Explosion r</label>
             <div class="param-control">
                 <input type="range" id="r-slider" min="0.0" max="5.0" value="0.5" step="0.1">
                 <input type="number" id="r-input" value="0.5" step="0.1">
             </div>
         </div>
 
-        <!-- Max speed factor (新增) -->
+        <!-- 最大速度因子 -->
         <div class="param-row">
-            <label>Max speed factor (multiplier of base speed)</label>
+            <label>Max speed</label>
             <div class="param-control">
                 <input type="range" id="speedfactor-slider" min="0.5" max="20.0" value="2.7" step="0.1">
                 <input type="number" id="speedfactor-input" value="2.7" step="0.1">
             </div>
         </div>
 
-        <!-- Button group (English) -->
+        <!-- 三个按钮同一行，强制不换行，已通过CSS实现 -->
         <div class="button-row">
             <div class="param-btn" id="apply-params">Apply</div>
             <div class="param-btn refresh" id="refresh-particles">Refresh</div>
             <div class="param-btn reset" id="reset-params">Reset</div>
         </div>
-        <div class="note"></div>
+        <!-- 移除空白note，保持极简 -->
     </div>
 
     <script>
@@ -281,7 +375,7 @@
             };
         }
 
-        // ==================== 引力粒子系统 ====================
+        // ==================== 引力粒子系统 (完全保留原逻辑，未做任何改动) ====================
         class GravityParticleSystem {
             constructor(containerId, baseConfig, initialFactor = 1.5) {
                 this.container = document.getElementById(containerId);
@@ -293,7 +387,7 @@
                 this.ctx = null;
                 this.animationId = null;
                 this.mouse = { x: 0, y: 0, isHovering: false };
-                
+
                 // 可调节参数
                 this.G = 6.0;
                 this.attractStrength = 3.0;
@@ -581,10 +675,10 @@
 
                     const speedFactor = outerSpeedMultiplier * (r / explosionRadius) + 0.3 * (Math.random() - 0.5);
                     const speed = baseSpeed * Math.max(0.2, speedFactor);
-                    
+
                     const normX = Math.cos(angle);
                     const normY = Math.sin(angle);
-                    
+
                     const vx = normX * speed;
                     const vy = normY * speed;
 
@@ -833,7 +927,7 @@
                         const baseLength = p.size * 15 * glowScale;
                         const now = performance.now() / 1000;
                         const baseAngle = now * 0.06;
-                        
+
                         for (let r = 0; r < numRays; r++) {
                             const angle = (r / numRays) * Math.PI * 2 + baseAngle + (Math.random() * 0.2 - 0.1);
                             const dx = Math.cos(angle);
@@ -859,23 +953,20 @@
                         continue;
                     }
 
-                    // 大质量粒子（质量 > 50倍初始平均质量）且非预警状态，增强绘制（黑洞质感，尺寸减半，青蓝紫色调，变淡）
+                    // 大质量粒子（质量 > 50倍初始平均质量）且非预警状态，增强绘制
                     if (p.mass > this.initialAvgMass * 50) {
-                        // 增强光晕半径缩小为原来的0.8倍左右（原为 5.0 + pulse*2.5）
-                        const enhancedGlowR = p.size * (4.0 + pulse * 2.0); // 缩小约0.8倍
+                        const enhancedGlowR = p.size * (4.0 + pulse * 2.0);
                         const enhancedGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, enhancedGlowR);
-                        // 青蓝紫色调渐变，透明度降低（变淡）
-                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.85)');        // 中心黑色稍淡
-                        enhancedGrad.addColorStop(0.3, 'rgba(20,40,80,0.5)');   // 深蓝
-                        enhancedGrad.addColorStop(0.6, 'rgba(60,40,120,0.3)');  // 紫罗兰
-                        enhancedGrad.addColorStop(0.8, 'rgba(120,80,180,0.2)'); // 淡紫
-                        enhancedGrad.addColorStop(1, 'rgba(180,160,255,0)');    // 透明
+                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
+                        enhancedGrad.addColorStop(0.3, 'rgba(20,40,80,0.5)');
+                        enhancedGrad.addColorStop(0.6, 'rgba(60,40,120,0.3)');
+                        enhancedGrad.addColorStop(0.8, 'rgba(120,80,180,0.2)');
+                        enhancedGrad.addColorStop(1, 'rgba(180,160,255,0)');
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, enhancedGlowR, 0, Math.PI * 2);
                         this.ctx.fillStyle = enhancedGrad;
                         this.ctx.fill();
 
-                        // 绘制暗核（事件视界）尺寸减半（原为 p.size*0.9）
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, p.size * 0.45, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'rgba(0,0,0,0.98)';
@@ -999,10 +1090,10 @@
 
             window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.5);
 
-            // ---------- UI 绑定 ----------
+            // ---------- UI 绑定 (完全保留原逻辑，只修改了actual-count的位置但ID未变，依然有效) ----------
             const toggleBtn = document.getElementById('params-toggle');
             const panel = document.getElementById('params-panel');
-            
+
             const gSlider = document.getElementById('g-slider');
             const gInput = document.getElementById('g-input');
             const attractSlider = document.getElementById('attract-slider');
@@ -1133,7 +1224,7 @@
                 gInput.value = '6.0'; attractInput.value = '3.0'; factorInput.value = '1.5';
                 mInput.value = '3'; fInput.value = '0.5'; rInput.value = '0.5';
                 speedfactorInput.value = '2.7';
-                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput(); 
+                syncGFromInput(); syncAttractFromInput(); syncFactorFromInput();
                 syncMFromInput(); syncFFromInput(); syncRFromInput(); syncSpeedFactorFromInput();
                 if (window.particleSystem) {
                     window.particleSystem.updateParams(6.0, 3.0, 3.0, 0.5, 0.5, 2.7);
@@ -1197,7 +1288,7 @@
                         window.particleSystem.destroy();
                         window.particleSystem = new GravityParticleSystem('particles-js', newBaseConfig, currentFactor);
                         window.particleSystem.updateParams(currentG, currentAttract, currentM, currentF, currentR, currentSpeedFactor);
-                        
+
                         updateActualCount();
                     } else {
                         if (window.particleSystem) window.particleSystem.resize();
