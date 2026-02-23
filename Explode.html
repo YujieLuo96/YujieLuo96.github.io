@@ -375,7 +375,7 @@
             };
         }
 
-        // ==================== 引力粒子系统 (完全保留原逻辑，未做任何改动) ====================
+        // ==================== 引力粒子系统 ====================
         class GravityParticleSystem {
             constructor(containerId, baseConfig, initialFactor = 1.5) {
                 this.container = document.getElementById(containerId);
@@ -892,9 +892,9 @@
                         glowScale = this.glowScale;
                     }
 
-                    // 黑洞预警状态（特殊效果）
+                    // 黑洞预警状态（特殊效果）—— 光晕和内核半径已调整为原来的1.5倍（之前修改）
                     if (this.state === 'warning' && i === maxMassIdx) {
-                        const glowR = p.size * (5.0 + pulse * 3.0) * glowScale;
+                        const glowR = p.size * (7.5 + pulse * 4.5) * glowScale;
                         const glowA = 0.18 + pulse * 0.22;
                         const rainbowGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
                         const stops = [
@@ -916,15 +916,15 @@
                         this.ctx.fillStyle = rainbowGrad;
                         this.ctx.fill();
 
-                        // 绘制粒子核心
+                        // 绘制粒子核心 —— 半径增大1.5倍
                         this.ctx.beginPath();
-                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        this.ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
                         this.ctx.fill();
 
-                        // 黑洞预警光线
+                        // 黑洞预警光线 —— 长度增大1.5倍 (原15 -> 22.5)
                         const numRays = 36;
-                        const baseLength = p.size * 15 * glowScale;
+                        const baseLength = p.size * 22.5 * glowScale;
                         const now = performance.now() / 1000;
                         const baseAngle = now * 0.06;
 
@@ -953,22 +953,33 @@
                         continue;
                     }
 
-                    // 大质量粒子（质量 > 50倍初始平均质量）且非预警状态，增强绘制
+                    // ========== 大质量粒子（质量 > 50倍初始平均质量）且非预警状态 ==========
+                    // 修改：光晕和内核半径放大至1.5倍，颜色以蓝、紫、青为主，更深融入背景
                     if (p.mass > this.initialAvgMass * 50) {
-                        const enhancedGlowR = p.size * (4.0 + pulse * 2.0);
+                        // 降低震动频率：使用慢速脉冲 (频率降低为原来的0.3)
+                        const slowPulse = 0.5 + 0.5 * Math.sin(p._phase * 0.3);
+                        // 光晕半径放大1.5倍: 原系数(4.0 + slowPulse * 2.0) -> (6.0 + slowPulse * 3.0)
+                        const enhancedGlowR = p.size * (6.0 + slowPulse * 3.0);
+                        // 内核半径放大1.5倍: 原0.45 -> 0.675
+                        const coreR = p.size * 0.675;
+                        // 外圈光晕以蓝、紫、青为主，色调稍深，透明度渐变自然
                         const enhancedGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, enhancedGlowR);
-                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.85)');
-                        enhancedGrad.addColorStop(0.3, 'rgba(20,40,80,0.5)');
-                        enhancedGrad.addColorStop(0.6, 'rgba(60,40,120,0.3)');
-                        enhancedGrad.addColorStop(0.8, 'rgba(120,80,180,0.2)');
-                        enhancedGrad.addColorStop(1, 'rgba(180,160,255,0)');
+                        enhancedGrad.addColorStop(0, 'rgba(0,0,0,0.95)');          // 核心深黑
+                        enhancedGrad.addColorStop(0.1, 'rgba(25,20,60,0.7)');     // 深紫
+                        enhancedGrad.addColorStop(0.2, 'rgba(20,30,80,0.6)');     // 深蓝紫
+                        enhancedGrad.addColorStop(0.3, 'rgba(10,40,90,0.5)');     // 深蓝
+                        enhancedGrad.addColorStop(0.4, 'rgba(0,50,100,0.4)');     // 靛青
+                        enhancedGrad.addColorStop(0.5, 'rgba(20,60,110,0.3)');    // 蓝青
+                        enhancedGrad.addColorStop(0.6, 'rgba(40,70,120,0.2)');    // 亮蓝
+                        enhancedGrad.addColorStop(0.8, 'rgba(60,80,130,0.1)');    // 淡蓝紫
+                        enhancedGrad.addColorStop(1, 'rgba(80,100,150,0)');       // 完全透明
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, enhancedGlowR, 0, Math.PI * 2);
                         this.ctx.fillStyle = enhancedGrad;
                         this.ctx.fill();
 
                         this.ctx.beginPath();
-                        this.ctx.arc(p.x, p.y, p.size * 0.45, 0, Math.PI * 2);
+                        this.ctx.arc(p.x, p.y, coreR, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'rgba(0,0,0,0.98)';
                         this.ctx.fill();
 
@@ -1090,7 +1101,7 @@
 
             window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.5);
 
-            // ---------- UI 绑定 (完全保留原逻辑，只修改了actual-count的位置但ID未变，依然有效) ----------
+            // ---------- UI 绑定 (完全保留原逻辑) ----------
             const toggleBtn = document.getElementById('params-toggle');
             const panel = document.getElementById('params-panel');
 
