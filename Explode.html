@@ -356,7 +356,8 @@
             return { hue: hue, sat: sat, lit: lit };
         }
 
-        function randJitter() { return (Math.random() - 0.5) * 28; }
+        // 随机抖动调整为 ±6 (原 ±14)
+        function randJitter() { return (Math.random() - 0.5) * 12; }
 
         // ==================== 获取屏幕类别 ====================
         function getScreenClass() {
