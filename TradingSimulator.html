@@ -515,10 +515,58 @@
     }
     .settings-panel.open { display: flex; }
 
+    /* ── CRYPTO mode button ────────────────────── */
+    .crypto-mode-btn {
+      background: rgba(255,170,0,0.06); border: 1px solid rgba(255,170,0,0.3);
+      border-bottom: 2px solid rgba(255,170,0,0.45);
+      color: rgba(255,170,0,0.65); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; padding: 3px 12px; cursor: pointer; border-radius: 2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.15s;
+      letter-spacing: 0.1em; white-space: nowrap;
+    }
+    .crypto-mode-btn:hover { color: #ffaa00; background: rgba(255,170,0,0.12); border-color: rgba(255,170,0,0.55); }
+    .crypto-mode-btn.active {
+      background: rgba(255,170,0,0.15); border-color: #ffaa00;
+      border-bottom-color: #ffaa00; color: #ffaa00;
+      box-shadow: 0 2px 14px rgba(255,170,0,0.3), 0 0 24px rgba(255,170,0,0.1);
+      animation: cryptoPulse 2s infinite;
+    }
+    @keyframes cryptoPulse {
+      0%,100% { box-shadow: 0 2px 14px rgba(255,170,0,0.3), 0 0 24px rgba(255,170,0,0.1); }
+      50%      { box-shadow: 0 2px 20px rgba(255,170,0,0.5), 0 0 36px rgba(255,170,0,0.2); }
+    }
+    /* CRYPTO symbol picker panel */
+    .crypto-panel {
+      width: 100%; background: rgba(255,170,0,0.04);
+      border: 1px solid rgba(255,170,0,0.18); border-radius: 3px;
+      padding: 10px 14px; display: none; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .crypto-panel.open { display: flex; }
+    .crypto-panel-label { font-size: 0.58rem; color: rgba(255,170,0,0.55); letter-spacing: 0.2em; text-transform: uppercase; margin-right: 4px; }
+    .crypto-sym-btn {
+      background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.22);
+      border-bottom: 2px solid rgba(255,170,0,0.35);
+      color: rgba(255,170,0,0.7); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; padding: 3px 11px; cursor: pointer; border-radius: 2px;
+      transition: all 0.12s; letter-spacing: 0.08em;
+    }
+    .crypto-sym-btn:hover { background: rgba(255,170,0,0.12); color: #ffaa00; border-color: rgba(255,170,0,0.55); }
+    .crypto-sym-btn.active { background: rgba(255,170,0,0.18); border-color: #ffaa00; color: #ffaa00; box-shadow: 0 0 10px rgba(255,170,0,0.25); }
+    .crypto-ws-status {
+      font-size: 0.6rem; letter-spacing: 0.12em; margin-left: auto;
+      padding: 2px 8px; border-radius: 2px; border: 1px solid;
+    }
+    .crypto-ws-status.connecting { color: rgba(245,230,66,0.8); border-color: rgba(245,230,66,0.4); }
+    .crypto-ws-status.live       { color: rgba(57,255,20,0.9);  border-color: rgba(57,255,20,0.5);  animation: liveBlink 1.5s infinite; }
+    .crypto-ws-status.error      { color: rgba(255,45,120,0.9); border-color: rgba(255,45,120,0.5); }
+    @keyframes liveBlink {
+      0%,100% { opacity:1; } 50% { opacity:0.5; }
+    }
+
     /* ── Touch: eliminate 300ms delay ─────────── */
     .cyber-button, .mode-btn, .close-order, #btn-home,
     .ema-check, .rainbow-check, .detailed-check,
-    .settings-btn,
+    .settings-btn, .crypto-mode-btn, .crypto-sym-btn,
     input[type=range], input[type=number] {
       touch-action: manipulation;
     }
@@ -639,6 +687,7 @@
     <div class="title" data-text="CYBER TRADER">CYBER TRADER</div>
     <div class="title-sep"></div>
     <div class="title-tag">MULTI-ORDER // 100x // STOCH-VOL + REGIME</div>
+    <button class="crypto-mode-btn" id="btn-crypto-mode">⬡ CRYPTO</button>
   </div>
 
   <!-- HUD 6 cells -->
@@ -705,6 +754,20 @@
       <div class="slider-label">CHART SPEED (N=<span id="sim-n-val">4</span>)</div>
       <input type="range" id="sim-n-slider" min="1" max="8" step="1" value="4">
     </div>
+  </div>
+
+  <!-- Crypto symbol picker -->
+  <div class="crypto-panel" id="crypto-panel">
+    <span class="crypto-panel-label">⬡ LIVE CRYPTO</span>
+    <button class="crypto-sym-btn active" data-sym="btcusdt">BTC/USDT</button>
+    <button class="crypto-sym-btn" data-sym="ethusdt">ETH/USDT</button>
+    <button class="crypto-sym-btn" data-sym="bnbusdt">BNB/USDT</button>
+    <button class="crypto-sym-btn" data-sym="solusdt">SOL/USDT</button>
+    <button class="crypto-sym-btn" data-sym="xrpusdt">XRP/USDT</button>
+    <button class="crypto-sym-btn" data-sym="dogeusdt">DOGE/USDT</button>
+    <button class="crypto-sym-btn" data-sym="adausdt">ADA/USDT</button>
+    <button class="crypto-sym-btn" data-sym="avaxusdt">AVAX/USDT</button>
+    <span class="crypto-ws-status connecting" id="crypto-ws-status">⬡ CONNECTING</span>
   </div>
 
   <!-- Control panel -->
@@ -877,10 +940,14 @@
   let rainDrops  = [];
   function initBg() {
     bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
-    rainDrops = Array.from({length:50}, () => ({
-      x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height,
-      speed: 1.4+Math.random()*3.5, len: 8+Math.random()*22, alpha: 0.015+Math.random()*0.055
-    }));
+    rainDrops = Array.from({length:50}, () => {
+      const alpha = 0.015 + Math.random()*0.055;
+      return {
+        x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height,
+        speed: 1.4+Math.random()*3.5, len: 8+Math.random()*22,
+        strokeStyle: `rgba(0,245,255,${alpha.toFixed(3)})`
+      };
+    });
   }
   let bgRafId = 0;
   function drawBg() {
@@ -888,12 +955,12 @@
     const BW=bgCanvas.width,BH=bgCanvas.height;
     bgCtx.strokeStyle='rgba(0,245,255,0.025)'; bgCtx.lineWidth=0.5;
     for(let i=0;i<=20;i++){const x=(i/20)*BW;bgCtx.beginPath();bgCtx.moveTo(x,BH);bgCtx.lineTo(BW/2+(i-10)*8,BH*0.7);bgCtx.stroke();}
-    rainDrops.forEach(d=>{
+    for(let i=0;i<rainDrops.length;i++){
+      const d=rainDrops[i];
       d.y+=d.speed; if(d.y-d.len>BH){d.y=-d.len;d.x=Math.random()*BW;}
-      const g=bgCtx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
-      g.addColorStop(0,'transparent'); g.addColorStop(1,`rgba(0,245,255,${d.alpha})`);
-      bgCtx.strokeStyle=g; bgCtx.beginPath(); bgCtx.moveTo(d.x,d.y-d.len); bgCtx.lineTo(d.x,d.y); bgCtx.stroke();
-    });
+      bgCtx.strokeStyle=d.strokeStyle;
+      bgCtx.beginPath(); bgCtx.moveTo(d.x,d.y-d.len); bgCtx.lineTo(d.x,d.y); bgCtx.stroke();
+    }
     bgRafId = requestAnimationFrame(drawBg);
   }
   initBg(); drawBg();
@@ -1020,6 +1087,55 @@
   const cardRefs    = new Map(); // id → { card, pEl, nowEl, barEl, eqEl }
   let _histRenderedLen = 0;      // renderHistory 已渲染的行数（增量渲染用）
 
+  /* ── P8：SUMMARY 增量统计状态 ──────────────────── */
+  // 交易统计（每笔平仓时增量更新）
+  let _sm_n=0, _sm_wins=0, _sm_sumWinPnl=0, _sm_sumLossPnl=0;
+  let _sm_best=-Infinity, _sm_worst=Infinity, _sm_totalFees=0;
+  let _sm_maxConsecLoss=0, _sm_curConsecLoss=0;
+  let _sm_maxConsecWin=0,  _sm_curConsecWin=0;
+  // 净资产统计（每 tick 增量更新）
+  let _sm_peak=0, _sm_mdd=0, _sm_mddAmt=0;
+  let _sm_sumR=0, _sm_sumR2=0, _sm_nR=0;
+
+  function _smReset() {
+    _sm_n=0; _sm_wins=0; _sm_sumWinPnl=0; _sm_sumLossPnl=0;
+    _sm_best=-Infinity; _sm_worst=Infinity; _sm_totalFees=0;
+    _sm_maxConsecLoss=0; _sm_curConsecLoss=0;
+    _sm_maxConsecWin=0;  _sm_curConsecWin=0;
+    _sm_peak=0; _sm_mdd=0; _sm_mddAmt=0;
+    _sm_sumR=0; _sm_sumR2=0; _sm_nR=0;
+  }
+
+  /* 替代 tradeHistory.unshift，同步更新增量统计 */
+  function _pushTrade(rec) {
+    tradeHistory.unshift(rec);
+    const p = rec.netPnl;
+    _sm_n++;
+    _sm_totalFees += rec.openFee + rec.closeFee;
+    if (p > 0) {
+      _sm_wins++; _sm_sumWinPnl += p;
+      _sm_curConsecWin++; _sm_curConsecLoss = 0;
+      if (_sm_curConsecWin  > _sm_maxConsecWin)  _sm_maxConsecWin  = _sm_curConsecWin;
+    } else {
+      _sm_sumLossPnl += p;
+      _sm_curConsecLoss++; _sm_curConsecWin = 0;
+      if (_sm_curConsecLoss > _sm_maxConsecLoss) _sm_maxConsecLoss = _sm_curConsecLoss;
+    }
+    if (p > _sm_best)  _sm_best  = p;
+    if (p < _sm_worst) _sm_worst = p;
+  }
+
+  /* 每 tick 在 push netAssetHistory 后调用 */
+  function _recordNetAssetStat(newVal, prevVal) {
+    if (newVal > _sm_peak) _sm_peak = newVal;
+    const dd = _sm_peak > 0 ? (_sm_peak - newVal) / _sm_peak : 0;
+    if (dd > _sm_mdd) { _sm_mdd = dd; _sm_mddAmt = _sm_peak - newVal; }
+    if (prevVal > 0) {
+      const r = (newVal - prevVal) / prevVal;
+      _sm_sumR += r; _sm_sumR2 += r * r; _sm_nR++;
+    }
+  }
+
   /* ═══════════════════════════════════════════
      账户
   ═══════════════════════════════════════════ */
@@ -1113,13 +1229,25 @@
   let showDetailedEMA = false;
   let showRainbowEMA  = false;
 
+  // ── CRYPTO live mode ──────────────────────
+  let _cryptoMode        = false;
+  let _cryptoWS          = null;
+  let _cryptoSymbol      = 'btcusdt';
+  let _cryptoLatestPrice = null;  // latest price from WS; null = no data yet
+  let _cryptoQtyBuffer   = 0;     // accumulated trade qty between ticks
+
   /* ═══════════════════════════════════════════
      数学工具
   ═══════════════════════════════════════════ */
+  let _nrSpare = 0, _nrHasSpare = false;
   function normalRandom() {
-    let u=0,v=0;
-    while(u===0)u=Math.random(); while(v===0)v=Math.random();
-    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+    if (_nrHasSpare) { _nrHasSpare = false; return _nrSpare; }
+    let u=0, v=0;
+    while(u===0) u=Math.random(); while(v===0) v=Math.random();
+    const mag = Math.sqrt(-2*Math.log(u));
+    _nrSpare = mag * Math.sin(2*Math.PI*v);
+    _nrHasSpare = true;
+    return mag * Math.cos(2*Math.PI*v);
   }
 
   /* ═══════════════════════════════════════════
@@ -1164,6 +1292,43 @@
      价格步进（每 200ms）
   ═══════════════════════════════════════════ */
   function stepPrice() {
+    // ── CRYPTO mode: use latest WS price instead of generating stochastic ──
+    if (_cryptoMode) {
+      if (_cryptoLatestPrice === null) return;  // no data yet, wait
+      totalTicks++;
+      prevTickPrice = currentPrice;
+      lastTickTime  = performance.now();
+      currentPrice  = _cryptoLatestPrice;
+      if (prevTickPrice <= 0) prevTickPrice = currentPrice; // first tick: no jump
+
+      const qtySnap     = _cryptoQtyBuffer;
+      _cryptoQtyBuffer  = 0;
+      updateSREMA(currentPrice);
+
+      // Data recording (same as sim path below)
+      const relVol = qtySnap > 0 ? Math.min(4, qtySnap) : 0.6 + 0.4 * Math.random();
+      volumeHistory.push(relVol);
+      const open = ohlc.length > 0 ? ohlc[ohlc.length-1].c : currentPrice;
+      ohlc.push({o:open, h:Math.max(open,currentPrice), l:Math.min(open,currentPrice), c:currentPrice});
+      priceHistory.push(currentPrice);
+      if (ohlc.length > MAX_HISTORY) {
+        ohlc.shift(); priceHistory.shift(); volumeHistory.shift();
+        let _w=0;
+        for(let _i=0;_i<trades.length;_i++){trades[_i].index--;if(trades[_i].index>=0)trades[_w++]=trades[_i];}
+        trades.length=_w;
+      }
+      updateEMACache();
+      checkSLTP();
+      refreshUI();
+      const snapEq  = orders.reduce((s,o)=>s+orderEquity(o),0);
+      const _naNew  = cash + snapEq;
+      const _naPrev = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length-1] : 0;
+      netAssetHistory.push(_naNew);
+      if(netAssetHistory.length > 2000) netAssetHistory.shift();
+      _recordNetAssetStat(_naNew, _naPrev);
+      return;
+    }
+
     totalTicks++;
     prevTickPrice = currentPrice;        // 保存上帧价格，用于插值
     lastTickTime  = performance.now();
@@ -1262,9 +1427,12 @@
     checkSLTP();
     refreshUI();
     // 净资产快照（供 SUMMARY 图表使用）
-    const snapEq = orders.reduce((s,o)=>s+orderEquity(o),0);
-    netAssetHistory.push(cash + snapEq);
+    const snapEq  = orders.reduce((s,o)=>s+orderEquity(o),0);
+    const _naNew  = cash + snapEq;
+    const _naPrev = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length-1] : 0;
+    netAssetHistory.push(_naNew);
     if(netAssetHistory.length > 2000) netAssetHistory.shift();
+    _recordNetAssetStat(_naNew, _naPrev);  // O(1) 增量更新 MDD / Sharpe
     // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
   }
 
@@ -1321,7 +1489,7 @@
       const liqFee=calcFee(o.shares, currentPrice);
       const liqGross=orderUnrealized(o);
       cash+=Math.max(0,o._equity)-liqFee; realizedPnl+=Math.max(0,o._equity)-o.margin-liqFee;
-      tradeHistory.unshift({
+      _pushTrade({
         id:o.id, dir:o.dir, shares:o.shares, lev:o.lev,
         openPrice:o.openPrice, closePrice:currentPrice,
         grossPnl:liqGross, openFee:o.openFee||0, closeFee:liqFee,
@@ -1354,14 +1522,20 @@
     pnlEl.style.color   = totalPnl>=0?'var(--green)':'var(--pink)';
     pnlEl.style.textShadow = totalPnl>=0?'0 0 10px rgba(57,255,20,0.6)':'0 0 10px rgba(255,45,120,0.6)';
     accLevEl.textContent = accLev.toFixed(2)+'x';
-    spotEl.textContent   = currentPrice.toFixed(2);
+    spotEl.textContent   = currentPrice >= 1000 ? currentPrice.toFixed(1) : currentPrice.toFixed(2);
     cashEl.textContent   = Math.max(0, cash+unrealized).toFixed(2); // 等价于 getFreeCash()
 
-    // 情景 HUD
-    const reg = REGIMES[regimeIdx];
-    regimeEl.textContent   = reg.name;
-    regimeEl.style.color   = reg.color;
-    regimeEl.style.textShadow = `0 0 10px ${reg.color}99`;
+    // 情景 HUD (或 CRYPTO symbol)
+    if (_cryptoMode) {
+      regimeEl.textContent      = _cryptoSymbol.replace('usdt','').toUpperCase();
+      regimeEl.style.color      = '#ffaa00';
+      regimeEl.style.textShadow = '0 0 10px rgba(255,170,0,0.7)';
+    } else {
+      const reg = REGIMES[regimeIdx];
+      regimeEl.textContent   = reg.name;
+      regimeEl.style.color   = reg.color;
+      regimeEl.style.textShadow = `0 0 10px ${reg.color}99`;
+    }
 
     if(netAsset<=0.001&&!liquidated){
       // 路径C：orders=[] 直接清空，须先清理所有卡片和 refs
@@ -1465,7 +1639,7 @@
     const o=orders[idx], unreal=orderUnrealized(o);
     const closeFee=calcFee(o.shares, currentPrice);
     cash+=Math.max(0,orderEquity(o))-closeFee; realizedPnl+=unreal-closeFee;
-    tradeHistory.unshift({
+    _pushTrade({
       id: o.id, dir: o.dir, shares: o.shares, lev: o.lev,
       openPrice: o.openPrice, closePrice: currentPrice,
       grossPnl: unreal, openFee: o.openFee||0, closeFee,
@@ -1542,13 +1716,13 @@
     swanTOffset = 1 + Math.floor(Math.random() * 2999);
     srEmaValues.clear(); srPrevSide.clear(); srBreakDrift=0;
     ordersDiv.innerHTML=''; cardRefs.clear();   // 清理所有卡片和缓存 refs
-    tradeHistory=[]; netAssetHistory=[];
+    tradeHistory=[]; netAssetHistory=[]; _smReset();
     historyList.innerHTML=''; historySummary.textContent='';
     _histRenderedLen=0;                        // 重置历史行计数器
     historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
     summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
     liqIndicator.style.display='none';
-    initPrice(); emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear(); updateEMACache();
+    initPrice(); emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear(); _aggCache=null; updateEMACache();
     trades=[]; refreshUI();
     triggerFlash();
   }
@@ -1593,6 +1767,18 @@
   const aggEmaCache=new Map();
   const aggEmaScratch=new Map(); // 复用输出 buffer，避免 60fps GC 分配
   const emaCacheTick=new Map();  // period → 上次更新时的 totalTicks，用于检测是否跨 tick 失效
+
+  // ── P1：聚合 K 线缓存 ─────────────────────────────────────────────
+  // 稳定段（除末尾 partial candle 外的全部）每 tick 重建一次（O(MAX_HISTORY)）
+  // 帧内（60fps）仅 O(1) 更新末尾 partial candle 的 h/l/c
+  let _aggCache = null;
+  // {
+  //   totalTicks, sz, len  — 失效检测 key
+  //   stableCount          — 稳定 K 线数量（= ag.length - 1）
+  //   ag[]   / vol[]  / closes[]  — 输出数组（跨帧复用，partial 槽在末尾）
+  //   partialBaseH / partialBaseL — partial 组内 ohlc 的最高/最低（不含 animP）
+  //   partialOpen         — partial 组第一根 ohlc 的 open
+  // }
 
   function getAggEMA(closes, period) {
     const totalLen = closes.length;
@@ -1676,6 +1862,89 @@
   /* 聚合 OHLC / volume / 收盘价到指定 tick 数量
      从右端划分：partialSize 由 totalTicks % sz 决定，与数组长度无关
      → 每 sz 个数据点才生成一根新 K 线，与 MAX_HISTORY 滑窗无关 */
+  /* _rebuildAggCache：每 tick 最多调用一次（O(MAX_HISTORY)）
+     将稳定段聚合结果写入 _aggCache，同时预算 partial 组的 hi/lo/vol/open，
+     供 getAggregated 每帧 O(1) 完成末尾 partial candle 的拼接。
+     分组逻辑与原 getAggregated 完全等价（逐行可对照验证）。 */
+  function _rebuildAggCache() {
+    const sz  = candleSize;
+    const len = ohlc.length;
+
+    // sz <= 1 时 getAggregated 走早返回路径，不会调用本函数
+    // len === 0 时也不调用，故此处无需再判断
+
+    // ── 与原逻辑相同：从右向左确定分组边界 ──────────────────────────
+    const partialSize = ((totalTicks - 1) % sz) + 1;
+
+    // partial 组（最右侧，未完成）
+    const pEnd   = len;
+    const pStart = Math.max(0, pEnd - partialSize);
+
+    // 稳定组：右向左收集，然后 reverse 成旧→新（与原 groups.reverse() 等价）
+    const sStarts = [];
+    const sEnds   = [];
+    let pos = pEnd - partialSize;   // = pStart（当 pStart > 0 时），等价于原 pos -= partialSize
+    while (pos > 0) {
+      const start = Math.max(0, pos - sz);
+      sStarts.push(start);
+      sEnds.push(pos);
+      pos = start;
+    }
+    sStarts.reverse();  // 旧 → 新（与原 groups.reverse() 等价）
+    sEnds.reverse();
+
+    // ── 构建稳定段输出数组 ────────────────────────────────────────────
+    const ag     = [];
+    const vol    = [];
+    const closes = [];
+
+    for (let gi = 0; gi < sStarts.length; gi++) {
+      const gStart = sStarts[gi];
+      const gEnd   = sEnds[gi];
+      if (gStart >= gEnd) continue;   // 与原 `if (g.start >= g.end) continue` 等价
+      let hi = -Infinity, lo = Infinity, vSum = 0;
+      for (let j = gStart; j < gEnd; j++) {
+        const c = ohlc[j];
+        if (c.h > hi) hi = c.h;
+        if (c.l < lo) lo = c.l;
+        vSum += volumeHistory[j] || 0;
+      }
+      ag.push({ o: ohlc[gStart].o, h: hi, l: lo, c: ohlc[gEnd - 1].c });
+      vol.push(vSum / (gEnd - gStart));
+      closes.push(ohlc[gEnd - 1].c);
+    }
+
+    // ── partial 组：预算 baseH/baseL/vol/open，animP 留到帧内接入 ────
+    let partialBaseH = -Infinity, partialBaseL = Infinity, partialVSum = 0;
+    for (let j = pStart; j < pEnd; j++) {
+      const c = ohlc[j];
+      if (c.h > partialBaseH) partialBaseH = c.h;
+      if (c.l < partialBaseL) partialBaseL = c.l;
+      partialVSum += volumeHistory[j] || 0;
+    }
+    const partialVolAvg  = partialVSum / (pEnd - pStart);   // pEnd > pStart 已由 len>0 保证
+    const partialOpen    = ohlc[pStart].o;
+    const stableCount    = ag.length;
+
+    // partial 槽：占位对象，h/l/c 在每帧由 getAggregated 填写
+    ag.push({ o: partialOpen, h: 0, l: 0, c: 0 });
+    vol.push(partialVolAvg);
+    closes.push(0);  // placeholder，每帧更新为 animP
+
+    _aggCache = {
+      totalTicks, sz, len,
+      stableCount,
+      ag, vol, closes,
+      partialBaseH,
+      partialBaseL,
+      partialOpen,
+    };
+  }
+
+  /* getAggregated：与原函数接口、返回值语义完全相同。
+     cache hit 时帧内工作量 = O(1)（只写 partial 槽的 5 个字段）。
+     cache miss（每 tick 第一帧 / TF 切换 / reset）时调用 _rebuildAggCache，
+     耗时与原函数单次调用完全相同（O(MAX_HISTORY)），但每 tick 只发生一次。 */
   function getAggregated(animP) {
     const sz = candleSize;
     if (sz <= 1) return { ag: ohlc, vol: volumeHistory, closes: priceHistory };
@@ -1683,38 +1952,30 @@
     const len = ohlc.length;
     if (len === 0) return { ag: [], vol: [], closes: [] };
 
-    // 当前最右侧（未完成）K 线已积累多少数据点
-    const partialSize = ((totalTicks - 1) % sz) + 1;
-
-    // 从右向左构建分组，最右组为 partial
-    const groups = [];
-    let pos = len;
-    groups.push({ start: Math.max(0, pos - partialSize), end: pos, isLast: true });
-    pos -= partialSize;
-    while (pos > 0) {
-      const start = Math.max(0, pos - sz);
-      groups.push({ start, end: pos, isLast: false });
-      pos = start;
+    // 缓存失效条件：totalTicks / candleSize / ohlc 长度任一变化
+    if (_aggCache === null
+        || _aggCache.totalTicks !== totalTicks
+        || _aggCache.sz         !== sz
+        || _aggCache.len        !== len) {
+      _rebuildAggCache();
+      // 极端情况：rebuild 后仍为 null（理论上不会发生，加防御）
+      if (_aggCache === null) return { ag: [], vol: [], closes: [] };
     }
-    groups.reverse(); // 旧 → 新
 
-    const ag = [], vol = [], closes = [];
-    for (const g of groups) {
-      if (g.start >= g.end) continue;
-      let hi = -Infinity, lo = Infinity, vSum = 0;
-      for (let j = g.start; j < g.end; j++) {
-        const c = ohlc[j];
-        if (c.h > hi) hi = c.h;
-        if (c.l < lo) lo = c.l;
-        vSum += volumeHistory[j] || 0;
-      }
-      const closePrice = g.isLast ? animP : ohlc[g.end - 1].c;
-      if (g.isLast) { if (animP > hi) hi = animP; if (animP < lo) lo = animP; }
-      ag.push({ o: ohlc[g.start].o, h: hi, l: lo, c: closePrice });
-      vol.push(vSum / (g.end - g.start));
-      closes.push(closePrice);
-    }
-    return { ag, vol, closes };
+    // ── O(1)：将 animP 融入末尾 partial candle ───────────────────────
+    const sc          = _aggCache.stableCount;
+    const partCandle  = _aggCache.ag[sc];
+    const bH          = _aggCache.partialBaseH;
+    const bL          = _aggCache.partialBaseL;
+
+    partCandle.o      = _aggCache.partialOpen;
+    partCandle.h      = bH > animP ? bH : animP;   // max(baseH, animP)
+    partCandle.l      = bL < animP ? bL : animP;   // min(baseL, animP)
+    partCandle.c      = animP;
+    _aggCache.closes[sc] = animP;
+    // vol[sc] 在 _rebuildAggCache 时已设置，无需每帧更新
+
+    return { ag: _aggCache.ag, vol: _aggCache.vol, closes: _aggCache.closes };
   }
 
   /* EMA on arbitrary close-price array (not cache) — uses Float64Array, no fill() */
@@ -1849,23 +2110,26 @@
       ctx.fillText('$'+price.toFixed(2),4,mapY(price)-2);
     }
 
-    // ── SL/TP 水平线 ──
-    ctx.setLineDash([4,4]); ctx.lineWidth=0.8;
-    orders.forEach(o=>{
-      if(o.sl!==null&&o.sl>minP&&o.sl<maxP){
-        const y=mapY(o.sl); ctx.strokeStyle='rgba(255,68,68,0.5)';
-        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
-        ctx.fillStyle='#ff5555';ctx.font='9px "Share Tech Mono"';
-        ctx.fillText(`SL #${o.id}`,CW-55,y-2);
-      }
-      if(o.tp!==null&&o.tp>minP&&o.tp<maxP){
-        const y=mapY(o.tp); ctx.strokeStyle='rgba(68,255,136,0.5)';
-        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
-        ctx.fillStyle='#44ff88';ctx.font='9px "Share Tech Mono"';
-        ctx.fillText(`TP #${o.id}`,CW-55,y-2);
-      }
-    });
-    ctx.setLineDash([]);
+    // ── SL/TP 水平线（只在有 SL/TP 订单时才切换 lineDash）──
+    const _hasSLTP = orders.some(o=>o.sl!==null||o.tp!==null);
+    if (_hasSLTP) {
+      ctx.setLineDash([4,4]); ctx.lineWidth=0.8;
+      orders.forEach(o=>{
+        if(o.sl!==null&&o.sl>minP&&o.sl<maxP){
+          const y=mapY(o.sl); ctx.strokeStyle='rgba(255,68,68,0.5)';
+          ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
+          ctx.fillStyle='#ff5555';ctx.font='9px "Share Tech Mono"';
+          ctx.fillText(`SL #${o.id}`,CW-55,y-2);
+        }
+        if(o.tp!==null&&o.tp>minP&&o.tp<maxP){
+          const y=mapY(o.tp); ctx.strokeStyle='rgba(68,255,136,0.5)';
+          ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
+          ctx.fillStyle='#44ff88';ctx.font='9px "Share Tech Mono"';
+          ctx.fillText(`TP #${o.id}`,CW-55,y-2);
+        }
+      });
+      ctx.setLineDash([]);
+    }
 
     // ── 开仓标记（转换到聚合 index）──
     ctx.font='bold 12px "Orbitron"';
@@ -1929,7 +2193,7 @@
     btn.addEventListener('click',()=>{
       _activeTfMult=parseInt(btn.dataset.tf);
       candleSize=_activeTfMult * simN;
-      aggEmaCache.clear();
+      aggEmaCache.clear(); _aggCache=null;
       document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
     });
@@ -2004,9 +2268,7 @@
   const naCtx        = naCanvas.getContext('2d');
 
   function drawNetAssetChart() {
-    const naCanvas = document.getElementById('net-asset-canvas');
-    if (!naCanvas) return;
-    const naCtx = naCanvas.getContext('2d');
+    // 使用闭包中已有的 naCanvas / naCtx，无需重复 getElementById/getContext
     const data = netAssetHistory;
     const W = naCanvas.offsetWidth || 600;
     const H = 110;
@@ -2023,10 +2285,16 @@
       return;
     }
 
-    const minV = Math.min(...data) * 0.998;
-    const maxV = Math.max(...data) * 1.002;
+    // 用循环代替 Math.min/max(...data)，避免大数组 spread 栈压力
+    let minV = data[0], maxV = data[0];
+    for (let i = 1; i < data.length; i++) {
+      if (data[i] < minV) minV = data[i];
+      if (data[i] > maxV) maxV = data[i];
+    }
+    minV *= 0.998; maxV *= 1.002;
     const range = maxV - minV || 1;
-    const mapX = i => (i / (data.length - 1)) * W;
+    const dLen  = data.length;
+    const mapX = i => (i / (dLen - 1)) * W;
     const mapY = v => H - 6 - ((v - minV) / range) * (H - 12);
 
     // background
@@ -2042,15 +2310,15 @@
     naCtx.setLineDash([]);
 
     // gradient fill
-    const last = data[data.length - 1];
+    const last = data[dLen - 1];
     const isUp = last >= initialCash;
     const grad = naCtx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, isUp ? 'rgba(57,255,20,0.18)' : 'rgba(255,45,120,0.18)');
     grad.addColorStop(1, 'rgba(0,0,0,0)');
     naCtx.beginPath();
     naCtx.moveTo(mapX(0), H);
-    data.forEach((v, i) => naCtx.lineTo(mapX(i), mapY(v)));
-    naCtx.lineTo(mapX(data.length - 1), H);
+    for (let i = 0; i < dLen; i++) naCtx.lineTo(mapX(i), mapY(data[i]));
+    naCtx.lineTo(mapX(dLen - 1), H);
     naCtx.closePath();
     naCtx.fillStyle = grad;
     naCtx.fill();
@@ -2059,7 +2327,8 @@
     naCtx.beginPath();
     naCtx.strokeStyle = isUp ? '#39ff14' : '#ff2d78';
     naCtx.lineWidth = 1.5;
-    data.forEach((v, i) => i === 0 ? naCtx.moveTo(mapX(i), mapY(v)) : naCtx.lineTo(mapX(i), mapY(v)));
+    naCtx.moveTo(mapX(0), mapY(data[0]));
+    for (let i = 1; i < dLen; i++) naCtx.lineTo(mapX(i), mapY(data[i]));
     naCtx.stroke();
 
     // labels
@@ -2231,100 +2500,64 @@
   }
 
   function renderSummary() {
-    const summaryPanel = document.getElementById('summary-panel');
     if (!summaryPanel || !summaryPanel.classList.contains('open')) return;
     drawNetAssetChart();
 
+    // ── 净资产读取（O(1)）────────────────────────────────────────────
     const cur = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length - 1] : initialCash;
     const totalReturn = cur - initialCash;
     const returnPct   = initialCash > 0 ? (totalReturn / initialCash * 100) : 0;
 
-    // ── 单次遍历 netAssetHistory：MDD + Sharpe ────────────────────────
-    let peak = netAssetHistory[0] || initialCash;
-    let mdd = 0, mddAmt = 0;
-    let sumR = 0, sumR2 = 0, nR = 0;
-    for (let i = 1; i < netAssetHistory.length; i++) {
-      const prev = netAssetHistory[i - 1];
-      const v    = netAssetHistory[i];
-      if (v > peak) peak = v;
-      const dd = peak > 0 ? (peak - v) / peak : 0;
-      if (dd > mdd) { mdd = dd; mddAmt = peak - v; }
-      if (prev > 0) { const r = (v - prev) / prev; sumR += r; sumR2 += r * r; nR++; }
-    }
+    // ── 从增量变量直接读取，无需遍历数组 ──────────────────────────────
+    const mdd     = _sm_mdd;
+    const mddAmt  = _sm_mddAmt;
+    const nR      = _sm_nR;
+
     let sharpe = null;
     if (nR > 1) {
-      const meanR = sumR / nR;
-      const varR  = Math.max(0, sumR2 / nR - meanR * meanR);
+      const meanR = _sm_sumR / nR;
+      const varR  = Math.max(0, _sm_sumR2 / nR - meanR * meanR);
       const stdR  = Math.sqrt(varR);
       if (stdR > 1e-10) sharpe = meanR / stdR;
     }
 
-    // ── 单次遍历 tradeHistory（从旧→新：length-1 → 0）────────────────
-    // tradeHistory 用 unshift 写入，index 0 = 最新，length-1 = 最旧
-    let n = 0, wins = 0;
-    let sumWinPnl = 0, sumLossPnl = 0;
-    let best = -Infinity, worst = Infinity;
-    let totalFees = 0;
-    let maxConsecLoss = 0, curConsecLoss = 0;
-    let maxConsecWin  = 0, curConsecWin  = 0;
-    for (let i = tradeHistory.length - 1; i >= 0; i--) {
-      const t = tradeHistory[i];
-      n++;
-      totalFees += t.openFee + t.closeFee;
-      if (t.netPnl > 0) {
-        wins++; sumWinPnl += t.netPnl;
-        curConsecWin++; curConsecLoss = 0;
-        if (curConsecWin  > maxConsecWin)  maxConsecWin  = curConsecWin;
-      } else {
-        sumLossPnl += t.netPnl;   // ≤ 0
-        curConsecLoss++; curConsecWin = 0;
-        if (curConsecLoss > maxConsecLoss) maxConsecLoss = curConsecLoss;
-      }
-      if (t.netPnl > best)  best  = t.netPnl;
-      if (t.netPnl < worst) worst = t.netPnl;
-    }
+    const n           = _sm_n;
+    const wins        = _sm_wins;
+    const sumWinPnl   = _sm_sumWinPnl;
+    const sumLossPnl  = _sm_sumLossPnl;
+    const best        = _sm_best;
+    const worst       = _sm_worst;
+    const totalFees   = _sm_totalFees;
+    const maxConsecLoss = _sm_maxConsecLoss;
+    const maxConsecWin  = _sm_maxConsecWin;
 
     // ── 派生指标 ──────────────────────────────────────────────────────
     const losses  = n - wins;
     const avgWin  = wins   > 0 ? sumWinPnl  / wins   : 0;
     const avgLoss = losses > 0 ? sumLossPnl / losses : 0;  // ≤ 0
     const winRate = n > 0 ? wins / n : 0;
-    // Profit Factor：总盈利 / 总亏损（绝对值）
     const pf = sumLossPnl < -1e-8 ? sumWinPnl / Math.abs(sumLossPnl)
              : (sumWinPnl > 0 ? 999 : null);
-    // Risk/Reward：平均盈利 / 平均亏损绝对值
     const rr = wins > 0 && losses > 0 ? avgWin / Math.abs(avgLoss) : null;
-    // Expectancy：每笔期望盈亏
     const expectancy = n > 0 ? winRate * avgWin + (1 - winRate) * avgLoss : null;
-    // Calmar：总收益% / 最大回撤%
     const calmar = mdd > 1e-6 ? returnPct / (mdd * 100) : null;
 
-    // ── 雷达图评分（复用上面已算的所有指标，零额外遍历）──────────────
+    // ── 雷达图评分 ──────────────────────────────────────────────────
     {
-      // EDGE：PF → 0-100（PF=0→0, PF=4→100）
-      const sEdge = n === 0 ? 0
-                  : pf === null ? 0
-                  : Math.min(100, (pf >= 999 ? 100 : pf / 4 * 100));
-      // WIN%：胜率 → 0-100
+      const sEdge = n === 0 ? 0 : pf === null ? 0 : Math.min(100, (pf >= 999 ? 100 : pf / 4 * 100));
       const sAcc  = winRate * 100;
-      // RISK：回撤越低越好（MDD=0→100, MDD=50%→0）
       const sRisk = Math.max(0, 100 - mdd * 200);
-      // R/R：盈亏比（RR=0→0, RR=3→100）
       const sPay  = rr === null ? 0 : Math.min(100, rr / 3 * 100);
-      // STAB：Sharpe 映射（[-2,3]→[0,100]），数据不足时按比例衰减
       let sStab = 0;
       if (sharpe !== null) {
         const raw = Math.max(0, Math.min(100, (sharpe + 2) / 5 * 100));
-        sStab = nR >= 30 ? raw : raw * nR / 30; // 数据点<30时降权
+        sStab = nR >= 30 ? raw : raw * nR / 30;
       }
-      // EFF：Calmar（Calmar=0→0, Calmar=5→100）
-      const sEff  = calmar === null ? 0 : Math.max(0, Math.min(100, calmar / 5 * 100));
-
+      const sEff = calmar === null ? 0 : Math.max(0, Math.min(100, calmar / 5 * 100));
       drawRadarChart([sEdge, sAcc, sRisk, sPay, sStab, sEff]);
     }
 
     // ── DOM 更新 ──────────────────────────────────────────────────────
-    // 收益与风险
     const smReturn = document.getElementById('sm-return');
     smReturn.style.color = totalReturn >= 0 ? 'var(--green)' : 'var(--pink)';
     smReturn.textContent = (totalReturn >= 0 ? '+' : '') + '$' + totalReturn.toFixed(2);
@@ -2345,7 +2578,6 @@
       document.getElementById('sm-calmar-sub').textContent = mdd === 0 ? 'no drawdown yet' : '';
     }
 
-    // 交易质量
     const smWr = document.getElementById('sm-winrate');
     smWr.textContent = n ? (winRate * 100).toFixed(1) + '%' : '—';
     smWr.style.color = n && winRate >= 0.5 ? 'var(--green)' : 'var(--pink)';
@@ -2370,7 +2602,6 @@
       smExp.textContent = '—'; smExp.style.color = 'var(--cyan)';
     }
 
-    // 细节指标
     const smRr = document.getElementById('sm-rr');
     if (rr !== null) {
       smRr.textContent = rr.toFixed(2) + 'x';
@@ -2399,7 +2630,6 @@
       smSharpe.textContent = '—'; smSharpe.style.color = 'var(--cyan)';
     }
 
-    // 汇总宽行
     document.getElementById('sm-trades').textContent = n;
     document.getElementById('sm-fees').textContent   = n ? '-$' + totalFees.toFixed(2) : '—';
     document.getElementById('sm-best').textContent   = n ? (best  >= 0 ? '+' : '') + '$' + best.toFixed(2)  : '—';
@@ -2444,6 +2674,7 @@
     aggEmaScratch.clear();   // scratch 缓冲区尺寸随 candleSize 变化，必须同步清除
     emaCache.clear();
     emaCacheTick.clear();
+    _aggCache = null;
 
     // 重置 regime 计时到新 N 的刻度，避免当前 regime 以旧 N 节奏跑完
     regimeDuration = simN * (100 + Math.floor(Math.random() * 320));
@@ -2464,7 +2695,7 @@
   slInput.addEventListener('input',()=>clearSlTpErr(slInput,'sl-err'));
   tpInput.addEventListener('input',()=>clearSlTpErr(tpInput,'tp-err'));
   btnCloseAll.addEventListener('click',closeAll);
-  btnReset.addEventListener('click',resetGame);
+  // btnReset handler is registered below in the CRYPTO section (handles both modes)
   const initAssetVal = document.getElementById('init-asset-val');
   initAssetInput.addEventListener('input',()=>{
     const v=parseFloat(initAssetInput.value)||1000;
@@ -2487,13 +2718,172 @@
   document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;updateEMACache();});
 
   /* ═══════════════════════════════════════════
+     CRYPTO live mode
+  ═══════════════════════════════════════════ */
+  const cryptoPanel    = document.getElementById('crypto-panel');
+  const cryptoModeBtn  = document.getElementById('btn-crypto-mode');
+  const cryptoWsStatus = document.getElementById('crypto-ws-status');
+
+  function _setCryptoWsStatus(state) {
+    const labels = { connecting:'⬡ CONNECTING', live:'● LIVE', error:'✕ ERROR' };
+    cryptoWsStatus.textContent  = labels[state] || state;
+    cryptoWsStatus.className    = 'crypto-ws-status ' + state;
+  }
+
+  function _disconnectCryptoWS() {
+    if (_cryptoWS) {
+      _cryptoWS.onclose = null; // prevent auto-reconnect on deliberate close
+      _cryptoWS.onerror = null;
+      _cryptoWS.close();
+      _cryptoWS = null;
+    }
+  }
+
+  function _connectCryptoWS(symbol) {
+    _disconnectCryptoWS();
+    _setCryptoWsStatus('connecting');
+    const url = `wss://stream.binance.com:9443/ws/${symbol}@trade`;
+    let ws;
+    try { ws = new WebSocket(url); } catch(e) { _setCryptoWsStatus('error'); return; }
+    _cryptoWS = ws;
+
+    ws.onopen = () => _setCryptoWsStatus('connecting'); // wait for first message
+
+    ws.onmessage = (evt) => {
+      if (!_cryptoMode || ws !== _cryptoWS) return;
+      try {
+        const d = JSON.parse(evt.data);
+        const p = parseFloat(d.p);   // trade price
+        const q = parseFloat(d.q);   // trade quantity
+        if (!isFinite(p) || p <= 0) return;
+        _cryptoLatestPrice = p;
+        _cryptoQtyBuffer  += q;
+        if (cryptoWsStatus.className.indexOf('live') < 0) _setCryptoWsStatus('live');
+      } catch(_) {}
+    };
+
+    ws.onerror = () => { if (ws === _cryptoWS) _setCryptoWsStatus('error'); };
+
+    ws.onclose = (evt) => {
+      if (!_cryptoMode || ws !== _cryptoWS) return;
+      _setCryptoWsStatus('error');
+      // Auto-reconnect after 3 seconds
+      setTimeout(() => { if (_cryptoMode && ws === _cryptoWS) _connectCryptoWS(symbol); }, 3000);
+    };
+  }
+
+  function _enterCryptoMode(symbol) {
+    _cryptoMode        = true;
+    _cryptoSymbol      = symbol;
+    _cryptoLatestPrice = null;
+    _cryptoQtyBuffer   = 0;
+
+    // Reset game state (positions, PnL) but clear price history for fresh chart
+    initialCash = parseFloat(initAssetInput.value) || 1000;
+    cash = initialCash; realizedPnl = 0; liquidated = false;
+    // Close & clear orders
+    ordersDiv.innerHTML = ''; cardRefs.clear();
+    orders = []; nextOrderId = 1;
+    // Clear history panels
+    tradeHistory = []; netAssetHistory = []; _smReset();
+    historyList.innerHTML = ''; historySummary.textContent = ''; _histRenderedLen = 0;
+    historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
+    summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
+    liqIndicator.style.display = 'none';
+    // Clear price arrays (chart starts blank, fills as WS data arrives)
+    ohlc = []; priceHistory = []; volumeHistory = [];
+    currentPrice = 0; prevTickPrice = 0; totalTicks = 0;
+    _aggCache = null;
+    emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear();
+    trades = [];
+    srEmaValues.clear(); srPrevSide.clear(); srBreakDrift = 0;
+
+    // Sync symbol picker
+    document.querySelectorAll('.crypto-sym-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.sym === symbol);
+    });
+
+    cryptoPanel.classList.add('open');
+    cryptoModeBtn.classList.add('active');
+    cryptoModeBtn.textContent = '⬡ LIVE';
+
+    // Disable sim speed slider (speed irrelevant in live mode)
+    document.getElementById('sim-n-slider').disabled = true;
+
+    _connectCryptoWS(symbol);
+    refreshUI();
+    triggerFlash();
+    showToast(`<b>CRYPTO MODE · ${symbol.toUpperCase()}</b><br>Connecting to Binance live feed…`, 'info', 3500);
+  }
+
+  function _exitCryptoMode() {
+    _cryptoMode = false;
+    _disconnectCryptoWS();
+    _cryptoLatestPrice = null;
+    _cryptoQtyBuffer   = 0;
+
+    cryptoPanel.classList.remove('open');
+    cryptoModeBtn.classList.remove('active');
+    cryptoModeBtn.textContent = '⬡ CRYPTO';
+    document.getElementById('sim-n-slider').disabled = false;
+
+    // Restart with fresh sim (resetGame handles initPrice & tick restart)
+    clearInterval(_tickInterval);
+    resetGame();
+    _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
+    showToast('Returning to <b>SIM mode</b>', 'info', 2000);
+  }
+
+  // CRYPTO mode toggle button
+  cryptoModeBtn.addEventListener('click', () => {
+    if (_cryptoMode) _exitCryptoMode();
+    else             _enterCryptoMode(_cryptoSymbol);
+  });
+
+  // Symbol selector buttons
+  document.querySelectorAll('.crypto-sym-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!_cryptoMode) return;
+      const sym = btn.dataset.sym;
+      if (sym === _cryptoSymbol) return;
+      _enterCryptoMode(sym);  // switches symbol, resets chart, reconnects
+    });
+  });
+
+  // Override RESET button in crypto mode
+  btnReset.addEventListener('click', () => {
+    if (_cryptoMode) {
+      // Soft reset: keep crypto mode & symbol, clear positions only
+      _disconnectCryptoWS();
+      initialCash = parseFloat(initAssetInput.value) || 1000;
+      cash = initialCash; realizedPnl = 0; liquidated = false;
+      ordersDiv.innerHTML = ''; cardRefs.clear();
+      orders = []; nextOrderId = 1;
+      tradeHistory = []; netAssetHistory = []; _smReset();
+      historyList.innerHTML = ''; historySummary.textContent = ''; _histRenderedLen = 0;
+      historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
+      summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
+      liqIndicator.style.display = 'none';
+      ohlc = []; priceHistory = []; volumeHistory = [];
+      currentPrice = 0; prevTickPrice = 0; totalTicks = 0; _aggCache = null;
+      emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear();
+      trades = []; srEmaValues.clear(); srPrevSide.clear(); srBreakDrift = 0;
+      _cryptoLatestPrice = null; _cryptoQtyBuffer = 0;
+      _connectCryptoWS(_cryptoSymbol);
+      refreshUI(); triggerFlash();
+    } else {
+      resetGame();
+    }
+  });
+
+  /* ═══════════════════════════════════════════
      初始化 + 主循环
   ═══════════════════════════════════════════ */
   resetGame();
 
   // 价格 tick（每 TICK_MS_BASE/simN ms 更新一次）
   let _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
-  window.addEventListener('beforeunload', ()=>clearInterval(_tickInterval));
+  window.addEventListener('beforeunload', () => { clearInterval(_tickInterval); _disconnectCryptoWS(); });
 
   // 渲染循环（60fps，含插值平滑）
   function renderLoop(){ drawChart(); requestAnimationFrame(renderLoop); }
