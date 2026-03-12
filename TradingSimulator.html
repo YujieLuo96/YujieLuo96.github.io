@@ -1011,7 +1011,9 @@
   let ohlc          = [];
   let priceHistory  = [];
   let volumeHistory = [];
-  let MAX_HISTORY = 800;   // 实际容量 = 200 * simN，默认 N=4 → 800
+  const MIN_VISIBLE_CANDLES = 200;  // 最少显示的K线数
+  const MAX_TF_MULT = 5;           // 最大时间周期倍数
+  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4;  // 默认 N=4
   let trades        = [];
   let tradeHistory    = [];  // 已平仓记录
   let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
@@ -2419,7 +2421,8 @@
     candleSize    = _activeTfMult * n;
 
     // 按 N 缩放历史容量，保证始终有约 200 个 T 周期的原始数据
-    MAX_HISTORY = 200 * n;
+    const MAX_TF_MULT = 5;  // 最大时间周期倍数
+    MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n;
 
     // N 减小时历史数组可能超出新容量，需从头部裁剪
     const excess = ohlc.length - MAX_HISTORY;
