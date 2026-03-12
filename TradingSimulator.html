@@ -3,327 +3,364 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYBER TRADER // MULTI-ORDER + RAINBOW EMA</title>
+  <title>CYBER TRADER</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
 
     :root {
-      --cyan:    #00f5ff;
-      --pink:    #ff2d78;
-      --yellow:  #f5e642;
-      --green:   #39ff14;
-      --dark:    #04000f;
-      --panel:   rgba(0,245,255,0.04);
-      --border:  rgba(0,245,255,0.18);
+      --cyan:   #00f5ff;
+      --pink:   #ff2d78;
+      --yellow: #f5e642;
+      --green:  #39ff14;
+      --dark:   #03000e;
+      --panel:  rgba(0,245,255,0.035);
+      --border: rgba(0,245,255,0.16);
+      --border2:rgba(0,245,255,0.08);
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
 
     body {
       background: var(--dark);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; min-height: 100vh;
       font-family: 'Share Tech Mono', monospace;
-      overflow-x: hidden;
-      user-select: none;
-      padding: 10px;
+      overflow-x: hidden; user-select: none; padding: 12px 10px;
     }
 
     #bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+
+    /* scanline + vignette */
     body::after {
-      content:'';
-      position:fixed; inset:0; z-index:99; pointer-events:none;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+      content:''; position:fixed; inset:0; z-index:99; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px);
     }
     body::before {
-      content:'';
-      position:fixed; inset:0; z-index:98; pointer-events:none;
-      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.7) 100%);
+      content:''; position:fixed; inset:0; z-index:98; pointer-events:none;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.65) 100%);
     }
 
     .game-wrapper {
       position: relative; z-index: 1;
-      width: min(1400px, 98vw);
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      width: min(1440px, 98vw);
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
     }
 
-    /* ----- TITLE ----- */
-    .title-row {
-      display: flex; align-items: center; gap: 18px;
-      width: 100%; padding: 0 4px;
-    }
+    /* ── TITLE ────────────────────────────── */
+    .title-row { display: flex; align-items: center; gap: 18px; width: 100%; padding: 2px 4px; }
     .title {
-      font-family: 'Orbitron', monospace;
-      font-size: 2rem;
-      font-weight: 900;
-      letter-spacing: 0.22em;
-      color: var(--cyan);
-      text-shadow: 0 0 6px var(--cyan), 0 0 20px var(--cyan), 0 0 50px rgba(0,245,255,0.4);
-      text-transform: uppercase;
+      font-family: 'Orbitron', monospace; font-size: 1.9rem; font-weight: 900;
+      letter-spacing: 0.25em; color: var(--cyan); text-transform: uppercase;
+      text-shadow: 0 0 6px var(--cyan), 0 0 22px var(--cyan), 0 0 55px rgba(0,245,255,0.35);
       position: relative;
     }
     .title::before, .title::after {
-      content: attr(data-text);
-      position: absolute; top:0; left:0; width:100%;
-      pointer-events: none;
-      clip-path: inset(0 0 0 0);
+      content: attr(data-text); position: absolute; top:0; left:0; width:100%;
+      pointer-events: none; clip-path: inset(0 0 100% 0);
     }
-    .title::before {
-      color: var(--pink);
-      animation: glitch-top 4s infinite linear;
+    .title::before { color: var(--pink);   animation: glitch-t 5s infinite linear; }
+    .title::after  { color: var(--yellow); animation: glitch-b 5s infinite linear; }
+    @keyframes glitch-t {
+      0%,88%,100% { clip-path:inset(0 0 100% 0); transform:translate(0); }
+      91% { clip-path:inset(0 0 55% 0); transform:translate(-3px,0); }
+      93% { clip-path:inset(25% 0 45% 0); transform:translate(3px,0); }
+      95% { clip-path:inset(0 0 75% 0); transform:translate(-2px,0); }
     }
-    .title::after {
-      color: var(--yellow);
-      animation: glitch-bot 4s infinite linear;
+    @keyframes glitch-b {
+      0%,88%,100% { clip-path:inset(100% 0 0 0); transform:translate(0); }
+      90% { clip-path:inset(55% 0 0 0); transform:translate(3px,0); }
+      92% { clip-path:inset(45% 0 25% 0); transform:translate(-2px,0); }
+      94% { clip-path:inset(75% 0 0 0); transform:translate(2px,0); }
     }
-    @keyframes glitch-top {
-      0%,90%,100%  { clip-path:inset(0 0 100% 0); transform:translate(0); }
-      92%          { clip-path:inset(0 0 60% 0);  transform:translate(-3px,0); }
-      94%          { clip-path:inset(30% 0 50% 0); transform:translate(3px,0); }
-      96%          { clip-path:inset(0 0 80% 0);  transform:translate(-2px,0); }
-      98%          { clip-path:inset(0 0 100% 0); transform:translate(0); }
-    }
-    @keyframes glitch-bot {
-      0%,90%,100%  { clip-path:inset(100% 0 0 0); transform:translate(0); }
-      93%          { clip-path:inset(60% 0 0 0);  transform:translate(3px,0); }
-      95%          { clip-path:inset(50% 0 30% 0); transform:translate(-2px,0); }
-      97%          { clip-path:inset(80% 0 0 0);  transform:translate(2px,0); }
-      99%          { clip-path:inset(100% 0 0 0); transform:translate(0); }
-    }
-    .title-sep { flex:1; height:1px; background: linear-gradient(to right, transparent, var(--border)); }
-    .title-tag {
-      font-size: 0.65rem; color: rgba(0,245,255,0.4);
-      letter-spacing: 0.15em; white-space: nowrap;
-    }
+    .title-sep { flex:1; height:1px; background: linear-gradient(to right, rgba(0,245,255,0.3), transparent); }
+    .title-tag { font-size: 0.6rem; color: rgba(0,245,255,0.35); letter-spacing: 0.18em; white-space: nowrap; }
 
-    /* ----- HUD (5 columns now) ----- */
-    .hud {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
-      gap: 6px;
-    }
+    /* ── HUD (6 cells) ────────────────────── */
+    .hud { width: 100%; display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; }
     .hud-cell {
       background: var(--panel);
       border: 1px solid var(--border);
-      padding: 6px 10px;
+      border-bottom: 2px solid rgba(0,245,255,0.18);
+      border-radius: 3px;
+      padding: 7px 10px 6px;
       display: flex; flex-direction: column; align-items: center;
-      position: relative;
-      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+      position: relative; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,245,255,0.06);
     }
     .hud-cell::before {
-      content:''; position:absolute; inset:0;
-      background: linear-gradient(135deg, rgba(0,245,255,0.06) 0%, transparent 60%);
-      pointer-events: none;
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background: linear-gradient(155deg, rgba(0,245,255,0.07) 0%, transparent 55%);
     }
     .hud-label {
-      font-size: 0.55rem; letter-spacing: 0.2em;
-      color: rgba(0,245,255,0.45);
-      margin-bottom: 2px;
+      font-family: 'Orbitron', monospace;
+      font-size: 0.52rem; font-weight: 700; letter-spacing: 0.18em;
+      color: rgba(0,245,255,0.75); margin-bottom: 4px; text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(0,245,255,0.4);
     }
     .hud-value {
-      font-family: 'Orbitron', monospace;
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: var(--cyan);
-      text-shadow: 0 0 8px var(--cyan);
-      min-width: 3ch; text-align: center;
+      font-family: 'Orbitron', monospace; font-size: 1.1rem; font-weight: 700;
+      color: var(--cyan); text-shadow: 0 0 12px rgba(0,245,255,0.7);
+      min-width: 3ch; text-align: center; transition: color 0.3s, text-shadow 0.3s;
     }
-    /* 各列特殊颜色 */
-    .hud-cell:nth-child(2) .hud-value { color: var(--pink); text-shadow: 0 0 8px var(--pink); }  /* P&L */
-    .hud-cell:nth-child(3) .hud-value { color: var(--yellow); text-shadow: 0 0 8px var(--yellow); } /* 账户杠杆 */
-    .hud-cell:nth-child(4) .hud-value { color: var(--green); text-shadow: 0 0 8px var(--green); }   /* spot */
-    .hud-cell:nth-child(5) .hud-value { color: #f0f; text-shadow: 0 0 8px #f0f; }  /* 现金 */
+    /* per-cell accent colors */
+    .hud-cell:nth-child(2) .hud-label { color: rgba(0,245,255,0.75); }
+    .hud-cell:nth-child(3) .hud-label { color: rgba(245,230,66,0.75); text-shadow: 0 0 8px rgba(245,230,66,0.3); }
+    .hud-cell:nth-child(3) .hud-value  { color: var(--yellow); text-shadow: 0 0 12px rgba(245,230,66,0.7); }
+    .hud-cell:nth-child(4) .hud-label { color: rgba(57,255,20,0.75); text-shadow: 0 0 8px rgba(57,255,20,0.3); }
+    .hud-cell:nth-child(4) .hud-value  { color: var(--green);  text-shadow: 0 0 12px rgba(57,255,20,0.7); }
+    .hud-cell:nth-child(5) .hud-label { color: rgba(223,95,255,0.75); text-shadow: 0 0 8px rgba(200,80,255,0.3); }
+    .hud-cell:nth-child(5) .hud-value  { color: #df5fff;       text-shadow: 0 0 12px rgba(200,80,255,0.7); }
+    /* regime cell */
+    .hud-cell:nth-child(6) .hud-label { color: rgba(255,255,255,0.55); text-shadow: none; }
 
-    /* chart frame */
-    .chart-frame {
-      position: relative; width:100%;
-    }
+    /* ── CHART FRAME ──────────────────────── */
+    .chart-frame { position: relative; width:100%; }
     .chart-frame::before, .chart-frame::after, .corner-bl, .corner-tr {
-      content:'';
-      position: absolute;
-      width: 18px; height: 18px;
-      z-index: 2; pointer-events: none;
+      content:''; position: absolute; width: 20px; height: 20px; z-index: 2; pointer-events: none;
     }
-    .chart-frame::before {
-      top:-2px; left:-2px;
-      border-top: 2px solid var(--cyan);
-      border-left: 2px solid var(--cyan);
-      box-shadow: -2px -2px 8px rgba(0,245,255,0.5);
-    }
-    .chart-frame::after {
-      bottom:-2px; right:-2px;
-      border-bottom: 2px solid var(--cyan);
-      border-right: 2px solid var(--cyan);
-      box-shadow: 2px 2px 8px rgba(0,245,255,0.5);
-    }
-    .corner-bl {
-      bottom:-2px; left:-2px;
-      border-bottom: 2px solid var(--pink);
-      border-left: 2px solid var(--pink);
-      box-shadow: -2px 2px 8px rgba(255,45,120,0.5);
-    }
-    .corner-tr {
-      top:-2px; right:-2px;
-      border-top: 2px solid var(--pink);
-      border-right: 2px solid var(--pink);
-      box-shadow: 2px -2px 8px rgba(255,45,120,0.5);
-    }
+    .chart-frame::before { top:-2px; left:-2px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); box-shadow:-2px -2px 10px rgba(0,245,255,0.55); }
+    .chart-frame::after  { bottom:-2px; right:-2px; border-bottom:2px solid var(--cyan); border-right:2px solid var(--cyan); box-shadow:2px 2px 10px rgba(0,245,255,0.55); }
+    .corner-bl { bottom:-2px; left:-2px; border-bottom:2px solid var(--pink); border-left:2px solid var(--pink); box-shadow:-2px 2px 10px rgba(255,45,120,0.55); }
+    .corner-tr { top:-2px; right:-2px; border-top:2px solid var(--pink); border-right:2px solid var(--pink); box-shadow:2px -2px 10px rgba(255,45,120,0.55); }
     #stock-canvas {
-      display: block;
-      width: 100%; height: auto;
-      background: #010008;
-      image-rendering: crisp-edges;
-      border: 1px solid rgba(0,245,255,0.2);
-      box-shadow: 0 0 30px rgba(0,245,255,0.1);
+      display: block; width: 100%; height: auto;
+      background: #02000a; border: 1px solid rgba(0,245,255,0.18);
+      box-shadow: 0 0 40px rgba(0,245,255,0.08), inset 0 0 60px rgba(0,0,0,0.4);
     }
 
-    /* control panel */
+    /* ── CHART TOOLBAR ────────────────────── */
+    .chart-toolbar {
+      width: 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      background: rgba(0,0,0,0.25); border: 1px solid var(--border2);
+      border-radius: 3px; padding: 7px 14px;
+    }
+    .tool-group { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    .tool-label { font-size: 0.62rem; color: rgba(0,245,255,0.45); letter-spacing: 0.15em; }
+    .mode-btn {
+      background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
+      border-bottom: 2px solid rgba(0,245,255,0.3);
+      color: rgba(0,245,255,0.6); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem; padding: 3px 13px; cursor: pointer; border-radius: 2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.1s;
+    }
+    .mode-btn:active { transform: translateY(1px); border-bottom-width: 1px; box-shadow: none; }
+    .mode-btn.active { background: rgba(0,245,255,0.15); border-color: var(--cyan); border-bottom-color: var(--cyan); color: var(--cyan); box-shadow: 0 2px 12px rgba(0,245,255,0.3); }
+    .mode-btn:hover:not(.active) { border-color: rgba(0,245,255,0.5); color: var(--cyan); background: rgba(0,245,255,0.07); }
+    .ema-check    { display: flex; align-items: center; gap: 4px; color: rgba(0,245,255,0.65); font-size: 0.72rem; cursor: pointer; }
+    .ema-check input { accent-color: var(--pink); width: 14px; height: 14px; cursor: pointer; }
+    .rainbow-check { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; cursor: pointer; border-left: 1px solid var(--border2); padding-left: 10px; }
+    .detailed-check { display: flex; align-items: center; gap: 4px; color: rgba(57,255,20,0.7); font-size: 0.72rem; cursor: pointer; }
+
+    /* ── CONTROL PANEL ────────────────────── */
     .control-panel {
-      width: 100%;
-      background: var(--panel);
+      width: 100%; background: var(--panel);
       border: 1px solid var(--border);
-      padding: 14px 12px;
-      display: flex; flex-wrap: wrap; gap: 20px;
-      align-items: center; justify-content: space-between;
-      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      border-radius: 3px;
+      padding: 12px 14px; display: flex; flex-direction: row; gap: 0;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.4);
     }
-    .panel-group {
-      display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
+    /* Left: big action buttons */
+    .action-col {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; padding-right: 18px; margin-right: 18px;
+      border-right: 1px solid var(--border2); min-width: 130px;
     }
-    .slider-group {
-      display: flex; flex-direction: column; align-items: flex-start;
-      min-width: 140px;
+    /* Right: two rows of params */
+    .params-col { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
+    .panel-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+    .panel-divider {
+      width: 100%; height: 1px;
+      background: linear-gradient(to right, transparent, var(--border2), transparent);
     }
-    .slider-label {
-      font-size: 0.65rem; letter-spacing: 0.15em;
-      color: rgba(0,245,255,0.6); text-transform: uppercase;
+    .panel-section-label {
+      font-size: 0.5rem; letter-spacing: 0.25em; color: rgba(0,245,255,0.3);
+      text-transform: uppercase; margin-bottom: 2px; width: 100%;
     }
-    .slider-label span { color: var(--pink); margin-left: 6px; }
+    .slider-group { display: flex; flex-direction: column; align-items: flex-start; min-width: 120px; }
+    .slider-label { font-size: 0.6rem; letter-spacing: 0.14em; color: rgba(0,245,255,0.55); text-transform: uppercase; margin-bottom: 4px; }
+    .slider-label span { color: var(--pink); margin-left: 5px; font-size: 0.7rem; }
     input[type=range] {
-      width: 100%; height: 4px;
-      background: linear-gradient(90deg, var(--cyan), var(--pink));
-      border: none; outline: none;
-      -webkit-appearance: none;
+      width: 100%; height: 3px;
+      background: linear-gradient(90deg, rgba(0,245,255,0.5), rgba(255,45,120,0.5));
+      border: none; outline: none; -webkit-appearance: none; appearance: none; cursor: pointer;
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; width: 14px; height: 14px;
-      background: var(--cyan); border: 2px solid white;
-      box-shadow: 0 0 10px var(--cyan); cursor: pointer;
-    }
-    .value-badge {
-      font-size: 0.8rem; color: var(--yellow); margin-left: 6px;
+      -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%;
+      background: var(--cyan); border: 2px solid rgba(0,0,0,0.6);
+      box-shadow: 0 0 8px var(--cyan), 0 0 16px rgba(0,245,255,0.4); cursor: pointer;
     }
     .num-input {
-      background: transparent; border: 1px solid var(--border);
+      background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.2);
       color: var(--cyan); font-family: 'Share Tech Mono', monospace;
-      padding: 4px 8px; width: 100px; text-align: center;
+      padding: 5px 8px; width: 90px; text-align: center; font-size: 0.85rem;
+      transition: border-color 0.15s;
     }
-    .action-buttons {
-      display: flex; gap: 12px; align-items: center;
-    }
+    .num-input:focus { border-color: var(--cyan); outline: none; background: rgba(0,245,255,0.07); }
+    .sl-tp-row { display: flex; gap: 12px; align-items: flex-start; }
+    .sl-tp-group { display: flex; flex-direction: column; gap: 3px; width: 90px; }
+    .sl-tp-group label { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; height: 14px; display: flex; align-items: center; }
+    .sl-input  { border-color: rgba(255,68,68,0.35);  color: #ff6060; width: 100%; }
+    .tp-input  { border-color: rgba(68,255,136,0.35); color: #55ff99; width: 100%; }
+    .sl-input:focus  { border-color: #ff4444; }
+    .tp-input:focus  { border-color: #44ff88; }
+    .sl-input.err { border-color:#ff2222!important; box-shadow:0 0 6px rgba(255,34,34,0.5); }
+    .tp-input.err { border-color:#ffaa00!important; box-shadow:0 0 6px rgba(255,170,0,0.5); }
+    .field-err { font-size:0.55rem; color:#ff6060; letter-spacing:0.05em; min-height:10px; margin-top:1px; }
+
+    /* ── ACTION BUTTONS (3D Cyber) ─────────── */
     .cyber-button {
-      background: transparent;
-      border: 1px solid var(--border);
-      color: var(--cyan);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.9rem; letter-spacing: 0.15em;
-      padding: 6px 18px;
-      cursor: pointer;
-      clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
-      transition: 0.1s;
+      background: rgba(0,245,255,0.05);
+      border: 1px solid rgba(0,245,255,0.3);
+      border-bottom: 3px solid rgba(0,245,255,0.45);
+      border-radius: 3px;
+      color: var(--cyan); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem; letter-spacing: 0.12em; padding: 7px 16px;
+      cursor: pointer; position: relative; overflow: hidden; width: 100%;
+      box-shadow: 0 4px 14px rgba(0,245,255,0.12), inset 0 1px 0 rgba(0,245,255,0.08);
+      text-shadow: 0 0 8px rgba(0,245,255,0.6);
+      transition: all 0.1s;
     }
-    .cyber-button.long { color: var(--green); border-color: var(--green); }
-    .cyber-button.short { color: var(--pink); border-color: var(--pink); }
     .cyber-button:hover {
       background: rgba(0,245,255,0.1);
-      box-shadow: 0 0 16px currentColor;
+      box-shadow: 0 4px 22px rgba(0,245,255,0.25), inset 0 1px 0 rgba(0,245,255,0.15);
     }
+    .cyber-button:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+      box-shadow: 0 1px 6px rgba(0,245,255,0.1);
+    }
+    .cyber-button.long {
+      color: var(--green);
+      background: rgba(57,255,20,0.06);
+      border-color: rgba(57,255,20,0.45);
+      border-bottom-color: rgba(57,255,20,0.7);
+      font-size: 1.05rem; font-weight: bold; padding: 11px 10px; letter-spacing: 0.2em;
+      box-shadow: 0 4px 18px rgba(57,255,20,0.18), inset 0 1px 0 rgba(57,255,20,0.1);
+      text-shadow: 0 0 12px rgba(57,255,20,0.8);
+    }
+    .cyber-button.long:hover {
+      background: rgba(57,255,20,0.12);
+      box-shadow: 0 4px 28px rgba(57,255,20,0.4), inset 0 1px 0 rgba(57,255,20,0.2);
+    }
+    .cyber-button.long:active  { transform: translateY(2px); border-bottom-width: 1px; box-shadow: 0 1px 8px rgba(57,255,20,0.15); }
+    .cyber-button.short {
+      color: var(--pink);
+      background: rgba(255,45,120,0.06);
+      border-color: rgba(255,45,120,0.45);
+      border-bottom-color: rgba(255,45,120,0.7);
+      font-size: 1.05rem; font-weight: bold; padding: 11px 10px; letter-spacing: 0.2em;
+      box-shadow: 0 4px 18px rgba(255,45,120,0.18), inset 0 1px 0 rgba(255,45,120,0.1);
+      text-shadow: 0 0 12px rgba(255,45,120,0.8);
+    }
+    .cyber-button.short:hover {
+      background: rgba(255,45,120,0.12);
+      box-shadow: 0 4px 28px rgba(255,45,120,0.4), inset 0 1px 0 rgba(255,45,120,0.2);
+    }
+    .cyber-button.short:active { transform: translateY(2px); border-bottom-width: 1px; box-shadow: 0 1px 8px rgba(255,45,120,0.15); }
+    .cyber-button.util {
+      font-size: 0.72rem; padding: 7px 10px;
+      color: rgba(0,245,255,0.6);
+      border-color: rgba(0,245,255,0.2);
+      border-bottom-color: rgba(0,245,255,0.35);
+      background: rgba(0,245,255,0.03);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+      text-shadow: none;
+    }
+    .cyber-button.util:hover { color: var(--cyan); background: rgba(0,245,255,0.08); box-shadow: 0 3px 14px rgba(0,245,255,0.2); }
+    .cyber-button.reset-btn {
+      font-size: 0.65rem; padding: 5px 10px; width: auto;
+      color: rgba(0,245,255,0.4);
+      border-color: rgba(0,245,255,0.15);
+      border-bottom-color: rgba(0,245,255,0.25);
+      background: transparent; text-shadow: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .cyber-button.reset-btn:hover { color: rgba(0,245,255,0.75); background: rgba(0,245,255,0.05); }
 
-    /* chart toolbar */
-    .chart-toolbar {
-      width: 100%;
-      display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
-      background: rgba(0,245,255,0.02);
-      border: 1px solid var(--border);
-      padding: 8px 15px;
-      clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    /* ── TOAST NOTIFICATIONS ──────────────── */
+    #toast-container {
+      position: fixed; top: 14px; right: 14px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 6px; pointer-events: none;
     }
-    .tool-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .mode-btn {
-      background: transparent; border: 1px solid rgba(0,245,255,0.3);
-      color: var(--cyan); font-size: 0.8rem; padding: 4px 16px;
-      cursor: pointer; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+    .toast {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;
+      letter-spacing: 0.08em; padding: 8px 14px;
+      border-left: 3px solid; border-radius: 3px; backdrop-filter: blur(8px);
+      animation: toastIn 0.18s ease, toastOut 0.3s ease 2.7s forwards;
+      pointer-events: none; max-width: 320px; line-height: 1.5;
     }
-    .mode-btn.active { background: rgba(0,245,255,0.2); border-color: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
-    .ema-check { display: flex; align-items: center; gap: 5px; color: rgba(0,245,255,0.7); font-size: 0.75rem; }
-    .ema-check input { accent-color: var(--pink); width: 16px; height: 16px; }
-    .rainbow-check { display: flex; align-items: center; gap: 5px; color: var(--yellow); font-size: 0.75rem; border-left: 1px solid var(--border); padding-left: 12px; }
-    .detailed-check { display: flex; align-items: center; gap: 5px; color: var(--green); font-size: 0.75rem; }
+    .toast.warn  { background: rgba(255,160,0,0.12); border-color: #ffa000; color: #ffcc44; }
+    .toast.error { background: rgba(255,40,40,0.12); border-color: #ff2828; color: #ff7070; }
+    .toast.info  { background: rgba(0,245,255,0.08); border-color: var(--cyan); color: var(--cyan); }
+    .toast.success { background: rgba(57,255,20,0.08); border-color: var(--green); color: var(--green); }
+    @keyframes toastIn  { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateX(10px); } }
 
-    /* 订单面板 */
+    /* ── ORDERS PANEL ─────────────────────── */
     .orders-panel {
-      width: 100%;
-      background: rgba(0,245,255,0.02);
-      border: 1px solid var(--border);
-      padding: 12px;
-      margin-top: 6px;
-      clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+      width: 100%; background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border2); border-radius: 3px; padding: 10px 12px;
     }
     .orders-header {
       display: flex; justify-content: space-between; align-items: center;
-      color: var(--cyan); font-size: 0.8rem; letter-spacing: 0.2em;
-      margin-bottom: 10px;
+      color: rgba(0,245,255,0.5); font-size: 0.72rem; letter-spacing: 0.2em; margin-bottom: 8px;
     }
-    .orders-container {
-      display: flex; flex-wrap: wrap; gap: 12px; min-height: 70px;
-    }
+    .orders-container { display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px; }
     .order-card {
-      background: #01000c;
-      border: 1px solid rgba(0,245,255,0.25);
-      padding: 10px 14px;
-      font-size: 0.75rem;
-      display: flex; flex-direction: column; gap: 5px;
-      min-width: 180px;
-      box-shadow: 0 0 12px rgba(255,45,120,0.2);
-      position: relative;
+      background: linear-gradient(160deg, rgba(2,0,18,0.95) 0%, rgba(0,0,8,0.98) 100%);
+      border: 1px solid rgba(0,245,255,0.18);
+      padding: 9px 12px 8px; font-size: 0.7rem;
+      display: flex; flex-direction: column; gap: 3px;
+      min-width: 188px; position: relative; overflow: hidden;
     }
-    .order-card.long { border-left: 4px solid var(--green); }
-    .order-card.short { border-left: 4px solid var(--pink); }
-    .order-row {
-      display: flex; justify-content: space-between;
-      color: rgba(0,245,255,0.7);
+    .order-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:2px;
     }
-    .order-row .value {
-      color: var(--yellow); font-weight: bold;
-    }
+    .order-card.long  { border-left: 3px solid rgba(57,255,20,0.7); }
+    .order-card.long::before  { background: linear-gradient(90deg, rgba(57,255,20,0.6), transparent); }
+    .order-card.short { border-left: 3px solid rgba(255,45,120,0.7); }
+    .order-card.short::before { background: linear-gradient(90deg, rgba(255,45,120,0.6), transparent); }
+    .order-row { display: flex; justify-content: space-between; gap: 8px; color: rgba(0,245,255,0.55); }
+    .order-row .lbl { color: rgba(0,245,255,0.4); }
+    .order-row .value { color: rgba(245,230,66,0.85); }
+    .order-divider { height: 1px; background: rgba(0,245,255,0.07); margin: 2px 0; }
+    /* equity progress bar */
+    .equity-bar-wrap { height: 3px; background: rgba(0,245,255,0.07); margin: 3px 0 1px; border-radius: 1px; overflow: hidden; }
+    .equity-bar { height: 100%; border-radius: 1px; transition: width 0.2s; }
     .close-order {
-      background: transparent; border: 1px solid var(--pink);
-      color: var(--pink); font-family: 'Share Tech Mono', monospace;
-      padding: 4px 8px; margin-top: 4px; cursor: pointer;
-      clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+      background: rgba(255,45,120,0.05);
+      border: 1px solid rgba(255,45,120,0.35);
+      border-bottom: 2px solid rgba(255,45,120,0.5);
+      border-radius: 2px;
+      color: rgba(255,45,120,0.75); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem; padding: 3px 8px; margin-top: 3px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(255,45,120,0.1);
+      transition: all 0.1s;
     }
-    .close-order:hover { background: rgba(255,45,120,0.2); }
+    .close-order:hover { background: rgba(255,45,120,0.15); border-color: var(--pink); color: var(--pink); box-shadow: 0 2px 12px rgba(255,45,120,0.3); }
+    .close-order:active { transform: translateY(1px); border-bottom-width: 1px; }
 
-    #trade-flash { position:fixed; inset:0; z-index:97; pointer-events:none; opacity:0; background: radial-gradient(ellipse at center, rgba(255,45,120,0.15) 0%, transparent 70%); transition: opacity 0.05s; }
+    /* ── FLASH / LIQ ──────────────────────── */
+    #trade-flash { position:fixed; inset:0; z-index:97; pointer-events:none; opacity:0;
+      background: radial-gradient(ellipse at center, rgba(0,245,255,0.1) 0%, transparent 70%); transition: opacity 0.05s; }
     #trade-flash.flash { opacity:1; transition: none; }
-    #liq-flash { position:fixed; inset:0; z-index:96; pointer-events:none; opacity:0; background: radial-gradient(ellipse at center, rgba(255,0,0,0.3) 0%, transparent 80%); transition: opacity 0.1s; }
+    #liq-flash { position:fixed; inset:0; z-index:96; pointer-events:none; opacity:0;
+      background: radial-gradient(ellipse at center, rgba(255,0,0,0.28) 0%, transparent 80%); transition: opacity 0.12s; }
     #liq-flash.active { opacity:1; transition: none; }
 
-    .return-home { margin-top: 8px; display: flex; justify-content: center; }
-    #btn-home { padding: 6px 20px; background: transparent; border: 1px solid rgba(255,45,120,0.3); color: rgba(255,45,120,0.5); font-size:0.75rem; cursor:pointer; text-transform: uppercase; text-decoration: none; }
-    #btn-home:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 12px rgba(255,45,120,0.3); }
+    /* ── MISC ─────────────────────────────── */
+    .return-home { display: flex; justify-content: center; margin-top: 4px; }
+    #btn-home { padding: 5px 18px; background: transparent; border: 1px solid rgba(255,45,120,0.25);
+      color: rgba(255,45,120,0.4); font-family:'Share Tech Mono',monospace; font-size:0.7rem;
+      cursor:pointer; text-transform: uppercase; text-decoration: none; transition: all 0.15s; }
+    #btn-home:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 10px rgba(255,45,120,0.25); }
 
-    .hint { font-size: 0.6rem; color: rgba(0,245,255,0.25); display: flex; gap: 20px; margin-top: 4px; }
-    .warning { color: #ff2d78; font-size: 0.7rem; animation: blink 1s infinite; }
-    @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    .hint { font-size: 0.55rem; color: rgba(0,245,255,0.2); display: flex; gap: 18px; flex-wrap: wrap; padding: 0 2px; }
+    .warning { color: #ff2d78; font-size: 0.7rem; animation: blink 1s infinite; text-align: center; width: 100%; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
   </style>
 </head>
 <body>
-
 <canvas id="bg-canvas"></canvas>
 <div id="trade-flash"></div>
 <div id="liq-flash"></div>
@@ -333,624 +370,916 @@
   <div class="title-row">
     <div class="title" data-text="CYBER TRADER">CYBER TRADER</div>
     <div class="title-sep"></div>
-    <div class="title-tag">MULTI ORDER // 100x</div>
+    <div class="title-tag">MULTI-ORDER // 100x // STOCH-VOL + REGIME</div>
   </div>
 
-  <!-- HUD: 净值 / P&L / 账户杠杆 / 价格 / 现金 -->
+  <!-- HUD 6 cells -->
   <div class="hud">
     <div class="hud-cell"><div class="hud-label">NET ASSET</div><div class="hud-value" id="asset-value">1000.00</div></div>
-    <div class="hud-cell"><div class="hud-label">TOTAL P&L</div><div class="hud-value" id="pnl-value">0.00</div></div>
+    <div class="hud-cell"><div class="hud-label">TOTAL P&amp;L</div><div class="hud-value" id="pnl-value">+0.00</div></div>
     <div class="hud-cell"><div class="hud-label">ACC LEV</div><div class="hud-value" id="acc-leverage">1.00x</div></div>
     <div class="hud-cell"><div class="hud-label">SPOT</div><div class="hud-value" id="spot-price">100.00</div></div>
     <div class="hud-cell"><div class="hud-label">CASH</div><div class="hud-value" id="cash-value">1000.00</div></div>
+    <div class="hud-cell"><div class="hud-label">REGIME</div><div class="hud-value" id="regime-value" style="font-size:0.85rem;">CHOP</div></div>
   </div>
 
-  <div id="liquidation-indicator" style="display:none; width:100%; text-align:center;" class="warning">⚠️ LIQUIDATED ⚠️</div>
+  <div id="liquidation-indicator" style="display:none;" class="warning">⚠ ACCOUNT LIQUIDATED ⚠</div>
 
   <div class="chart-frame">
-    <div class="corner-bl"></div>
-    <div class="corner-tr"></div>
-    <canvas id="stock-canvas" width="1000" height="400"></canvas>
+    <div class="corner-bl"></div><div class="corner-tr"></div>
+    <canvas id="stock-canvas" width="1200" height="440"></canvas>
   </div>
 
   <div class="chart-toolbar">
     <div class="tool-group">
-      <span style="color:var(--cyan); font-size:0.7rem;">MODE:</span>
+      <span class="tool-label">TF</span>
+      <button class="mode-btn tf-btn active" data-tf="1">1T</button>
+      <button class="mode-btn tf-btn" data-tf="5">5T</button>
+      <button class="mode-btn tf-btn" data-tf="15">15T</button>
+      <button class="mode-btn tf-btn" data-tf="30">30T</button>
+      <button class="mode-btn tf-btn" data-tf="60">60T</button>
+    </div>
+    <div class="tool-group">
+      <span class="tool-label">MODE</span>
       <button id="btn-line" class="mode-btn active">LINE</button>
       <button id="btn-candle" class="mode-btn">CANDLE</button>
     </div>
     <div class="tool-group">
-      <span style="color:var(--cyan); font-size:0.7rem;">EMA:</span>
-      <label class="ema-check"><input type="checkbox" id="ema5" checked> <span style="color:var(--yellow);">5</span></label>
-      <label class="ema-check"><input type="checkbox" id="ema20"> <span style="color:var(--pink);">20</span></label>
+      <span class="tool-label">EMA</span>
+      <label class="ema-check"><input type="checkbox" id="ema5" checked><span style="color:var(--yellow);">5</span></label>
+      <label class="ema-check"><input type="checkbox" id="ema20"><span style="color:var(--pink);">20</span></label>
     </div>
     <div class="tool-group">
-      <label class="detailed-check"><input type="checkbox" id="detailedEMA"> <span style="color:#7ff0b0;">EMA精选(1,2,3,5,7,10,20,30,60)</span></label>
-      <label class="rainbow-check"><input type="checkbox" id="rainbowEMA"> <span style="background:linear-gradient(90deg,red,orange,yellow,green,blue,indigo,violet); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">🌈彩虹EMA(1-60)</span></label>
+      <label class="detailed-check"><input type="checkbox" id="detailedEMA"><span>EMA精选</span></label>
+      <label class="rainbow-check"><input type="checkbox" id="rainbowEMA">
+        <span style="background:linear-gradient(90deg,red,orange,yellow,green,cyan,blue,violet);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">彩虹EMA 1-60</span>
+      </label>
     </div>
   </div>
 
-  <!-- 控制面板：增加数量输入、杠杆滑块、开仓按钮等 -->
+  <!-- Control panel -->
   <div class="control-panel">
-    <div class="panel-group">
-      <div class="slider-group">
-        <div class="slider-label">INIT ASSET <span>$</span></div>
-        <input type="number" id="init-asset" class="num-input" value="1000" step="100" min="100">
-      </div>
-      <div class="slider-group">
-        <div class="slider-label">SET LEVERAGE <span id="leverage-display">2.0x</span></div>
-        <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
-      </div>
-      <div class="slider-group">
-        <div class="slider-label">SHARES <span>QTY</span></div>
-        <input type="number" id="order-shares" class="num-input" value="1.0" step="0.1" min="0.1">
-      </div>
-      <div class="slider-group">
-        <div class="slider-label">DRIFT (μ) <span id="mu-val">+0.02</span></div>
-        <input type="range" id="mu-slider" min="-0.2" max="0.2" step="0.01" value="0.02">
-      </div>
-      <div class="slider-group">
-        <div class="slider-label">VOL (σ) <span id="sigma-val">0.03</span></div>
-        <input type="range" id="sigma-slider" min="0.02" max="0.3" step="0.01" value="0.03">
-      </div>
+    <!-- Left: action buttons -->
+    <div class="action-col">
+      <button class="cyber-button long"  id="btn-long">▲ LONG</button>
+      <button class="cyber-button short" id="btn-short">▼ SHORT</button>
+      <button class="cyber-button util" id="btn-close-all">⛌ CLOSE ALL</button>
     </div>
 
-    <div class="action-buttons">
-      <button class="cyber-button long" id="btn-long">▲ LONG</button>
-      <button class="cyber-button short" id="btn-short">▼ SHORT</button>
-      <button class="cyber-button" id="btn-close-all">⛌ CLOSE ALL</button>
-      <button class="cyber-button" id="btn-reset">⟲ RESET</button>
+    <!-- Right: two rows of parameters -->
+    <div class="params-col">
+      <!-- Row 1: sliders + INIT ASSET slider -->
+      <div class="panel-row">
+        <div class="panel-section-label">◈ Market Parameters</div>
+        <div class="slider-group" style="min-width:150px">
+          <div class="slider-label">DRIFT (μ) <span id="mu-val">+0.020</span></div>
+          <input type="range" id="mu-slider" min="-0.2" max="0.2" step="0.005" value="0.02">
+        </div>
+        <div class="slider-group" style="min-width:150px">
+          <div class="slider-label">VOLATILITY (σ) <span id="sigma-val">0.060</span></div>
+          <input type="range" id="sigma-slider" min="0.005" max="0.3" step="0.005" value="0.06">
+        </div>
+        <div class="slider-group" style="min-width:155px">
+          <div class="slider-label">LEVERAGE <span id="leverage-display">2.0x</span></div>
+          <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
+        </div>
+        <div class="slider-group" style="min-width:150px">
+          <div class="slider-label">INIT ASSET <span id="init-asset-val">$1000</span></div>
+          <input type="range" id="init-asset" min="1000" max="10000" step="500" value="1000">
+        </div>
+      </div>
+
+      <div class="panel-divider"></div>
+
+      <!-- Row 2: QTY · SL · TP + RESET right-bottom -->
+      <div class="panel-row" style="align-items:flex-start">
+        <div class="panel-section-label">◈ Order Setup</div>
+        <div class="sl-tp-row" style="flex:1">
+          <div class="sl-tp-group">
+            <label style="color:rgba(0,245,255,0.55);">QTY</label>
+            <input type="number" id="order-shares" class="num-input" value="1.0" step="0.1" min="0.1" style="width:100%">
+            <div class="field-err"></div>
+          </div>
+          <div class="sl-tp-group">
+            <label style="color:rgba(255,96,96,0.65);">STOP LOSS</label>
+            <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1">
+            <div id="sl-err" class="field-err"></div>
+          </div>
+          <div class="sl-tp-group">
+            <label style="color:rgba(85,255,153,0.65);">TAKE PROFIT</label>
+            <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1">
+            <div id="tp-err" class="field-err"></div>
+          </div>
+        </div>
+        <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto;align-self:flex-end">⟲ RESET</button>
+      </div>
     </div>
   </div>
 
-  <!-- 订单面板 (独立订单列表) -->
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <!-- Positions -->
   <div class="orders-panel">
     <div class="orders-header">
-      <span>◈  OPEN POSITIONS  ◈</span>
-      <span id="shares-summary">L:0.0 / S:0.0 shares</span>
+      <span>◈ OPEN POSITIONS</span>
+      <span id="shares-summary" style="color:rgba(0,245,255,0.35)">L:0.00 / S:0.00 shares</span>
     </div>
-    <div id="orders-list" class="orders-container">
-      <!-- 动态生成订单卡片 -->
-    </div>
+    <div id="orders-list" class="orders-container"></div>
   </div>
 
-  <div class="return-home">
-    <a href="#" id="btn-home">← RETURN HOME</a>
-  </div>
-
+  <div class="return-home"><a href="../Nest.html" id="btn-home">← RETURN HOME</a></div>
   <div class="hint">
-    <span>⚡ 每单独立杠杆/股数 · 归零自动平仓 · 账户杠杆 = 名义市值/净值</span>
-    <span>🔹 点击卡片 [X] 单独平仓</span>
+    <span>⚡ 逐仓保证金 · 各单独立杠杆 · 维持保证金5%爆仓</span>
+    <span>🔹 SL/TP填绝对价格 · 留空不设置</span>
+    <span>📈 随机波动率+跳跃扩散+情景切换</span>
   </div>
 </div>
 
 <script>
-  (function() {
-    // --- 背景雨效 (保持原样) ---
-    const bgCanvas = document.getElementById('bg-canvas');
-    const bgCtx = bgCanvas.getContext('2d');
-    let rainDrops = [];
-    function initBg() {
-      bgCanvas.width = window.innerWidth;
-      bgCanvas.height = window.innerHeight;
-      rainDrops = Array.from({length: 50}, () => ({
-        x: Math.random() * bgCanvas.width,
-        y: Math.random() * bgCanvas.height,
-        speed: 1.2 + Math.random() * 4,
-        len: 8 + Math.random() * 25,
-        alpha: 0.02 + Math.random() * 0.07
-      }));
-    }
-    function drawBg() {
-      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-      const W = bgCanvas.width, H = bgCanvas.height;
-      bgCtx.strokeStyle = 'rgba(0,245,255,0.03)';
-      bgCtx.lineWidth = 0.5;
-      for (let i = 0; i <= 20; i++) {
-        let x = (i / 20) * W;
-        bgCtx.beginPath(); bgCtx.moveTo(x, H); bgCtx.lineTo(W/2 + (i-10)*8, H*0.7); bgCtx.stroke();
+(function () {
+
+  /* ═══════════════════════════════════════════
+     背景雨效
+  ═══════════════════════════════════════════ */
+  const bgCanvas = document.getElementById('bg-canvas');
+  const bgCtx    = bgCanvas.getContext('2d');
+  let rainDrops  = [];
+  function initBg() {
+    bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+    rainDrops = Array.from({length:50}, () => ({
+      x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height,
+      speed: 1.4+Math.random()*3.5, len: 8+Math.random()*22, alpha: 0.015+Math.random()*0.055
+    }));
+  }
+  let bgRafId = 0;
+  function drawBg() {
+    bgCtx.clearRect(0,0,bgCanvas.width,bgCanvas.height);
+    const BW=bgCanvas.width,BH=bgCanvas.height;
+    bgCtx.strokeStyle='rgba(0,245,255,0.025)'; bgCtx.lineWidth=0.5;
+    for(let i=0;i<=20;i++){const x=(i/20)*BW;bgCtx.beginPath();bgCtx.moveTo(x,BH);bgCtx.lineTo(BW/2+(i-10)*8,BH*0.7);bgCtx.stroke();}
+    rainDrops.forEach(d=>{
+      d.y+=d.speed; if(d.y-d.len>BH){d.y=-d.len;d.x=Math.random()*BW;}
+      const g=bgCtx.createLinearGradient(d.x,d.y-d.len,d.x,d.y);
+      g.addColorStop(0,'transparent'); g.addColorStop(1,`rgba(0,245,255,${d.alpha})`);
+      bgCtx.strokeStyle=g; bgCtx.beginPath(); bgCtx.moveTo(d.x,d.y-d.len); bgCtx.lineTo(d.x,d.y); bgCtx.stroke();
+    });
+    bgRafId = requestAnimationFrame(drawBg);
+  }
+  initBg(); drawBg();
+  window.addEventListener('resize', () => { cancelAnimationFrame(bgRafId); initBg(); drawBg(); });
+
+  /* ═══════════════════════════════════════════
+     Canvas
+  ═══════════════════════════════════════════ */
+  const canvas = document.getElementById('stock-canvas');
+  const ctx    = canvas.getContext('2d');
+  const CW = canvas.width, CH = canvas.height;
+
+  /* ═══════════════════════════════════════════
+     价格模型参数
+  ═══════════════════════════════════════════ */
+  let mu_user    = 0.02;
+  let sigma_user = 0.06;
+  let mu_base    = mu_user;
+  let sigma_base = sigma_user;
+  const dt       = 0.1;
+
+  let mu_t    = mu_user;
+  let sigma_t = sigma_user;
+
+  const VOL_KAPPA   = 2.5;
+  const VOL_OF_VOL  = 0.65;  // 增大：更明显的波动率聚集
+  const DRIFT_KAPPA = 0.8;
+  const DRIFT_VOL   = 0.15;  // 增大：漂移更活跃
+  const JUMP_PROB   = 0.025;
+  const JUMP_MEAN   = -0.005;
+  const JUMP_STD    = 0.04;
+
+  /* ═══════════════════════════════════════════
+     情景系统
+  ═══════════════════════════════════════════ */
+  const REGIMES = [
+    { name:'BULL', weight:0.33, color:'#39ff14', muMult:0.5,  muAdd:+0.09, sigMult:0.65, jumpMult:0.6 },
+    { name:'BEAR', weight:0.27, color:'#ff2d78', muMult:0.5,  muAdd:-0.11, sigMult:1.80, jumpMult:2.2 },
+    { name:'CHOP', weight:0.40, color:'#f5e642', muMult:0.08, muAdd: 0.00, sigMult:0.65, jumpMult:0.8 },
+  ];
+
+  let regimeIdx      = 2;
+  let prevRegimeIdx  = 2;
+  let regimeTick     = 0;
+  let regimeDuration = 120 + Math.floor(Math.random()*180);
+  let regimeBlend    = 1.0;
+  const REGIME_TRANSITION = 30;
+  let effectiveJumpProb = JUMP_PROB;
+
+  /* ═══════════════════════════════════════════
+     价格历史 & 动画插值
+  ═══════════════════════════════════════════ */
+  let currentPrice  = 100.0;
+  let prevTickPrice = 100.0;   // 上一 tick 的价格（用于插值）
+  let lastTickTime  = performance.now();
+  const TICK_MS     = 200;
+
+  let ohlc          = [];
+  let priceHistory  = [];
+  let volumeHistory = [];
+  const MAX_HISTORY = 200;
+  let trades        = [];
+
+  /* ═══════════════════════════════════════════
+     账户
+  ═══════════════════════════════════════════ */
+  let initialCash       = 1000.0;
+  let cash              = 1000.0;
+  let realizedPnl       = 0.0;
+  let orders            = [];
+  let nextOrderId       = 1;
+  let liquidated        = false;
+  const MAINT_RATIO     = 0.05;
+
+  /* ═══════════════════════════════════════════
+     UI refs
+  ═══════════════════════════════════════════ */
+  const assetEl         = document.getElementById('asset-value');
+  const pnlEl           = document.getElementById('pnl-value');
+  const accLevEl        = document.getElementById('acc-leverage');
+  const spotEl          = document.getElementById('spot-price');
+  const cashEl          = document.getElementById('cash-value');
+  const regimeEl        = document.getElementById('regime-value');
+  const toastContainer  = document.getElementById('toast-container');
+
+  /* ── Toast 通知（不阻断流程）── */
+  function showToast(msg, type='warn', duration=3000){
+    const el=document.createElement('div');
+    el.className=`toast ${type}`;
+    el.innerHTML=msg;
+    toastContainer.appendChild(el);
+    setTimeout(()=>{ el.style.animation='toastOut 0.3s ease forwards'; setTimeout(()=>el.remove(),300); }, duration);
+  }
+  const leverageSlider  = document.getElementById('leverage-slider');
+  const leverageDisplay = document.getElementById('leverage-display');
+  const muSlider        = document.getElementById('mu-slider');
+  const sigmaSlider     = document.getElementById('sigma-slider');
+  const muVal           = document.getElementById('mu-val');
+  const sigmaVal        = document.getElementById('sigma-val');
+  const initAssetInput  = document.getElementById('init-asset');
+  const sharesInput     = document.getElementById('order-shares');
+  const slInput         = document.getElementById('sl-input');
+  const tpInput         = document.getElementById('tp-input');
+  const btnLong         = document.getElementById('btn-long');
+  const btnShort        = document.getElementById('btn-short');
+  const btnCloseAll     = document.getElementById('btn-close-all');
+  const btnReset        = document.getElementById('btn-reset');
+  const flash           = document.getElementById('trade-flash');
+  const liqFlash        = document.getElementById('liq-flash');
+  const liqIndicator    = document.getElementById('liquidation-indicator');
+  const ordersDiv       = document.getElementById('orders-list');
+  const sharesSummary   = document.getElementById('shares-summary');
+
+  let chartMode       = 'line';
+  let candleSize      = 1;   // ticks per displayed candle
+  let totalTicks      = 0;   // monotonically increasing tick counter, never capped by MAX_HISTORY
+  let showEMA5        = true;
+  let showEMA20       = false;
+  let showDetailedEMA = false;
+  let showRainbowEMA  = false;
+
+  /* ═══════════════════════════════════════════
+     数学工具
+  ═══════════════════════════════════════════ */
+  function normalRandom() {
+    let u=0,v=0;
+    while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  /* ═══════════════════════════════════════════
+     情景步进
+  ═══════════════════════════════════════════ */
+  function stepRegime() {
+    regimeTick++;
+    regimeBlend = Math.min(1, regimeBlend + 1/REGIME_TRANSITION);
+    if (regimeTick >= regimeDuration) {
+      prevRegimeIdx = regimeIdx;
+      let next=regimeIdx, tries=0;
+      while(next===regimeIdx && tries++<20){
+        const r=Math.random(); let cum=0;
+        for(let i=0;i<REGIMES.length;i++){cum+=REGIMES[i].weight;if(r<cum){next=i;break;}}
       }
-      rainDrops.forEach(d => {
-        d.y += d.speed;
-        if (d.y - d.len > H) { d.y = -d.len; d.x = Math.random() * W; }
-        const grad = bgCtx.createLinearGradient(d.x, d.y - d.len, d.x, d.y);
-        grad.addColorStop(0, 'transparent');
-        grad.addColorStop(1, `rgba(0,245,255,${d.alpha})`);
-        bgCtx.strokeStyle = grad;
-        bgCtx.beginPath(); bgCtx.moveTo(d.x, d.y - d.len); bgCtx.lineTo(d.x, d.y); bgCtx.stroke();
-      });
-      requestAnimationFrame(drawBg);
+      regimeIdx=next; regimeTick=0;
+      regimeDuration=100+Math.floor(Math.random()*320);
+      regimeBlend=0;
     }
-    initBg(); drawBg();
-    window.addEventListener('resize', initBg);
+    const b=regimeBlend, curr=REGIMES[regimeIdx], prev=REGIMES[prevRegimeIdx];
+    mu_base    = Math.max(-0.5,Math.min(0.5, mu_user*(prev.muMult*(1-b)+curr.muMult*b) + (prev.muAdd*(1-b)+curr.muAdd*b)));
+    sigma_base = Math.max(0.005, sigma_user*(prev.sigMult*(1-b)+curr.sigMult*b));
+    effectiveJumpProb = JUMP_PROB*(prev.jumpMult*(1-b)+curr.jumpMult*b);
+  }
 
-    // --- 画布元素 ---
-    const canvas = document.getElementById('stock-canvas');
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width, height = canvas.height;
+  /* ═══════════════════════════════════════════
+     随机参数步进
+  ═══════════════════════════════════════════ */
+  function stepStochasticParams() {
+    const sqDt=Math.sqrt(dt);
+    sigma_t = Math.max(sigma_user*0.5,
+      Math.min(sigma_user*2.0,
+        sigma_t + VOL_KAPPA*(sigma_base-sigma_t)*dt + VOL_OF_VOL*sigma_t*normalRandom()*sqDt
+      )
+    );
+    mu_t = Math.max(-0.8,Math.min(0.8,
+      mu_t + DRIFT_KAPPA*(mu_base-mu_t)*dt + DRIFT_VOL*normalRandom()*sqDt
+    ));
+  }
 
-    // --- BSM 参数 ---
-    let mu = 0.02, sigma = 0.03;
-    const dt = 0.1;
-    let currentPrice = 100.0;
+  /* ═══════════════════════════════════════════
+     价格步进（每 200ms）
+  ═══════════════════════════════════════════ */
+  function stepPrice() {
+    totalTicks++;
+    prevTickPrice = currentPrice;        // 保存上帧价格，用于插值
+    lastTickTime  = performance.now();
 
-    // 历史数据
-    let ohlc = [];
-    let priceHistory = [];
-    const MAX_HISTORY = 200;
+    stepRegime();
+    stepStochasticParams();
 
-    // 交易标记 (仅用于图表)
-    let trades = [];
+    const drift     = mu_t - 0.5*sigma_t*sigma_t;
+    const diffusion = sigma_t*Math.sqrt(dt)*normalRandom();
+    const jump      = Math.random()<effectiveJumpProb ? JUMP_MEAN+JUMP_STD*normalRandom() : 0;
 
-    // --- 多订单核心数据 ---
-    let cash = 1000.0;                     // 可用现金
-    let orders = [];                        // 订单数组
-    let nextOrderId = 1;
+    currentPrice = currentPrice*Math.exp(drift*dt+diffusion+jump);
+    if(currentPrice<0.01) currentPrice=0.01;
 
-    // 爆仓标志
-    let liquidated = false;
+    const relVol = (sigma_t/Math.max(sigma_user,0.001))*(0.7+0.6*Math.random());
+    volumeHistory.push(relVol);
 
-    // UI 元素
-    const assetEl = document.getElementById('asset-value');
-    const pnlEl = document.getElementById('pnl-value');
-    const accLevEl = document.getElementById('acc-leverage');
-    const spotEl = document.getElementById('spot-price');
-    const cashEl = document.getElementById('cash-value');
-    const leverageSlider = document.getElementById('leverage-slider');
-    const leverageDisplay = document.getElementById('leverage-display');
-    const muSlider = document.getElementById('mu-slider');
-    const sigmaSlider = document.getElementById('sigma-slider');
-    const muVal = document.getElementById('mu-val');
-    const sigmaVal = document.getElementById('sigma-val');
-    const initAssetInput = document.getElementById('init-asset');
-    const sharesInput = document.getElementById('order-shares');
-    const btnLong = document.getElementById('btn-long');
-    const btnShort = document.getElementById('btn-short');
-    const btnCloseAll = document.getElementById('btn-close-all');
-    const btnReset = document.getElementById('btn-reset');
-    const flash = document.getElementById('trade-flash');
-    const liqFlash = document.getElementById('liq-flash');
-    const liqIndicator = document.getElementById('liquidation-indicator');
-    const ordersDiv = document.getElementById('orders-list');
-    const sharesSummary = document.getElementById('shares-summary');
+    const open=ohlc.length>0?ohlc[ohlc.length-1].c:currentPrice, close=currentPrice;
+    const micro=sigma_t*0.25*Math.random();
+    ohlc.push({o:open, h:Math.max(open,close)*(1+micro), l:Math.min(open,close)*(1-micro), c:close});
+    priceHistory.push(close);
 
-    // 图表模式
-    let chartMode = 'line';
-    let showEMA5 = true, showEMA20 = false, showDetailedEMA = false, showRainbowEMA = false;
-
-    // --- 辅助函数 ---
-    function normalRandom() {
-      let u = 0, v = 0;
-      while(u === 0) u = Math.random();
-      while(v === 0) v = Math.random();
-      return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+    if(ohlc.length>MAX_HISTORY){
+      ohlc.shift(); priceHistory.shift(); volumeHistory.shift();
+      trades=trades.filter(t=>t.index>0).map(t=>{t.index--;return t;});
     }
 
-    // 初始化价格序列
-    function initPrice() {
-      ohlc = [];
-      priceHistory = [];
-      let p = 100.0;
-      for (let i = 0; i < 100; i++) {
-        let open = i === 0 ? p : ohlc[i-1].c;
-        let close = p;
-        let high = Math.max(open, close) * (1 + Math.random()*0.015);
-        let low = Math.min(open, close) * (1 - Math.random()*0.015);
-        ohlc.push({o: open, h: high, l: low, c: close});
-        priceHistory.push(close);
-        p = p * Math.exp((mu - 0.5*sigma*sigma)*dt + sigma*Math.sqrt(dt)*normalRandom());
-        if (p<0.1) p=0.1;
-      }
-      currentPrice = priceHistory[priceHistory.length-1];
+    updateEMACache();
+    checkSLTP();
+    refreshUI();
+    // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
+  }
+
+  /* ═══════════════════════════════════════════
+     SL / TP
+  ═══════════════════════════════════════════ */
+  function checkSLTP() {
+    const hits=[];
+    orders.forEach(o=>{
+      const hitSL=o.sl!==null&&((o.dir===1&&currentPrice<=o.sl)||(o.dir===-1&&currentPrice>=o.sl));
+      const hitTP=o.tp!==null&&((o.dir===1&&currentPrice>=o.tp)||(o.dir===-1&&currentPrice<=o.tp));
+      if(hitSL||hitTP) hits.push({id:o.id,reason:hitSL?'SL':'TP',dir:o.dir});
+    });
+    hits.forEach(h=>{
+      const pnl=orderUnrealized(orders.find(o=>o.id===h.id));
+      const tag=h.reason==='SL'?'🔴 STOP LOSS':'🟢 TAKE PROFIT';
+      const side=h.dir===1?'LONG':'SHORT';
+      showToast(`${tag} triggered<br>#${h.id} ${side} &nbsp;PnL: <b>${pnl>=0?'+':''}$${pnl.toFixed(2)}</b>`,
+        h.reason==='SL'?'error':'success', 4000);
+      closeOrderById(h.id,false);
+    });
+  }
+
+  /* ═══════════════════════════════════════════
+     仓位计算
+  ═══════════════════════════════════════════ */
+  function orderUnrealized(o){ return o.dir*o.shares*(currentPrice-o.openPrice); }
+  function orderEquity(o){ return o.margin+orderUnrealized(o); }
+  function liqPrice(o){
+    const room=o.margin*(1-MAINT_RATIO);
+    return o.openPrice-o.dir*room/o.shares;
+  }
+
+  /* ═══════════════════════════════════════════
+     维持保证金检测
+  ═══════════════════════════════════════════ */
+  function updateOrdersAndGetEquity() {
+    let total=0; const toLiq=[];
+    for(let i=0;i<orders.length;i++){
+      const o=orders[i]; const eq=orderEquity(o); o._equity=eq;
+      if(eq<=o.margin*MAINT_RATIO) toLiq.push(i); else total+=eq;
     }
-
-    // --- 更新所有订单权益，检测归零，返回总权益 ---
-    function updateOrdersAndGetEquity() {
-      let totalEquity = 0;
-      const toRemove = [];
-      for (let i = 0; i < orders.length; i++) {
-        const o = orders[i];
-        // 关键修改：盈亏必须乘以杠杆
-        const unrealized = o.dir * o.shares * (currentPrice - o.openPrice) * o.lev;
-        const equity = o.margin + unrealized;
-        o.currentEquity = equity; // 存储用于显示
-        if (equity <= 0.0001) {   // 归零平仓
-          toRemove.push(i);
-        } else {
-          totalEquity += equity;
-        }
-      }
-      // 从后往前删除
-      for (let i = toRemove.length-1; i >=0; i--) {
-        const idx = toRemove[i];
-        const o = orders[idx];
-        cash += o.currentEquity;   // 权益（<=0）加回现金
-        orders.splice(idx, 1);
-        triggerFlash();
-        // 爆闪提示
-        liqFlash.classList.add('active');
-        setTimeout(() => liqFlash.classList.remove('active'), 200);
-      }
-      return totalEquity;
-    }
-
-    // 计算总市值 (多空绝对值之和)
-    function getTotalNotional() {
-      let longShares = 0, shortShares = 0;
-      orders.forEach(o => {
-        if (o.dir === 1) longShares += o.shares;
-        else shortShares += o.shares;
-      });
-      return (longShares + shortShares) * currentPrice;
-    }
-
-    // 更新所有UI数值
-    function refreshUI() {
-      const totalEquity = updateOrdersAndGetEquity(); // 先清理归零订单
-      const netAsset = cash + totalEquity;
-      const totalNotional = getTotalNotional();
-      const accLev = netAsset > 0.001 ? totalNotional / netAsset : 0;
-
-      // 更新HUD
-      assetEl.textContent = netAsset.toFixed(2);
-      const totalPnl = netAsset - cash; // 未实现盈亏
-      pnlEl.textContent = totalPnl.toFixed(2);
-      accLevEl.textContent = accLev.toFixed(2) + 'x';
-      spotEl.textContent = currentPrice.toFixed(2);
-      cashEl.textContent = cash.toFixed(2);
-
-      // 爆仓检测
-      if (netAsset <= 0.001 && orders.length > 0) {
-        // 强制平所有
-        orders.forEach(o => cash += o.currentEquity || 0);
-        orders = [];
-        liquidated = true;
-        liqIndicator.style.display = 'block';
-        liqFlash.classList.add('active');
-        setTimeout(() => liqFlash.classList.remove('active'), 500);
-      } else if (netAsset > 0) {
-        liquidated = false;
-        liqIndicator.style.display = 'none';
-      }
-
-      // 更新多空股数摘要
-      let longQty = 0, shortQty = 0;
-      orders.forEach(o => { if (o.dir === 1) longQty += o.shares; else shortQty += o.shares; });
-      sharesSummary.textContent = `L:${longQty.toFixed(2)} / S:${shortQty.toFixed(2)} shares`;
-
-      renderOrders();
-    }
-
-    // 渲染订单卡片
-    function renderOrders() {
-      if (!ordersDiv) return;
-      let html = '';
-      orders.forEach(o => {
-        // 关键修改：显示盈亏必须乘以杠杆
-        const unrealized = o.dir * o.shares * (currentPrice - o.openPrice) * o.lev;
-        const equity = o.margin + unrealized;
-        const pnlColor = unrealized >= 0 ? '#39ff14' : '#ff2d78';
-        html += `<div class="order-card ${o.dir === 1 ? 'long' : 'short'}">`;
-        html += `<div class="order-row"><span>${o.dir === 1 ? '▲ LONG' : '▼ SHORT'}</span><span class="value">ID:${o.id}</span></div>`;
-        html += `<div class="order-row"><span>Open</span><span class="value">$${o.openPrice.toFixed(2)}</span></div>`;
-        html += `<div class="order-row"><span>Shares</span><span class="value">${o.shares.toFixed(2)}</span></div>`;
-        html += `<div class="order-row"><span>Leverage</span><span class="value">${o.lev.toFixed(1)}x</span></div>`;
-        html += `<div class="order-row"><span>Unrealized</span><span style="color:${pnlColor};">$${unrealized.toFixed(2)}</span></div>`;
-        html += `<button class="close-order" data-id="${o.id}">✕ CLOSE</button>`;
-        html += `</div>`;
-      });
-      ordersDiv.innerHTML = html || '<div style="color:rgba(0,245,255,0.2); width:100%; text-align:center; padding:20px;">// NO OPEN POSITIONS //</div>';
-
-      // 绑定关闭按钮事件
-      document.querySelectorAll('.close-order').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = parseInt(e.target.dataset.id);
-          closeOrderById(id);
-        });
-      });
-    }
-
-    // 平仓指定订单
-    function closeOrderById(id) {
-      const idx = orders.findIndex(o => o.id === id);
-      if (idx === -1) return;
-      const o = orders[idx];
-      // 关键修改：盈亏乘以杠杆
-      const unrealized = o.dir * o.shares * (currentPrice - o.openPrice) * o.lev;
-      const equity = o.margin + unrealized;
-      cash += equity;
-      orders.splice(idx, 1);
+    for(let i=toLiq.length-1;i>=0;i--){
+      const o=orders[toLiq[i]];
+      cash+=Math.max(0,o._equity); realizedPnl+=Math.max(0,o._equity)-o.margin;
+      orders.splice(toLiq[i],1);
       triggerFlash();
-      refreshUI();
+      liqFlash.classList.add('active');
+      setTimeout(()=>liqFlash.classList.remove('active'),250);
     }
+    return total;
+  }
+  function getTotalNotional(){ return orders.reduce((s,o)=>s+o.shares*currentPrice,0); }
 
-    // 开仓
-    function placeOrder(direction) {
-      const shares = parseFloat(sharesInput.value);
-      if (isNaN(shares) || shares <= 0) return;
-      const lev = parseFloat(leverageSlider.value);
-      const requiredMargin = (shares * currentPrice) / lev;
-      if (cash < requiredMargin) {
-        alert('⚠️ INSUFFICIENT CASH');
-        return;
-      }
-      cash -= requiredMargin;
-      const newOrder = {
-        id: nextOrderId++,
-        dir: direction,
-        openPrice: currentPrice,
-        shares: shares,
-        lev: lev,
-        margin: requiredMargin,
-      };
-      orders.push(newOrder);
-      // 记录图表标记
-      trades.push({ type: direction === 1 ? 'L' : 'S', price: currentPrice, index: ohlc.length-1 });
-      triggerFlash();
-      refreshUI();
+  /* ═══════════════════════════════════════════
+     HUD 刷新
+  ═══════════════════════════════════════════ */
+  function refreshUI() {
+    const posEq  = updateOrdersAndGetEquity();
+    const netAsset = cash+posEq;
+    const notional = getTotalNotional();
+    const accLev   = netAsset>0.001 ? notional/netAsset : 0;
+    const unreal   = orders.reduce((s,o)=>s+orderUnrealized(o),0);
+    const totalPnl = realizedPnl+unreal;
+
+    assetEl.textContent = netAsset.toFixed(2);
+    pnlEl.textContent   = (totalPnl>=0?'+':'')+totalPnl.toFixed(2);
+    pnlEl.style.color   = totalPnl>=0?'var(--green)':'var(--pink)';
+    pnlEl.style.textShadow = totalPnl>=0?'0 0 10px rgba(57,255,20,0.6)':'0 0 10px rgba(255,45,120,0.6)';
+    accLevEl.textContent = accLev.toFixed(2)+'x';
+    spotEl.textContent   = currentPrice.toFixed(2);
+    cashEl.textContent   = cash.toFixed(2);
+
+    // 情景 HUD
+    const reg = REGIMES[regimeIdx];
+    regimeEl.textContent   = reg.name;
+    regimeEl.style.color   = reg.color;
+    regimeEl.style.textShadow = `0 0 10px ${reg.color}99`;
+
+    if(netAsset<=0.001&&!liquidated){
+      orders=[]; liquidated=true; liqIndicator.style.display='block';
+      liqFlash.classList.add('active'); setTimeout(()=>liqFlash.classList.remove('active'),600);
+      showToast('💀 ACCOUNT LIQUIDATED<br>所有仓位已强制平仓，点击 ⟲ RESET 重新开始','error',5000);
+    } else if(netAsset>0.001){ liquidated=false; liqIndicator.style.display='none'; }
+
+    let lQ=0,sQ=0; orders.forEach(o=>{if(o.dir===1)lQ+=o.shares;else sQ+=o.shares;});
+    sharesSummary.textContent=`L:${lQ.toFixed(2)} / S:${sQ.toFixed(2)} shares`;
+    renderOrders();
+  }
+
+  /* ═══════════════════════════════════════════
+     订单卡片
+  ═══════════════════════════════════════════ */
+  function renderOrders() {
+    if(!ordersDiv) return;
+    if(orders.length===0){
+      ordersDiv.innerHTML='<div style="color:rgba(0,245,255,0.15);width:100%;text-align:center;padding:16px 0;font-size:0.75rem;">// NO OPEN POSITIONS //</div>';
+      return;
     }
+    let html='';
+    orders.forEach(o=>{
+      const unreal  = orderUnrealized(o);
+      const eq      = orderEquity(o);
+      const retPct  = (unreal/o.margin*100).toFixed(1);
+      const pnlClr  = unreal>=0?'#39ff14':'#ff2d78';
+      const liqP    = liqPrice(o);
+      // Equity bar: eq/margin clamped 0-200%
+      const barPct  = Math.max(0,Math.min(200, eq/o.margin*100));
+      const barClr  = barPct>=100?'#39ff14':barPct>30?'#f5e642':'#ff2d78';
+      html+=`<div class="order-card ${o.dir===1?'long':'short'}">
+        <div class="order-row"><span>${o.dir===1?'▲ LONG':'▼ SHORT'} <span style="color:rgba(0,245,255,0.4)">#${o.id}</span></span><span style="color:${pnlClr}">${unreal>=0?'+':''}${unreal.toFixed(2)} (${retPct}%)</span></div>
+        <div class="order-divider"></div>
+        <div class="order-row"><span class="lbl">Open/Now</span><span class="value">$${o.openPrice.toFixed(2)} / $${currentPrice.toFixed(2)}</span></div>
+        <div class="order-row"><span class="lbl">Qty × Lev</span><span class="value">${o.shares.toFixed(2)} × ${o.lev.toFixed(1)}x</span></div>
+        <div class="order-row"><span class="lbl">Margin</span><span class="value">$${o.margin.toFixed(2)}</span></div>
+        <div class="equity-bar-wrap"><div class="equity-bar" style="width:${Math.min(100,barPct/2)}%;background:${barClr}"></div></div>
+        <div class="order-row"><span class="lbl">Equity</span><span style="color:${pnlClr}">$${eq.toFixed(2)}</span></div>
+        <div class="order-row"><span class="lbl">Liq Price</span><span style="color:#ff7050">$${liqP.toFixed(2)}</span></div>
+        ${o.sl!==null?`<div class="order-row"><span class="lbl">SL</span><span style="color:#ff5050">$${o.sl.toFixed(2)}</span></div>`:''}
+        ${o.tp!==null?`<div class="order-row"><span class="lbl">TP</span><span style="color:#50ff90">$${o.tp.toFixed(2)}</span></div>`:''}
+        <button class="close-order" data-id="${o.id}">✕ CLOSE</button>
+      </div>`;
+    });
+    ordersDiv.innerHTML=html;
+    document.querySelectorAll('.close-order').forEach(btn=>{
+      btn.addEventListener('click',e=>closeOrderById(parseInt(e.target.dataset.id)));
+    });
+  }
 
-    // 平所有
-    function closeAll() {
-      orders.forEach(o => {
-        const unrealized = o.dir * o.shares * (currentPrice - o.openPrice) * o.lev;
-        cash += o.margin + unrealized;
-      });
-      orders = [];
-      triggerFlash();
-      refreshUI();
+  /* ═══════════════════════════════════════════
+     平仓
+  ═══════════════════════════════════════════ */
+  function closeOrderById(id,doRefresh=true){
+    const idx=orders.findIndex(o=>o.id===id); if(idx===-1)return;
+    const o=orders[idx], unreal=orderUnrealized(o);
+    cash+=Math.max(0,orderEquity(o)); realizedPnl+=unreal;
+    orders.splice(idx,1); triggerFlash();
+    if(doRefresh) refreshUI();
+  }
+
+  /* ═══════════════════════════════════════════
+     开仓
+  ═══════════════════════════════════════════ */
+  function placeOrder(direction){
+    if(liquidated){showToast('⚠ ACCOUNT LIQUIDATED<br>Reset to continue','error');return;}
+    const shares=parseFloat(sharesInput.value);
+    if(isNaN(shares)||shares<=0){showToast('⚠ Invalid shares qty','warn');return;}
+    const lev=parseFloat(leverageSlider.value);
+    const margin=(shares*currentPrice)/lev;
+    if(cash<margin){showToast(`⚠ INSUFFICIENT CASH<br>Required: <b>$${margin.toFixed(2)}</b> &nbsp;Available: <b>$${cash.toFixed(2)}</b>`,'warn');return;}
+    const sl=slInput.value!==''?parseFloat(slInput.value):null;
+    const tp=tpInput.value!==''?parseFloat(tpInput.value):null;
+    const slErr=document.getElementById('sl-err');
+    const tpErr=document.getElementById('tp-err');
+    slErr.textContent=''; tpErr.textContent='';
+    slInput.classList.remove('err'); tpInput.classList.remove('err');
+    let hasErr=false;
+    if(sl!==null&&((direction===1&&sl>=currentPrice)||(direction===-1&&sl<=currentPrice))){
+      slErr.textContent=direction===1?`需 < $${currentPrice.toFixed(2)}`:`需 > $${currentPrice.toFixed(2)}`;
+      slInput.classList.add('err'); hasErr=true;
     }
-
-    // 重置
-    function resetGame() {
-      cash = parseFloat(initAssetInput.value) || 1000;
-      orders = [];
-      currentPrice = 100.0;
-      initPrice();
-      trades = [];
-      liquidated = false;
-      liqIndicator.style.display = 'none';
-      refreshUI();
-      triggerFlash();
+    if(tp!==null&&((direction===1&&tp<=currentPrice)||(direction===-1&&tp>=currentPrice))){
+      tpErr.textContent=direction===1?`需 > $${currentPrice.toFixed(2)}`:`需 < $${currentPrice.toFixed(2)}`;
+      tpInput.classList.add('err'); hasErr=true;
     }
+    if(hasErr)return;
+    cash-=margin;
+    orders.push({id:nextOrderId++,dir:direction,openPrice:currentPrice,shares,lev,margin,sl,tp,_equity:margin});
+    trades.push({type:direction===1?'L':'S',price:currentPrice,index:ohlc.length-1});
+    triggerFlash(); refreshUI();
+  }
 
-    function triggerFlash() {
-      flash.classList.add('flash');
-      setTimeout(() => flash.classList.remove('flash'), 100);
+  function closeAll(){
+    [...orders.map(o=>o.id)].forEach(id=>closeOrderById(id,false));
+    triggerFlash(); refreshUI();
+  }
+
+  /* ═══════════════════════════════════════════
+     重置
+  ═══════════════════════════════════════════ */
+  function resetGame(){
+    initialCash=parseFloat(initAssetInput.value)||1000;
+    cash=initialCash; realizedPnl=0; orders=[]; nextOrderId=1; liquidated=false;
+    currentPrice=100; prevTickPrice=100; lastTickTime=performance.now();
+    regimeIdx=2; prevRegimeIdx=2; regimeTick=0;
+    regimeDuration=120+Math.floor(Math.random()*180); regimeBlend=1;
+    mu_base=mu_user; sigma_base=sigma_user; effectiveJumpProb=JUMP_PROB;
+    mu_t=mu_user; sigma_t=sigma_user;
+    liqIndicator.style.display='none';
+    initPrice(); emaCache.clear(); aggEmaCache.clear(); updateEMACache();
+    trades=[]; refreshUI();
+    triggerFlash();
+  }
+
+  function triggerFlash(){
+    flash.classList.add('flash'); setTimeout(()=>flash.classList.remove('flash'),100);
+  }
+
+  /* ═══════════════════════════════════════════
+     初始化价格历史
+  ═══════════════════════════════════════════ */
+  function initPrice(){
+    ohlc=[]; priceHistory=[]; volumeHistory=[];
+    let p=100,s=sigma_user,m=mu_user;
+    const sqDt=Math.sqrt(dt);
+    for(let i=0;i<100;i++){
+      s=Math.max(sigma_user*0.5,Math.min(sigma_user*2.0,s+VOL_KAPPA*(sigma_user-s)*dt+VOL_OF_VOL*s*normalRandom()*sqDt));
+      m=Math.max(-0.8,Math.min(0.8,m+DRIFT_KAPPA*(mu_user-m)*dt+DRIFT_VOL*normalRandom()*sqDt));
+      const drift=m-0.5*s*s;
+      const jump=Math.random()<JUMP_PROB?JUMP_MEAN+JUMP_STD*normalRandom():0;
+      p=p*Math.exp(drift*dt+s*sqDt*normalRandom()+jump);
+      if(p<0.01)p=0.01;
+      const open=i===0?p:ohlc[i-1].c, micro=s*0.25*Math.random();
+      ohlc.push({o:open,h:Math.max(open,p)*(1+micro),l:Math.min(open,p)*(1-micro),c:p});
+      priceHistory.push(p);
+      volumeHistory.push((s/Math.max(sigma_user,0.001))*(0.7+0.6*Math.random()));
     }
+    currentPrice=priceHistory[priceHistory.length-1];
+    prevTickPrice=currentPrice;
+    sigma_t=s; mu_t=m;
+    // 对齐 totalTicks 使 getAggregated 的 partialSize 正确（防止 partialSize=0 死循环）
+    totalTicks=priceHistory.length;
+  }
 
-    // --- BSM 步进 ---
-    function stepPrice() {
-      const drift = mu - 0.5 * sigma * sigma;
-      const diffusion = sigma * Math.sqrt(dt);
-      const rnd = normalRandom();
-      const change = Math.exp(drift * dt + diffusion * rnd);
-      currentPrice = currentPrice * change;
-      if (currentPrice < 0.1) currentPrice = 0.1;
-
-      let open = ohlc.length > 0 ? ohlc[ohlc.length-1].c : currentPrice;
-      let close = currentPrice;
-      let high = Math.max(open, close) * (1 + Math.random()*0.012);
-      let low = Math.min(open, close) * (1 - Math.random()*0.012);
-      ohlc.push({o: open, h: high, l: low, c: close});
-      priceHistory.push(close);
-      if (ohlc.length > MAX_HISTORY) {
-        ohlc.shift();
-        priceHistory.shift();
-        trades = trades.filter(t => t.index > 0).map(t => { t.index--; return t; });
-      }
-
-      refreshUI(); // 更新订单权益、检测归零、重绘
-    }
-
-    // --- 绘制图表 (与原逻辑一致，增加EMA函数) ---
-    function computeEMA(period) {
-      if (priceHistory.length === 0) return [];
-      let ema = [];
-      let multiplier = 2 / (period + 1);
-      ema[0] = priceHistory[0];
-      for (let i = 1; i < priceHistory.length; i++) {
-        ema[i] = (priceHistory[i] - ema[i-1]) * multiplier + ema[i-1];
-      }
-      return ema;
-    }
-
-    function rainbowColor(period, maxPeriod = 60) {
-      let hue;
-      if (period <= 25) hue = (period - 1) * (80 / 24);
-      else if (period <= 34) hue = 80 + (period - 26) * (20 / 8);
-      else hue = 100 + (period - 35) * (200 / 25);
-      return `hsl(${hue}, 100%, 60%)`;
-    }
-
-    function drawChart() {
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#04000a';
-      ctx.fillRect(0, 0, width, height);
-
-      // 网格
-      ctx.lineWidth = 0.5;
-      const stepsX = 10, stepsY = 8;
-      for (let i = 0; i <= stepsX; i++) {
-        let x = (i / stepsX) * width;
-        ctx.strokeStyle = (i % 4 === 0) ? 'rgba(0,245,255,0.12)' : 'rgba(0,245,255,0.04)';
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
-      }
-      for (let i = 0; i <= stepsY; i++) {
-        let y = (i / stepsY) * height;
-        ctx.strokeStyle = (i % 4 === 0) ? 'rgba(255,45,120,0.08)' : 'rgba(0,245,255,0.03)';
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
-      }
-
-      if (priceHistory.length < 2) return;
-
-      let minP = Math.min(...priceHistory) * 0.95;
-      let maxP = Math.max(...priceHistory) * 1.05;
-      if (maxP - minP < 0.01) { minP = currentPrice * 0.8; maxP = currentPrice * 1.2; }
-
-      const mapX = (i) => (i / (priceHistory.length - 1)) * width;
-      const mapY = (price) => height - ((price - minP) / (maxP - minP)) * height * 0.85 - 25;
-
-      // K线或折线
-      if (chartMode === 'candle' && ohlc.length > 0) {
-        const candleWidth = Math.max(2, (width / priceHistory.length) * 0.6);
-        for (let i = 0; i < ohlc.length; i++) {
-          const k = ohlc[i];
-          const x = mapX(i) - candleWidth/2;
-          const openY = mapY(k.o);
-          const closeY = mapY(k.c);
-          const highY = mapY(k.h);
-          const lowY = mapY(k.l);
-          const color = k.c >= k.o ? '#39ff14' : '#ff2d78';
-          ctx.fillStyle = color;
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath(); ctx.moveTo(x + candleWidth/2, highY); ctx.lineTo(x + candleWidth/2, lowY); ctx.stroke();
-          if (k.c >= k.o) { ctx.fillRect(x, closeY, candleWidth, openY - closeY); }
-          else { ctx.fillRect(x, openY, candleWidth, closeY - openY); }
-        }
+  /* ═══════════════════════════════════════════
+     EMA 缓存
+  ═══════════════════════════════════════════ */
+  const emaCache=new Map();
+  // 聚合 EMA 缓存：每次 closes 内容变化时重算，避免每帧重复计算
+  const aggEmaCache=new Map(); // key: `${period}` → { closesLen, lastClose, ema }
+  function getAggEMA(closes, period) {
+    const lastClose = closes[closes.length-1];
+    const cached = aggEmaCache.get(period);
+    if (cached && cached.closesLen === closes.length && cached.lastClose === lastClose)
+      return cached.ema;
+    const ema = emaFromArray(closes, period);
+    aggEmaCache.set(period, { closesLen: closes.length, lastClose, ema });
+    return ema;
+  }
+  function updateEMACache(){
+    const needed=new Set([5,20]);
+    if(showDetailedEMA)[1,2,3,5,7,10,20,30,60].forEach(p=>needed.add(p));
+    if(showRainbowEMA)for(let p=1;p<=60;p++)needed.add(p);
+    const n=priceHistory.length, steady=(n===MAX_HISTORY);
+    needed.forEach(period=>{
+      const k=2/(period+1), prev=emaCache.get(period);
+      if(steady&&prev&&prev.length===n){
+        const e=new Float64Array(n); e.set(prev.subarray(1));
+        e[n-1]=(priceHistory[n-1]-e[n-2])*k+e[n-2]; emaCache.set(period,e);
       } else {
-        ctx.beginPath();
-        ctx.strokeStyle = '#00f5ff';
-        ctx.lineWidth = 2.5;
-        ctx.shadowColor = '#00f5ff';
-        ctx.shadowBlur = 10;
-        for (let i = 0; i < priceHistory.length; i++) {
-          let x = mapX(i);
-          let y = mapY(priceHistory[i]);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+        const e=new Float64Array(n); e[0]=priceHistory[0];
+        for(let i=1;i<n;i++)e[i]=(priceHistory[i]-e[i-1])*k+e[i-1];
+        emaCache.set(period,e);
       }
+    });
+  }
+  function computeEMA(period){ return emaCache.get(period)||[]; }
 
-      // EMA
-      ctx.shadowBlur = 4;
-      ctx.lineWidth = 1.2;
-      if (showRainbowEMA) {
-        for (let p = 1; p <= 60; p++) {
-          let ema = computeEMA(p);
-          ctx.beginPath();
-          ctx.strokeStyle = rainbowColor(p, 60);
-          ctx.lineWidth = 0.8;
-          for (let i = 0; i < ema.length; i++) {
-            let x = mapX(i);
-            let y = mapY(ema[i]);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-        }
-      }
-      if (showDetailedEMA) {
-        const periods = [1,2,3,5,7,10,20,30,60];
-        periods.forEach(p => {
-          let ema = computeEMA(p);
-          ctx.beginPath();
-          ctx.strokeStyle = rainbowColor(p, 60);
-          ctx.lineWidth = 1.5;
-          for (let i = 0; i < ema.length; i++) {
-            let x = mapX(i);
-            let y = mapY(ema[i]);
-            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-        });
-      }
-      if (showEMA5) {
-        let ema = computeEMA(5);
-        ctx.beginPath();
-        ctx.strokeStyle = '#f5e642';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < ema.length; i++) {
-          let x = mapX(i);
-          let y = mapY(ema[i]);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-      if (showEMA20) {
-        let ema = computeEMA(20);
-        ctx.beginPath();
-        ctx.strokeStyle = '#ff2d78';
-        ctx.lineWidth = 2;
-        for (let i = 0; i < ema.length; i++) {
-          let x = mapX(i);
-          let y = mapY(ema[i]);
-          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
+  function rainbowColor(p){
+    let h;
+    if(p<=25)h=(p-1)*(80/24);
+    else if(p<=34)h=80+(p-26)*(20/8);
+    else h=100+(p-35)*(200/25);
+    return `hsl(${h},100%,60%)`;
+  }
 
-      // 交易标记
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 16px "Orbitron"';
-      trades.forEach(t => {
-        if (t.index >= 0 && t.index < priceHistory.length) {
-          let x = mapX(t.index);
-          let y = mapY(t.price) - 12;
-          ctx.fillStyle = t.type === 'L' ? '#39ff14' : '#ff2d78';
-          ctx.fillText(t.type, x-6, y);
-        }
-      });
+  /* ═══════════════════════════════════════════
+     绘图（60fps rAF 驱动，带插值平滑）
+  ═══════════════════════════════════════════ */
+  /* 聚合 OHLC / volume / 收盘价到指定 tick 数量
+     从右端划分：partialSize 由 totalTicks % sz 决定，与数组长度无关
+     → 每 sz 个 tick 才生成一根新 K 线，与 MAX_HISTORY 滑窗无关 */
+  function getAggregated(animP) {
+    const sz = candleSize;
+    if (sz <= 1) return { ag: ohlc, vol: volumeHistory, closes: priceHistory };
 
-      ctx.shadowBlur = 12;
-      ctx.fillStyle = '#f5e642';
-      ctx.beginPath(); ctx.arc(width-30, mapY(currentPrice), 6, 0, 2*Math.PI);
-      ctx.fill();
-      ctx.font = 'bold 12px "Share Tech Mono"';
-      ctx.fillStyle = '#f5e642';
-      ctx.fillText('$'+currentPrice.toFixed(2), width-100, 40);
-      ctx.shadowBlur = 0;
+    const len = ohlc.length;
+    if (len === 0) return { ag: [], vol: [], closes: [] };
+
+    // 当前最右侧（未完成）K 线已积累多少 tick
+    const partialSize = ((totalTicks - 1) % sz) + 1;
+
+    // 从右向左构建分组，最右组为 partial
+    const groups = [];
+    let pos = len;
+    groups.push({ start: Math.max(0, pos - partialSize), end: pos, isLast: true });
+    pos -= partialSize;
+    while (pos > 0) {
+      const start = Math.max(0, pos - sz);
+      groups.push({ start, end: pos, isLast: false });
+      pos = start;
+    }
+    groups.reverse(); // 旧 → 新
+
+    const ag = [], vol = [], closes = [];
+    for (const g of groups) {
+      if (g.start >= g.end) continue;
+      let hi = -Infinity, lo = Infinity, vSum = 0;
+      for (let j = g.start; j < g.end; j++) {
+        const c = ohlc[j];
+        if (c.h > hi) hi = c.h;
+        if (c.l < lo) lo = c.l;
+        vSum += volumeHistory[j] || 0;
+      }
+      const closePrice = g.isLast ? animP : ohlc[g.end - 1].c;
+      if (g.isLast) { if (animP > hi) hi = animP; if (animP < lo) lo = animP; }
+      ag.push({ o: ohlc[g.start].o, h: hi, l: lo, c: closePrice });
+      vol.push(vSum / (g.end - g.start));
+      closes.push(closePrice);
+    }
+    return { ag, vol, closes };
+  }
+
+  /* EMA on arbitrary close-price array (not cache) — uses Float64Array, no fill() */
+  function emaFromArray(arr, period) {
+    const len = arr.length;
+    if (len < period) return [];
+    const k = 2 / (period + 1);
+    const out = new Float64Array(len - period + 1);
+    let sum = 0;
+    for (let i = 0; i < period; i++) sum += arr[i];
+    out[0] = sum / period;
+    for (let i = period; i < len; i++)
+      out[i - period + 1] = (arr[i] - out[i - period]) * k + out[i - period];
+    return out;
+  }
+
+  function drawChart() {
+    // 插值动画价格
+    const elapsed = performance.now() - lastTickTime;
+    const t       = Math.min(1, elapsed / TICK_MS);
+    const animP   = prevTickPrice + (currentPrice - prevTickPrice) * t;
+
+    ctx.clearRect(0,0,CW,CH);
+    ctx.fillStyle='#02000a'; ctx.fillRect(0,0,CW,CH);
+
+    // 网格
+    ctx.lineWidth=0.5;
+    for(let i=0;i<=12;i++){
+      const x=(i/12)*CW;
+      ctx.strokeStyle=i%4===0?'rgba(0,245,255,0.1)':'rgba(0,245,255,0.03)';
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();
+    }
+    for(let i=0;i<=8;i++){
+      const y=(i/8)*CH;
+      ctx.strokeStyle=i%4===0?'rgba(255,45,120,0.07)':'rgba(0,245,255,0.025)';
+      ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
     }
 
-    // --- 事件绑定 ---
-    leverageSlider.addEventListener('input', (e) => {
-      leverageDisplay.textContent = parseFloat(e.target.value).toFixed(1) + 'x';
+    if(priceHistory.length<2)return;
+
+    const CHART_TOP    = 24;
+    const CHART_BOTTOM = CH*0.78;
+
+    // ── 聚合数据 ──
+    const { ag, vol: aggVol, closes: aggCloses } = getAggregated(animP);
+    const n = ag.length;
+    if(n < 2) return;
+
+    let minP=Infinity,maxP=-Infinity;
+    for(let i=0;i<n;i++){
+      if(ag[i].l<minP)minP=ag[i].l;
+      if(ag[i].h>maxP)maxP=ag[i].h;
+    }
+    minP=minP*0.997; maxP=maxP*1.003;
+    if(maxP-minP<0.01){minP=animP*0.8;maxP=animP*1.2;}
+
+    const mapX = i => (i/(n-1))*CW;
+    const mapY = p => CHART_TOP+(1-(p-minP)/(maxP-minP))*(CHART_BOTTOM-CHART_TOP);
+
+    // ── 成交量柱 ──
+    let maxVol=0.001;
+    for(let i=0;i<aggVol.length;i++)if(aggVol[i]>maxVol)maxVol=aggVol[i];
+    const barW=CW/n;
+    for(let i=0;i<aggVol.length;i++){
+      const vh=(aggVol[i]/maxVol)*(CH-CHART_BOTTOM-6);
+      ctx.fillStyle=(ag[i].c>=ag[i].o)?'rgba(57,255,20,0.22)':'rgba(255,45,120,0.22)';
+      ctx.fillRect(mapX(i)-barW/2, CH-vh-2, Math.max(barW-1,1), vh);
+    }
+    // 分割线
+    ctx.strokeStyle='rgba(0,245,255,0.07)'; ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(0,CHART_BOTTOM+2);ctx.lineTo(CW,CHART_BOTTOM+2);ctx.stroke();
+
+    // ── K线 / 折线 ──
+    if(chartMode==='candle'){
+      const cw=Math.max(2,barW*0.6);
+      for(let i=0;i<n;i++){
+        const k=ag[i], cx=mapX(i);
+        const oY=mapY(k.o),cY=mapY(k.c),hY=mapY(k.h),lY=mapY(k.l);
+        const col=k.c>=k.o?'#39ff14':'#ff2d78';
+        ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(cx,hY);ctx.lineTo(cx,lY);ctx.stroke();
+        ctx.fillRect(cx-cw/2,Math.min(oY,cY),cw,Math.max(1,Math.abs(cY-oY)));
+      }
+    } else {
+      // 渐变填充
+      const grad=ctx.createLinearGradient(0,CHART_TOP,0,CHART_BOTTOM);
+      grad.addColorStop(0,'rgba(0,245,255,0.18)');
+      grad.addColorStop(0.65,'rgba(0,245,255,0.04)');
+      grad.addColorStop(1,'rgba(0,245,255,0)');
+      ctx.beginPath();
+      for(let i=0;i<n;i++){
+        const x=mapX(i), y=mapY(aggCloses[i]);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.lineTo(mapX(n-1),CHART_BOTTOM);
+      ctx.lineTo(mapX(0),CHART_BOTTOM);
+      ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+
+      // 折线本身
+      ctx.beginPath();
+      ctx.strokeStyle='#00f5ff'; ctx.lineWidth=1.8;
+      ctx.shadowColor='#00f5ff'; ctx.shadowBlur=7;
+      for(let i=0;i<n;i++){
+        const x=mapX(i), y=mapY(aggCloses[i]);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke(); ctx.shadowBlur=0;
+    }
+
+    // ── EMA (基于聚合收盘价) ──
+    ctx.shadowBlur=0;
+    function drawEMA(period,color,lw){
+      const ema = candleSize<=1 ? computeEMA(period) : getAggEMA(aggCloses, period);
+      if(!ema.length)return;
+      // ema 长度可能短于 n，右对齐绘制
+      const offset = n - ema.length;
+      ctx.beginPath(); ctx.strokeStyle=color; ctx.lineWidth=lw;
+      for(let i=0;i<ema.length;i++){
+        const x=mapX(i+offset),y=mapY(ema[i]);
+        i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+    }
+    if(showRainbowEMA) for(let p=1;p<=60;p++) drawEMA(p,rainbowColor(p),0.7);
+    if(showDetailedEMA) [1,2,3,5,7,10,20,30,60].forEach(p=>drawEMA(p,rainbowColor(p),1.4));
+    if(showEMA5)  drawEMA(5,'#f5e642',1.5);
+    if(showEMA20) drawEMA(20,'#ff2d78',1.5);
+
+    // ── Y 轴价格刻度 ──
+    ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(0,245,255,0.3)';
+    for(let i=0;i<=6;i++){
+      const price=minP+(maxP-minP)*(i/6);
+      ctx.fillText('$'+price.toFixed(2),4,mapY(price)-2);
+    }
+
+    // ── SL/TP 水平线 ──
+    ctx.setLineDash([4,4]); ctx.lineWidth=0.8;
+    orders.forEach(o=>{
+      if(o.sl!==null&&o.sl>minP&&o.sl<maxP){
+        const y=mapY(o.sl); ctx.strokeStyle='rgba(255,68,68,0.5)';
+        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
+        ctx.fillStyle='#ff5555';ctx.font='9px "Share Tech Mono"';
+        ctx.fillText(`SL #${o.id}`,CW-55,y-2);
+      }
+      if(o.tp!==null&&o.tp>minP&&o.tp<maxP){
+        const y=mapY(o.tp); ctx.strokeStyle='rgba(68,255,136,0.5)';
+        ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
+        ctx.fillStyle='#44ff88';ctx.font='9px "Share Tech Mono"';
+        ctx.fillText(`TP #${o.id}`,CW-55,y-2);
+      }
     });
-    muSlider.addEventListener('input', (e) => { mu = parseFloat(e.target.value); muVal.textContent = mu.toFixed(3); });
-    sigmaSlider.addEventListener('input', (e) => { sigma = parseFloat(e.target.value); sigmaVal.textContent = sigma.toFixed(3); });
+    ctx.setLineDash([]);
 
-    btnLong.addEventListener('click', () => placeOrder(1));
-    btnShort.addEventListener('click', () => placeOrder(-1));
-    btnCloseAll.addEventListener('click', closeAll);
-    btnReset.addEventListener('click', resetGame);
-
-    initAssetInput.addEventListener('change', () => { if (orders.length === 0) cash = parseFloat(initAssetInput.value) || 1000; refreshUI(); });
-
-    // 图表模式
-    document.getElementById('btn-line').addEventListener('click', () => {
-      chartMode = 'line';
-      document.getElementById('btn-line').classList.add('active');
-      document.getElementById('btn-candle').classList.remove('active');
+    // ── 开仓标记（转换到聚合 index）──
+    ctx.font='bold 12px "Orbitron"';
+    trades.forEach(t=>{
+      const aggIdx = Math.floor(t.index / candleSize);
+      if(aggIdx>=0&&aggIdx<n){
+        const x=mapX(aggIdx),y=mapY(t.price)-13;
+        ctx.fillStyle=t.type==='L'?'#39ff14':'#ff2d78';
+        ctx.fillText(t.type,x-5,y);
+      }
     });
-    document.getElementById('btn-candle').addEventListener('click', () => {
-      chartMode = 'candle';
-      document.getElementById('btn-candle').classList.add('active');
-      document.getElementById('btn-line').classList.remove('active');
+
+    // ── 当前价格点（用 animP）──
+    const dotY=mapY(animP);
+    ctx.shadowColor='#f5e642'; ctx.shadowBlur=14;
+    ctx.fillStyle='#f5e642';
+    ctx.beginPath();ctx.arc(CW-24,dotY,5,0,2*Math.PI);ctx.fill();
+    ctx.shadowBlur=0;
+    ctx.font='bold 11px "Share Tech Mono"';ctx.fillStyle='#f5e642';
+    ctx.fillText('$'+animP.toFixed(2),CW-105,dotY-9);
+
+    // ── 情景标签（右上角，简洁）──
+    const rCurr=REGIMES[regimeIdx];
+    const inTrans=regimeBlend<0.95;
+    ctx.shadowColor=rCurr.color; ctx.shadowBlur=8;
+    ctx.font='bold 10px "Orbitron"'; ctx.fillStyle=rCurr.color;
+    const lbl=inTrans?`${REGIMES[prevRegimeIdx].name}→${rCurr.name}`:`◈ ${rCurr.name}`;
+    ctx.fillText(lbl, CW-(inTrans?100:62), 16);
+    ctx.shadowBlur=0;
+
+    // ── 底部参数 ──
+    ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(0,245,255,0.25)';
+    ctx.fillText(`σ:${(sigma_t*100).toFixed(2)}%  μ:${(mu_t>=0?'+':'')}${(mu_t*100).toFixed(2)}%`,8,CH-4);
+  }
+
+  /* ═══════════════════════════════════════════
+     事件绑定
+  ═══════════════════════════════════════════ */
+  document.querySelectorAll('.tf-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      candleSize=parseInt(btn.dataset.tf);
+      aggEmaCache.clear();
+      document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
     });
-    document.getElementById('ema5').addEventListener('change', (e) => { showEMA5 = e.target.checked; });
-    document.getElementById('ema20').addEventListener('change', (e) => { showEMA20 = e.target.checked; });
-    document.getElementById('detailedEMA').addEventListener('change', (e) => { showDetailedEMA = e.target.checked; });
-    document.getElementById('rainbowEMA').addEventListener('change', (e) => { showRainbowEMA = e.target.checked; });
+  });
+  leverageSlider.addEventListener('input',e=>{leverageDisplay.textContent=parseFloat(e.target.value).toFixed(1)+'x';});
+  muSlider.addEventListener('input',e=>{mu_user=parseFloat(e.target.value);muVal.textContent=(mu_user>=0?'+':'')+mu_user.toFixed(3);});
+  sigmaSlider.addEventListener('input',e=>{sigma_user=parseFloat(e.target.value);sigmaVal.textContent=sigma_user.toFixed(3);});
+  btnLong.addEventListener('click',()=>placeOrder(1));
+  btnShort.addEventListener('click',()=>placeOrder(-1));
+  function clearSlTpErr(el,errId){el.classList.remove('err');document.getElementById(errId).textContent='';}
+  slInput.addEventListener('input',()=>clearSlTpErr(slInput,'sl-err'));
+  tpInput.addEventListener('input',()=>clearSlTpErr(tpInput,'tp-err'));
+  btnCloseAll.addEventListener('click',closeAll);
+  btnReset.addEventListener('click',resetGame);
+  const initAssetVal = document.getElementById('init-asset-val');
+  initAssetInput.addEventListener('input',()=>{
+    const v=parseFloat(initAssetInput.value)||1000;
+    initAssetVal.textContent='$'+v.toLocaleString();
+    if(orders.length===0){initialCash=v;cash=initialCash;refreshUI();}
+  });
+  document.getElementById('btn-line').addEventListener('click',()=>{
+    chartMode='line';
+    document.getElementById('btn-line').classList.add('active');
+    document.getElementById('btn-candle').classList.remove('active');
+  });
+  document.getElementById('btn-candle').addEventListener('click',()=>{
+    chartMode='candle';
+    document.getElementById('btn-candle').classList.add('active');
+    document.getElementById('btn-line').classList.remove('active');
+  });
+  document.getElementById('ema5').addEventListener('change',       e=>{showEMA5=e.target.checked;});
+  document.getElementById('ema20').addEventListener('change',      e=>{showEMA20=e.target.checked;});
+  document.getElementById('detailedEMA').addEventListener('change',e=>{showDetailedEMA=e.target.checked;updateEMACache();});
+  document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;updateEMACache();});
 
-    document.getElementById('btn-home').addEventListener('click', (e) => { e.preventDefault(); alert('RETURN HOME (simulated)'); });
+  /* ═══════════════════════════════════════════
+     初始化 + 主循环
+  ═══════════════════════════════════════════ */
+  resetGame();
 
-    // 初始化
-    initPrice();
-    resetGame();
+  // 价格 tick（200ms 数据更新）
+  const tickInterval = setInterval(stepPrice, TICK_MS);
+  window.addEventListener('beforeunload', ()=>clearInterval(tickInterval));
 
-    // 定时器 (200ms)
-    setInterval(() => {
-      stepPrice();
-      drawChart();
-    }, 200);
+  // 渲染循环（60fps，含插值平滑）
+  function renderLoop(){ drawChart(); requestAnimationFrame(renderLoop); }
+  requestAnimationFrame(renderLoop);
 
-    // 动画重绘
-    function animLoop() { drawChart(); requestAnimationFrame(animLoop); }
-    requestAnimationFrame(animLoop);
-
-    window.addEventListener('beforeunload', () => clearInterval(interval));
-  })();
+})();
 </script>
 </body>
 </html>
