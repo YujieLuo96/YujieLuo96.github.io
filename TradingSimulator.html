@@ -358,6 +358,102 @@
     .hint { font-size: 0.55rem; color: rgba(0,245,255,0.2); display: flex; gap: 18px; flex-wrap: wrap; padding: 0 2px; }
     .warning { color: #ff2d78; font-size: 0.7rem; animation: blink 1s infinite; text-align: center; width: 100%; }
     @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+
+    /* ── Touch: eliminate 300ms delay ─────────── */
+    .cyber-button, .mode-btn, .close-order, #btn-home,
+    .ema-check, .rainbow-check, .detailed-check,
+    input[type=range], input[type=number] {
+      touch-action: manipulation;
+    }
+
+    /* ══════════════════════════════════════════
+       MOBILE STYLES  ≤ 768px
+    ══════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      body { padding: 6px 5px; }
+      .game-wrapper { gap: 5px; width: 99vw; }
+
+      /* ── Title ── */
+      .title { font-size: 1.1rem; letter-spacing: 0.1em; }
+      .title-tag { display: none; }
+      .title-sep { flex: 0; width: 8px; }
+
+      /* ── HUD: 3 × 2 grid ── */
+      .hud { grid-template-columns: repeat(3, 1fr); gap: 3px; }
+      .hud-cell { padding: 5px 4px 4px; }
+      .hud-label { font-size: 0.42rem; margin-bottom: 2px; letter-spacing: 0.09em; }
+      .hud-value { font-size: 0.82rem; }
+
+      /* ── Chart toolbar ── */
+      .chart-toolbar { padding: 5px 7px; gap: 5px 7px; }
+      .tool-group { gap: 5px; flex-wrap: wrap; }
+      .mode-btn { font-size: 0.65rem; padding: 6px 9px; }
+      .ema-check, .detailed-check { font-size: 0.65rem; }
+      .rainbow-check { font-size: 0.65rem; padding-left: 7px; }
+
+      /* ── Control panel: stack vertically ── */
+      .control-panel { flex-direction: column; padding: 9px 9px; gap: 0; }
+
+      .action-col {
+        flex-direction: row; flex-wrap: wrap; gap: 7px;
+        padding-right: 0; margin-right: 0;
+        border-right: none;
+        border-bottom: 1px solid var(--border2);
+        padding-bottom: 10px; margin-bottom: 10px;
+        min-width: unset; width: 100%;
+        justify-content: stretch;
+        align-items: stretch;
+      }
+      .action-col .cyber-button.long  { flex: 1; min-width: 80px; padding: 13px 6px; }
+      .action-col .cyber-button.short { flex: 1; min-width: 80px; padding: 13px 6px; }
+      .action-col .cyber-button.util  { width: 100%; padding: 9px 6px; }
+
+      /* ── Sliders: 2 per row ── */
+      .params-col { width: 100%; }
+      .panel-row { gap: 8px 10px; }
+      .slider-group { min-width: calc(50% - 8px); flex: 1 1 calc(50% - 8px); }
+      .slider-label { font-size: 0.55rem; }
+      input[type=range] { height: 4px; }
+      input[type=range]::-webkit-slider-thumb { width: 22px; height: 22px; }
+      input[type=range]::-moz-range-thumb {
+        width: 22px; height: 22px; border-radius: 50%;
+        background: var(--cyan); border: 2px solid rgba(0,0,0,0.6);
+      }
+
+      /* ── Number inputs: ≥16px prevents iOS auto-zoom ── */
+      .num-input { font-size: 1rem; height: 40px; padding: 4px 6px; width: 100%; }
+      .sl-tp-row { flex-wrap: wrap; gap: 8px; }
+      .sl-tp-group { flex: 1; min-width: 75px; }
+      .sl-tp-group label { font-size: 0.52rem; }
+      .field-err { font-size: 0.5rem; }
+
+      /* Reset button */
+      .cyber-button.reset-btn { padding: 8px 12px; font-size: 0.62rem; }
+
+      /* ── Order cards: full width ── */
+      .orders-container { flex-direction: column; gap: 7px; }
+      .order-card { min-width: 0; width: 100%; font-size: 0.72rem; }
+      .close-order {
+        padding: 8px 0; font-size: 0.72rem;
+        width: 100%; text-align: center; margin-top: 5px;
+      }
+
+      /* ── Misc ── */
+      .hint { font-size: 0.5rem; gap: 6px; flex-direction: column; }
+      #btn-home { padding: 8px 22px; font-size: 0.68rem; }
+
+      /* ── Toast: stretch on narrow screens ── */
+      #toast-container { top: 8px; right: 8px; left: 8px; align-items: stretch; }
+      .toast { max-width: 100%; font-size: 0.72rem; }
+    }
+
+    /* ── Extra-small: ≤ 400px (iPhone SE etc.) ── */
+    @media (max-width: 400px) {
+      .hud-value { font-size: 0.72rem; }
+      .hud-label { font-size: 0.38rem; }
+      .slider-group { min-width: 100%; flex: 1 1 100%; }
+      .title { font-size: 0.95rem; }
+    }
   </style>
 </head>
 <body>
@@ -527,14 +623,26 @@
     bgRafId = requestAnimationFrame(drawBg);
   }
   initBg(); drawBg();
-  window.addEventListener('resize', () => { cancelAnimationFrame(bgRafId); initBg(); drawBg(); });
+  window.addEventListener('resize', () => { cancelAnimationFrame(bgRafId); initBg(); drawBg(); resizeStockCanvas(); });
 
   /* ═══════════════════════════════════════════
      Canvas
   ═══════════════════════════════════════════ */
   const canvas = document.getElementById('stock-canvas');
   const ctx    = canvas.getContext('2d');
-  const CW = canvas.width, CH = canvas.height;
+  let CW = canvas.width, CH = canvas.height;
+
+  function resizeStockCanvas() {
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+      CW = Math.round(window.innerWidth * 0.97);
+      CH = Math.round(CW * 0.56);
+    } else {
+      CW = 1200; CH = 440;
+    }
+    canvas.width = CW; canvas.height = CH;
+  }
+  resizeStockCanvas();
 
   /* ═══════════════════════════════════════════
      价格模型参数
