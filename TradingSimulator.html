@@ -197,9 +197,6 @@
       transition: border-color 0.15s;
     }
     .num-input:focus { border-color: var(--cyan); outline: none; background: rgba(0,245,255,0.07); }
-    .sl-tp-row { display: flex; gap: 12px; align-items: flex-start; }
-    .sl-tp-group { display: flex; flex-direction: column; gap: 3px; width: 90px; }
-    .sl-tp-group label { font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; height: 14px; display: flex; align-items: center; }
     .sl-input  { border-color: rgba(255,68,68,0.35);  color: #ff6060; width: 100%; }
     .tp-input  { border-color: rgba(68,255,136,0.35); color: #55ff99; width: 100%; }
     .sl-input:focus  { border-color: #ff4444; }
@@ -517,14 +514,22 @@
 
     /* ── CRYPTO mode button ────────────────────── */
     .crypto-mode-btn {
-      background: rgba(255,170,0,0.06); border: 1px solid rgba(255,170,0,0.3);
-      border-bottom: 2px solid rgba(255,170,0,0.45);
-      color: rgba(255,170,0,0.65); font-family: 'Share Tech Mono', monospace;
+      background: rgba(255,170,0,0.06); border: 1px solid rgba(255,170,0,0.45);
+      border-bottom: 2px solid rgba(255,170,0,0.75);
+      color: rgba(255,170,0,0.85); font-family: 'Share Tech Mono', monospace;
       font-size: 0.72rem; padding: 3px 12px; cursor: pointer; border-radius: 2px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.15s;
       letter-spacing: 0.1em; white-space: nowrap;
     }
-    .crypto-mode-btn:hover { color: #ffaa00; background: rgba(255,170,0,0.12); border-color: rgba(255,170,0,0.55); }
+    .crypto-mode-btn:hover {
+    color: #ffaa00;
+    background: rgba(255,170,0,0.22);
+    border-color: rgba(255,170,0,0.75);
+    /* 底部阴影叠加橙色光晕 */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 15px #ffaa00, 0 0 30px rgba(255,170,0,0.75);
+    /* 文字添加橙色光晕 */
+    text-shadow: 0 0 8px #ffaa00;
+    }
     .crypto-mode-btn.active {
       background: rgba(255,170,0,0.15); border-color: #ffaa00;
       border-bottom-color: #ffaa00; color: #ffaa00;
@@ -632,9 +637,6 @@
 
       /* ── Number inputs: ≥16px prevents iOS auto-zoom ── */
       .num-input { font-size: 1rem; height: 40px; padding: 4px 6px; width: 100%; }
-      .sl-tp-row { flex-wrap: wrap; gap: 8px; }
-      .sl-tp-group { flex: 1; min-width: 75px; }
-      .sl-tp-group label { font-size: 0.52rem; }
       .field-err { font-size: 0.5rem; }
 
       /* Reset button */
@@ -686,7 +688,6 @@
   <div class="title-row">
     <div class="title" data-text="CYBER TRADER">CYBER TRADER</div>
     <div class="title-sep"></div>
-    <div class="title-tag">MULTI-ORDER // 100x // STOCH-VOL + REGIME</div>
     <button class="crypto-mode-btn" id="btn-crypto-mode">⬡ CRYPTO</button>
   </div>
 
@@ -781,40 +782,34 @@
 
     <!-- Right: two rows of parameters -->
     <div class="params-col">
-      <!-- Row 1: trade sizing sliders -->
-      <div class="panel-row">
-        <div class="panel-section-label">◈ Trade Parameters</div>
-        <div class="slider-group pos-inactive" id="pos-ratio-group" style="min-width:155px">
+      <!-- Single row: sliders on top, inputs below, each column aligned -->
+      <div class="panel-row" style="align-items:flex-start">
+        <div class="panel-section-label">◈ Parameters</div>
+        <!-- POSITION SIZE → QTY input below -->
+        <div class="slider-group pos-inactive" id="pos-ratio-group" style="min-width:140px">
           <div class="slider-label">POSITION SIZE <span id="pos-ratio-val">---</span></div>
           <input type="range" id="pos-ratio-slider" min="0.05" max="1" step="0.05" value="1">
+          <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:70%;margin-top:10px" inputmode="numeric" autocomplete="off">
+          <div class="field-err"></div>
         </div>
-        <div class="slider-group" style="min-width:155px">
+        <!-- STOP LOSS slider → SL price input below -->
+        <div class="slider-group pos-inactive" id="sl-ratio-group" style="min-width:140px">
+          <div class="slider-label" style="color:rgba(255,96,96,0.55)">STOP LOSS <span id="sl-ratio-val" style="color:#ff6060">---</span></div>
+          <input type="range" id="sl-ratio-slider" min="5" max="100" step="5" value="10">
+          <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
+          <div id="sl-err" class="field-err"></div>
+        </div>
+        <!-- TAKE PROFIT slider → TP price input below -->
+        <div class="slider-group pos-inactive" id="tp-ratio-group" style="min-width:140px">
+          <div class="slider-label" style="color:rgba(85,255,153,0.55)">TAKE PROFIT <span id="tp-ratio-val" style="color:#55ff99">---</span></div>
+          <input type="range" id="tp-ratio-slider" min="5" max="200" step="5" value="20">
+          <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
+          <div id="tp-err" class="field-err"></div>
+        </div>
+        <!-- LEVERAGE (no input below) -->
+        <div class="slider-group" style="min-width:140px">
           <div class="slider-label">LEVERAGE <span id="leverage-display">2.0x</span></div>
           <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
-        </div>
-      </div>
-
-      <div class="panel-divider"></div>
-
-      <!-- Row 2: QTY · SL · TP + RESET right-bottom -->
-      <div class="panel-row" style="align-items:flex-start">
-        <div class="panel-section-label">◈ Order Setup</div>
-        <div class="sl-tp-row" style="flex:1">
-          <div class="sl-tp-group">
-            <label style="color:rgba(0,245,255,0.55);">QTY</label>
-            <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:100%" inputmode="numeric" autocomplete="off">
-            <div class="field-err"></div>
-          </div>
-          <div class="sl-tp-group">
-            <label style="color:rgba(255,96,96,0.65);">STOP LOSS</label>
-            <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1" inputmode="decimal" autocomplete="off">
-            <div id="sl-err" class="field-err"></div>
-          </div>
-          <div class="sl-tp-group">
-            <label style="color:rgba(85,255,153,0.65);">TAKE PROFIT</label>
-            <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" inputmode="decimal" autocomplete="off">
-            <div id="tp-err" class="field-err"></div>
-          </div>
         </div>
         <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto;align-self:flex-end">⟲ RESET</button>
       </div>
@@ -1186,6 +1181,50 @@
   const slInput         = document.getElementById('sl-input');
 
   let posRatioMode = false; // true = position size drives order; false = QTY drives order
+  let slRatioMode  = false; // true = SL % slider active
+  let tpRatioMode  = false; // true = TP % slider active
+
+  const slRatioSlider = document.getElementById('sl-ratio-slider');
+  const slRatioVal    = document.getElementById('sl-ratio-val');
+  const slRatioGroup  = document.getElementById('sl-ratio-group');
+  const tpRatioSlider = document.getElementById('tp-ratio-slider');
+  const tpRatioVal    = document.getElementById('tp-ratio-val');
+  const tpRatioGroup  = document.getElementById('tp-ratio-group');
+
+  function calcSlPrice(dir) {
+    // dir: 1=long, -1=short
+    // loss = pct% * margin; margin = shares*price/lev → sl offset = pct * price / lev
+    const pct = parseFloat(slRatioSlider.value) / 100;
+    const lev = parseFloat(leverageSlider.value);
+    return currentPrice * (1 - dir * pct / lev);
+  }
+  function calcTpPrice(dir) {
+    const pct = parseFloat(tpRatioSlider.value) / 100;
+    const lev = parseFloat(leverageSlider.value);
+    return currentPrice * (1 + dir * pct / lev);
+  }
+  function activateSlRatio() {
+    slRatioMode = true;
+    slRatioGroup.classList.remove('pos-inactive');
+    slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0) + '%';
+    slInput.value = calcSlPrice(1).toFixed(2);
+  }
+  function deactivateSlRatio() {
+    slRatioMode = false;
+    slRatioGroup.classList.add('pos-inactive');
+    slRatioVal.textContent = '---';
+  }
+  function activateTpRatio() {
+    tpRatioMode = true;
+    tpRatioGroup.classList.remove('pos-inactive');
+    tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0) + '%';
+    tpInput.value = calcTpPrice(1).toFixed(2);
+  }
+  function deactivateTpRatio() {
+    tpRatioMode = false;
+    tpRatioGroup.classList.add('pos-inactive');
+    tpRatioVal.textContent = '---';
+  }
 
   function calcPosRatioShares() {
     const ratio  = parseFloat(posRatioSlider.value);
@@ -1547,6 +1586,9 @@
 
     // position size 激活时，QTY 随价格/净值实时更新
     if(posRatioMode) sharesInput.value = calcPosRatioShares();
+    // SL/TP 滑块激活时，价格随当前价实时更新（默认 long 方向预览）
+    if(slRatioMode) { slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0)+'%'; slInput.value = calcSlPrice(1).toFixed(2); }
+    if(tpRatioMode) { tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0)+'%'; tpInput.value = calcTpPrice(1).toFixed(2); }
 
     renderOrders();
     renderHistory();
@@ -1672,6 +1714,9 @@
     const fee=calcFee(shares, currentPrice);
     const freeCash=getFreeCash();
     if(freeCash<margin+fee){showToast(`⚠ INSUFFICIENT CASH<br>Required: <b>$${(margin+fee).toFixed(2)}</b> (fee $${fee.toFixed(2)}) &nbsp;Available: <b>$${freeCash.toFixed(2)}</b>`,'warn');return;}
+    // SL/TP 滑块激活时，按实际开仓方向精确计算价格
+    if(slRatioMode) slInput.value = calcSlPrice(direction).toFixed(2);
+    if(tpRatioMode) tpInput.value = calcTpPrice(direction).toFixed(2);
     const sl=slInput.value!==''?parseFloat(slInput.value):null;
     const tp=tpInput.value!==''?parseFloat(tpInput.value):null;
     const slErr=document.getElementById('sl-err');
@@ -1722,6 +1767,7 @@
     historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
     summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
     liqIndicator.style.display='none';
+    deactivateSlRatio(); deactivateTpRatio();
     initPrice(); emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear(); _aggCache=null; updateEMACache();
     trades=[]; refreshUI();
     triggerFlash();
@@ -2201,10 +2247,18 @@
   leverageSlider.addEventListener('input',e=>{
     leverageDisplay.textContent=parseFloat(e.target.value).toFixed(1)+'x';
     if(posRatioMode) sharesInput.value = calcPosRatioShares();
+    if(slRatioMode)  slInput.value = calcSlPrice(1).toFixed(2);
+    if(tpRatioMode)  tpInput.value = calcTpPrice(1).toFixed(2);
   });
   posRatioSlider.addEventListener('pointerdown', activatePosRatio); // 点击即激活
   posRatioSlider.addEventListener('input', activatePosRatio);       // 拖动时持续更新 QTY
   sharesInput.addEventListener('focus', deactivatePosRatio);         // 点击/聚焦 QTY 即 deactivate
+  slRatioSlider.addEventListener('pointerdown', activateSlRatio);
+  slRatioSlider.addEventListener('input', activateSlRatio);
+  slInput.addEventListener('focus', deactivateSlRatio);
+  tpRatioSlider.addEventListener('pointerdown', activateTpRatio);
+  tpRatioSlider.addEventListener('input', activateTpRatio);
+  tpInput.addEventListener('focus', deactivateTpRatio);
   document.getElementById('btn-settings').addEventListener('click',()=>{
     const btn=document.getElementById('btn-settings');
     const panel=document.getElementById('settings-panel');
