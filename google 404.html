@@ -6,15 +6,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no">
     <title>Google 404 T-rex game</title>
     <link rel="stylesheet" href="index.css">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet"> 
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
     <script src="index.js"></script>
+    <style>
+        #back-link {
+            position: fixed;
+            top: 14px;
+            left: 16px;
+            z-index: 20;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 0.82rem;
+            color: #5f6368;
+            text-decoration: none;
+            background: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #dadce0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            transition: background 0.15s;
+        }
+        #back-link:hover {
+            background: #f1f3f4;
+        }
+        #messageBox {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.92);
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+        }
+        #messageBox h1 {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: #5f6368;
+            margin: 0 0 8px;
+            text-align: center;
+        }
+        #messageBox p {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 0.82rem;
+            color: #9aa0a6;
+            margin: 0;
+        }
+    </style>
 </head>
 
 <body id="t" class="offline">
-    <a href="index.html">Return back to homepage</a>
-    <div id="messageBox" class="sendmessage">
-         <h1 style="text-align: center;font-family: 'Open Sans', sans-serif;">Press Space or tap screen to start</h1>
-         <div class="niokbutton" onclick="okbuttonsend()"></div>
+    <a id="back-link" href="index.html">← Home</a>
+    <div id="messageBox" onclick="okbuttonsend(event)">
+        <h1>Press Space or tap to start</h1>
+        <p>↑ / Space to jump &nbsp;·&nbsp; ↓ to duck</p>
     </div>
     <div id="main-frame-error" class="interstitial-wrapper">
         <div id="main-content">
@@ -33,20 +80,31 @@
 </body>
 
 <script>
-    // 原有的事件监听器保持不变
+    function okbuttonsend(e) {
+        var box = document.getElementById("messageBox");
+        if (box.style.display === "none") return;
+        box.style.display = "none";
+        // 触摸事件已在 touchstart 里处理，这里只处理鼠标点击
+        if (!e || e.type !== "touchstart") {
+            document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 32, which: 32, bubbles: true }));
+        }
+    }
+
     document.onkeydown = function(evt) {
         evt = evt || window.event;
-        if (evt.keyCode == 32) {
+        if (evt.keyCode == 32 || evt.keyCode == 38) {
             var box = document.getElementById("messageBox");
-            box.style.visibility="hidden";
+            box.style.display = "none";
         }
     };
 
-    // 保持原有的okbuttonsend函数
-    function okbuttonsend() {
+    document.getElementById("messageBox").addEventListener("touchstart", function(e) {
+        e.preventDefault();
         var box = document.getElementById("messageBox");
-        box.style.visibility="hidden";
-    }
+        if (box.style.display === "none") return;
+        box.style.display = "none";
+        document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 32, which: 32, bubbles: true }));
+    }, { passive: false });
 </script>
     
 </html>
