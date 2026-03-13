@@ -84,7 +84,6 @@
         var box = document.getElementById("messageBox");
         if (box.style.display === "none") return;
         box.style.display = "none";
-        // 触摸事件已在 touchstart 里处理，这里只处理鼠标点击
         if (!e || e.type !== "touchstart") {
             document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 32, which: 32, bubbles: true }));
         }
