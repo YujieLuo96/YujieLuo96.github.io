@@ -277,15 +277,16 @@
 
     /* ── TOAST NOTIFICATIONS ──────────────── */
     #toast-container {
-      position: fixed; top: 14px; right: 14px; z-index: 9999;
-      display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+      position: absolute; top: 8px; left: 8px; z-index: 100;
+      display: flex; flex-direction: column; gap: 5px; pointer-events: none;
+      max-width: 260px;
     }
     .toast {
-      font-family: 'Share Tech Mono', monospace; font-size: 0.78rem;
-      letter-spacing: 0.08em; padding: 8px 14px;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;
+      letter-spacing: 0.07em; padding: 6px 12px;
       border-left: 3px solid; border-radius: 3px; backdrop-filter: blur(8px);
       animation: toastIn 0.18s ease, toastOut 0.3s ease 2.7s forwards;
-      pointer-events: none; max-width: 320px; line-height: 1.5;
+      pointer-events: none; max-width: 260px; line-height: 1.45;
     }
     .toast.warn  { background: rgba(255,160,0,0.12); border-color: #ffa000; color: #ffcc44; }
     .toast.error { background: rgba(255,40,40,0.12); border-color: #ff2828; color: #ff7070; }
@@ -295,8 +296,8 @@
       box-shadow: 0 0 18px rgba(200,255,255,0.25); font-weight: bold; }
     .toast.swan-black { background: rgba(80,0,40,0.20); border-color: #cc00aa; color: #ff66dd;
       box-shadow: 0 0 18px rgba(200,0,120,0.30); font-weight: bold; }
-    @keyframes toastIn  { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateX(10px); } }
+    @keyframes toastIn  { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateX(-8px); } }
 
     /* ── ORDERS PANEL ─────────────────────── */
     .orders-panel {
@@ -668,9 +669,9 @@
       .hint { font-size: 0.5rem; gap: 6px; flex-direction: column; }
       #btn-home { padding: 8px 22px; font-size: 0.68rem; }
 
-      /* ── Toast: stretch on narrow screens ── */
-      #toast-container { top: 8px; right: 8px; left: 8px; align-items: stretch; }
-      .toast { max-width: 100%; font-size: 0.72rem; }
+      /* ── Toast: 手机端略缩小字号 ── */
+      #toast-container { max-width: 200px; }
+      .toast { font-size: 0.68rem; }
     }
 
     /* ── Extra-small: ≤ 400px (iPhone SE etc.) ── */
@@ -826,6 +827,7 @@
   <div class="chart-frame">
     <div class="corner-bl"></div><div class="corner-tr"></div>
     <canvas id="stock-canvas" width="1200" height="440"></canvas>
+    <div id="toast-container"></div>
   </div>
 
   <div class="chart-toolbar">
@@ -956,9 +958,6 @@ if (crossunder(fast, slow)) {
     strategy.entry('short');
 }</textarea>
   </div>
-
-  <!-- Toast notifications -->
-  <div id="toast-container"></div>
 
   <!-- Positions -->
   <div class="orders-panel">
@@ -1313,8 +1312,9 @@ if (crossunder(fast, slow)) {
   const regimeEl        = document.getElementById('regime-value');
   const toastContainer  = document.getElementById('toast-container');
 
-  /* ── Toast 通知（不阻断流程）── */
+  /* ── Toast 通知（不阻断流程，最多显示6条）── */
   function showToast(msg, type='warn', duration=3000){
+    while(toastContainer.children.length >= 6) toastContainer.firstChild.remove();
     const el=document.createElement('div');
     el.className=`toast ${type}`;
     el.innerHTML=msg;
@@ -1608,7 +1608,7 @@ if (crossunder(fast, slow)) {
 
     const open=ohlc.length>0?ohlc[ohlc.length-1].c:currentPrice, close=currentPrice;
     const micro=sigma_t*0.25*Math.random();
-    ohlc.push({o:open, h:Math.max(open,close)*(1+micro), l:Math.min(open,close)*(1-micro), c:close});
+    ohlc.push({o:open, h:Math.max(open,close)*(1+micro), l:Math.max(0.01,Math.min(open,close)*(1-micro)), c:close});
     priceHistory.push(close);
 
     if(ohlc.length>MAX_HISTORY){
@@ -1977,7 +1977,7 @@ if (crossunder(fast, slow)) {
       if(p<0.01)p=0.01;
       updateSREMA(p);  // 预热 S/R EMA，游戏开始时 srEmaValues 已收敛
       const open=i===0?p:ohlc[i-1].c, micro=s*0.25*Math.random();
-      ohlc.push({o:open,h:Math.max(open,p)*(1+micro),l:Math.min(open,p)*(1-micro),c:p});
+      ohlc.push({o:open,h:Math.max(open,p)*(1+micro),l:Math.max(0.01,Math.min(open,p)*(1-micro)),c:p});
       priceHistory.push(p);
       volumeHistory.push((s/Math.max(sigma_user,0.001))*(0.7+0.6*Math.random()));
     }
