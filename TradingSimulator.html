@@ -792,6 +792,11 @@
           <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:70%;margin-top:10px" inputmode="numeric" autocomplete="off">
           <div class="field-err"></div>
         </div>
+        <!-- LEVERAGE (no input below) -->
+        <div class="slider-group" style="min-width:140px">
+          <div class="slider-label">LEVERAGE <span id="leverage-display">2.0x</span></div>
+          <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
+        </div>
         <!-- STOP LOSS slider → SL price input below -->
         <div class="slider-group pos-inactive" id="sl-ratio-group" style="min-width:140px">
           <div class="slider-label" style="color:rgba(255,96,96,0.55)">STOP LOSS <span id="sl-ratio-val" style="color:#ff6060">---</span></div>
@@ -805,11 +810,6 @@
           <input type="range" id="tp-ratio-slider" min="5" max="200" step="5" value="20">
           <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
           <div id="tp-err" class="field-err"></div>
-        </div>
-        <!-- LEVERAGE (no input below) -->
-        <div class="slider-group" style="min-width:140px">
-          <div class="slider-label">LEVERAGE <span id="leverage-display">2.0x</span></div>
-          <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
         </div>
         <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto;align-self:flex-end">⟲ RESET</button>
       </div>
