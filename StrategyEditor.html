@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strategy Editor · Cyber Trader</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background: #06090f;
+            font-family: 'Share Tech Mono', 'Fira Code', monospace;
+            color: #c0d0e0;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* header */
+        .header {
+            background: #0e1520;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(0,245,255,0.12);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        .logo {
+            font-family: 'Orbitron', monospace;
+            color: #00f5ff;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px #00f5ff, 0 0 22px rgba(0,245,255,0.3);
+            white-space: nowrap;
+        }
+        .btn {
+            background: rgba(0,245,255,0.06);
+            border: 1px solid rgba(0,245,255,0.3);
+            border-bottom: 2px solid rgba(0,245,255,0.5);
+            color: rgba(0,245,255,0.85);
+            padding: 4px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            transition: all 0.1s;
+            white-space: nowrap;
+        }
+        .btn:hover {
+            background: rgba(0,245,255,0.14);
+            color: #00f5ff;
+            box-shadow: 0 2px 12px rgba(0,245,255,0.25);
+        }
+        .btn:active { transform: translateY(1px); border-bottom-width: 1px; }
+        .btn, .btn-outline, .example-btn, .instruction-header {
+            touch-action: manipulation;
+        }
+        /* Apply button — green accent */
+        .btn-apply {
+            background: rgba(57,255,20,0.07);
+            border-color: rgba(57,255,20,0.4);
+            border-bottom-color: rgba(57,255,20,0.65);
+            color: rgba(57,255,20,0.9);
+        }
+        .btn-apply:hover {
+            background: rgba(57,255,20,0.15);
+            color: #39ff14;
+            box-shadow: 0 2px 14px rgba(57,255,20,0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(0,245,255,0.18);
+            border-bottom: 1px solid rgba(0,245,255,0.18);
+            color: rgba(0,245,255,0.55);
+            font-size: 0.72rem; padding: 3px 9px;
+        }
+        .btn-outline:hover, .btn-outline:active { background: rgba(0,245,255,0.08); color: #00f5ff; }
+        .examples-label {
+            font-size: 0.72rem; color: rgba(0,245,255,0.3);
+            letter-spacing: 0.15em; white-space: nowrap;
+        }
+        .check-result {
+            margin-left: auto;
+            font-size: 0.78rem;
+            color: rgba(0,245,255,0.6);
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        /* main area */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* editor panel (left) */
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #080d16;
+            border-right: 1px solid rgba(0,245,255,0.1);
+            position: relative;
+            min-width: 200px;
+        }
+        .editor-header {
+            background: #0e1520;
+            padding: 6px 14px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+            font-size: 0.72rem;
+            color: rgba(0,245,255,0.5);
+            letter-spacing: 0.12em;
+        }
+        #code {
+            width: 100%;
+            flex: 1;
+            background: #06090f;
+            border: none;
+            color: #b8d4f0;
+            font-family: 'Share Tech Mono', 'Fira Code', monospace;
+            font-size: 0.88rem;
+            padding: 14px 16px;
+            resize: none;
+            outline: none;
+            tab-size: 4;
+            line-height: 1.6;
+            caret-color: #00f5ff;
+        }
+        #code::selection { background: rgba(0,245,255,0.18); }
+        .status-bar {
+            background: #0e1520;
+            padding: 5px 14px;
+            font-size: 0.72rem;
+            color: rgba(0,245,255,0.4);
+            border-top: 1px solid rgba(0,245,255,0.1);
+            display: flex;
+            gap: 20px;
+            letter-spacing: 0.06em;
+        }
+        .status-error   { color: #ff7070; }
+        .status-success { color: #5cdd5c; }
+
+        /* instruction panel (right) - collapsible */
+        .instruction-panel {
+            width: 310px;
+            background: #0e1520;
+            border-left: 1px solid rgba(0,245,255,0.1);
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .instruction-panel.collapsed { width: 40px; }
+        .instruction-header {
+            background: #111a27;
+            padding: 9px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+            user-select: none;
+        }
+        .instruction-header h3 {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: rgba(0,245,255,0.7);
+            font-family: 'Orbitron', monospace;
+        }
+        .instruction-panel.collapsed .instruction-header h3 { display: none; }
+        .collapse-icon {
+            font-size: 1rem;
+            color: rgba(0,245,255,0.5);
+            transition: transform 0.2s;
+        }
+        .instruction-panel.collapsed .collapse-icon { transform: rotate(180deg); }
+        .instruction-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            font-size: 0.8rem;
+            line-height: 1.65;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,245,255,0.15) transparent;
+        }
+        .instruction-panel.collapsed .instruction-content { display: none; }
+        .instruction-content::-webkit-scrollbar { width: 4px; }
+        .instruction-content::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.15); border-radius: 2px; }
+
+        /* styles for docs inside instruction */
+        .doc-section { margin-bottom: 1.4rem; }
+        .doc-section h4 {
+            color: #00f5ff;
+            font-size: 0.82rem;
+            margin-bottom: 7px;
+            border-left: 2px solid #ff2d78;
+            padding-left: 8px;
+            letter-spacing: 0.08em;
+        }
+        .doc-section table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 6px 0;
+            font-size: 0.75rem;
+        }
+        .doc-section th {
+            text-align: left;
+            background: rgba(0,245,255,0.06);
+            padding: 4px 7px;
+            color: rgba(0,245,255,0.7);
+            border-bottom: 1px solid rgba(0,245,255,0.1);
+        }
+        .doc-section td {
+            padding: 4px 7px;
+            border-bottom: 1px solid rgba(0,245,255,0.05);
+            color: #a0b8cc;
+        }
+        code {
+            background: rgba(255,160,80,0.1);
+            color: #ffaa66;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.78rem;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        pre {
+            background: #040608;
+            padding: 10px 12px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.74rem;
+            color: #b8d4f0;
+            border: 1px solid rgba(0,245,255,0.1);
+            margin: 8px 0;
+            line-height: 1.55;
+        }
+        .example-btn {
+            background: rgba(0,245,255,0.05);
+            border: 1px solid rgba(0,245,255,0.2);
+            color: rgba(0,245,255,0.65);
+            padding: 2px 9px;
+            border-radius: 2px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.1s;
+        }
+        .example-btn:hover, .example-btn:active { background: rgba(0,245,255,0.12); color: #00f5ff; }
+        .badge {
+            background: rgba(57,255,20,0.1);
+            color: #5cdd5c;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.68rem;
+            border: 1px solid rgba(57,255,20,0.2);
+        }
+
+        /* completion box */
+        .completion-box {
+            position: absolute;
+            background: #131e2a;
+            border: 1px solid rgba(0,245,255,0.25);
+            border-radius: 3px;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.7), 0 0 20px rgba(0,245,255,0.08);
+            max-width: 280px;
+        }
+        .completion-item {
+            padding: 5px 12px;
+            cursor: pointer;
+            color: rgba(0,245,255,0.75);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 0.78rem;
+        }
+        .completion-item:hover, .completion-item:active { background: rgba(0,245,255,0.1); color: #00f5ff; }
+        .completion-item.selected { background: rgba(0,245,255,0.15); color: #00f5ff; }
+
+        /* ══════════════════════════════════════
+           MOBILE  ≤ 768px
+        ══════════════════════════════════════ */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                overflow-x: hidden;
+                overflow-y: auto;
+            }
+
+            /* Header: allow wrapping, bigger tap targets */
+            .header { padding: 8px 10px; gap: 6px; }
+
+            .btn {
+                padding: 10px 12px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+            }
+            .btn-outline {
+                padding: 8px 9px;
+                min-height: 36px;
+                display: inline-flex;
+                align-items: center;
+            }
+            .example-btn {
+                padding: 7px 10px;
+                min-height: 36px;
+            }
+            .examples-label { font-size: 0.72rem; }
+            .check-result { order: 10; flex-basis: 100%; }
+
+            /* Stack editor + instruction vertically */
+            .main {
+                flex-direction: column;
+                overflow: visible;
+                height: auto;
+            }
+
+            .editor-panel {
+                border-right: none;
+                border-bottom: 1px solid rgba(0,245,255,0.1);
+                min-height: 0;
+            }
+
+            /* Prevent iOS auto-zoom on focus (requires ≥16px) */
+            #code { font-size: 1rem; min-height: 40vh; }
+
+            /* Instruction panel: full-width, collapses by height */
+            .instruction-panel,
+            .instruction-panel.collapsed {
+                width: 100%;
+                transition: none;
+                flex-shrink: 0;
+                border-left: none;
+                border-top: 1px solid rgba(0,245,255,0.1);
+            }
+            /* Show title even when collapsed (now horizontal bar) */
+            .instruction-panel.collapsed .instruction-header h3 {
+                display: block;
+            }
+            .instruction-content {
+                max-height: 55vh;
+                padding: 10px;
+            }
+
+            /* Completion box: clamp width to viewport */
+            .completion-box { max-width: min(280px, 85vw); }
+
+            /* Instruction header: larger tap area */
+            .instruction-header { padding: 12px 14px; min-height: 44px; }
+        }
+
+        /* ── Extra-small ≤ 400px ── */
+        @media (max-width: 400px) {
+            .btn { padding: 10px 9px; font-size: 0.75rem; }
+            #code { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span class="logo">⚡ STRATEGY EDITOR</span>
+    <button class="btn" id="check-syntax" title="Check syntax (Ctrl+S)">🔍 CHECK</button>
+    <button class="btn btn-apply" id="btn-apply" title="Apply code to Trader (Ctrl+Enter)">▶ APPLY TO TRADER</button>
+    <button class="btn" id="btn-copy" title="Copy code to clipboard">⎘ COPY</button>
+    <div class="check-result" id="syntax-result">— ready —</div>
+    <span class="examples-label">EXAMPLES:</span>
+    <button class="btn-outline example-btn" data-example="ma">MA Cross</button>
+    <button class="btn-outline example-btn" data-example="rsi">RSI</button>
+    <button class="btn-outline example-btn" data-example="breakout">Breakout</button>
+    <button class="btn-outline example-btn" data-example="persist">Persist</button>
+    <button class="btn-outline example-btn" data-example="roll">EMA Roll</button>
+</div>
+
+<div class="main">
+    <!-- left editor -->
+    <div class="editor-panel">
+        <div class="editor-header">
+            <span>📝 STRATEGY CODE</span>
+            <span style="opacity:0.5">Tab=autocomplete · Ctrl+S=check · Ctrl+Enter=apply</span>
+        </div>
+        <textarea id="code" spellcheck="false" placeholder="// write strategy code here..."></textarea>
+        <div class="status-bar">
+            <span id="hint-msg">Ready</span>
+            <span id="cursor-pos">Ln 1, Col 1</span>
+        </div>
+        <div id="completion" class="completion-box"></div>
+    </div>
+
+    <!-- right instruction panel (collapsible) -->
+    <div class="instruction-panel" id="instructionPanel">
+        <div class="instruction-header" id="toggleInstruction">
+            <h3>📘 INSTRUCTION</h3>
+            <span class="collapse-icon" id="collapseIcon">◀</span>
+        </div>
+        <div class="instruction-content" id="instructionContent">
+            <!-- detailed documentation -->
+            <div class="doc-section">
+                <h4>🔹 SYNTAX RULES</h4>
+                <p>Code is valid <strong>JavaScript</strong> executed every tick inside a <code>with(env){...}</code> sandbox. All built-in names below are injected automatically — no imports needed.</p>
+                <p>• Statements should end with <code>;</code><br>
+                   • <code>if</code> blocks require <code>()</code> and <code>{}</code><br>
+                   • Variables: just assign — <code>fast = ema(close, 9);</code><br>
+                   • Comments: <code>// line</code> or <code>/* block */</code><br>
+                   • Standard JS: <code>Math.abs</code>, <code>Math.max</code>, <code>Math.min</code>, <code>Math.floor</code>, <code>Math.sqrt</code> etc. all work</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📊 BUILT-IN VARIABLES</h4>
+                <table>
+                    <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+                    <tr><td><code>open</code></td><td>number</td><td>Current candle open price</td></tr>
+                    <tr><td><code>high</code></td><td>number</td><td>Current candle high (updates each tick)</td></tr>
+                    <tr><td><code>low</code></td><td>number</td><td>Current candle low (updates each tick)</td></tr>
+                    <tr><td><code>close</code></td><td>number</td><td>Latest tick price — use in all calculations</td></tr>
+                    <tr><td><code>volume</code></td><td>number</td><td>Relative volume this candle</td></tr>
+                    <tr><td><code>bar_index</code></td><td>number</td><td>Completed bar count from 0 — use for frequency control</td></tr>
+                </table>
+                <pre>// bar_index: run logic only every 5 bars
+if (bar_index % 5 === 0) {
+    // rebalance or re-evaluate less frequently
+}</pre>
+            </div>
+
+            <div class="doc-section">
+                <h4>🧮 INDICATOR FUNCTIONS</h4>
+                <p>All are <strong>stateless</strong> — call any time, no <code>this.xxx</code> setup needed.</p>
+                <table>
+                    <tr><th>Function</th><th>Returns</th><th>Description</th></tr>
+                    <tr><td><code>sma(src, len)</code></td><td>number</td><td>Simple moving average of close (len bars)</td></tr>
+                    <tr><td><code>ema(src, len)</code></td><td>number</td><td>Exponential moving average of close (len bars)</td></tr>
+                    <tr><td><code>rsi(len=14)</code></td><td>0–100</td><td>Wilder RSI — 70+ overbought, 30− oversold</td></tr>
+                    <tr><td><code>atr(len=14)</code></td><td>number</td><td>Average True Range — volatility unit for SL sizing</td></tr>
+                    <tr><td><code>highest(len=20)</code></td><td>number</td><td>Highest <em>high</em> of last len completed bars</td></tr>
+                    <tr><td><code>lowest(len=20)</code></td><td>number</td><td>Lowest <em>low</em> of last len completed bars</td></tr>
+                    <tr><td><code>bb(len=20, mult=2)</code></td><td>object</td><td>Bollinger Bands → <code>{ upper, mid, lower }</code></td></tr>
+                    <tr><td><code>stoch(kLen=14, dLen=3)</code></td><td>object</td><td>Stochastic Oscillator → <code>{ k, d }</code> both 0–100</td></tr>
+                    <tr><td><code>crossover(a, b)</code></td><td>boolean</td><td><code>true</code> only on the one tick when a crosses above b</td></tr>
+                    <tr><td><code>crossunder(a, b)</code></td><td>boolean</td><td><code>true</code> only on the one tick when a crosses below b</td></tr>
+                </table>
+                <p><span class="badge">Note</span> <code>sma</code>/<code>ema</code> always use close price. The <code>src</code> argument is accepted for compatibility but ignored.</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>💡 INDICATOR USAGE PATTERNS</h4>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin-bottom:6px">ATR — volatility-scaled stop loss</p>
+                <pre>a = atr(14);
+strategy.entry('long', {
+    ratio: 1.0,
+    sl: close - 2 * a,   // 2 ATR below entry
+    tp: close + 4 * a    // 4 ATR above (2:1 R/R)
+});</pre>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin-bottom:6px">Bollinger Bands — mean-reversion + squeeze</p>
+                <pre>bands = bb(20, 2);
+// Long when price touches lower band
+if (close < bands.lower) {
+    strategy.entry('long', { ratio: 0.5,
+        sl: bands.lower * 0.98, tp: bands.mid });
+}
+// Short when price touches upper band
+if (close > bands.upper) {
+    strategy.entry('short', { ratio: 0.5,
+        sl: bands.upper * 1.02, tp: bands.mid });
+}</pre>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin-bottom:6px">Stochastic — overbought / oversold filter</p>
+                <pre>s = stoch(14, 3);
+fast = ema(close, 9);
+slow = ema(close, 21);
+// Only enter long if stoch is not overbought
+if (crossover(fast, slow) &amp;&amp; s.k < 80) {
+    strategy.entry('long', { ratio: 1.0,
+        sl: slow * 0.98, tp: close * 1.08 });
+}
+if (crossunder(fast, slow) &amp;&amp; s.k > 20) {
+    strategy.entry('short', { ratio: 1.0,
+        sl: slow * 1.02, tp: close * 0.92 });
+}</pre>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin-bottom:6px">RSI + EMA trend filter</p>
+                <pre>r = rsi(14);
+trend = ema(close, 50);
+// Only buy dips in an uptrend
+if (close > trend &amp;&amp; r < 35) {
+    strategy.entry('long', { ratio: 0.6,
+        sl: close - 2*atr(14), tp: close * 1.10 });
+}
+if (close &lt; trend &amp;&amp; r > 65) {
+    strategy.entry('short', { ratio: 0.6,
+        sl: close + 2*atr(14), tp: close * 0.90 });
+}</pre>
+            </div>
+
+            <div class="doc-section">
+                <h4>🎯 STRATEGY COMMANDS</h4>
+                <table>
+                    <tr><th>Command</th><th>Behaviour</th></tr>
+                    <tr><td><code>strategy.entry('long'/'short', opts?)</code></td><td><strong>Idempotent</strong> — closes opposite side, opens this side. No-op if already on same side.</td></tr>
+                    <tr><td><code>strategy.add('long'/'short', opts?)</code></td><td><strong>Always opens</strong> a new order on that side. Use for pyramiding / scaling in.</td></tr>
+                    <tr><td><code>strategy.close('long'/'short')</code></td><td>Close all orders on that side.</td></tr>
+                    <tr><td><code>strategy.closeAll()</code></td><td>Close every open order regardless of direction.</td></tr>
+                </table>
+                <p style="margin-top:8px"><strong>opts</strong> — all fields optional, any combination:</p>
+                <table>
+                    <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
+                    <tr><td><code>ratio</code></td><td>0–1</td><td>Fraction of free cash. Default <code>1.0</code>. Overridden by <code>qty</code>.</td></tr>
+                    <tr><td><code>qty</code></td><td>number</td><td>Fixed share count. Takes priority over <code>ratio</code>.</td></tr>
+                    <tr><td><code>sl</code></td><td>price</td><td>Stop-loss. Long: must be &lt; entry. Short: must be &gt; entry.</td></tr>
+                    <tr><td><code>tp</code></td><td>price</td><td>Take-profit. Long: must be &gt; entry. Short: must be &lt; entry.</td></tr>
+                </table>
+                <pre>strategy.entry('long', { ratio: 0.5, sl: close-2*atr(14), tp: close*1.10 });
+strategy.entry('short', { qty: 20, sl: close*1.03 });
+
+// Pyramiding: add 20% when price moves in our favour
+if (close > this.lastAdd * 1.03) {
+    strategy.add('long', { ratio: 0.2, sl: ema(close,21)*0.98 });
+    this.lastAdd = close;
+}</pre>
+            </div>
+
+            <div class="doc-section">
+                <h4>📡 POSITION STATE</h4>
+                <p><code>strategy.position</code> returns a snapshot of current holdings:</p>
+                <table>
+                    <tr><th>Field</th><th>Type</th><th>Value</th></tr>
+                    <tr><td><code>.side</code></td><td>string</td><td><code>'long'</code> / <code>'short'</code> / <code>'none'</code></td></tr>
+                    <tr><td><code>.qty</code></td><td>number</td><td>Total shares on that side</td></tr>
+                    <tr><td><code>.avgPrice</code></td><td>number</td><td>Volume-weighted average entry price</td></tr>
+                    <tr><td><code>.unrealized</code></td><td>number</td><td>Floating P&amp;L in $ at current price</td></tr>
+                </table>
+                <pre>pos = strategy.position;
+
+// Gate: only add if already long and profitable
+if (pos.side === 'long' &amp;&amp; pos.unrealized > 0) {
+    strategy.add('long', { ratio: 0.2 });
+}
+
+// Rolling: close and reopen to compound gains
+if (pos.side === 'long' &amp;&amp; close > pos.avgPrice * 1.05) {
+    strategy.close('long');
+    strategy.entry('long', { ratio: 1.0,
+        sl: ema(close,21)*0.975, tp: close*1.10 });
+}
+
+// Emergency exit: close all on large drawdown
+if (pos.unrealized < -200) { strategy.closeAll(); }</pre>
+                <p><span class="badge">Note</span> <code>position</code> reflects state <em>before</em> any commands on the current tick. After <code>strategy.close()</code>, the next tick will show <code>side: 'none'</code>.</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>💾 PERSISTENT VARIABLES</h4>
+                <p>Use <code>this.myVar</code> to store <em>custom</em> state between ticks. Always guard with <code>=== undefined</code> on first tick.</p>
+                <pre>// Track last add price for pyramiding frequency control
+if (this.lastAdd === undefined) this.lastAdd = close;
+if (close > this.lastAdd * 1.03) {
+    strategy.add('long', { ratio: 0.2 });
+    this.lastAdd = close;
+}
+
+// Previous value comparison (when crossover() isn't enough)
+if (this.prevRsi === undefined) this.prevRsi = rsi(14);
+r = rsi(14);
+if (this.prevRsi > 50 &amp;&amp; r &lt; 50) { /* RSI crossed below 50 */ }
+this.prevRsi = r;</pre>
+                <p><span class="badge">When to use</span> Custom rolling sums, counters, previous arbitrary values, cooldown timers. For standard crossovers/indicators, use the built-in functions instead.</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 1 – MA CROSS + PYRAMID</h4>
+                <pre>// MA Cross + Pyramid — enter on crossover, add 10% each tick while trend holds
+fast = ema(close, 9);
+slow = ema(close, 21);
+pos  = strategy.position;
+if (crossover(fast, slow)) {
+    strategy.entry('long',  { ratio: 0.1, sl: slow * 0.97, tp: close * 1.10 });
+} else if (fast > slow && pos.side === 'long') {
+    strategy.add('long',    { ratio: 0.1, sl: slow * 0.97 });
+}
+if (crossunder(fast, slow)) {
+    strategy.entry('short', { ratio: 0.1, sl: slow * 1.03, tp: close * 0.90 });
+} else if (fast < slow && pos.side === 'short') {
+    strategy.add('short',   { ratio: 0.1, sl: slow * 1.03 });
+}</pre>
+                <button class="example-btn" data-example="ma">Load</button>
+                <p>入场用 <code>entry</code>（10%），之后每 tick 只要趋势保持就用 <code>add</code> 继续加仓 10%。资金耗尽时自动停止加仓。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 2 – RSI + PYRAMID</h4>
+                <pre>// RSI Mean Reversion + Pyramid — add 10% while signal holds
+r   = rsi(14);
+a   = atr(14);
+pos = strategy.position;
+if (r > 70) {
+    strategy.close('long');
+} else if (r < 30) {
+    strategy.entry('long', { ratio: 0.1, sl: close - 2 * a, tp: close * 1.08 });
+} else if (r < 40 && pos.side === 'long') {
+    strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });
+}</pre>
+                <button class="example-btn" data-example="rsi">Load</button>
+                <p>RSI &lt; 30 触发入场，RSI 在 30–40 之间继续加仓（每次 10%），RSI &gt; 70 全部平多。<span class="badge">ATR stop</span> 动态止损。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 3 – BREAKOUT + PYRAMID</h4>
+                <pre>// Two-sided Breakout + Pyramid — add 10% while price extends the breakout
+h20 = highest(20);
+l20 = lowest(20);
+pos = strategy.position;
+if (close > h20) {
+    strategy.close('short');
+    strategy.entry('long',  { ratio: 0.1, sl: l20, tp: close * 1.10 });
+} else if (pos.side === 'long' && close > pos.avgPrice) {
+    strategy.add('long',    { ratio: 0.1, sl: l20 });
+}
+if (close < l20) {
+    strategy.close('long');
+    strategy.entry('short', { ratio: 0.1, sl: h20, tp: close * 0.90 });
+} else if (pos.side === 'short' && close < pos.avgPrice) {
+    strategy.add('short',   { ratio: 0.1, sl: h20 });
+}</pre>
+                <button class="example-btn" data-example="breakout">Load</button>
+                <p>突破入场后，只要价格继续向有利方向（多仓高于均价 / 空仓低于均价）就每 tick 加仓 10%。SL 锁定在区间极值。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 4 – MANUAL CROSS + PYRAMID</h4>
+                <pre>// Manual MA Cross + Pyramid — first-tick safe, add 10% while trend holds
+fast = ema(close, 9);
+slow = ema(close, 21);
+pos  = strategy.position;
+if (this.prevFast === undefined) {
+    this.prevFast = fast; this.prevSlow = slow;
+} else {
+    if (this.prevFast <= this.prevSlow && fast > slow) {
+        strategy.close('short');
+        strategy.entry('long',  { ratio: 0.1, sl: slow * 0.98, tp: close * 1.08 });
+    } else if (fast > slow && pos.side === 'long') {
+        strategy.add('long',    { ratio: 0.1, sl: slow * 0.98 });
+    }
+    if (this.prevFast >= this.prevSlow && fast < slow) {
+        strategy.close('long');
+        strategy.entry('short', { ratio: 0.1, sl: slow * 1.02, tp: close * 0.92 });
+    } else if (fast < slow && pos.side === 'short') {
+        strategy.add('short',   { ratio: 0.1, sl: slow * 1.02 });
+    }
+    this.prevFast = fast; this.prevSlow = slow;
+}</pre>
+                <button class="example-btn" data-example="persist">Load</button>
+                <p>首 tick 安全初始化，金叉/死叉触发入场（10%），之后每 tick 均线方向不变就继续加仓。<code>this.prevFast/Slow</code> 跨 tick 持久化。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 5 – EMA ROLL + PYRAMID</h4>
+                <pre>// EMA Roll + Pyramid — add 10%/tick, compound on every +3% gain
+fast = ema(close, 9);
+slow = ema(close, 21);
+pos  = strategy.position;
+if (fast > slow) {
+    if (pos.side !== 'long') {
+        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });
+    } else if (close > pos.avgPrice * 1.03) {
+        strategy.close('long');
+        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });
+    } else {
+        strategy.add('long',   { ratio: 0.1, sl: slow * 0.975 });
+    }
+} else if (fast < slow) {
+    strategy.closeAll();
+}</pre>
+                <button class="example-btn" data-example="roll">Load</button>
+                <p>趋势持续时每 tick 加仓 10%。当均价盈利 +3% 时滚仓（平仓 + 重开），以复利方式扩大本金。均线反转时全平。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📌 QUICK REFERENCE</h4>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin-bottom:4px">Editor shortcuts</p>
+                <p>• <strong>Ctrl+S</strong> — check syntax &nbsp;·&nbsp; <strong>Ctrl+Enter</strong> — apply to trader</p>
+                <p>• <strong>Tab</strong> — autocomplete / indent &nbsp;·&nbsp; <strong>▶ APPLY</strong> — send without closing editor</p>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin:8px 0 4px">Common gotchas</p>
+                <p>• <code>strategy.entry</code> is idempotent — won't stack. Use <code>strategy.add</code> for pyramiding.</p>
+                <p>• <code>strategy.add</code> fires every tick unless guarded by a condition (price threshold, <code>bar_index</code>, <code>this.counter</code>).</p>
+                <p>• SL/TP are <strong>fixed</strong> at the moment the order is placed — they don't trail automatically.</p>
+                <p>• SL/TP with wrong-side prices are silently rejected with a toast warning.</p>
+                <p>• <code>ratio</code> and <code>qty</code>: if both set, <code>qty</code> wins. Omit both → 100% of free cash.</p>
+                <p>• <code>bb()</code> and <code>stoch()</code> return objects — assign to a variable first: <code>b = bb(20); b.upper</code>.</p>
+                <p>• All names are <strong>case-sensitive</strong>: <code>close</code> ✓ &nbsp; <code>Close</code> ✗</p>
+                <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin:8px 0 4px">Choosing the right tool</p>
+                <table style="font-size:0.7rem">
+                    <tr><th>Need</th><th>Use</th></tr>
+                    <tr><td>Standard indicator</td><td><code>rsi()</code> <code>atr()</code> <code>bb()</code> etc — no state needed</td></tr>
+                    <tr><td>Previous bar value</td><td><code>this.prev = value</code> pattern</td></tr>
+                    <tr><td>One entry per signal</td><td><code>strategy.entry()</code></td></tr>
+                    <tr><td>Scale into position</td><td><code>strategy.add()</code> + price/bar guard</td></tr>
+                    <tr><td>Compound gains (roll)</td><td><code>strategy.close()</code> then <code>strategy.entry()</code></td></tr>
+                    <tr><td>Emergency exit</td><td><code>strategy.closeAll()</code></td></tr>
+                    <tr><td>Check if in position</td><td><code>strategy.position.side</code></td></tr>
+                    <tr><td>Limit trade frequency</td><td><code>bar_index % N === 0</code> or <code>this.cooldown</code></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const editor        = document.getElementById('code');
+        const completionBox = document.getElementById('completion');
+        const syntaxResult  = document.getElementById('syntax-result');
+        const cursorPos     = document.getElementById('cursor-pos');
+        const hintMsg       = document.getElementById('hint-msg');
+        const toggleBtn     = document.getElementById('toggleInstruction');
+        const instructionPanel = document.getElementById('instructionPanel');
+        const collapseIcon  = document.getElementById('collapseIcon');
+
+        // ----- Autocomplete keywords -----
+        const keywords = [
+            'open', 'high', 'low', 'close', 'volume',
+            'sma(', 'ema(', 'rsi(', 'atr(', 'highest(', 'lowest(', 'bb(', 'stoch(',
+            'crossover(', 'crossunder(', 'bar_index',
+            "strategy.entry('long'", "strategy.entry('short'",
+            "strategy.entry('long', { ratio: ", "strategy.entry('short', { ratio: ",
+            "strategy.entry('long', { qty: ", "strategy.entry('short', { qty: ",
+            "strategy.add('long'", "strategy.add('short'",
+            "strategy.add('long', { ratio: ", "strategy.add('short', { ratio: ",
+            "strategy.close('long')", "strategy.close('short')", 'strategy.closeAll()',
+            'strategy.position',
+            'Math.max(', 'Math.min(', 'Math.abs(', 'Math.floor(', 'Math.round(',
+            'this.'
+        ];
+
+        function getCursorPos(ta) { return ta.selectionStart; }
+        function setCursorPos(ta, p) { ta.setSelectionRange(p, p); }
+
+        // Simple caret coordinate estimate (no DOM mirror needed)
+        function getCaretXY(ta) {
+            const rect = ta.getBoundingClientRect();
+            const pos  = getCursorPos(ta);
+            const text = ta.value.substring(0, pos);
+            const lines = text.split('\n');
+            const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 18;
+            const charW = 9.5; // approximate for monospace ~0.88rem
+            const col  = lines[lines.length-1].length;
+            const row  = lines.length - 1;
+            return {
+                left: rect.left + ta.offsetLeft + 14 + col * charW - ta.scrollLeft,
+                top:  rect.top  + ta.offsetTop  + 6  + (row+1) * lineH - ta.scrollTop
+            };
+        }
+
+        let selectedIdx = -1;
+
+        function showCompletions(prefix) {
+            if (!prefix) { completionBox.style.display = 'none'; return; }
+            const matches = keywords.filter(k => k.toLowerCase().startsWith(prefix.toLowerCase()));
+            if (!matches.length) { completionBox.style.display = 'none'; return; }
+
+            completionBox.innerHTML = '';
+            selectedIdx = 0;
+            matches.forEach((m, i) => {
+                const div = document.createElement('div');
+                div.className = 'completion-item' + (i === 0 ? ' selected' : '');
+                div.textContent = m;
+                div.onpointerdown = e => { e.preventDefault(); insertCompletion(prefix, m); };
+                completionBox.appendChild(div);
+            });
+
+            const xy     = getCaretXY(editor);
+            const edRect = editor.getBoundingClientRect();  // 缓存一次，避免重复触发布局回流
+            completionBox.style.display = 'block';
+            completionBox.style.left = (xy.left - edRect.left - 4) + 'px';
+            completionBox.style.top  = (xy.top  - edRect.top  + 2) + 'px';
+        }
+
+        function hideCompletions() {
+            completionBox.style.display = 'none';
+            selectedIdx = -1;
+        }
+
+        function insertCompletion(prefix, completion) {
+            const pos = getCursorPos(editor);
+            const text = editor.value;
+            editor.value = text.substring(0, pos - prefix.length) + completion + text.substring(pos);
+            setCursorPos(editor, pos - prefix.length + completion.length);
+            hideCompletions();
+            updateCursorDisplay();
+        }
+
+        editor.addEventListener('keydown', e => {
+            // Navigate completion list
+            if (completionBox.style.display === 'block') {
+                const items = completionBox.querySelectorAll('.completion-item');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    items[selectedIdx]?.classList.remove('selected');
+                    selectedIdx = (selectedIdx + 1) % items.length;
+                    items[selectedIdx].classList.add('selected');
+                    return;
+                }
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    items[selectedIdx]?.classList.remove('selected');
+                    selectedIdx = (selectedIdx - 1 + items.length) % items.length;
+                    items[selectedIdx].classList.add('selected');
+                    return;
+                }
+                if (e.key === 'Enter' && selectedIdx >= 0) {
+                    e.preventDefault();
+                    items[selectedIdx]?.onpointerdown(e);
+                    return;
+                }
+                if (e.key === 'Escape') { hideCompletions(); return; }
+            }
+
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const pos = getCursorPos(editor);
+                const prefix = (editor.value.substring(0, pos).match(/[\w.]+$/) || [''])[0];
+                if (prefix) {
+                    const matches = keywords.filter(k => k.toLowerCase().startsWith(prefix.toLowerCase()));
+                    if (matches.length === 1) { insertCompletion(prefix, matches[0]); return; }
+                    if (matches.length > 1)   { showCompletions(prefix); return; }
+                }
+                // Indent: insert spaces
+                editor.value = editor.value.substring(0, pos) + '    ' + editor.value.substring(pos);
+                setCursorPos(editor, pos + 4);
+                updateCursorDisplay();
+                return;
+            }
+
+            // Ctrl+S → check syntax
+            if ((e.ctrlKey||e.metaKey) && e.key === 's') {
+                e.preventDefault(); checkSyntax(); return;
+            }
+            // Ctrl+Enter → apply to trader
+            if ((e.ctrlKey||e.metaKey) && e.key === 'Enter') {
+                e.preventDefault(); applyToTrader(); return;
+            }
+        });
+
+        editor.addEventListener('click',  () => { hideCompletions(); updateCursorDisplay(); });
+        editor.addEventListener('input',  () => { hideCompletions(); updateCursorDisplay(); });
+        editor.addEventListener('scroll', () =>  hideCompletions());
+        document.addEventListener('click', e => {
+            if (!editor.contains(e.target) && !completionBox.contains(e.target)) hideCompletions();
+        });
+
+        function updateCursorDisplay() {
+            const pos  = getCursorPos(editor);
+            const text = editor.value.substring(0, pos);
+            const lns  = text.split('\n');
+            cursorPos.textContent = `Ln ${lns.length}, Col ${lns[lns.length-1].length + 1}`;
+        }
+
+        // ----- Syntax checker — simulates the actual pineEnv via with() -----
+        function checkSyntax() {
+            const code = editor.value.trim();
+            if (!code) {
+                syntaxResult.textContent = '— empty —';
+                syntaxResult.className = 'check-result';
+                return;
+            }
+            try {
+                // Build the same sandbox as the runtime: with(pineEnv){...}
+                // Mocked pineEnv exposes the same names as getters + methods
+                const mockEnv = {
+                    get open()   { return 100; },
+                    get high()   { return 100; },
+                    get low()    { return 100; },
+                    get close()  { return 100; },
+                    get volume() { return 1;   },
+                    sma:       () => 100,
+                    ema:       () => 100,
+                    rsi:       () => 50,
+                    atr:       () => 1,
+                    highest:   () => 100,
+                    lowest:    () => 100,
+                    bb:        () => ({ upper: 102, mid: 100, lower: 98 }),
+                    stoch:     () => ({ k: 50, d: 50 }),
+                    crossover: () => false,
+                    crossunder:() => false,
+                    get bar_index() { return 100; },
+                    strategy: {
+                        entry:    () => {},
+                        add:      () => {},
+                        close:    () => {},
+                        closeAll: () => {},
+                        get position() { return { side: 'none', qty: 0, avgPrice: 0, unrealized: 0 }; }
+                    },
+                    Math
+                };
+                const fn = new Function('pineEnv', `with(pineEnv){${code}}`);
+                fn.call({}, mockEnv);
+                syntaxResult.textContent = '✓ OK';
+                syntaxResult.className = 'check-result status-success';
+                hintMsg.textContent = 'Syntax OK';
+            } catch(e) {
+                if (e instanceof SyntaxError || e instanceof ReferenceError) {
+                    syntaxResult.textContent = '✗ ' + e.message;
+                    syntaxResult.className = 'check-result status-error';
+                    hintMsg.textContent = e.message;
+                } else {
+                    // Runtime errors from mocks are expected — code is structurally OK
+                    syntaxResult.textContent = '✓ OK (runtime ok)';
+                    syntaxResult.className = 'check-result status-success';
+                    hintMsg.textContent = 'Syntax OK';
+                }
+            }
+        }
+
+        // ----- Apply to Trader (postMessage to parent iframe) -----
+        function applyToTrader() {
+            const code = editor.value.trim();
+            if (!code) { hintMsg.textContent = 'Nothing to apply'; return; }
+            try {
+                window.parent.postMessage({ type: 'apply-strategy', code }, '*');
+                hintMsg.textContent = '✓ Applied to Trader';
+                syntaxResult.textContent = '✓ Applied';
+                syntaxResult.className = 'check-result status-success';
+            } catch(e) {
+                hintMsg.textContent = 'Apply failed: ' + e.message;
+            }
+        }
+
+        document.getElementById('check-syntax').addEventListener('click', checkSyntax);
+        document.getElementById('btn-apply').addEventListener('click', applyToTrader);
+
+        document.getElementById('btn-copy').addEventListener('click', () => {
+            navigator.clipboard.writeText(editor.value).then(() => {
+                hintMsg.textContent = '✓ Copied to clipboard';
+                setTimeout(() => { hintMsg.textContent = 'Ready'; }, 2000);
+            }).catch(() => {
+                // fallback
+                editor.select();
+                document.execCommand('copy');
+                hintMsg.textContent = '✓ Copied';
+                setTimeout(() => { hintMsg.textContent = 'Ready'; }, 2000);
+            });
+        });
+
+        // ----- Examples -----
+        const EXAMPLES = {
+            ma: [
+                "// MA Cross + Pyramid — enter on crossover, add 10% each tick while trend holds",
+                "fast = ema(close, 9);",
+                "slow = ema(close, 21);",
+                "pos  = strategy.position;",
+                "if (crossover(fast, slow)) {",
+                "    strategy.entry('long',  { ratio: 0.1, sl: slow * 0.97, tp: close * 1.10 });",
+                "} else if (fast > slow && pos.side === 'long') {",
+                "    strategy.add('long',    { ratio: 0.1, sl: slow * 0.97 });",
+                "}",
+                "if (crossunder(fast, slow)) {",
+                "    strategy.entry('short', { ratio: 0.1, sl: slow * 1.03, tp: close * 0.90 });",
+                "} else if (fast < slow && pos.side === 'short') {",
+                "    strategy.add('short',   { ratio: 0.1, sl: slow * 1.03 });",
+                "}"
+            ].join('\n'),
+
+            rsi: [
+                "// RSI Mean Reversion + Pyramid — add 10% while signal holds",
+                "r   = rsi(14);",
+                "a   = atr(14);",
+                "pos = strategy.position;",
+                "if (r > 70) {",
+                "    strategy.close('long');",
+                "} else if (r < 30) {",
+                "    strategy.entry('long', { ratio: 0.1, sl: close - 2 * a, tp: close * 1.08 });",
+                "} else if (r < 40 && pos.side === 'long') {",
+                "    strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });",
+                "}"
+            ].join('\n'),
+
+            breakout: [
+                "// Two-sided Breakout + Pyramid — add 10% while price extends the breakout",
+                "h20 = highest(20);",
+                "l20 = lowest(20);",
+                "pos = strategy.position;",
+                "if (close > h20) {",
+                "    strategy.close('short');",
+                "    strategy.entry('long',  { ratio: 0.1, sl: l20, tp: close * 1.10 });",
+                "} else if (pos.side === 'long' && close > pos.avgPrice) {",
+                "    strategy.add('long',    { ratio: 0.1, sl: l20 });",
+                "}",
+                "if (close < l20) {",
+                "    strategy.close('long');",
+                "    strategy.entry('short', { ratio: 0.1, sl: h20, tp: close * 0.90 });",
+                "} else if (pos.side === 'short' && close < pos.avgPrice) {",
+                "    strategy.add('short',   { ratio: 0.1, sl: h20 });",
+                "}"
+            ].join('\n'),
+
+            persist: [
+                "// Manual MA Cross + Pyramid — first-tick safe, add 10% while trend holds",
+                "fast = ema(close, 9);",
+                "slow = ema(close, 21);",
+                "pos  = strategy.position;",
+                "if (this.prevFast === undefined) {",
+                "    this.prevFast = fast; this.prevSlow = slow;",
+                "} else {",
+                "    if (this.prevFast <= this.prevSlow && fast > slow) {",
+                "        strategy.close('short');",
+                "        strategy.entry('long',  { ratio: 0.1, sl: slow * 0.98, tp: close * 1.08 });",
+                "    } else if (fast > slow && pos.side === 'long') {",
+                "        strategy.add('long',    { ratio: 0.1, sl: slow * 0.98 });",
+                "    }",
+                "    if (this.prevFast >= this.prevSlow && fast < slow) {",
+                "        strategy.close('long');",
+                "        strategy.entry('short', { ratio: 0.1, sl: slow * 1.02, tp: close * 0.92 });",
+                "    } else if (fast < slow && pos.side === 'short') {",
+                "        strategy.add('short',   { ratio: 0.1, sl: slow * 1.02 });",
+                "    }",
+                "    this.prevFast = fast; this.prevSlow = slow;",
+                "}"
+            ].join('\n'),
+
+            roll: [
+                "// EMA Roll + Pyramid — add 10%/tick, compound on every +3% gain",
+                "fast = ema(close, 9);",
+                "slow = ema(close, 21);",
+                "pos  = strategy.position;",
+                "if (fast > slow) {",
+                "    if (pos.side !== 'long') {",
+                "        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });",
+                "    } else if (close > pos.avgPrice * 1.03) {",
+                "        strategy.close('long');",
+                "        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });",
+                "    } else {",
+                "        strategy.add('long',   { ratio: 0.1, sl: slow * 0.975 });",
+                "    }",
+                "} else if (fast < slow) {",
+                "    strategy.closeAll();",
+                "}"
+            ].join('\n')
+        };
+
+        document.querySelectorAll('[data-example]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const code = EXAMPLES[btn.getAttribute('data-example')];
+                if (code) {
+                    editor.value = code;
+                    updateCursorDisplay();
+                    checkSyntax();
+                }
+            });
+        });
+
+        // ----- Collapse instruction panel -----
+        toggleBtn.addEventListener('click', () => {
+            instructionPanel.classList.toggle('collapsed');
+            collapseIcon.innerHTML = instructionPanel.classList.contains('collapsed') ? '▶' : '◀';
+        });
+
+        // ----- Init -----
+        editor.value = EXAMPLES.ma;
+        updateCursorDisplay();
+        checkSyntax();
+    })();
+</script>
+</body>
+</html>

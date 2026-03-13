@@ -94,7 +94,7 @@
     }
     .hud-label {
       font-family: 'Orbitron', monospace;
-      font-size: 0.52rem; font-weight: 700; letter-spacing: 0.18em;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.18em;
       color: rgba(0,245,255,0.75); margin-bottom: 4px; text-transform: uppercase;
       text-shadow: 0 0 8px rgba(0,245,255,0.4);
     }
@@ -136,7 +136,7 @@
       border-radius: 3px; padding: 7px 14px;
     }
     .tool-group { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
-    .tool-label { font-size: 0.62rem; color: rgba(0,245,255,0.45); letter-spacing: 0.15em; }
+    .tool-label { font-size: 0.68rem; color: rgba(0,245,255,0.45); letter-spacing: 0.15em; }
     .mode-btn {
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
       border-bottom: 2px solid rgba(0,245,255,0.3);
@@ -174,11 +174,11 @@
       background: linear-gradient(to right, transparent, var(--border2), transparent);
     }
     .panel-section-label {
-      font-size: 0.5rem; letter-spacing: 0.25em; color: rgba(0,245,255,0.3);
+      font-size: 0.62rem; letter-spacing: 0.25em; color: rgba(0,245,255,0.3);
       text-transform: uppercase; margin-bottom: 2px; width: 100%;
     }
     .slider-group { display: flex; flex-direction: column; align-items: flex-start; min-width: 120px; }
-    .slider-label { font-size: 0.6rem; letter-spacing: 0.14em; color: rgba(0,245,255,0.55); text-transform: uppercase; margin-bottom: 4px; }
+    .slider-label { font-size: 0.68rem; letter-spacing: 0.14em; color: rgba(0,245,255,0.55); text-transform: uppercase; margin-bottom: 4px; }
     .slider-label span { color: var(--pink); margin-left: 5px; font-size: 0.7rem; }
     input[type=range] {
       width: 100%; height: 3px;
@@ -203,7 +203,7 @@
     .tp-input:focus  { border-color: #44ff88; }
     .sl-input.err { border-color:#ff2222!important; box-shadow:0 0 6px rgba(255,34,34,0.5); }
     .tp-input.err { border-color:#ffaa00!important; box-shadow:0 0 6px rgba(255,170,0,0.5); }
-    .field-err { font-size:0.55rem; color:#ff6060; letter-spacing:0.05em; min-height:10px; margin-top:1px; }
+    .field-err { font-size:0.65rem; color:#ff6060; letter-spacing:0.05em; min-height:10px; margin-top:1px; }
 
     /* ── ACTION BUTTONS (3D Cyber) ─────────── */
     .cyber-button {
@@ -351,7 +351,7 @@
       cursor: pointer; border-radius: 2px; transition: all 0.12s;
       touch-action: manipulation;
     }
-    .history-btn:hover { color: var(--yellow); background: rgba(245,230,66,0.09); border-color: rgba(245,230,66,0.5); }
+    .history-btn:hover, .history-btn:active { color: var(--yellow); background: rgba(245,230,66,0.09); border-color: rgba(245,230,66,0.5); }
     .history-btn.active { background: rgba(245,230,66,0.13); border-color: var(--yellow); color: var(--yellow);
       box-shadow: 0 0 10px rgba(245,230,66,0.2); }
     .history-panel {
@@ -413,7 +413,7 @@
       cursor: pointer; border-radius: 2px; transition: all 0.12s;
       touch-action: manipulation;
     }
-    .summary-btn:hover { color: var(--cyan); background: rgba(0,245,255,0.09); border-color: rgba(0,245,255,0.5); }
+    .summary-btn:hover, .summary-btn:active { color: var(--cyan); background: rgba(0,245,255,0.09); border-color: rgba(0,245,255,0.5); }
     .summary-btn.active { background: rgba(0,245,255,0.13); border-color: var(--cyan); color: var(--cyan);
       box-shadow: 0 0 10px rgba(0,245,255,0.2); }
     .summary-panel {
@@ -499,7 +499,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.15s;
       letter-spacing: 0.1em;
     }
-    .settings-btn:hover { color: var(--cyan); background: rgba(0,245,255,0.09); border-color: rgba(0,245,255,0.45); }
+    .settings-btn:hover, .settings-btn:active { color: var(--cyan); background: rgba(0,245,255,0.09); border-color: rgba(0,245,255,0.45); }
     .settings-btn.active {
       background: rgba(0,245,255,0.13); border-color: var(--cyan);
       border-bottom-color: var(--cyan); color: var(--cyan);
@@ -514,31 +514,40 @@
 
     /* ── CRYPTO mode button ────────────────────── */
     .crypto-mode-btn {
-      background: rgba(255,170,0,0.06); border: 1px solid rgba(255,170,0,0.45);
-      border-bottom: 2px solid rgba(255,170,0,0.75);
-      color: rgba(255,170,0,0.85); font-family: 'Share Tech Mono', monospace;
-      font-size: 0.72rem; padding: 3px 12px; cursor: pointer; border-radius: 2px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.15s;
-      letter-spacing: 0.1em; white-space: nowrap;
+      background: rgba(255,170,0,0.08);
+      border: 1px solid rgba(255,170,0,0.55);
+      border-bottom: 2px solid rgba(255,170,0,0.9);
+      color: rgba(255,200,60,0.95);
+      font-family: 'Orbitron', monospace;
+      font-size: 0.78rem; font-weight: 700;
+      padding: 5px 18px; cursor: pointer; border-radius: 2px;
+      letter-spacing: 0.18em; white-space: nowrap;
+      text-shadow: 0 0 8px rgba(255,170,0,0.75), 0 0 20px rgba(255,170,0,0.35);
+      box-shadow: 0 2px 10px rgba(255,170,0,0.2), 0 0 22px rgba(255,170,0,0.08), inset 0 1px 0 rgba(255,200,0,0.1);
+      transition: all 0.2s;
+      animation: cryptoIdleGlow 3s ease-in-out infinite;
+    }
+    @keyframes cryptoIdleGlow {
+      0%,100% { box-shadow: 0 2px 10px rgba(255,170,0,0.2), 0 0 22px rgba(255,170,0,0.08), inset 0 1px 0 rgba(255,200,0,0.1); }
+      50%      { box-shadow: 0 2px 16px rgba(255,170,0,0.35), 0 0 36px rgba(255,170,0,0.18), inset 0 1px 0 rgba(255,200,0,0.15); }
     }
     .crypto-mode-btn:hover {
-    color: #ffaa00;
-    background: rgba(255,170,0,0.22);
-    border-color: rgba(255,170,0,0.75);
-    /* 底部阴影叠加橙色光晕 */
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3), 0 0 15px #ffaa00, 0 0 30px rgba(255,170,0,0.75);
-    /* 文字添加橙色光晕 */
-    text-shadow: 0 0 8px #ffaa00;
+      color: #ffcc00;
+      background: rgba(255,170,0,0.18);
+      border-color: rgba(255,200,0,0.85);
+      text-shadow: 0 0 12px #ffcc00, 0 0 28px rgba(255,170,0,0.7);
+      box-shadow: 0 2px 20px rgba(255,170,0,0.55), 0 0 45px rgba(255,170,0,0.28), inset 0 1px 0 rgba(255,220,0,0.2);
+      animation: none;
     }
     .crypto-mode-btn.active {
-      background: rgba(255,170,0,0.15); border-color: #ffaa00;
-      border-bottom-color: #ffaa00; color: #ffaa00;
-      box-shadow: 0 2px 14px rgba(255,170,0,0.3), 0 0 24px rgba(255,170,0,0.1);
-      animation: cryptoPulse 2s infinite;
+      background: rgba(255,170,0,0.16); border-color: #ffcc00;
+      border-bottom-color: #ffcc00; color: #ffee80;
+      text-shadow: 0 0 10px #ffcc00, 0 0 22px rgba(255,200,0,0.8);
+      animation: cryptoActivePulse 1.8s ease-in-out infinite;
     }
-    @keyframes cryptoPulse {
-      0%,100% { box-shadow: 0 2px 14px rgba(255,170,0,0.3), 0 0 24px rgba(255,170,0,0.1); }
-      50%      { box-shadow: 0 2px 20px rgba(255,170,0,0.5), 0 0 36px rgba(255,170,0,0.2); }
+    @keyframes cryptoActivePulse {
+      0%,100% { box-shadow: 0 2px 18px rgba(255,170,0,0.45), 0 0 38px rgba(255,170,0,0.2), inset 0 1px 0 rgba(255,220,0,0.15); }
+      50%      { box-shadow: 0 2px 30px rgba(255,190,0,0.7), 0 0 60px rgba(255,170,0,0.38), inset 0 1px 0 rgba(255,230,0,0.25); }
     }
     /* CRYPTO symbol picker panel */
     .crypto-panel {
@@ -555,7 +564,7 @@
       font-size: 0.72rem; padding: 3px 11px; cursor: pointer; border-radius: 2px;
       transition: all 0.12s; letter-spacing: 0.08em;
     }
-    .crypto-sym-btn:hover { background: rgba(255,170,0,0.12); color: #ffaa00; border-color: rgba(255,170,0,0.55); }
+    .crypto-sym-btn:hover, .crypto-sym-btn:active { background: rgba(255,170,0,0.12); color: #ffaa00; border-color: rgba(255,170,0,0.55); }
     .crypto-sym-btn.active { background: rgba(255,170,0,0.18); border-color: #ffaa00; color: #ffaa00; box-shadow: 0 0 10px rgba(255,170,0,0.25); }
     .crypto-ws-status {
       font-size: 0.6rem; letter-spacing: 0.12em; margin-left: auto;
@@ -572,7 +581,8 @@
     .cyber-button, .mode-btn, .close-order, #btn-home,
     .ema-check, .rainbow-check, .detailed-check,
     .settings-btn, .crypto-mode-btn, .crypto-sym-btn,
-    input[type=range], input[type=number] {
+    input[type=range], input[type=number],
+    .strategy-panel button {
       touch-action: manipulation;
     }
 
@@ -591,18 +601,18 @@
       /* ── HUD: 3 × 2 grid ── */
       .hud { grid-template-columns: repeat(3, 1fr); gap: 3px; }
       .hud-cell { padding: 5px 4px 4px; }
-      .hud-label { font-size: 0.42rem; margin-bottom: 2px; letter-spacing: 0.09em; }
+      .hud-label { font-size: 0.56rem; margin-bottom: 2px; letter-spacing: 0.09em; }
       .hud-value { font-size: 0.82rem; }
 
       /* ── Chart toolbar ── */
       .chart-toolbar { padding: 5px 7px; gap: 5px 7px; }
       .tool-group { gap: 5px; flex-wrap: wrap; }
       /* 44px tap target for all toolbar buttons */
-      .mode-btn { font-size: 0.65rem; padding: 0 9px; min-height: 38px;
+      .mode-btn { font-size: 0.65rem; padding: 0 9px; min-height: 44px;
         display: inline-flex; align-items: center; justify-content: center; }
       /* Checkbox labels: larger hit area */
-      .ema-check, .detailed-check { font-size: 0.65rem; min-height: 36px; padding: 4px 4px; }
-      .rainbow-check { font-size: 0.65rem; padding: 4px 4px 4px 7px; min-height: 36px; }
+      .ema-check, .detailed-check { font-size: 0.65rem; min-height: 44px; padding: 4px 4px; }
+      .rainbow-check { font-size: 0.65rem; padding: 4px 4px 4px 7px; min-height: 44px; }
       .ema-check input, .rainbow-check input, .detailed-check input {
         width: 18px; height: 18px; flex-shrink: 0; }
 
@@ -674,8 +684,118 @@
       .action-col .cyber-button.long,
       .action-col .cyber-button.short { width: 100%; flex: 1 1 100%; padding: 14px 6px; }
       /* 超窄工具栏: TF 按钮缩小 */
-      .mode-btn { padding: 0 6px; font-size: 0.62rem; min-height: 36px; }
+      .mode-btn { padding: 0 6px; font-size: 0.62rem; min-height: 40px; }
     }
+
+    /* ── PineScript 策略面板 ─────────────────── */
+    .strategy-panel {
+      width: 100%; background: rgba(0,0,0,0.22);
+      border: 1px solid var(--border2); border-radius: 3px;
+      padding: 10px 14px;
+    }
+    .strategy-header {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .strategy-label {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.65rem; letter-spacing: 0.22em;
+      color: rgba(0,245,255,0.65); text-transform: uppercase;
+    }
+    .strategy-status {
+      font-size: 0.62rem; padding: 2px 8px;
+      border-radius: 2px; background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border2);
+      color: rgba(0,245,255,0.4); letter-spacing: 0.1em;
+      margin-left: auto;
+    }
+    .strategy-status.running {
+      color: var(--green); border-color: rgba(57,255,20,0.3);
+      text-shadow: 0 0 6px var(--green);
+      animation: stratPulse 1.2s ease-in-out infinite;
+    }
+    @keyframes stratPulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.6; }
+    }
+    .strategy-code {
+      width: 100%; background: #02000a;
+      border: 1px solid var(--border2);
+      color: rgba(0,245,255,0.85);
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; line-height: 1.55;
+      padding: 10px 12px; resize: vertical;
+      border-radius: 2px;
+      tab-size: 4;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,245,255,0.35) rgba(0,245,255,0.04);
+    }
+    .strategy-code:focus { border-color: rgba(0,245,255,0.35); outline: none; }
+    /* Webkit 滚动条 — 赛博风 */
+    .strategy-code::-webkit-scrollbar { width: 6px; }
+    .strategy-code::-webkit-scrollbar-track {
+      background: rgba(0,245,255,0.03);
+      border-left: 1px solid rgba(0,245,255,0.08);
+    }
+    .strategy-code::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0,245,255,0.55), rgba(255,45,120,0.45));
+      border-radius: 0;
+      border-left: 1px solid rgba(0,245,255,0.25);
+      box-shadow: inset 0 0 4px rgba(0,245,255,0.2), 0 0 6px rgba(0,245,255,0.25);
+    }
+    .strategy-code::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(0,245,255,0.80), rgba(255,45,120,0.65));
+      box-shadow: inset 0 0 4px rgba(0,245,255,0.3), 0 0 10px rgba(0,245,255,0.45);
+    }
+    .strategy-code::-webkit-scrollbar-corner { background: transparent; }
+    @media (max-width: 768px) {
+      .strategy-header { gap: 6px; }
+      .strategy-label  { font-size: 0.58rem; }
+      .strategy-status { margin-left: 0; }
+    }
+
+    /* ── 策略编辑器模态窗口 ───────────────────── */
+    .modal {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(5px);
+      z-index: 10000;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-content {
+      width: 92vw; height: 90vh;
+      background: #0b0f1a;
+      border: 1px solid var(--cyan);
+      box-shadow: 0 0 50px rgba(0,245,255,0.25), 0 0 120px rgba(0,245,255,0.08);
+      display: flex; flex-direction: column;
+      border-radius: 4px; overflow: hidden;
+    }
+    .modal-header {
+      background: #111a27;
+      padding: 8px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid rgba(0,245,255,0.15);
+      flex-shrink: 0;
+    }
+    .modal-title {
+      font-family: 'Orbitron', monospace;
+      color: var(--cyan); font-size: 0.9rem; letter-spacing: 0.2em;
+      text-shadow: 0 0 8px rgba(0,245,255,0.5);
+    }
+    .modal-close {
+      background: transparent;
+      border: 1px solid rgba(255,45,120,0.45);
+      color: rgba(255,45,120,0.75);
+      font-size: 1rem; width: 36px; height: 36px;
+      border-radius: 3px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.1s; font-family: monospace;
+    }
+    .modal-close:hover {
+      background: var(--pink); color: #000;
+      box-shadow: 0 0 12px var(--pink);
+    }
+    .modal-body { flex: 1; overflow: hidden; }
+    #editor-frame { width: 100%; height: 100%; border: none; background: #0b1018; display: block; }
   </style>
 </head>
 <body>
@@ -816,6 +936,27 @@
     </div>
   </div>
 
+  <!-- PineScript 策略面板 -->
+  <div class="strategy-panel">
+    <div class="strategy-header">
+      <span class="strategy-label">⚙ PINE STRATEGY</span>
+      <button class="cyber-button util" id="btn-strategy-start" style="width:auto;padding:4px 14px;">▶ START</button>
+      <button class="cyber-button util" id="btn-strategy-stop"  style="width:auto;padding:4px 14px;">⏹ STOP</button>
+      <button class="cyber-button util" id="btn-strategy-editor" style="width:auto;padding:4px 14px;">📝 EDITOR</button>
+      <span id="strategy-status" class="strategy-status">● IDLE</span>
+    </div>
+    <textarea id="pine-code" class="strategy-code" rows="5"
+      placeholder="// 示例：MA 金叉策略&#10;fast = ema(close, 9);&#10;slow = ema(close, 21);&#10;if (crossover(fast, slow)) { strategy.entry('long'); }&#10;if (crossunder(fast, slow)) { strategy.entry('short'); }">// MA Cross (default)
+fast = ema(close, 9);
+slow = ema(close, 21);
+if (crossover(fast, slow)) {
+    strategy.entry('long');
+}
+if (crossunder(fast, slow)) {
+    strategy.entry('short');
+}</textarea>
+  </div>
+
   <!-- Toast notifications -->
   <div id="toast-container"></div>
 
@@ -912,6 +1053,19 @@
             <div class="stat-value" id="sm-worst" style="color:var(--pink)">—</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 策略编辑器模态窗口 -->
+  <div id="editor-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="modal-title">⚡ STRATEGY EDITOR</span>
+        <button class="modal-close" id="modal-close" title="Close (Esc)">✕</button>
+      </div>
+      <div class="modal-body">
+        <iframe id="editor-frame" src="StrategyEditor.html" frameborder="0"></iframe>
       </div>
     </div>
   </div>
@@ -1183,6 +1337,7 @@
   let posRatioMode = false; // true = position size drives order; false = QTY drives order
   let slRatioMode  = false; // true = SL % slider active
   let tpRatioMode  = false; // true = TP % slider active
+  let _slTpPreviewDir = 1;  // 1=long / -1=short：SL/TP 滑块价格预览方向（pointerdown 按钮时更新）
 
   const slRatioSlider = document.getElementById('sl-ratio-slider');
   const slRatioVal    = document.getElementById('sl-ratio-val');
@@ -1207,7 +1362,7 @@
     slRatioMode = true;
     slRatioGroup.classList.remove('pos-inactive');
     slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0) + '%';
-    slInput.value = calcSlPrice(1).toFixed(2);
+    slInput.value = calcSlPrice(_slTpPreviewDir).toFixed(2);
   }
   function deactivateSlRatio() {
     slRatioMode = false;
@@ -1218,7 +1373,7 @@
     tpRatioMode = true;
     tpRatioGroup.classList.remove('pos-inactive');
     tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0) + '%';
-    tpInput.value = calcTpPrice(1).toFixed(2);
+    tpInput.value = calcTpPrice(_slTpPreviewDir).toFixed(2);
   }
   function deactivateTpRatio() {
     tpRatioMode = false;
@@ -1365,6 +1520,7 @@
       netAssetHistory.push(_naNew);
       if(netAssetHistory.length > 2000) netAssetHistory.shift();
       _recordNetAssetStat(_naNew, _naPrev);
+      evaluateStrategy();
       return;
     }
 
@@ -1472,6 +1628,7 @@
     netAssetHistory.push(_naNew);
     if(netAssetHistory.length > 2000) netAssetHistory.shift();
     _recordNetAssetStat(_naNew, _naPrev);  // O(1) 增量更新 MDD / Sharpe
+    evaluateStrategy();
     // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
   }
 
@@ -1483,15 +1640,17 @@
     orders.forEach(o=>{
       const hitSL=o.sl!==null&&((o.dir===1&&currentPrice<=o.sl)||(o.dir===-1&&currentPrice>=o.sl));
       const hitTP=o.tp!==null&&((o.dir===1&&currentPrice>=o.tp)||(o.dir===-1&&currentPrice<=o.tp));
-      if(hitSL||hitTP) hits.push({id:o.id,reason:hitSL?'SL':'TP',dir:o.dir});
+      // 直接保存 order 引用，避免后续 hits.forEach 中再次 orders.find()
+      if(hitSL||hitTP) hits.push({order:o, reason:hitSL?'SL':'TP'});
     });
     hits.forEach(h=>{
-      const pnl=orderUnrealized(orders.find(o=>o.id===h.id));
-      const tag=h.reason==='SL'?'🔴 STOP LOSS':'🟢 TAKE PROFIT';
-      const side=h.dir===1?'LONG':'SHORT';
-      showToast(`${tag} triggered<br>#${h.id} ${side} &nbsp;PnL: <b>${pnl>=0?'+':''}$${pnl.toFixed(2)}</b>`,
+      const o   = h.order;
+      const pnl = orderUnrealized(o);
+      const tag = h.reason==='SL'?'🔴 STOP LOSS':'🟢 TAKE PROFIT';
+      const side= o.dir===1?'LONG':'SHORT';
+      showToast(`${tag} triggered<br>#${o.id} ${side} &nbsp;PnL: <b>${pnl>=0?'+':''}$${pnl.toFixed(2)}</b>`,
         h.reason==='SL'?'error':'success', 4000);
-      closeOrderById(h.id,false,h.reason);
+      closeOrderById(o.id,false,h.reason);
     });
   }
 
@@ -1544,7 +1703,6 @@
     }
     return {posEq, notional, unrealized};
   }
-  function getTotalNotional(){ return orders.reduce((s,o)=>s+o.shares*currentPrice,0); }
 
   /* ═══════════════════════════════════════════
      HUD 刷新
@@ -1587,8 +1745,8 @@
     // position size 激活时，QTY 随价格/净值实时更新
     if(posRatioMode) sharesInput.value = calcPosRatioShares();
     // SL/TP 滑块激活时，价格随当前价实时更新（默认 long 方向预览）
-    if(slRatioMode) { slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0)+'%'; slInput.value = calcSlPrice(1).toFixed(2); }
-    if(tpRatioMode) { tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0)+'%'; tpInput.value = calcTpPrice(1).toFixed(2); }
+    if(slRatioMode) { slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0)+'%'; slInput.value = calcSlPrice(_slTpPreviewDir).toFixed(2); }
+    if(tpRatioMode) { tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0)+'%'; tpInput.value = calcTpPrice(_slTpPreviewDir).toFixed(2); }
 
     renderOrders();
     renderHistory();
@@ -1618,8 +1776,9 @@
     // 孤儿清理已由各平仓路径负责（closeOrderById / updateOrdersAndGetEquity路径B / refreshUI路径C）
 
     orders.forEach(o=>{
-      const unreal = orderUnrealized(o);
-      const eq     = orderEquity(o);
+      // o._equity 已由 updateOrdersAndGetEquity() 在本 tick 计算并缓存，直接复用
+      const eq     = o._equity;
+      const unreal = eq - o.margin;          // 等价于 orderUnrealized(o)
       const retPct = (unreal/o.margin*100).toFixed(1);
       const pnlClr = unreal>=0?'#39ff14':'#ff2d78';
       const barPct = Math.max(0,Math.min(200,eq/o.margin*100));
@@ -1698,41 +1857,61 @@
   /* ═══════════════════════════════════════════
      开仓
   ═══════════════════════════════════════════ */
-  function placeOrder(direction){
+  // forcedShares/forcedSl/forcedTp: when called from strategy executor (non-null = bypass UI)
+  function placeOrder(direction, forcedShares=null, forcedSl=null, forcedTp=null){
     if(liquidated){showToast('⚠ ACCOUNT LIQUIDATED<br>Reset to continue','error');return;}
     const lev=parseFloat(leverageSlider.value);
     let shares, margin;
-    if(posRatioMode){
-      const posRatio=parseFloat(posRatioSlider.value);
-      shares=calcPosRatioShares();
+    if(forcedShares !== null){
+      // Strategy-driven: use provided share count
+      shares=forcedShares;
       margin=(shares*currentPrice)/lev;
     } else {
-      shares=parseFloat(sharesInput.value);
-      if(isNaN(shares)||shares<=0){showToast('⚠ Enter a valid QTY or drag POSITION SIZE','warn');return;}
-      margin=(shares*currentPrice)/lev;
+      // Manual UI: preserve normal position-size / ratio logic
+      if(posRatioMode){
+        shares=calcPosRatioShares();
+        margin=(shares*currentPrice)/lev;
+      } else {
+        shares=parseFloat(sharesInput.value);
+        if(isNaN(shares)||shares<=0){showToast('⚠ Enter a valid QTY or drag POSITION SIZE','warn');return;}
+        margin=(shares*currentPrice)/lev;
+      }
     }
     const fee=calcFee(shares, currentPrice);
     const freeCash=getFreeCash();
     if(freeCash<margin+fee){showToast(`⚠ INSUFFICIENT CASH<br>Required: <b>$${(margin+fee).toFixed(2)}</b> (fee $${fee.toFixed(2)}) &nbsp;Available: <b>$${freeCash.toFixed(2)}</b>`,'warn');return;}
-    // SL/TP 滑块激活时，按实际开仓方向精确计算价格
-    if(slRatioMode) slInput.value = calcSlPrice(direction).toFixed(2);
-    if(tpRatioMode) tpInput.value = calcTpPrice(direction).toFixed(2);
-    const sl=slInput.value!==''?parseFloat(slInput.value):null;
-    const tp=tpInput.value!==''?parseFloat(tpInput.value):null;
-    const slErr=document.getElementById('sl-err');
-    const tpErr=document.getElementById('tp-err');
-    slErr.textContent=''; tpErr.textContent='';
-    slInput.classList.remove('err'); tpInput.classList.remove('err');
-    let hasErr=false;
-    if(sl!==null&&((direction===1&&sl>=currentPrice)||(direction===-1&&sl<=currentPrice))){
-      slErr.textContent=direction===1?`Must be < $${currentPrice.toFixed(2)}`:`Must be > $${currentPrice.toFixed(2)}`;
-      slInput.classList.add('err'); hasErr=true;
+    // SL/TP: strategy supplies explicit values; manual trades use ratio-mode auto-calc (original behavior)
+    let sl, tp;
+    if(forcedShares !== null){
+      sl = forcedSl;
+      tp = forcedTp;
+    } else {
+      if(slRatioMode) slInput.value = calcSlPrice(direction).toFixed(2);
+      if(tpRatioMode) tpInput.value = calcTpPrice(direction).toFixed(2);
+      sl = slInput.value!==''?parseFloat(slInput.value):null;
+      tp = tpInput.value!==''?parseFloat(tpInput.value):null;
     }
-    if(tp!==null&&((direction===1&&tp<=currentPrice)||(direction===-1&&tp>=currentPrice))){
-      tpErr.textContent=direction===1?`Must be > $${currentPrice.toFixed(2)}`:`Must be < $${currentPrice.toFixed(2)}`;
-      tpInput.classList.add('err'); hasErr=true;
+    if(forcedShares === null){
+      // 手动订单：做 UI 验证，展示错误反馈
+      const slErr=document.getElementById('sl-err');
+      const tpErr=document.getElementById('tp-err');
+      slErr.textContent=''; tpErr.textContent='';
+      slInput.classList.remove('err'); tpInput.classList.remove('err');
+      let hasErr=false;
+      if(sl!==null&&((direction===1&&sl>=currentPrice)||(direction===-1&&sl<=currentPrice))){
+        slErr.textContent=direction===1?`Must be < $${currentPrice.toFixed(2)}`:`Must be > $${currentPrice.toFixed(2)}`;
+        slInput.classList.add('err'); hasErr=true;
+      }
+      if(tp!==null&&((direction===1&&tp<=currentPrice)||(direction===-1&&tp>=currentPrice))){
+        tpErr.textContent=direction===1?`Must be > $${currentPrice.toFixed(2)}`:`Must be < $${currentPrice.toFixed(2)}`;
+        tpInput.classList.add('err'); hasErr=true;
+      }
+      if(hasErr)return;
+    } else {
+      // 策略订单：跳过 UI 验证，静默丢弃无效的 SL/TP（不阻断开仓）
+      if(sl!==null&&((direction===1&&sl>=currentPrice)||(direction===-1&&sl<=currentPrice))) sl=null;
+      if(tp!==null&&((direction===1&&tp<=currentPrice)||(direction===-1&&tp>=currentPrice))) tp=null;
     }
-    if(hasErr)return;
     cash -= margin + fee;
     realizedPnl -= fee;
     orders.push({id:nextOrderId++,dir:direction,openPrice:currentPrice,shares,lev,margin,sl,tp,_equity:margin,openFee:fee});
@@ -1771,11 +1950,15 @@
     initPrice(); emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear(); _aggCache=null; updateEMACache();
     trades=[]; refreshUI();
     triggerFlash();
+    // 停止策略（若已定义）
+    if(typeof _strategyActive !== 'undefined'){
+      _strategyActive = false; _strategyFn = null; _strategyCtx = {}; _crossState.clear();
+      const _sSt = document.getElementById('strategy-status');
+      if(_sSt){ _sSt.textContent='● IDLE'; _sSt.classList.remove('running'); }
+    }
   }
 
-  function triggerFlash(){
-    flash.classList.add('flash'); setTimeout(()=>flash.classList.remove('flash'),100);
-  }
+  function triggerFlash(){ /* flash removed */ }
 
   /* ═══════════════════════════════════════════
      初始化价格历史
@@ -1792,6 +1975,7 @@
       const jump=Math.random()<JUMP_PROB/simN?JUMP_MEAN+JUMP_STD*normalRandom():0;
       p=p*Math.exp(drift*dt+s*sqDt*normalRandom()+jump);
       if(p<0.01)p=0.01;
+      updateSREMA(p);  // 预热 S/R EMA，游戏开始时 srEmaValues 已收敛
       const open=i===0?p:ohlc[i-1].c, micro=s*0.25*Math.random();
       ohlc.push({o:open,h:Math.max(open,p)*(1+micro),l:Math.min(open,p)*(1-micro),c:p});
       priceHistory.push(p);
@@ -1840,8 +2024,9 @@
       baseEma = cached.ema; // tick 边界未变，直接复用
     } else {
       // 仅 tick 更新时（200ms）才重算稳定段，O(stableLen) 但每秒只跑 5 次
+      // 传入 stableLen 避免 closes.slice(0, stableLen) 产生临时数组
       baseEma = stableLen >= period
-        ? emaFromArray(closes.slice(0, stableLen), period)
+        ? emaFromArray(closes, period, stableLen)
         : new Float64Array(0);
       aggEmaCache.set(period, { stableLen, stableLastClose, ema: baseEma });
     }
@@ -2024,10 +2209,10 @@
     return { ag: _aggCache.ag, vol: _aggCache.vol, closes: _aggCache.closes };
   }
 
-  /* EMA on arbitrary close-price array (not cache) — uses Float64Array, no fill() */
-  function emaFromArray(arr, period) {
-    const len = arr.length;
-    if (len < period) return [];
+  /* EMA on arbitrary close-price array (not cache) — uses Float64Array, no fill()
+     可选 len 参数：只处理 arr 的前 len 个元素，避免调用方做 arr.slice(0, len) */
+  function emaFromArray(arr, period, len = arr.length) {
+    if (len < period) return new Float64Array(0);
     const k = 2 / (period + 1);
     const out = new Float64Array(len - period + 1);
     let sum = 0;
@@ -2156,26 +2341,6 @@
       ctx.fillText('$'+price.toFixed(2),4,mapY(price)-2);
     }
 
-    // ── SL/TP 水平线（只在有 SL/TP 订单时才切换 lineDash）──
-    const _hasSLTP = orders.some(o=>o.sl!==null||o.tp!==null);
-    if (_hasSLTP) {
-      ctx.setLineDash([4,4]); ctx.lineWidth=0.8;
-      orders.forEach(o=>{
-        if(o.sl!==null&&o.sl>minP&&o.sl<maxP){
-          const y=mapY(o.sl); ctx.strokeStyle='rgba(255,68,68,0.5)';
-          ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
-          ctx.fillStyle='#ff5555';ctx.font='9px "Share Tech Mono"';
-          ctx.fillText(`SL #${o.id}`,CW-55,y-2);
-        }
-        if(o.tp!==null&&o.tp>minP&&o.tp<maxP){
-          const y=mapY(o.tp); ctx.strokeStyle='rgba(68,255,136,0.5)';
-          ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();
-          ctx.fillStyle='#44ff88';ctx.font='9px "Share Tech Mono"';
-          ctx.fillText(`TP #${o.id}`,CW-55,y-2);
-        }
-      });
-      ctx.setLineDash([]);
-    }
 
     // ── 开仓标记（转换到聚合 index）──
     ctx.font='bold 12px "Orbitron"';
@@ -2276,9 +2441,9 @@
     if(!historyPanel.classList.contains('open')) return;
     const TYPE_LABEL = { MANUAL:'CLOSE', SL:'STOP LOSS', TP:'TAKE PROFIT', LIQ:'LIQUIDATED' };
     const TYPE_CLS   = { MANUAL:'manual', SL:'sl', TP:'tp', LIQ:'liq' };
-    // summary row（每次全量计算，数据量小）
-    const totalFees = tradeHistory.reduce((s,t)=>s+t.openFee+t.closeFee, 0);
-    const totalNet  = tradeHistory.reduce((s,t)=>s+t.netPnl, 0);
+    // summary row：直接读增量统计变量，O(1)，无需两次全量 reduce
+    const totalFees = _sm_totalFees;
+    const totalNet  = _sm_sumWinPnl + _sm_sumLossPnl;
     historySummary.textContent =
       `${tradeHistory.length} trades · Net P&L: ${totalNet>=0?'+':''}$${totalNet.toFixed(2)} · Total Fees: -$${totalFees.toFixed(2)}`;
     // 增量渲染：只 prepend 自上次渲染以来新增的行（tradeHistory 用 unshift，最新在索引0）
@@ -2474,7 +2639,7 @@
       return;
     }
 
-    // ── 数据多边形 填充 ─────────────────────────────────────────────
+    // ── 数据多边形：单次路径，fill 后直接 stroke，省去重复三角函数计算 ──
     rCtx.beginPath();
     for (let i = 0; i < N; i++) {
       const a = axAngle(i);
@@ -2483,18 +2648,9 @@
               : rCtx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
     }
     rCtx.closePath();
+    rCtx.shadowBlur = 0;
     rCtx.fillStyle = `rgba(${rgb},0.1)`;
     rCtx.fill();
-
-    // ── 数据多边形 描边（发光）─────────────────────────────────────
-    rCtx.beginPath();
-    for (let i = 0; i < N; i++) {
-      const a = axAngle(i);
-      const r = R * scores[i] / 100;
-      i === 0 ? rCtx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a))
-              : rCtx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
-    }
-    rCtx.closePath();
     rCtx.strokeStyle = `rgba(${rgb},0.9)`;
     rCtx.lineWidth = 1.4;
     rCtx.shadowColor = `rgba(${rgb},0.55)`;
@@ -2743,8 +2899,11 @@
     document.getElementById('sim-n-val').textContent = n;
     applySimN(n);
   });
-  btnLong.addEventListener('click',()=>placeOrder(1));
-  btnShort.addEventListener('click',()=>placeOrder(-1));
+  // pointerdown 先于 click 触发，确保开仓前预览方向已正确更新
+  btnLong.addEventListener('pointerdown',  () => { _slTpPreviewDir =  1; });
+  btnLong.addEventListener('click',  () => placeOrder(1));
+  btnShort.addEventListener('pointerdown', () => { _slTpPreviewDir = -1; });
+  btnShort.addEventListener('click', () => placeOrder(-1));
   function clearSlTpErr(el,errId){el.classList.remove('err');document.getElementById(errId).textContent='';}
   slInput.addEventListener('input',()=>clearSlTpErr(slInput,'sl-err'));
   tpInput.addEventListener('input',()=>clearSlTpErr(tpInput,'tp-err'));
@@ -2929,6 +3088,299 @@
       resetGame();
     }
   });
+
+  /* ═══════════════════════════════════════════
+     PineScript 策略执行器
+  ═══════════════════════════════════════════ */
+  let _strategyActive = false;
+  let _strategyFn     = null;
+  let _strategyCtx    = {};   // 策略持久状态（this.xxx）
+
+  // crossover/crossunder 调用序号跟踪（每 tick 重置），用于存储前值
+  let _crossIdx = 0;
+  const _crossState = new Map(); // idx → { a, b }
+
+  // pineEnv 通过 with(pineEnv) 暴露给策略代码
+  // 用 getter 使 open/high/low/close/volume 以数字形式暴露（而非函数），
+  // 这样策略代码可直接写 close > 100 而无需调用
+  const pineEnv = {
+    get open()   { return ohlc.length ? ohlc[ohlc.length-1].o : currentPrice; },
+    get high()   { return ohlc.length ? ohlc[ohlc.length-1].h : currentPrice; },
+    get low()    { return ohlc.length ? ohlc[ohlc.length-1].l : currentPrice; },
+    get close()  { return currentPrice; },
+    get volume() { return volumeHistory.length ? volumeHistory[volumeHistory.length-1] : 0; },
+
+    // sma / ema 始终基于收盘价序列（src 参数保留兼容性但不影响数据源）
+    sma(src, len) {
+      const arr = priceHistory.slice(-len);
+      return arr.length >= len ? arr.reduce((a,b)=>a+b,0)/len : currentPrice;
+    },
+    ema(src, len) {
+      // 取 3× 周期的历史以确保 EMA 收敛
+      const arr = priceHistory.slice(-Math.max(len*3, len+10));
+      if (arr.length < len) return currentPrice;
+      const k = 2/(len+1);
+      let e = arr[0];
+      for (let i=1; i<arr.length; i++) e = (arr[i]-e)*k+e;
+      return e;
+    },
+    // crossover / crossunder：通过调用序号记忆前一 tick 的 a/b 值，保证比较正确
+    // 第一次执行（无前值）返回 false，避免首 tick 误触发
+    crossover(a, b) {
+      const idx = _crossIdx++;
+      const s = _crossState.get(idx);
+      const result = s != null && s.a <= s.b && a > b;
+      _crossState.set(idx, {a, b});
+      return result;
+    },
+    crossunder(a, b) {
+      const idx = _crossIdx++;
+      const s = _crossState.get(idx);
+      const result = s != null && s.a >= s.b && a < b;
+      _crossState.set(idx, {a, b});
+      return result;
+    },
+
+    // ── 新增指标函数（均无需手动维护 this.xxx 状态）────────────────────
+
+    // rsi(len=14): Wilder RSI，从价格历史无状态计算
+    rsi(len = 14) {
+      const arr = priceHistory.slice(-Math.max(len * 3, len + 10));
+      if (arr.length < 2) return 50;
+      const k = 1 / len;
+      const init = Math.min(len, arr.length - 1);
+      let uA = 0, dA = 0;
+      for (let i = 1; i <= init; i++) {
+        const d = arr[i] - arr[i-1];
+        uA += Math.max(d, 0); dA += Math.max(-d, 0);
+      }
+      uA /= init; dA /= init;
+      for (let i = init + 1; i < arr.length; i++) {
+        const d = arr[i] - arr[i-1];
+        uA = uA*(1-k) + Math.max(d, 0)*k;
+        dA = dA*(1-k) + Math.max(-d, 0)*k;
+      }
+      return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100 / (1 + uA / dA);
+    },
+
+    // atr(len=14): Wilder 平均真实波幅，用于动态止损定价
+    atr(len = 14) {
+      if (ohlc.length < 2) return 0;
+      const sl = ohlc.slice(-Math.max(len * 3, len + 10));
+      if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
+      const k = 1 / len;
+      let v = sl[1].h - sl[1].l;
+      for (let i = 1; i < sl.length; i++) {
+        const tr = Math.max(
+          sl[i].h - sl[i].l,
+          Math.abs(sl[i].h - sl[i-1].c),
+          Math.abs(sl[i].l - sl[i-1].c)
+        );
+        v = v*(1-k) + tr*k;
+      }
+      return v;
+    },
+
+    // highest(len=20): 最近 len 根已完结 K 线的最高价（不含当前开放K线）
+    highest(len = 20) {
+      const end = ohlc.length - 1;
+      const sl = ohlc.slice(Math.max(0, end - len), end);
+      return sl.length ? Math.max(...sl.map(b => b.h)) : currentPrice;
+    },
+
+    // lowest(len=20): 最近 len 根已完结 K 线的最低价
+    lowest(len = 20) {
+      const end = ohlc.length - 1;
+      const sl = ohlc.slice(Math.max(0, end - len), end);
+      return sl.length ? Math.min(...sl.map(b => b.l)) : currentPrice;
+    },
+
+    // bb(len=20, mult=2.0): 布林带，返回 { upper, mid, lower }
+    bb(len = 20, mult = 2.0) {
+      const arr = priceHistory.slice(-len);
+      if (arr.length < len) return { upper: currentPrice, mid: currentPrice, lower: currentPrice };
+      const mid = arr.reduce((a, b) => a + b, 0) / len;
+      const std = Math.sqrt(arr.reduce((s, v) => s + (v - mid) ** 2, 0) / len);
+      return { upper: mid + mult * std, mid, lower: mid - mult * std };
+    },
+
+    // stoch(kLen=14, dLen=3): 随机指标，返回 { k, d }（均为 0-100）
+    stoch(kLen = 14, dLen = 3) {
+      if (ohlc.length < kLen) return { k: 50, d: 50 };
+      const calcK = bars => {
+        const hh = Math.max(...bars.map(b => b.h));
+        const ll = Math.min(...bars.map(b => b.l));
+        return hh === ll ? 50 : (bars[bars.length-1].c - ll) / (hh - ll) * 100;
+      };
+      const k = calcK(ohlc.slice(-kLen));
+      let dSum = 0, dCnt = 0;
+      for (let i = 0; i < dLen; i++) {
+        const end2 = ohlc.length - i;
+        if (end2 - kLen < 0) break;
+        dSum += calcK(ohlc.slice(end2 - kLen, end2));
+        dCnt++;
+      }
+      return { k, d: dCnt ? dSum / dCnt : k };
+    },
+
+    // bar_index: 已完结 K 线根数（从 0 开始），可用于定时/频率控制
+    get bar_index() { return Math.max(0, ohlc.length - 1); },
+
+    strategy: {
+      // entry：平掉反向仓位，若该方向已有仓位则不重复开仓（幂等）
+      // opts (可选对象):
+      //   qty   : number  — 固定手数（股数），优先于 ratio
+      //   ratio : number  — 0~1，占当前可用资金比例，默认 1.0（全仓）
+      //   sl    : number  — 止损价格（多仓须 < 当前价，空仓须 > 当前价）
+      //   tp    : number  — 止盈价格（多仓须 > 当前价，空仓须 < 当前价）
+      entry(direction, opts = {}) {
+        if (!_strategyActive) return;
+        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
+        // 单次遍历：同时收集同向标志和反向 id，避免三次 orders 迭代
+        let hasSame = false;
+        const oppositeIds = [];
+        for (const o of orders) {
+          if (o.dir === dir) hasSame = true;
+          else oppositeIds.push(o.id);
+        }
+        // 先平反向（用收集好的副本，避免遍历中 splice）
+        oppositeIds.forEach(id => closeOrderById(id, false));
+        // 已持同向仓位则不再叠仓
+        if (!hasSame) {
+          const lev = parseFloat(leverageSlider.value);
+          let shares;
+          if (opts.qty != null) {
+            // 固定手数模式
+            shares = Math.floor(opts.qty);
+          } else {
+            // 比例模式：ratio ∈ [0,1]，默认 1.0（全仓）
+            const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
+            const budget = ratio * getFreeCash() - FEE_FIXED;
+            shares = Math.floor(budget / (currentPrice * (1/lev + FEE_RATE)));
+          }
+          const sl = opts.sl != null ? opts.sl : null;
+          const tp = opts.tp != null ? opts.tp : null;
+          if (shares > 0) placeOrder(dir, shares, sl, tp);
+        }
+      },
+      // add：在已有同向仓位的基础上再开一笔（允许叠仓/加仓/金字塔）
+      // opts 与 entry 完全相同：{ qty?, ratio?, sl?, tp? }
+      add(direction, opts = {}) {
+        if (!_strategyActive) return;
+        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
+        const lev = parseFloat(leverageSlider.value);
+        let shares;
+        if (opts.qty != null) {
+          shares = Math.floor(opts.qty);
+        } else {
+          const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
+          const budget = ratio * getFreeCash() - FEE_FIXED;
+          shares = Math.floor(budget / (currentPrice * (1/lev + FEE_RATE)));
+        }
+        const sl = opts.sl != null ? opts.sl : null;
+        const tp = opts.tp != null ? opts.tp : null;
+        if (shares > 0) placeOrder(dir, shares, sl, tp);
+      },
+      // close：平掉指定方向的所有仓位（安全副本，避免 splice 导致跳过）
+      close(direction) {
+        if (!_strategyActive) return;
+        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
+        [...orders.filter(o => o.dir === dir).map(o => o.id)]
+          .forEach(id => closeOrderById(id, false));
+      },
+
+      // closeAll：平掉所有仓位（多空均平，不区分方向）
+      closeAll() {
+        if (!_strategyActive) return;
+        [...orders.map(o => o.id)].forEach(id => closeOrderById(id, false));
+      },
+
+      // position：只读属性，返回当前持仓快照
+      // 返回 { side: 'long'|'short'|'none', qty, avgPrice, unrealized }
+      get position() {
+        let lQty = 0, sQty = 0, lSum = 0, sSum = 0, lU = 0, sU = 0;
+        for (const o of orders) {
+          const u = o.dir * o.shares * (currentPrice - o.openPrice);
+          if (o.dir === 1) { lQty += o.shares; lSum += o.openPrice * o.shares; lU += u; }
+          else             { sQty += o.shares; sSum += o.openPrice * o.shares; sU += u; }
+        }
+        if (lQty > 0 && sQty === 0)
+          return { side: 'long',  qty: lQty, avgPrice: lSum / lQty, unrealized: lU };
+        if (sQty > 0 && lQty === 0)
+          return { side: 'short', qty: sQty, avgPrice: sSum / sQty, unrealized: sU };
+        return { side: 'none', qty: 0, avgPrice: 0, unrealized: 0 };
+      }
+    }
+  };
+
+  function compilePineScript(code) {
+    try {
+      return new Function('pineEnv', `with(pineEnv){${code}}`);
+    } catch(e) {
+      showToast('策略编译错误: ' + e.message, 'error');
+      return null;
+    }
+  }
+
+  function evaluateStrategy() {
+    if (!_strategyActive || !_strategyFn) return;
+    _crossIdx = 0; // 重置 crossover/crossunder 调用计数
+    try {
+      _strategyFn.call(_strategyCtx, pineEnv);
+    } catch(e) {
+      console.warn('策略执行异常', e);
+      showToast('策略执行错误，已停止: ' + e.message, 'error');
+      _strategyActive = false;
+      const st = document.getElementById('strategy-status');
+      st.textContent = '● IDLE'; st.classList.remove('running');
+    }
+    // 保证 strategy.close / closeAll 的平仓结果在本 tick 立即反映到 UI
+    refreshUI();
+  }
+
+  // 策略按钮事件
+  document.getElementById('btn-strategy-start').addEventListener('click', () => {
+    const code = document.getElementById('pine-code').value.trim();
+    if (!code) { showToast('⚠ 请先输入策略代码', 'warn'); return; }
+    const fn = compilePineScript(code);
+    if (fn) {
+      _strategyCtx = {}; _crossState.clear(); // 重置持久状态
+      _strategyFn = fn; _strategyActive = true;
+      const st = document.getElementById('strategy-status');
+      st.textContent = '● RUNNING'; st.classList.add('running');
+      showToast('策略已启动', 'success');
+    }
+  });
+
+  document.getElementById('btn-strategy-stop').addEventListener('click', () => {
+    _strategyActive = false;
+    const st = document.getElementById('strategy-status');
+    st.textContent = '● IDLE'; st.classList.remove('running');
+    closeAll();  // 停止时自动平掉所有策略持仓
+    showToast('策略已停止，持仓已全部平仓', 'info');
+  });
+
+  // 策略编辑器模态窗口
+  (function(){
+    const modal    = document.getElementById('editor-modal');
+    const closeBtn = document.getElementById('modal-close');
+    document.getElementById('btn-strategy-editor').addEventListener('click', () => {
+      modal.style.display = 'flex';
+    });
+    closeBtn.addEventListener('click', () => { modal.style.display = 'none'; });
+    modal.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none';
+    });
+    // 接收来自 StrategyEditor iframe 的"应用策略"消息
+    window.addEventListener('message', e => {
+      if (e.data && e.data.type === 'apply-strategy' && typeof e.data.code === 'string') {
+        document.getElementById('pine-code').value = e.data.code;
+        modal.style.display = 'none';
+        showToast('策略代码已从编辑器应用', 'success');
+      }
+    });
+  })();
 
   /* ═══════════════════════════════════════════
      初始化 + 主循环
