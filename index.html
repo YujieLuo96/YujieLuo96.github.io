@@ -8,12 +8,15 @@
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-responsive.min.css">
     <style>
+        html {
+            overflow-x: hidden; /* 放在 html 而非 body，避免 iOS Safari 滚动重置 */
+        }
+
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
             color: #f0f0f0;
             line-height: 1.6;
             margin: 0;
-            overflow-x: hidden;
             position: relative;
             background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
             min-height: 100vh;
@@ -321,7 +324,6 @@
             body {
                 background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
                 color: #f0f0f0;
-                overflow-x: hidden;
             }
 
             .container {
@@ -796,7 +798,7 @@
                     }
                 },
                 interactivity: {
-                    detect_on: "window",
+                    detect_on: "canvas",
                     events: {
                         onhover: {
                             enable: !isMobile,
@@ -839,17 +841,6 @@
                     document.body.style.webkitOverflowScrolling = 'touch';
                 }
             });
-
-            // 添加星星闪烁效果增强
-            setInterval(() => {
-                const stars = document.querySelectorAll('.twinkling-star');
-                stars.forEach(star => {
-                    // 随机改变一些星星的亮度
-                    if (Math.random() > 0.7) {
-                        star.style.opacity = Math.random() * Math.random()*0.8+0.2;
-                    }
-                });
-            }, 1000);
 
             // 窗口大小调整时重新初始化粒子（优化移动端）
             let resizeTimer;
