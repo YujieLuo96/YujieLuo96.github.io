@@ -488,7 +488,6 @@
 
     /* ── Settings button & panel ──────────────── */
     .settings-btn {
-      margin-left: auto;
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
       border-bottom: 2px solid rgba(0,245,255,0.3);
       color: rgba(0,245,255,0.55); font-family: 'Share Tech Mono', monospace;
@@ -783,6 +782,7 @@
         <span style="background:linear-gradient(90deg,red,orange,yellow,green,cyan,blue,violet);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">RAINBOW EMA 1-60</span>
       </label>
     </div>
+    <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto">⟲ RESET</button>
     <button class="settings-btn" id="btn-settings">⚙ SETTINGS</button>
   </div>
 
@@ -847,7 +847,6 @@
           <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
           <div id="tp-err" class="field-err"></div>
         </div>
-        <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto;align-self:flex-end">⟲ RESET</button>
       </div>
     </div>
   </div>

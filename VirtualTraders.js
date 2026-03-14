@@ -156,6 +156,11 @@ if (close > hh && this._p !== 1) {
   // Sparkline throttle: only redraw every N ticks to avoid canvas flash
   let _sparkTick = 0;
   const SPARK_INTERVAL = 10;
+  // Per-tick indicator cache: shared across all traders since market data is identical
+  const _piCache = new Map();
+  // Track which trader's static detail content was last rendered (avatar, code, history)
+  let _detailStaticId   = null;
+  let _detailTradeCnt   = -1;  // tracks t.stats.totalTrades — monotonic, never saturates
 
   /* ═══════════════════════════════════════════════════════════════════
      TRADER FACTORY
@@ -206,20 +211,27 @@ if (close > hh && this._p !== 1) {
     const { ohlc, priceHistory, volumeHistory, currentPrice } = _ctx;
 
     function sma(_s, len) {
+      const key = 'sma_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
       const a = priceHistory.slice(-len);
-      return a.length >= len ? a.reduce((x, y) => x + y, 0) / len : currentPrice;
+      const v = a.length >= len ? a.reduce((x, y) => x + y, 0) / len : currentPrice;
+      _piCache.set(key, v); return v;
     }
     function ema(_s, len) {
+      const key = 'ema_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
       const a = priceHistory.slice(-Math.max(len * 3, len + 10));
-      if (a.length < len) return currentPrice;
+      if (a.length < len) { _piCache.set(key, currentPrice); return currentPrice; }
       const k = 2 / (len + 1); let e = a[0];
       for (let i = 1; i < a.length; i++) e = (a[i] - e) * k + e;
-      return e;
+      _piCache.set(key, e); return e;
     }
     function rsi(len) {
       len = len || 14;
+      const key = 'rsi_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
       const a = priceHistory.slice(-Math.max(len * 3, len + 10));
-      if (a.length < 2) return 50;
+      if (a.length < 2) { _piCache.set(key, 50); return 50; }
       const k = 1 / len, init = Math.min(len, a.length - 1);
       let uA = 0, dA = 0;
       for (let i = 1; i <= init; i++) {
@@ -231,45 +243,67 @@ if (close > hh && this._p !== 1) {
         uA = uA*(1-k) + Math.max(d,0)*k;
         dA = dA*(1-k) + Math.max(-d,0)*k;
       }
-      return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100/(1 + uA/dA);
+      const v = dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100/(1 + uA/dA);
+      _piCache.set(key, v); return v;
     }
     function atr(len) {
       len = len || 14;
-      if (ohlc.length < 2) return 0;
+      const key = 'atr_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
+      if (ohlc.length < 2) { _piCache.set(key, 0); return 0; }
       const sl = ohlc.slice(-Math.max(len*3, len+10));
-      if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
+      if (sl.length < 2) { const v = sl[0] ? sl[0].h - sl[0].l : 0; _piCache.set(key, v); return v; }
       const k = 1/len; let v = sl[1].h - sl[1].l;
       for (let i=1; i<sl.length; i++) {
         const tr = Math.max(sl[i].h-sl[i].l,
           Math.abs(sl[i].h-sl[i-1].c), Math.abs(sl[i].l-sl[i-1].c));
         v = v*(1-k) + tr*k;
       }
-      return v;
+      _piCache.set(key, v); return v;
     }
     function highest(len) {
-      len = len||20; const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
-      return sl.length ? Math.max(...sl.map(b=>b.h)) : currentPrice;
+      len = len||20;
+      const key = 'highest_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
+      const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
+      let v = currentPrice;
+      if (sl.length) { v = sl[0].h; for (let i=1;i<sl.length;i++) if(sl[i].h>v) v=sl[i].h; }
+      _piCache.set(key, v); return v;
     }
     function lowest(len) {
-      len = len||20; const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
-      return sl.length ? Math.min(...sl.map(b=>b.l)) : currentPrice;
+      len = len||20;
+      const key = 'lowest_' + len;
+      if (_piCache.has(key)) return _piCache.get(key);
+      const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
+      let v = currentPrice;
+      if (sl.length) { v = sl[0].l; for (let i=1;i<sl.length;i++) if(sl[i].l<v) v=sl[i].l; }
+      _piCache.set(key, v); return v;
     }
     function bb(len, mult) {
       len=len||20; mult=mult||2;
+      const key = 'bb_' + len + '_' + mult;
+      if (_piCache.has(key)) return _piCache.get(key);
       const a=priceHistory.slice(-len);
-      if (a.length<len) return {upper:currentPrice,mid:currentPrice,lower:currentPrice};
+      if (a.length<len) { const r={upper:currentPrice,mid:currentPrice,lower:currentPrice}; _piCache.set(key,r); return r; }
       const mid=a.reduce((s,v)=>s+v,0)/len;
       const std=Math.sqrt(a.reduce((s,v)=>s+(v-mid)**2,0)/len);
-      return {upper:mid+mult*std,mid,lower:mid-mult*std};
+      const r={upper:mid+mult*std,mid,lower:mid-mult*std};
+      _piCache.set(key, r); return r;
     }
     function stoch(kL, dL) {
       kL=kL||14; dL=dL||3;
-      if (ohlc.length<kL) return {k:50,d:50};
-      const cK=b=>{const hh=Math.max(...b.map(x=>x.h)),ll=Math.min(...b.map(x=>x.l));
-        return hh===ll?50:(b[b.length-1].c-ll)/(hh-ll)*100;};
+      const key = 'stoch_' + kL + '_' + dL;
+      if (_piCache.has(key)) return _piCache.get(key);
+      if (ohlc.length<kL) { _piCache.set(key,{k:50,d:50}); return {k:50,d:50}; }
+      const cK=b=>{
+        let hh=b[0].h, ll=b[0].l;
+        for(let i=1;i<b.length;i++){if(b[i].h>hh)hh=b[i].h; if(b[i].l<ll)ll=b[i].l;}
+        return hh===ll?50:(b[b.length-1].c-ll)/(hh-ll)*100;
+      };
       const k=cK(ohlc.slice(-kL)); let dS=0,dC=0;
       for(let i=0;i<dL;i++){const e2=ohlc.length-i;if(e2-kL<0)break;dS+=cK(ohlc.slice(e2-kL,e2));dC++;}
-      return {k,d:dC?dS/dC:k};
+      const r={k,d:dC?dS/dC:k};
+      _piCache.set(key, r); return r;
     }
     function crossover(a, b) {
       const i=t._crossIdx++, s=t._crossState.get(i);
@@ -302,7 +336,11 @@ if (close > hh && this._p !== 1) {
     return e;
   }
   function _free(t) {
-    return Math.max(0, _eq(t) - t.orders.reduce((s,o)=>s+o.margin, 0));
+    // _eq = cash + sum(margin + unrealized); _free = _eq - sum(margin) = cash + sum(unrealized)
+    const p = _ctx.currentPrice;
+    let f = t.cash;
+    for (const o of t.orders) f += o.dir * o.shares * (p - o.openPrice);
+    return Math.max(0, f);
   }
   function _place(t, dir, opts) {
     opts = opts || {};
@@ -349,7 +387,7 @@ if (close > hh && this._p !== 1) {
   }
   function _sltp(t) {
     const price = _ctx.currentPrice;
-    for (const o of [...t.orders]) {
+    for (const o of t.orders.slice()) {
       const liqP = o.dir===1 ? o.openPrice*(1-(1-MAINT)/o.lev) : o.openPrice*(1+(1-MAINT)/o.lev);
       const liq = (o.dir===1&&price<=liqP)||(o.dir===-1&&price>=liqP);
       const sl  = o.sl!=null&&((o.dir===1&&price<=o.sl)||(o.dir===-1&&price>=o.sl));
@@ -378,9 +416,9 @@ if (close > hh && this._p !== 1) {
       add(dir, opts)  { _place(t, dir, opts||{}); },
       close(dir) {
         const d=dir.toLowerCase()==='long'?1:-1;
-        [...t.orders.filter(o=>o.dir===d)].forEach(o=>_closeOrd(t,o,'STRATEGY'));
+        t.orders.filter(o=>o.dir===d).forEach(o=>_closeOrd(t,o,'STRATEGY'));
       },
-      closeAll() { [...t.orders].forEach(o=>_closeOrd(t,o,'STRATEGY')); },
+      closeAll() { t.orders.slice().forEach(o=>_closeOrd(t,o,'STRATEGY')); },
       get position() {
         let lQ=0,sQ=0,lS=0,sS=0,lU=0,sU=0; const p=_ctx.currentPrice;
         for(const o of t.orders){
@@ -409,13 +447,16 @@ if (close > hh && this._p !== 1) {
   function tick() {
     if (!_ctx || !_traders.length) return;
     const now = Date.now();
+    _piCache.clear();   // indicator results are identical for all traders this tick
     for (const t of _traders) {
       if (!t.isRunning) continue;
       _sltp(t);
       _eval(t);
       const e = _eq(t);
+      t._cachedEq = e;  // reuse in rendering, avoid redundant recalculation
       t.equityHist.push({t:now, v:e});
-      if (t.equityHist.length > MAX_EQ) t.equityHist.shift();
+      // batch trim: splice once when notably over limit, not shift() every tick
+      if (t.equityHist.length > MAX_EQ + 20) t.equityHist.splice(0, t.equityHist.length - MAX_EQ);
       if (e > t.stats.peakEquity) t.stats.peakEquity = e;
       const dd = t.stats.peakEquity>0 ? (t.stats.peakEquity-e)/t.stats.peakEquity : 0;
       if (dd > t.stats.mdd) t.stats.mdd = dd;
@@ -433,7 +474,8 @@ if (close > hh && this._p !== 1) {
   ═══════════════════════════════════════════════════════════════════ */
   function _lb() {
     return _traders.map(t => {
-      const e=_ctx?_eq(t):t.initialCash, p=e-t.initialCash;
+      const e = t._cachedEq != null ? t._cachedEq : (_ctx ? _eq(t) : t.initialCash);
+      const p = e - t.initialCash;
       return {t, e, p, pct:t.initialCash>0?p/t.initialCash*100:0,
               wr:t.stats.totalTrades>0?t.stats.wins/t.stats.totalTrades*100:0};
     }).sort((a,b)=>b.p-a.p);
@@ -442,7 +484,7 @@ if (close > hh && this._p !== 1) {
   /* ── Stop a single trader: close all open positions, then halt ── */
   function _stopTrader(t) {
     t.isRunning = false;
-    [...t.orders].forEach(o => _closeOrd(t, o, 'STOPPED'));
+    t.orders.slice().forEach(o => _closeOrd(t, o, 'STOPPED'));
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -673,6 +715,7 @@ if (close > hh && this._p !== 1) {
   backdrop-filter: blur(4px);
 }
 .vt-ov.open { display: flex; }
+#vt-edit-ov { z-index: 3010; }
 .vt-modal {
   background: #04020f;
   border: 1px solid rgba(0,245,255,.22);
@@ -989,11 +1032,6 @@ if (close > hh && this._p !== 1) {
   const _esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const _el  = id => document.getElementById(id);
 
-  function _markDirty() {
-    if (_dirty) return; _dirty = true;
-    requestAnimationFrame(_renderAll);
-  }
-
   function _renderAll() {
     _dirty = false;
     _renderBtn();
@@ -1017,12 +1055,11 @@ if (close > hh && this._p !== 1) {
   /* ── Toggle button badge ── */
   function _renderBtn() {
     const badge = _el('vt-badge');
-    const dot   = document.querySelector('#vt-toggle-btn .vt-running-dot');
     const btn   = _el('vt-toggle-btn');
     if (!badge || !btn) return;
-    badge.textContent = _traders.length;
-    const anyOn = _traders.some(t => t.isRunning);
-    btn.classList.toggle('has-running', anyOn);
+    const n = _traders.length;
+    if (badge.textContent !== String(n)) badge.textContent = n;
+    btn.classList.toggle('has-running', _traders.some(t => t.isRunning));
   }
 
   /* ── Trader cards grid ── */
@@ -1043,7 +1080,7 @@ if (close > hh && this._p !== 1) {
   }
 
   function _buildCard(t) {
-    const e    = _ctx ? _eq(t) : t.initialCash;
+    const e    = t._cachedEq != null ? t._cachedEq : (_ctx ? _eq(t) : t.initialCash);
     const pnl  = e - t.initialCash;
     const pct  = pnl / t.initialCash * 100;
     const wr   = t.stats.totalTrades > 0 ? t.stats.wins / t.stats.totalTrades * 100 : 0;
@@ -1097,7 +1134,7 @@ if (close > hh && this._p !== 1) {
       const card = document.querySelector(`#vt-grid .vt-card[data-id="${t.id}"]`);
       if (!card) continue;
 
-      const e   = _ctx ? _eq(t) : t.initialCash;
+      const e   = t._cachedEq != null ? t._cachedEq : (_ctx ? _eq(t) : t.initialCash);
       const pnl = e - t.initialCash;
       const pct = pnl / t.initialCash * 100;
       const wr  = t.stats.totalTrades > 0 ? t.stats.wins / t.stats.totalTrades * 100 : 0;
@@ -1149,14 +1186,15 @@ if (close > hh && this._p !== 1) {
       c.strokeStyle=color+'44'; c.lineWidth=1;
       c.beginPath(); c.moveTo(0,h/2); c.lineTo(w,h/2); c.stroke(); return;
     }
-    const vals=hist.map(p=>p.v), mn=Math.min(...vals), mx=Math.max(...vals), rng=mx-mn||1;
+    const n=hist.length;
+    let mn=hist[0].v, mx=hist[0].v;
+    for(let i=1;i<n;i++){const v=hist[i].v;if(v<mn)mn=v;else if(v>mx)mx=v;}
+    const rng=mx-mn||1, scale=(h-5)/rng, xStep=w/(n-1);
     const g=c.createLinearGradient(0,0,w,0);
     g.addColorStop(0,color+'55'); g.addColorStop(1,color+'cc');
     c.strokeStyle=g; c.lineWidth=1.6; c.beginPath();
-    vals.forEach((v,i)=>{
-      const x=(i/(vals.length-1))*w, y=h-((v-mn)/rng)*(h-5)-2;
-      i===0?c.moveTo(x,y):c.lineTo(x,y);
-    });
+    c.moveTo(0, h-((hist[0].v-mn)*scale)-2);
+    for(let i=1;i<n;i++) c.lineTo(i*xStep, h-((hist[i].v-mn)*scale)-2);
     c.stroke();
     c.lineTo(w,h); c.lineTo(0,h); c.closePath();
     c.fillStyle=color+'1a'; c.fill();
@@ -1169,7 +1207,7 @@ if (close > hh && this._p !== 1) {
     const lb=_lb();
     if (lb.length===0) { body.innerHTML=''; if(empty) empty.style.display='block'; return; }
     if (empty) empty.style.display='none';
-    const maxA=Math.max(...lb.map(r=>Math.abs(r.p)),1);
+    let maxA=1; for(const r of lb){const a=Math.abs(r.p);if(a>maxA)maxA=a;}
     body.innerHTML=lb.map((r,i)=>{
       const t=r.t, rCls=i===0?'g':i===1?'s':i===2?'b':'';
       const rLbl=i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
@@ -1198,15 +1236,25 @@ if (close > hh && this._p !== 1) {
 
   /* ── Detail modal ── */
   function _renderDetail(t) {
-    const e=_ctx?_eq(t):t.initialCash, pnl=e-t.initialCash, pct=pnl/t.initialCash*100;
+    const e = t._cachedEq != null ? t._cachedEq : (_ctx ? _eq(t) : t.initialCash);
+    const pnl=e-t.initialCash, pct=pnl/t.initialCash*100;
     const wr=t.stats.totalTrades>0?t.stats.wins/t.stats.totalTrades*100:0;
     const pC=pnl>=0?'#39ff14':'#ff2d78';
-    const abbr=t.name.replace(/[^A-Z0-9]/gi,'').slice(0,2).toUpperCase()||'??';
-    const av=_el('vt-d-av');
-    if (av) { av.textContent=abbr; av.style.cssText=`background:${t.color};box-shadow:0 0 14px ${t.color};color:#000;`; }
     const s=(id,v,c)=>{ const el=_el(id); if(!el) return; el.textContent=v; if(c) el.style.color=c; };
-    s('vt-d-nm',  t.name);
-    s('vt-d-sn',  t.stratName.toUpperCase());
+
+    // Static parts: only render when trader changes (avatar color, name, strategy code)
+    if (_detailStaticId !== t.id) {
+      _detailStaticId = t.id;
+      _detailTradeCnt = -1; // force history rebuild on trader switch
+      const abbr=t.name.replace(/[^A-Z0-9]/gi,'').slice(0,2).toUpperCase()||'??';
+      const av=_el('vt-d-av');
+      if (av) { av.textContent=abbr; av.style.cssText=`background:${t.color};box-shadow:0 0 14px ${t.color};color:#000;`; }
+      s('vt-d-nm', t.name);
+      s('vt-d-sn', t.stratName.toUpperCase());
+      const codeEl=_el('vt-d-code'); if(codeEl) codeEl.textContent=t.stratCode;
+    }
+
+    // Dynamic stats (change every tick)
     const stEl=_el('vt-d-st');
     if(stEl){ stEl.textContent=t.isRunning?'● RUNNING':t._lastError?'✕ ERROR':'◼ STOPPED'; stEl.style.color=t.isRunning?'#39ff14':t._lastError?'#ff2d78':'rgba(0,245,255,.4)'; }
     s('vt-d-eq',    '$'+_f(e));
@@ -1225,32 +1273,42 @@ if (close > hh && this._p !== 1) {
     if(tog){ tog.textContent=t.isRunning?'⏹ STOP':'▶ START'; tog.style.color=t.isRunning?'#ff2d78':'#39ff14'; tog.style.borderColor=t.isRunning?'rgba(255,45,120,.3)':'rgba(57,255,20,.3)'; }
     const errEl=_el('vt-d-err');
     if(errEl){ errEl.style.display=t._lastError?'block':'none'; if(t._lastError) errEl.textContent='⚠ '+t._lastError; }
-    const codeEl=_el('vt-d-code'); if(codeEl) codeEl.textContent=t.stratCode;
+
     const ec=_el('vt-ec'); if(ec&&t.equityHist.length>1) _echart(ec,t);
-    const hist=_el('vt-d-hist');
-    if(hist) hist.innerHTML=t.history.slice(0,15).map(h=>{
-      const dc=h.dir===1?'#39ff14':'#ff2d78', pc=h.netPnl>=0?'#39ff14':'#ff2d78';
-      return `<tr><td style="color:${dc};">${h.dir===1?'LONG':'SHORT'}</td><td>$${_f(h.openPrice)}</td><td>$${_f(h.closePrice)}</td><td style="color:${pc};">${h.netPnl>=0?'+$':'-$'}${_f(Math.abs(h.netPnl))}</td><td style="color:rgba(0,245,255,.45);font-size:9px;">${h.reason}</td></tr>`;
-    }).join('')||`<tr><td colspan="5" style="text-align:center;color:rgba(0,245,255,.28);padding:12px;font-size:10px;letter-spacing:2px;">NO TRADES YET</td></tr>`;
+
+    // Trade history: only rebuild when a new trade was closed
+    const histEl=_el('vt-d-hist');
+    if(histEl && t.stats.totalTrades !== _detailTradeCnt) {
+      _detailTradeCnt = t.stats.totalTrades;
+      histEl.innerHTML=t.history.slice(0,15).map(h=>{
+        const dc=h.dir===1?'#39ff14':'#ff2d78', pc=h.netPnl>=0?'#39ff14':'#ff2d78';
+        return `<tr><td style="color:${dc};">${h.dir===1?'LONG':'SHORT'}</td><td>$${_f(h.openPrice)}</td><td>$${_f(h.closePrice)}</td><td style="color:${pc};">${h.netPnl>=0?'+$':'-$'}${_f(Math.abs(h.netPnl))}</td><td style="color:rgba(0,245,255,.45);font-size:9px;">${h.reason}</td></tr>`;
+      }).join('')||`<tr><td colspan="5" style="text-align:center;color:rgba(0,245,255,.28);padding:12px;font-size:10px;letter-spacing:2px;">NO TRADES YET</td></tr>`;
+    }
   }
 
   function _echart(canvas, t) {
     const dpr=devicePixelRatio||1, w=canvas.clientWidth||600, h=canvas.clientHeight||88;
-    canvas.width=w*dpr; canvas.height=h*dpr;
-    const c=canvas.getContext('2d'); c.scale(dpr,dpr); c.clearRect(0,0,w,h);
-    const vals=t.equityHist.map(p=>p.v);
-    if(vals.length<2) return;
-    const mn=Math.min(...vals), mx=Math.max(...vals), rng=mx-mn||1, pad=6;
+    const tw=w*dpr, th=h*dpr;
+    if(canvas.width!==tw||canvas.height!==th){canvas.width=tw; canvas.height=th;}
+    const c=canvas.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,w,h);
+    const hist=t.equityHist, ne=hist.length;
+    if(ne<2) return;
+    let mn=hist[0].v, mx=hist[0].v;
+    for(let i=1;i<ne;i++){const v=hist[i].v;if(v<mn)mn=v;else if(v>mx)mx=v;}
+    // y = pad + inner - (v - mn) * scale  where scale = inner / rng
+    const rng=mx-mn||1, pad=6, inner=h-2*pad, scale=inner/rng, xStep=w/(ne-1);
     c.strokeStyle='rgba(0,245,255,.04)'; c.lineWidth=1;
-    for(let i=1;i<4;i++){ const y=pad+(1-i/4)*(h-2*pad); c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke(); }
-    const baseY=pad+(1-(t.initialCash-mn)/rng)*(h-2*pad);
+    for(let i=1;i<4;i++){ const y=pad+(1-i/4)*inner; c.beginPath(); c.moveTo(0,y); c.lineTo(w,y); c.stroke(); }
+    const baseY=pad+inner-(t.initialCash-mn)*scale;
     c.setLineDash([4,5]); c.strokeStyle='rgba(245,230,66,.28)'; c.lineWidth=1;
     c.beginPath(); c.moveTo(0,baseY); c.lineTo(w,baseY); c.stroke(); c.setLineDash([]);
     const g=c.createLinearGradient(0,0,w,0);
     g.addColorStop(0,t.color+'77'); g.addColorStop(1,t.color);
     c.strokeStyle=g; c.lineWidth=2.2; c.shadowColor=t.color; c.shadowBlur=5;
     c.beginPath();
-    vals.forEach((v,i)=>{ const x=(i/(vals.length-1))*w, y=pad+(1-(v-mn)/rng)*(h-2*pad); i===0?c.moveTo(x,y):c.lineTo(x,y); });
+    c.moveTo(0, pad+inner-(hist[0].v-mn)*scale);
+    for(let i=1;i<ne;i++) c.lineTo(i*xStep, pad+inner-(hist[i].v-mn)*scale);
     c.stroke(); c.shadowBlur=0;
     c.lineTo(w,h); c.lineTo(0,h); c.closePath();
     const fg=c.createLinearGradient(0,0,0,h);
@@ -1273,14 +1331,14 @@ if (close > hh && this._p !== 1) {
   function _openDet(t) {
     _detailId=t.id; _el('vt-det-ov').classList.add('open'); _renderDetail(t);
   }
-  function _closeDet() { _el('vt-det-ov').classList.remove('open'); _detailId=null; }
+  function _closeDet() { _el('vt-det-ov').classList.remove('open'); _detailId=null; _detailStaticId=null; _detailTradeCnt=-1; }
 
   function _openEdit(t) {
     _editId=t.id; _el('vt-edit-code').value=t.stratCode;
     _el('vt-edit-pre').querySelectorAll('.vt-pb').forEach(b=>b.classList.toggle('on',b.dataset.p===t.stratName));
     _el('vt-edit-ov').classList.add('open');
   }
-  function _closeEdit() { _el('vt-edit-ov').classList.remove('open'); _editId=null; }
+  function _closeEdit() { _el('vt-edit-ov').classList.remove('open'); _editId=null; _detailStaticId=null; }
 
   /* ═══════════════════════════════════════════════════════════════════
      EVENT BINDING
