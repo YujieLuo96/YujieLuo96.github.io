@@ -434,8 +434,14 @@
                     <tr><td><code>close</code></td><td>number</td><td>Latest tick price — use in all calculations</td></tr>
                     <tr><td><code>volume</code></td><td>number</td><td>Relative volume this candle</td></tr>
                     <tr><td><code>bar_index</code></td><td>number</td><td>Completed bar count from 0 — use for frequency control</td></tr>
+                    <tr><td><code>bar_changed</code></td><td>boolean</td><td><strong>true only when a new candle just opened.</strong> In CRYPTO mode this is true once per candle interval (1m/5m…). In SIM mode always true. Use to guard <code>strategy.add</code> so it fires once per candle, not every 200ms tick.</td></tr>
                 </table>
-                <pre>// bar_index: run logic only every 5 bars
+                <pre>// bar_changed: guard strategy.add to fire once per candle (essential in CRYPTO mode)
+if (bar_changed) {
+    strategy.add('long', { ratio: 0.1, sl: slow * 0.97 });
+}
+
+// bar_index: run logic only every 5 bars
 if (bar_index % 5 === 0) {
     // rebalance or re-evaluate less frequently
 }</pre>
@@ -697,7 +703,7 @@ if (fast > slow) {
                 <p>• <strong>Tab</strong> — autocomplete / indent &nbsp;·&nbsp; <strong>▶ APPLY</strong> — send without closing editor</p>
                 <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin:8px 0 4px">Common gotchas</p>
                 <p>• <code>strategy.entry</code> is idempotent — won't stack. Use <code>strategy.add</code> for pyramiding.</p>
-                <p>• <code>strategy.add</code> fires every tick unless guarded by a condition (price threshold, <code>bar_index</code>, <code>this.counter</code>).</p>
+                <p>• <code>strategy.add</code> fires every tick unless guarded. <strong>In CRYPTO mode</strong> use <code>if (bar_changed) { strategy.add(...) }</code> so it fires once per candle (1m/5m…), not every 200ms.</p>
                 <p>• SL/TP are <strong>fixed</strong> at the moment the order is placed — they don't trail automatically.</p>
                 <p>• SL/TP with wrong-side prices are silently rejected with a toast warning.</p>
                 <p>• <code>ratio</code> and <code>qty</code>: if both set, <code>qty</code> wins. Omit both → 100% of free cash.</p>
@@ -709,7 +715,7 @@ if (fast > slow) {
                     <tr><td>Standard indicator</td><td><code>rsi()</code> <code>atr()</code> <code>bb()</code> etc — no state needed</td></tr>
                     <tr><td>Previous bar value</td><td><code>this.prev = value</code> pattern</td></tr>
                     <tr><td>One entry per signal</td><td><code>strategy.entry()</code></td></tr>
-                    <tr><td>Scale into position</td><td><code>strategy.add()</code> + price/bar guard</td></tr>
+                    <tr><td>Scale into position</td><td><code>if (bar_changed) { strategy.add() }</code> — once per candle</td></tr>
                     <tr><td>Compound gains (roll)</td><td><code>strategy.close()</code> then <code>strategy.entry()</code></td></tr>
                     <tr><td>Emergency exit</td><td><code>strategy.closeAll()</code></td></tr>
                     <tr><td>Check if in position</td><td><code>strategy.position.side</code></td></tr>
@@ -735,7 +741,7 @@ if (fast > slow) {
         const keywords = [
             'open', 'high', 'low', 'close', 'volume',
             'sma(', 'ema(', 'rsi(', 'atr(', 'highest(', 'lowest(', 'bb(', 'stoch(',
-            'crossover(', 'crossunder(', 'bar_index',
+            'crossover(', 'crossunder(', 'bar_index', 'bar_changed',
             "strategy.entry('long'", "strategy.entry('short'",
             "strategy.entry('long', { ratio: ", "strategy.entry('short', { ratio: ",
             "strategy.entry('long', { qty: ", "strategy.entry('short', { qty: ",
@@ -898,6 +904,7 @@ if (fast > slow) {
                     crossover: () => false,
                     crossunder:() => false,
                     get bar_index() { return 100; },
+                    get bar_changed() { return true; },
                     strategy: {
                         entry:    () => {},
                         add:      () => {},

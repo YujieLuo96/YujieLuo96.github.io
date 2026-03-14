@@ -513,75 +513,10 @@
     }
     .settings-panel.open { display: flex; }
 
-    /* ── CRYPTO mode button ────────────────────── */
-    .crypto-mode-btn {
-      background: rgba(255,170,0,0.08);
-      border: 1px solid rgba(255,170,0,0.55);
-      border-bottom: 2px solid rgba(255,170,0,0.9);
-      color: rgba(255,200,60,0.95);
-      font-family: 'Orbitron', monospace;
-      font-size: 0.78rem; font-weight: 700;
-      padding: 5px 18px; cursor: pointer; border-radius: 2px;
-      letter-spacing: 0.18em; white-space: nowrap;
-      text-shadow: 0 0 8px rgba(255,170,0,0.75), 0 0 20px rgba(255,170,0,0.35);
-      box-shadow: 0 2px 10px rgba(255,170,0,0.2), 0 0 22px rgba(255,170,0,0.08), inset 0 1px 0 rgba(255,200,0,0.1);
-      transition: all 0.2s;
-      animation: cryptoIdleGlow 3s ease-in-out infinite;
-    }
-    @keyframes cryptoIdleGlow {
-      0%,100% { box-shadow: 0 2px 10px rgba(255,170,0,0.2), 0 0 22px rgba(255,170,0,0.08), inset 0 1px 0 rgba(255,200,0,0.1); }
-      50%      { box-shadow: 0 2px 16px rgba(255,170,0,0.35), 0 0 36px rgba(255,170,0,0.18), inset 0 1px 0 rgba(255,200,0,0.15); }
-    }
-    .crypto-mode-btn:hover {
-      color: #ffcc00;
-      background: rgba(255,170,0,0.18);
-      border-color: rgba(255,200,0,0.85);
-      text-shadow: 0 0 12px #ffcc00, 0 0 28px rgba(255,170,0,0.7);
-      box-shadow: 0 2px 20px rgba(255,170,0,0.55), 0 0 45px rgba(255,170,0,0.28), inset 0 1px 0 rgba(255,220,0,0.2);
-      animation: none;
-    }
-    .crypto-mode-btn.active {
-      background: rgba(255,170,0,0.16); border-color: #ffcc00;
-      border-bottom-color: #ffcc00; color: #ffee80;
-      text-shadow: 0 0 10px #ffcc00, 0 0 22px rgba(255,200,0,0.8);
-      animation: cryptoActivePulse 1.8s ease-in-out infinite;
-    }
-    @keyframes cryptoActivePulse {
-      0%,100% { box-shadow: 0 2px 18px rgba(255,170,0,0.45), 0 0 38px rgba(255,170,0,0.2), inset 0 1px 0 rgba(255,220,0,0.15); }
-      50%      { box-shadow: 0 2px 30px rgba(255,190,0,0.7), 0 0 60px rgba(255,170,0,0.38), inset 0 1px 0 rgba(255,230,0,0.25); }
-    }
-    /* CRYPTO symbol picker panel */
-    .crypto-panel {
-      width: 100%; background: rgba(255,170,0,0.04);
-      border: 1px solid rgba(255,170,0,0.18); border-radius: 3px;
-      padding: 10px 14px; display: none; flex-wrap: wrap; gap: 8px; align-items: center;
-    }
-    .crypto-panel.open { display: flex; }
-    .crypto-panel-label { font-size: 0.58rem; color: rgba(255,170,0,0.55); letter-spacing: 0.2em; text-transform: uppercase; margin-right: 4px; }
-    .crypto-sym-btn {
-      background: rgba(255,170,0,0.05); border: 1px solid rgba(255,170,0,0.22);
-      border-bottom: 2px solid rgba(255,170,0,0.35);
-      color: rgba(255,170,0,0.7); font-family: 'Share Tech Mono', monospace;
-      font-size: 0.72rem; padding: 3px 11px; cursor: pointer; border-radius: 2px;
-      transition: all 0.12s; letter-spacing: 0.08em;
-    }
-    .crypto-sym-btn:hover, .crypto-sym-btn:active { background: rgba(255,170,0,0.12); color: #ffaa00; border-color: rgba(255,170,0,0.55); }
-    .crypto-sym-btn.active { background: rgba(255,170,0,0.18); border-color: #ffaa00; color: #ffaa00; box-shadow: 0 0 10px rgba(255,170,0,0.25); }
-    .crypto-ws-status {
-      font-size: 0.6rem; letter-spacing: 0.12em; margin-left: auto;
-      padding: 2px 8px; border-radius: 2px; border: 1px solid;
-    }
-    .crypto-ws-status.connecting { color: rgba(245,230,66,0.8); border-color: rgba(245,230,66,0.4); }
-    .crypto-ws-status.live       { color: rgba(57,255,20,0.9);  border-color: rgba(57,255,20,0.5);  animation: liveBlink 1.5s infinite; }
-    .crypto-ws-status.error      { color: rgba(255,45,120,0.9); border-color: rgba(255,45,120,0.5); }
-    @keyframes liveBlink {
-      0%,100% { opacity:1; } 50% { opacity:0.5; }
-    }
-
     /* ── Touch: eliminate 300ms delay ─────────── */
     .cyber-button, .mode-btn, .close-order, #btn-home,
     .ema-check, .rainbow-check, .detailed-check,
-    .settings-btn, .crypto-mode-btn, .crypto-sym-btn,
+    .settings-btn,
     input[type=range], input[type=number],
     .strategy-panel button {
       touch-action: manipulation;
@@ -809,7 +744,6 @@
   <div class="title-row">
     <div class="title" data-text="CYBER TRADER">CYBER TRADER</div>
     <div class="title-sep"></div>
-    <button class="crypto-mode-btn" id="btn-crypto-mode">⬡ CRYPTO</button>
   </div>
 
   <!-- HUD 6 cells -->
@@ -877,20 +811,6 @@
       <div class="slider-label">CHART SPEED (N=<span id="sim-n-val">4</span>)</div>
       <input type="range" id="sim-n-slider" min="1" max="8" step="1" value="4">
     </div>
-  </div>
-
-  <!-- Crypto symbol picker -->
-  <div class="crypto-panel" id="crypto-panel">
-    <span class="crypto-panel-label">⬡ LIVE CRYPTO</span>
-    <button class="crypto-sym-btn active" data-sym="btcusdt">BTC/USDT</button>
-    <button class="crypto-sym-btn" data-sym="ethusdt">ETH/USDT</button>
-    <button class="crypto-sym-btn" data-sym="bnbusdt">BNB/USDT</button>
-    <button class="crypto-sym-btn" data-sym="solusdt">SOL/USDT</button>
-    <button class="crypto-sym-btn" data-sym="xrpusdt">XRP/USDT</button>
-    <button class="crypto-sym-btn" data-sym="dogeusdt">DOGE/USDT</button>
-    <button class="crypto-sym-btn" data-sym="adausdt">ADA/USDT</button>
-    <button class="crypto-sym-btn" data-sym="avaxusdt">AVAX/USDT</button>
-    <span class="crypto-ws-status connecting" id="crypto-ws-status">⬡ CONNECTING</span>
   </div>
 
   <!-- Control panel -->
@@ -1077,6 +997,22 @@ if (crossunder(fast, slow)) {
   </div>
 </div>
 
+<script>/* Load Crypto.html as JS — XHR bypasses .html MIME-type restriction */
+(function () {
+  try {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'Crypto.html', false); // synchronous
+    xhr.send(null);
+    if (xhr.status === 0 || xhr.status === 200) {
+      var s = document.createElement('script');
+      s.textContent = xhr.responseText;
+      document.head.appendChild(s);
+    }
+  } catch (e) {
+    console.warn('[Crypto.html] loader error:', e);
+  }
+})();
+</script>
 <script>
 (function () {
 
@@ -1423,13 +1359,6 @@ if (crossunder(fast, slow)) {
   let showDetailedEMA = false;
   let showRainbowEMA  = false;
 
-  // ── CRYPTO live mode ──────────────────────
-  let _cryptoMode        = false;
-  let _cryptoWS          = null;
-  let _cryptoSymbol      = 'btcusdt';
-  let _cryptoLatestPrice = null;  // latest price from WS; null = no data yet
-  let _cryptoQtyBuffer   = 0;     // accumulated trade qty between ticks
-
   /* ═══════════════════════════════════════════
      数学工具
   ═══════════════════════════════════════════ */
@@ -1486,43 +1415,8 @@ if (crossunder(fast, slow)) {
      价格步进（每 200ms）
   ═══════════════════════════════════════════ */
   function stepPrice() {
-    // ── CRYPTO mode: use latest WS price instead of generating stochastic ──
-    if (_cryptoMode) {
-      if (_cryptoLatestPrice === null) return;  // no data yet, wait
-      totalTicks++;
-      prevTickPrice = currentPrice;
-      lastTickTime  = performance.now();
-      currentPrice  = _cryptoLatestPrice;
-      if (prevTickPrice <= 0) prevTickPrice = currentPrice; // first tick: no jump
-
-      const qtySnap     = _cryptoQtyBuffer;
-      _cryptoQtyBuffer  = 0;
-      updateSREMA(currentPrice);
-
-      // Data recording (same as sim path below)
-      const relVol = qtySnap > 0 ? Math.min(4, qtySnap) : 0.6 + 0.4 * Math.random();
-      volumeHistory.push(relVol);
-      const open = ohlc.length > 0 ? ohlc[ohlc.length-1].c : currentPrice;
-      ohlc.push({o:open, h:Math.max(open,currentPrice), l:Math.min(open,currentPrice), c:currentPrice});
-      priceHistory.push(currentPrice);
-      if (ohlc.length > MAX_HISTORY) {
-        ohlc.shift(); priceHistory.shift(); volumeHistory.shift();
-        let _w=0;
-        for(let _i=0;_i<trades.length;_i++){trades[_i].index--;if(trades[_i].index>=0)trades[_w++]=trades[_i];}
-        trades.length=_w;
-      }
-      updateEMACache();
-      checkSLTP();
-      refreshUI();
-      const snapEq  = orders.reduce((s,o)=>s+orderEquity(o),0);
-      const _naNew  = cash + snapEq;
-      const _naPrev = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length-1] : 0;
-      netAssetHistory.push(_naNew);
-      if(netAssetHistory.length > 2000) netAssetHistory.shift();
-      _recordNetAssetStat(_naNew, _naPrev);
-      evaluateStrategy();
-      return;
-    }
+    // ── CRYPTO mode: kline-event-driven, tick is stopped on entry ──
+    if (Crypto.mode) return;
 
     totalTicks++;
     prevTickPrice = currentPrice;        // 保存上帧价格，用于插值
@@ -1723,8 +1617,8 @@ if (crossunder(fast, slow)) {
     cashEl.textContent   = Math.max(0, cash+unrealized).toFixed(2); // 等价于 getFreeCash()
 
     // 情景 HUD (或 CRYPTO symbol)
-    if (_cryptoMode) {
-      regimeEl.textContent      = _cryptoSymbol.replace('usdt','').toUpperCase();
+    if (Crypto.mode) {
+      regimeEl.textContent      = Crypto.symbol.replace('usdt','').toUpperCase();
       regimeEl.style.color      = '#ffaa00';
       regimeEl.style.textShadow = '0 0 10px rgba(255,170,0,0.7)';
     } else {
@@ -2908,7 +2802,7 @@ if (crossunder(fast, slow)) {
   slInput.addEventListener('input',()=>clearSlTpErr(slInput,'sl-err'));
   tpInput.addEventListener('input',()=>clearSlTpErr(tpInput,'tp-err'));
   btnCloseAll.addEventListener('click',closeAll);
-  // btnReset handler is registered below in the CRYPTO section (handles both modes)
+  // btnReset handler is registered below after Crypto module init (handles both modes)
   const initAssetVal = document.getElementById('init-asset-val');
   initAssetInput.addEventListener('input',()=>{
     const v=parseFloat(initAssetInput.value)||1000;
@@ -2931,162 +2825,85 @@ if (crossunder(fast, slow)) {
   document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;updateEMACache();});
 
   /* ═══════════════════════════════════════════
-     CRYPTO live mode
+     CRYPTO live mode  (module: Crypto.html)
   ═══════════════════════════════════════════ */
-  const cryptoPanel    = document.getElementById('crypto-panel');
-  const cryptoModeBtn  = document.getElementById('btn-crypto-mode');
-  const cryptoWsStatus = document.getElementById('crypto-ws-status');
-
-  function _setCryptoWsStatus(state) {
-    const labels = { connecting:'⬡ CONNECTING', live:'● LIVE', error:'✕ ERROR' };
-    cryptoWsStatus.textContent  = labels[state] || state;
-    cryptoWsStatus.className    = 'crypto-ws-status ' + state;
+  const _cryptoCtx = {
+    // Scalar state — getter/setter so module writes propagate back to IIFE scope
+    get currentPrice()     { return currentPrice; },     set currentPrice(v)     { currentPrice = v; },
+    get prevTickPrice()    { return prevTickPrice; },     set prevTickPrice(v)    { prevTickPrice = v; },
+    get lastTickTime()     { return lastTickTime; },      set lastTickTime(v)     { lastTickTime = v; },
+    get totalTicks()       { return totalTicks; },        set totalTicks(v)       { totalTicks = v; },
+    get cash()             { return cash; },              set cash(v)             { cash = v; },
+    get realizedPnl()      { return realizedPnl; },       set realizedPnl(v)      { realizedPnl = v; },
+    get liquidated()       { return liquidated; },        set liquidated(v)       { liquidated = v; },
+    get initialCash()      { return initialCash; },       set initialCash(v)      { initialCash = v; },
+    get nextOrderId()      { return nextOrderId; },       set nextOrderId(v)      { nextOrderId = v; },
+    get orders()           { return orders; },            set orders(v)           { orders = v; },
+    get tradeHistory()     { return tradeHistory; },      set tradeHistory(v)     { tradeHistory = v; },
+    get netAssetHistory()  { return netAssetHistory; },   set netAssetHistory(v)  { netAssetHistory = v; },
+    get _histRenderedLen() { return _histRenderedLen; },  set _histRenderedLen(v) { _histRenderedLen = v; },
+    get ohlc()             { return ohlc; },              set ohlc(v)             { ohlc = v; },
+    get priceHistory()     { return priceHistory; },      set priceHistory(v)     { priceHistory = v; },
+    get volumeHistory()    { return volumeHistory; },     set volumeHistory(v)    { volumeHistory = v; },
+    get _aggCache()        { return _aggCache; },         set _aggCache(v)        { _aggCache = v; },
+    get trades()           { return trades; },            set trades(v)           { trades = v; },
+    get srBreakDrift()     { return srBreakDrift; },      set srBreakDrift(v)     { srBreakDrift = v; },
+    // Constants / read-only
+    get MAX_HISTORY()      { return MAX_HISTORY; },
+    get TICK_MS_BASE()     { return TICK_MS_BASE; },
+    get simN()             { return simN; },
+    // DOM refs
+    get initAssetInput()   { return initAssetInput; },
+    get ordersDiv()        { return ordersDiv; },
+    get cardRefs()         { return cardRefs; },
+    get historyList()      { return historyList; },
+    get historySummary()   { return historySummary; },
+    get historyPanel()     { return historyPanel; },
+    get btnHistory()       { return btnHistory; },
+    get summaryPanel()     { return summaryPanel; },
+    get btnSummary()       { return btnSummary; },
+    get liqIndicator()     { return liqIndicator; },
+    // Cache Maps (mutated in-place by module)
+    get emaCache()         { return emaCache; },
+    get aggEmaCache()      { return aggEmaCache; },
+    get aggEmaScratch()    { return aggEmaScratch; },
+    get emaCacheTick()     { return emaCacheTick; },
+    get srEmaValues()      { return srEmaValues; },
+    get srPrevSide()       { return srPrevSide; },
+    // Methods
+    refreshUI:           () => refreshUI(),
+    triggerFlash:        () => triggerFlash(),
+    showToast:           (msg, type, dur) => showToast(msg, type, dur),
+    updateSREMA:         (p) => updateSREMA(p),
+    updateEMACache:      () => updateEMACache(),
+    checkSLTP:           () => checkSLTP(),
+    evaluateStrategy:    () => evaluateStrategy(),
+    orderEquity:         (o) => orderEquity(o),
+    _smReset:            () => _smReset(),
+    _recordNetAssetStat: (n, p) => _recordNetAssetStat(n, p),
+    stopTick:            () => clearInterval(_tickInterval),
+    startTick:           (ms) => { _tickInterval = setInterval(stepPrice, ms); },
+    resetGame:           () => resetGame(),
+  };
+  let Crypto;
+  try {
+    Crypto = typeof window._initCryptoModule === 'function'
+      ? window._initCryptoModule(_cryptoCtx)
+      : null;
+  } catch(e) {
+    console.warn('[Crypto] module init failed:', e);
+    Crypto = null;
   }
-
-  function _disconnectCryptoWS() {
-    if (_cryptoWS) {
-      _cryptoWS.onclose = null; // prevent auto-reconnect on deliberate close
-      _cryptoWS.onerror = null;
-      _cryptoWS.close();
-      _cryptoWS = null;
-    }
+  if (!Crypto) {
+    // Fallback: no-op stub so the simulator always works without the module
+    Crypto = { get mode(){ return false; }, get symbol(){ return ''; },
+               step(){}, disconnect(){}, softReset(){} };
   }
-
-  function _connectCryptoWS(symbol) {
-    _disconnectCryptoWS();
-    _setCryptoWsStatus('connecting');
-    const url = `wss://stream.binance.com:9443/ws/${symbol}@trade`;
-    let ws;
-    try { ws = new WebSocket(url); } catch(e) { _setCryptoWsStatus('error'); return; }
-    _cryptoWS = ws;
-
-    ws.onopen = () => _setCryptoWsStatus('connecting'); // wait for first message
-
-    ws.onmessage = (evt) => {
-      if (!_cryptoMode || ws !== _cryptoWS) return;
-      try {
-        const d = JSON.parse(evt.data);
-        const p = parseFloat(d.p);   // trade price
-        const q = parseFloat(d.q);   // trade quantity
-        if (!isFinite(p) || p <= 0) return;
-        _cryptoLatestPrice = p;
-        _cryptoQtyBuffer  += q;
-        if (cryptoWsStatus.className.indexOf('live') < 0) _setCryptoWsStatus('live');
-      } catch(_) {}
-    };
-
-    ws.onerror = () => { if (ws === _cryptoWS) _setCryptoWsStatus('error'); };
-
-    ws.onclose = (evt) => {
-      if (!_cryptoMode || ws !== _cryptoWS) return;
-      _setCryptoWsStatus('error');
-      // Auto-reconnect after 3 seconds
-      setTimeout(() => { if (_cryptoMode && ws === _cryptoWS) _connectCryptoWS(symbol); }, 3000);
-    };
-  }
-
-  function _enterCryptoMode(symbol) {
-    _cryptoMode        = true;
-    _cryptoSymbol      = symbol;
-    _cryptoLatestPrice = null;
-    _cryptoQtyBuffer   = 0;
-
-    // Reset game state (positions, PnL) but clear price history for fresh chart
-    initialCash = parseFloat(initAssetInput.value) || 1000;
-    cash = initialCash; realizedPnl = 0; liquidated = false;
-    // Close & clear orders
-    ordersDiv.innerHTML = ''; cardRefs.clear();
-    orders = []; nextOrderId = 1;
-    // Clear history panels
-    tradeHistory = []; netAssetHistory = []; _smReset();
-    historyList.innerHTML = ''; historySummary.textContent = ''; _histRenderedLen = 0;
-    historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
-    summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
-    liqIndicator.style.display = 'none';
-    // Clear price arrays (chart starts blank, fills as WS data arrives)
-    ohlc = []; priceHistory = []; volumeHistory = [];
-    currentPrice = 0; prevTickPrice = 0; totalTicks = 0;
-    _aggCache = null;
-    emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear();
-    trades = [];
-    srEmaValues.clear(); srPrevSide.clear(); srBreakDrift = 0;
-
-    // Sync symbol picker
-    document.querySelectorAll('.crypto-sym-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.sym === symbol);
-    });
-
-    cryptoPanel.classList.add('open');
-    cryptoModeBtn.classList.add('active');
-    cryptoModeBtn.textContent = '⬡ LIVE';
-
-    // Disable sim speed slider (speed irrelevant in live mode)
-    document.getElementById('sim-n-slider').disabled = true;
-
-    _connectCryptoWS(symbol);
-    refreshUI();
-    triggerFlash();
-    showToast(`<b>CRYPTO MODE · ${symbol.toUpperCase()}</b><br>Connecting to Binance live feed…`, 'info', 3500);
-  }
-
-  function _exitCryptoMode() {
-    _cryptoMode = false;
-    _disconnectCryptoWS();
-    _cryptoLatestPrice = null;
-    _cryptoQtyBuffer   = 0;
-
-    cryptoPanel.classList.remove('open');
-    cryptoModeBtn.classList.remove('active');
-    cryptoModeBtn.textContent = '⬡ CRYPTO';
-    document.getElementById('sim-n-slider').disabled = false;
-
-    // Restart with fresh sim (resetGame handles initPrice & tick restart)
-    clearInterval(_tickInterval);
-    resetGame();
-    _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
-    showToast('Returning to <b>SIM mode</b>', 'info', 2000);
-  }
-
-  // CRYPTO mode toggle button
-  cryptoModeBtn.addEventListener('click', () => {
-    if (_cryptoMode) _exitCryptoMode();
-    else             _enterCryptoMode(_cryptoSymbol);
-  });
-
-  // Symbol selector buttons
-  document.querySelectorAll('.crypto-sym-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (!_cryptoMode) return;
-      const sym = btn.dataset.sym;
-      if (sym === _cryptoSymbol) return;
-      _enterCryptoMode(sym);  // switches symbol, resets chart, reconnects
-    });
-  });
 
   // Override RESET button in crypto mode
   btnReset.addEventListener('click', () => {
-    if (_cryptoMode) {
-      // Soft reset: keep crypto mode & symbol, clear positions only
-      _disconnectCryptoWS();
-      initialCash = parseFloat(initAssetInput.value) || 1000;
-      cash = initialCash; realizedPnl = 0; liquidated = false;
-      ordersDiv.innerHTML = ''; cardRefs.clear();
-      orders = []; nextOrderId = 1;
-      tradeHistory = []; netAssetHistory = []; _smReset();
-      historyList.innerHTML = ''; historySummary.textContent = ''; _histRenderedLen = 0;
-      historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
-      summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
-      liqIndicator.style.display = 'none';
-      ohlc = []; priceHistory = []; volumeHistory = [];
-      currentPrice = 0; prevTickPrice = 0; totalTicks = 0; _aggCache = null;
-      emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear();
-      trades = []; srEmaValues.clear(); srPrevSide.clear(); srBreakDrift = 0;
-      _cryptoLatestPrice = null; _cryptoQtyBuffer = 0;
-      _connectCryptoWS(_cryptoSymbol);
-      refreshUI(); triggerFlash();
-    } else {
-      resetGame();
-    }
+    if (Crypto.mode) { Crypto.softReset(); }
+    else             { resetGame(); }
   });
 
   /* ═══════════════════════════════════════════
@@ -3389,7 +3206,7 @@ if (crossunder(fast, slow)) {
 
   // 价格 tick（每 TICK_MS_BASE/simN ms 更新一次）
   let _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
-  window.addEventListener('beforeunload', () => { clearInterval(_tickInterval); _disconnectCryptoWS(); });
+  window.addEventListener('beforeunload', () => { clearInterval(_tickInterval); Crypto.disconnect(); });
 
   // 渲染循环（60fps，含插值平滑）
   function renderLoop(){ drawChart(); requestAnimationFrame(renderLoop); }
