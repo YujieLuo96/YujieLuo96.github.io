@@ -308,6 +308,18 @@
       display: flex; justify-content: space-between; align-items: center;
       color: rgba(0,245,255,0.5); font-size: 0.72rem; letter-spacing: 0.2em; margin-bottom: 8px;
     }
+    .orders-title {
+      cursor: pointer; user-select: none;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .orders-title:hover { color: rgba(0,245,255,0.75); }
+    .orders-chevron {
+      font-size: 0.6em; display: inline-block; opacity: 0.6;
+      transition: transform 0.18s ease;
+    }
+    .orders-panel.positions-collapsed .orders-chevron { transform: rotate(-90deg); }
+    .orders-panel.positions-collapsed .orders-body    { display: none; }
+    .orders-panel.positions-collapsed .orders-header  { margin-bottom: 0; }
     .orders-container { display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px; }
     .order-card {
       background: linear-gradient(160deg, rgba(2,0,18,0.95) 0%, rgba(0,0,8,0.98) 100%);
@@ -873,15 +885,18 @@ if (crossunder(fast, slow)) {
   </div>
 
   <!-- Positions -->
-  <div class="orders-panel">
+  <div class="orders-panel" id="orders-panel">
     <div class="orders-header">
-      <span>◈ OPEN POSITIONS</span>
+      <span class="orders-title" id="btn-toggle-positions">
+        ◈ OPEN POSITIONS <span class="orders-chevron">▼</span>
+      </span>
       <span id="shares-summary" style="color:rgba(0,245,255,0.35)">L:0.00 / S:0.00 shares</span>
       <div style="display:flex;gap:6px;">
         <button class="history-btn" id="btn-history">📋 HISTORY</button>
         <button class="summary-btn" id="btn-summary">📊 SUMMARY</button>
       </div>
     </div>
+    <div class="orders-body">
     <div id="orders-list" class="orders-container"></div>
     <div class="history-panel" id="history-panel">
       <div class="history-summary" id="history-summary"></div>
@@ -967,6 +982,7 @@ if (crossunder(fast, slow)) {
         </div>
       </div>
     </div>
+    </div><!-- /.orders-body -->
   </div>
 
   <!-- 策略编辑器模态窗口 -->
@@ -993,6 +1009,8 @@ if (crossunder(fast, slow)) {
 <script src="Crypto.js"></script>
 <script src="MarketEngine.js"></script>
 <script src="VirtualTraders.js"></script>
+<script src="EMACache.js"></script>
+<script src="StrategyEngine.js"></script>
 <script>
 (function () {
 
@@ -1323,7 +1341,7 @@ if (crossunder(fast, slow)) {
       trades.length=_w;
     }
 
-    updateEMACache();
+    EMACache.update();
     checkSLTP();
     refreshUI();
     // 净资产快照（供 SUMMARY 图表使用）
@@ -1333,7 +1351,7 @@ if (crossunder(fast, slow)) {
     netAssetHistory.push(_naNew);
     if(netAssetHistory.length > 2000) netAssetHistory.shift();
     _recordNetAssetStat(_naNew, _naPrev);  // O(1) 增量更新 MDD / Sharpe
-    evaluateStrategy();
+    StrategyEngine.tick();
     // Virtual traders tick (independent bot accounts)
     if (window.VirtualTraders) VirtualTraders.tick();
     // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
@@ -1648,14 +1666,14 @@ if (crossunder(fast, slow)) {
     summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
     liqIndicator.style.display='none';
     deactivateSlRatio(); deactivateTpRatio();
-    initPrice(); emaCache.clear(); aggEmaCache.clear(); aggEmaScratch.clear(); emaCacheTick.clear(); _aggCache=null; updateEMACache();
+    initPrice(); EMACache.reset(); EMACache.update();
     trades=[]; refreshUI();
     triggerFlash();
     // 停止策略（若已定义）
-    if(typeof _strategyActive !== 'undefined'){
-      _strategyActive = false; _strategyFn = null; _strategyCtx = {}; _crossState.clear();
+    if (window.StrategyEngine) {
+      StrategyEngine.reset();
       const _sSt = document.getElementById('strategy-status');
-      if(_sSt){ _sSt.textContent='● IDLE'; _sSt.classList.remove('running'); }
+      if (_sSt) { _sSt.textContent = '● IDLE'; _sSt.classList.remove('running'); }
     }
   }
 
@@ -1674,87 +1692,11 @@ if (crossunder(fast, slow)) {
     totalTicks = priceHistory.length;
   }
 
-  /* ═══════════════════════════════════════════
-     EMA 缓存
-  ═══════════════════════════════════════════ */
-  const emaCache=new Map();
-  // aggEmaCache: period → { stableLen, stableLastClose, ema }
-  // 仅缓存稳定部分（不含动画帧的末尾 close），每 tick 更新一次（200ms），而非每帧
-  const aggEmaCache=new Map();
-  const aggEmaScratch=new Map(); // 复用输出 buffer，避免 60fps GC 分配
-  const emaCacheTick=new Map();  // period → 上次更新时的 totalTicks，用于检测是否跨 tick 失效
-
-  // ── P1：聚合 K 线缓存 ─────────────────────────────────────────────
-  // 稳定段（除末尾 partial candle 外的全部）每 tick 重建一次（O(MAX_HISTORY)）
-  // 帧内（60fps）仅 O(1) 更新末尾 partial candle 的 h/l/c
-  let _aggCache = null;
-  // {
-  //   totalTicks, sz, len  — 失效检测 key
-  //   stableCount          — 稳定 K 线数量（= ag.length - 1）
-  //   ag[]   / vol[]  / closes[]  — 输出数组（跨帧复用，partial 槽在末尾）
-  //   partialBaseH / partialBaseL — partial 组内 ohlc 的最高/最低（不含 animP）
-  //   partialOpen         — partial 组第一根 ohlc 的 open
-  // }
-
-  function getAggEMA(closes, period) {
-    const totalLen = closes.length;
-    if (totalLen < period) return [];
-
-    // 稳定收盘 = 除最后一根（= animP）之外的所有 close
-    const stableLen = totalLen - 1;
-    const stableLastClose = stableLen > 0 ? closes[stableLen - 1] : 0;
-
-    const cached = aggEmaCache.get(period);
-    let baseEma;
-    if (cached && cached.stableLen === stableLen && cached.stableLastClose === stableLastClose) {
-      baseEma = cached.ema; // tick 边界未变，直接复用
-    } else {
-      // 仅 tick 更新时（200ms）才重算稳定段，O(stableLen) 但每秒只跑 5 次
-      // 传入 stableLen 避免 closes.slice(0, stableLen) 产生临时数组
-      baseEma = stableLen >= period
-        ? emaFromArray(closes, period, stableLen)
-        : new Float64Array(0);
-      aggEmaCache.set(period, { stableLen, stableLastClose, ema: baseEma });
-    }
-
-    if (baseEma.length === 0) return emaFromArray(closes, period); // 兜底
-
-    // 用 O(1) 把 animP 那一步接上去，复用 scratch buffer 避免分配
-    const outLen = baseEma.length + 1;
-    let out = aggEmaScratch.get(period);
-    if (!out || out.length !== outLen) { out = new Float64Array(outLen); aggEmaScratch.set(period, out); }
-    out.set(baseEma);
-    const k = 2 / (period + 1);
-    const prevEma = baseEma[baseEma.length - 1];
-    out[baseEma.length] = prevEma + k * (closes[totalLen - 1] - prevEma);
-    return out;
-  }
-  function updateEMACache(){
-    const needed=new Set([5,20]);
-    if(showDetailedEMA)[1,2,3,5,7,10,20,30,60].forEach(p=>needed.add(p));
-    if(showRainbowEMA)for(let p=1;p<=60;p++)needed.add(p);
-    const n=priceHistory.length, steady=(n===MAX_HISTORY);
-    needed.forEach(period=>{
-      const k=2/(period+1), prev=emaCache.get(period);
-      // 增量路径必须满足：steady 态 + 上一次恰好是紧邻 tick（差值=1）
-      // 若 period 曾被关闭多个 tick 再重新启用，prev 已过期，必须全量重建
-      const lastTick=emaCacheTick.get(period)??-1;
-      if(steady&&prev&&prev.length===n&&(totalTicks-lastTick===1)){
-        const e=new Float64Array(n); e.set(prev.subarray(1));
-        e[n-1]=(priceHistory[n-1]-e[n-2])*k+e[n-2]; emaCache.set(period,e);
-      } else {
-        const e=new Float64Array(n); e[0]=priceHistory[0];
-        for(let i=1;i<n;i++)e[i]=(priceHistory[i]-e[i-1])*k+e[i-1];
-        emaCache.set(period,e);
-      }
-      emaCacheTick.set(period,totalTicks);
-    });
-  }
-  function computeEMA(period){ return emaCache.get(period)||[]; }
+  // EMA 缓存与 K 线聚合缓存已封装至 EMACache.js
 
   /* 独立函数（不在 drawChart 内部定义），避免 60fps 重复创建函数对象 */
   function drawEMALine(period, color, lw, n, aggCloses, mapX, mapY) {
-    const ema = candleSize <= 1 ? computeEMA(period) : getAggEMA(aggCloses, period);
+    const ema = candleSize <= 1 ? EMACache.computeEMA(period) : EMACache.getAggEMA(aggCloses, period);
     if (!ema.length) return;
     const offset = n - ema.length;
     ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = lw;
@@ -1776,139 +1718,6 @@ if (crossunder(fast, slow)) {
   /* ═══════════════════════════════════════════
      绘图（60fps rAF 驱动，带插值平滑）
   ═══════════════════════════════════════════ */
-  /* 聚合 OHLC / volume / 收盘价到指定 tick 数量
-     从右端划分：partialSize 由 totalTicks % sz 决定，与数组长度无关
-     → 每 sz 个数据点才生成一根新 K 线，与 MAX_HISTORY 滑窗无关 */
-  /* _rebuildAggCache：每 tick 最多调用一次（O(MAX_HISTORY)）
-     将稳定段聚合结果写入 _aggCache，同时预算 partial 组的 hi/lo/vol/open，
-     供 getAggregated 每帧 O(1) 完成末尾 partial candle 的拼接。
-     分组逻辑与原 getAggregated 完全等价（逐行可对照验证）。 */
-  function _rebuildAggCache() {
-    const sz  = candleSize;
-    const len = ohlc.length;
-
-    // sz <= 1 时 getAggregated 走早返回路径，不会调用本函数
-    // len === 0 时也不调用，故此处无需再判断
-
-    // ── 与原逻辑相同：从右向左确定分组边界 ──────────────────────────
-    const partialSize = ((totalTicks - 1) % sz) + 1;
-
-    // partial 组（最右侧，未完成）
-    const pEnd   = len;
-    const pStart = Math.max(0, pEnd - partialSize);
-
-    // 稳定组：右向左收集，然后 reverse 成旧→新（与原 groups.reverse() 等价）
-    const sStarts = [];
-    const sEnds   = [];
-    let pos = pEnd - partialSize;   // = pStart（当 pStart > 0 时），等价于原 pos -= partialSize
-    while (pos > 0) {
-      const start = Math.max(0, pos - sz);
-      sStarts.push(start);
-      sEnds.push(pos);
-      pos = start;
-    }
-    sStarts.reverse();  // 旧 → 新（与原 groups.reverse() 等价）
-    sEnds.reverse();
-
-    // ── 构建稳定段输出数组 ────────────────────────────────────────────
-    const ag     = [];
-    const vol    = [];
-    const closes = [];
-
-    for (let gi = 0; gi < sStarts.length; gi++) {
-      const gStart = sStarts[gi];
-      const gEnd   = sEnds[gi];
-      if (gStart >= gEnd) continue;   // 与原 `if (g.start >= g.end) continue` 等价
-      let hi = -Infinity, lo = Infinity, vSum = 0;
-      for (let j = gStart; j < gEnd; j++) {
-        const c = ohlc[j];
-        if (c.h > hi) hi = c.h;
-        if (c.l < lo) lo = c.l;
-        vSum += volumeHistory[j] || 0;
-      }
-      ag.push({ o: ohlc[gStart].o, h: hi, l: lo, c: ohlc[gEnd - 1].c });
-      vol.push(vSum / (gEnd - gStart));
-      closes.push(ohlc[gEnd - 1].c);
-    }
-
-    // ── partial 组：预算 baseH/baseL/vol/open，animP 留到帧内接入 ────
-    let partialBaseH = -Infinity, partialBaseL = Infinity, partialVSum = 0;
-    for (let j = pStart; j < pEnd; j++) {
-      const c = ohlc[j];
-      if (c.h > partialBaseH) partialBaseH = c.h;
-      if (c.l < partialBaseL) partialBaseL = c.l;
-      partialVSum += volumeHistory[j] || 0;
-    }
-    const partialVolAvg  = partialVSum / (pEnd - pStart);   // pEnd > pStart 已由 len>0 保证
-    const partialOpen    = ohlc[pStart].o;
-    const stableCount    = ag.length;
-
-    // partial 槽：占位对象，h/l/c 在每帧由 getAggregated 填写
-    ag.push({ o: partialOpen, h: 0, l: 0, c: 0 });
-    vol.push(partialVolAvg);
-    closes.push(0);  // placeholder，每帧更新为 animP
-
-    _aggCache = {
-      totalTicks, sz, len,
-      stableCount,
-      ag, vol, closes,
-      partialBaseH,
-      partialBaseL,
-      partialOpen,
-    };
-  }
-
-  /* getAggregated：与原函数接口、返回值语义完全相同。
-     cache hit 时帧内工作量 = O(1)（只写 partial 槽的 5 个字段）。
-     cache miss（每 tick 第一帧 / TF 切换 / reset）时调用 _rebuildAggCache，
-     耗时与原函数单次调用完全相同（O(MAX_HISTORY)），但每 tick 只发生一次。 */
-  function getAggregated(animP) {
-    const sz = candleSize;
-    if (sz <= 1) return { ag: ohlc, vol: volumeHistory, closes: priceHistory };
-
-    const len = ohlc.length;
-    if (len === 0) return { ag: [], vol: [], closes: [] };
-
-    // 缓存失效条件：totalTicks / candleSize / ohlc 长度任一变化
-    if (_aggCache === null
-        || _aggCache.totalTicks !== totalTicks
-        || _aggCache.sz         !== sz
-        || _aggCache.len        !== len) {
-      _rebuildAggCache();
-      // 极端情况：rebuild 后仍为 null（理论上不会发生，加防御）
-      if (_aggCache === null) return { ag: [], vol: [], closes: [] };
-    }
-
-    // ── O(1)：将 animP 融入末尾 partial candle ───────────────────────
-    const sc          = _aggCache.stableCount;
-    const partCandle  = _aggCache.ag[sc];
-    const bH          = _aggCache.partialBaseH;
-    const bL          = _aggCache.partialBaseL;
-
-    partCandle.o      = _aggCache.partialOpen;
-    partCandle.h      = bH > animP ? bH : animP;   // max(baseH, animP)
-    partCandle.l      = bL < animP ? bL : animP;   // min(baseL, animP)
-    partCandle.c      = animP;
-    _aggCache.closes[sc] = animP;
-    // vol[sc] 在 _rebuildAggCache 时已设置，无需每帧更新
-
-    return { ag: _aggCache.ag, vol: _aggCache.vol, closes: _aggCache.closes };
-  }
-
-  /* EMA on arbitrary close-price array (not cache) — uses Float64Array, no fill()
-     可选 len 参数：只处理 arr 的前 len 个元素，避免调用方做 arr.slice(0, len) */
-  function emaFromArray(arr, period, len = arr.length) {
-    if (len < period) return new Float64Array(0);
-    const k = 2 / (period + 1);
-    const out = new Float64Array(len - period + 1);
-    let sum = 0;
-    for (let i = 0; i < period; i++) sum += arr[i];
-    out[0] = sum / period;
-    for (let i = period; i < len; i++)
-      out[i - period + 1] = (arr[i] - out[i - period]) * k + out[i - period];
-    return out;
-  }
-
   function drawChart() {
     // 插值动画价格
     const elapsed = performance.now() - lastTickTime;
@@ -1937,7 +1746,7 @@ if (crossunder(fast, slow)) {
     const CHART_BOTTOM = CH * 0.78;
 
     // ── 聚合数据 ──
-    const { ag, vol: aggVol, closes: aggCloses } = getAggregated(animP);
+    const { ag, vol: aggVol, closes: aggCloses } = EMACache.getAggregated(animP);
     const n = ag.length;
     if(n < 2) return;
 
@@ -2090,7 +1899,7 @@ if (crossunder(fast, slow)) {
     btn.addEventListener('click',()=>{
       _activeTfMult=parseInt(btn.dataset.tf);
       candleSize=_activeTfMult * simN;
-      aggEmaCache.clear(); _aggCache=null;
+      EMACache.invalidateAgg();
       document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
     });
@@ -2115,6 +1924,12 @@ if (crossunder(fast, slow)) {
     const panel=document.getElementById('settings-panel');
     btn.classList.toggle('active');
     panel.classList.toggle('open');
+  });
+
+  /* ── OPEN POSITIONS 折叠 ── */
+  const ordersPanel = document.getElementById('orders-panel');
+  document.getElementById('btn-toggle-positions').addEventListener('click', () => {
+    ordersPanel.classList.toggle('positions-collapsed');
   });
 
   /* ── 交易历史面板 ── */
@@ -2565,11 +2380,7 @@ if (crossunder(fast, slow)) {
       totalTicks = priceHistory.length;   // 重新对齐 totalTicks
     }
 
-    aggEmaCache.clear();
-    aggEmaScratch.clear();   // scratch 缓冲区尺寸随 candleSize 变化，必须同步清除
-    emaCache.clear();
-    emaCacheTick.clear();
-    _aggCache = null;
+    EMACache.reset(); // scratch 缓冲区尺寸随 candleSize 变化，全量清空
 
     // regime 计时重置已包含在 ME.applyN(n) 中
     clearInterval(_tickInterval);
@@ -2608,8 +2419,8 @@ if (crossunder(fast, slow)) {
   });
   document.getElementById('ema5').addEventListener('change',       e=>{showEMA5=e.target.checked;});
   document.getElementById('ema20').addEventListener('change',      e=>{showEMA20=e.target.checked;});
-  document.getElementById('detailedEMA').addEventListener('change',e=>{showDetailedEMA=e.target.checked;updateEMACache();});
-  document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;updateEMACache();});
+  document.getElementById('detailedEMA').addEventListener('change',e=>{showDetailedEMA=e.target.checked;EMACache.update();});
+  document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;EMACache.update();});
 
   /* ═══════════════════════════════════════════
      CRYPTO live mode  (module: Crypto.js)
@@ -2632,7 +2443,7 @@ if (crossunder(fast, slow)) {
     get ohlc()             { return ohlc; },              set ohlc(v)             { ohlc = v; },
     get priceHistory()     { return priceHistory; },      set priceHistory(v)     { priceHistory = v; },
     get volumeHistory()    { return volumeHistory; },     set volumeHistory(v)    { volumeHistory = v; },
-    get _aggCache()        { return _aggCache; },         set _aggCache(v)        { _aggCache = v; },
+    get _aggCache()        { return EMACache.getRawAggCache(); }, set _aggCache(v)       { EMACache.setRawAggCache(v); },
     get trades()           { return trades; },            set trades(v)           { trades = v; },
     get srBreakDrift()     { return ME.srBreakDrift; },   set srBreakDrift(v)     { ME.srBreakDrift = v; },
     // Constants / read-only
@@ -2651,10 +2462,10 @@ if (crossunder(fast, slow)) {
     get btnSummary()       { return btnSummary; },
     get liqIndicator()     { return liqIndicator; },
     // Cache Maps (mutated in-place by module)
-    get emaCache()         { return emaCache; },
-    get aggEmaCache()      { return aggEmaCache; },
-    get aggEmaScratch()    { return aggEmaScratch; },
-    get emaCacheTick()     { return emaCacheTick; },
+    get emaCache()         { return EMACache.getEMACache(); },
+    get aggEmaCache()      { return EMACache.getAggEMACache(); },
+    get aggEmaScratch()    { return EMACache.getAggEmaScratch(); },
+    get emaCacheTick()     { return EMACache.getEMACacheTick(); },
     get srEmaValues()      { return ME.srEmaValues; },
     get srPrevSide()       { return ME.srPrevSide; },
     // Methods
@@ -2662,9 +2473,9 @@ if (crossunder(fast, slow)) {
     triggerFlash:        () => triggerFlash(),
     showToast:           (msg, type, dur) => showToast(msg, type, dur),
     updateSREMA:         (p) => ME.updateSREMA(p),
-    updateEMACache:      () => updateEMACache(),
+    updateEMACache:      () => EMACache.update(),
     checkSLTP:           () => checkSLTP(),
-    evaluateStrategy:    () => evaluateStrategy(),
+    evaluateStrategy:    () => StrategyEngine.tick(),
     orderEquity:         (o) => orderEquity(o),
     _smReset:            () => _smReset(),
     _recordNetAssetStat: (n, p) => _recordNetAssetStat(n, p),
@@ -2694,262 +2505,14 @@ if (crossunder(fast, slow)) {
   });
 
   /* ═══════════════════════════════════════════
-     PineScript 策略执行器
+     PineScript 策略执行器（逻辑已封装至 StrategyEngine.js）
   ═══════════════════════════════════════════ */
-  let _strategyActive = false;
-  let _strategyFn     = null;
-  let _strategyCtx    = {};   // 策略持久状态（this.xxx）
-
-  // crossover/crossunder 调用序号跟踪（每 tick 重置），用于存储前值
-  let _crossIdx = 0;
-  const _crossState = new Map(); // idx → { a, b }
-
-  // pineEnv 通过 with(pineEnv) 暴露给策略代码
-  // 用 getter 使 open/high/low/close/volume 以数字形式暴露（而非函数），
-  // 这样策略代码可直接写 close > 100 而无需调用
-  const pineEnv = {
-    get open()   { return ohlc.length ? ohlc[ohlc.length-1].o : currentPrice; },
-    get high()   { return ohlc.length ? ohlc[ohlc.length-1].h : currentPrice; },
-    get low()    { return ohlc.length ? ohlc[ohlc.length-1].l : currentPrice; },
-    get close()  { return currentPrice; },
-    get volume() { return volumeHistory.length ? volumeHistory[volumeHistory.length-1] : 0; },
-
-    // sma / ema 始终基于收盘价序列（src 参数保留兼容性但不影响数据源）
-    sma(src, len) {
-      const arr = priceHistory.slice(-len);
-      return arr.length >= len ? arr.reduce((a,b)=>a+b,0)/len : currentPrice;
-    },
-    ema(src, len) {
-      // 取 3× 周期的历史以确保 EMA 收敛
-      const arr = priceHistory.slice(-Math.max(len*3, len+10));
-      if (arr.length < len) return currentPrice;
-      const k = 2/(len+1);
-      let e = arr[0];
-      for (let i=1; i<arr.length; i++) e = (arr[i]-e)*k+e;
-      return e;
-    },
-    // crossover / crossunder：通过调用序号记忆前一 tick 的 a/b 值，保证比较正确
-    // 第一次执行（无前值）返回 false，避免首 tick 误触发
-    crossover(a, b) {
-      const idx = _crossIdx++;
-      const s = _crossState.get(idx);
-      const result = s != null && s.a <= s.b && a > b;
-      _crossState.set(idx, {a, b});
-      return result;
-    },
-    crossunder(a, b) {
-      const idx = _crossIdx++;
-      const s = _crossState.get(idx);
-      const result = s != null && s.a >= s.b && a < b;
-      _crossState.set(idx, {a, b});
-      return result;
-    },
-
-    // ── 新增指标函数（均无需手动维护 this.xxx 状态）────────────────────
-
-    // rsi(len=14): Wilder RSI，从价格历史无状态计算
-    rsi(len = 14) {
-      const arr = priceHistory.slice(-Math.max(len * 3, len + 10));
-      if (arr.length < 2) return 50;
-      const k = 1 / len;
-      const init = Math.min(len, arr.length - 1);
-      let uA = 0, dA = 0;
-      for (let i = 1; i <= init; i++) {
-        const d = arr[i] - arr[i-1];
-        uA += Math.max(d, 0); dA += Math.max(-d, 0);
-      }
-      uA /= init; dA /= init;
-      for (let i = init + 1; i < arr.length; i++) {
-        const d = arr[i] - arr[i-1];
-        uA = uA*(1-k) + Math.max(d, 0)*k;
-        dA = dA*(1-k) + Math.max(-d, 0)*k;
-      }
-      return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100 / (1 + uA / dA);
-    },
-
-    // atr(len=14): Wilder 平均真实波幅，用于动态止损定价
-    atr(len = 14) {
-      if (ohlc.length < 2) return 0;
-      const sl = ohlc.slice(-Math.max(len * 3, len + 10));
-      if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
-      const k = 1 / len;
-      let v = sl[1].h - sl[1].l;
-      for (let i = 1; i < sl.length; i++) {
-        const tr = Math.max(
-          sl[i].h - sl[i].l,
-          Math.abs(sl[i].h - sl[i-1].c),
-          Math.abs(sl[i].l - sl[i-1].c)
-        );
-        v = v*(1-k) + tr*k;
-      }
-      return v;
-    },
-
-    // highest(len=20): 最近 len 根已完结 K 线的最高价（不含当前开放K线）
-    highest(len = 20) {
-      const end = ohlc.length - 1;
-      const sl = ohlc.slice(Math.max(0, end - len), end);
-      return sl.length ? Math.max(...sl.map(b => b.h)) : currentPrice;
-    },
-
-    // lowest(len=20): 最近 len 根已完结 K 线的最低价
-    lowest(len = 20) {
-      const end = ohlc.length - 1;
-      const sl = ohlc.slice(Math.max(0, end - len), end);
-      return sl.length ? Math.min(...sl.map(b => b.l)) : currentPrice;
-    },
-
-    // bb(len=20, mult=2.0): 布林带，返回 { upper, mid, lower }
-    bb(len = 20, mult = 2.0) {
-      const arr = priceHistory.slice(-len);
-      if (arr.length < len) return { upper: currentPrice, mid: currentPrice, lower: currentPrice };
-      const mid = arr.reduce((a, b) => a + b, 0) / len;
-      const std = Math.sqrt(arr.reduce((s, v) => s + (v - mid) ** 2, 0) / len);
-      return { upper: mid + mult * std, mid, lower: mid - mult * std };
-    },
-
-    // stoch(kLen=14, dLen=3): 随机指标，返回 { k, d }（均为 0-100）
-    stoch(kLen = 14, dLen = 3) {
-      if (ohlc.length < kLen) return { k: 50, d: 50 };
-      const calcK = bars => {
-        const hh = Math.max(...bars.map(b => b.h));
-        const ll = Math.min(...bars.map(b => b.l));
-        return hh === ll ? 50 : (bars[bars.length-1].c - ll) / (hh - ll) * 100;
-      };
-      const k = calcK(ohlc.slice(-kLen));
-      let dSum = 0, dCnt = 0;
-      for (let i = 0; i < dLen; i++) {
-        const end2 = ohlc.length - i;
-        if (end2 - kLen < 0) break;
-        dSum += calcK(ohlc.slice(end2 - kLen, end2));
-        dCnt++;
-      }
-      return { k, d: dCnt ? dSum / dCnt : k };
-    },
-
-    // bar_index: 已完结 K 线根数（从 0 开始），可用于定时/频率控制
-    get bar_index() { return Math.max(0, ohlc.length - 1); },
-
-    strategy: {
-      // entry：平掉反向仓位，若该方向已有仓位则不重复开仓（幂等）
-      // opts (可选对象):
-      //   qty   : number  — 固定手数（股数），优先于 ratio
-      //   ratio : number  — 0~1，占当前可用资金比例，默认 1.0（全仓）
-      //   sl    : number  — 止损价格（多仓须 < 当前价，空仓须 > 当前价）
-      //   tp    : number  — 止盈价格（多仓须 > 当前价，空仓须 < 当前价）
-      entry(direction, opts = {}) {
-        if (!_strategyActive) return;
-        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
-        // 单次遍历：同时收集同向标志和反向 id，避免三次 orders 迭代
-        let hasSame = false;
-        const oppositeIds = [];
-        for (const o of orders) {
-          if (o.dir === dir) hasSame = true;
-          else oppositeIds.push(o.id);
-        }
-        // 先平反向（用收集好的副本，避免遍历中 splice）
-        oppositeIds.forEach(id => closeOrderById(id, false));
-        // 已持同向仓位则不再叠仓
-        if (!hasSame) {
-          const lev = parseFloat(leverageSlider.value);
-          let shares;
-          if (opts.qty != null) {
-            // 固定手数模式
-            shares = Math.floor(opts.qty);
-          } else {
-            // 比例模式：ratio ∈ [0,1]，默认 1.0（全仓）
-            const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
-            const budget = ratio * getFreeCash() - FEE_FIXED;
-            shares = Math.floor(budget / (currentPrice * (1/lev + FEE_RATE)));
-          }
-          const sl = opts.sl != null ? opts.sl : null;
-          const tp = opts.tp != null ? opts.tp : null;
-          if (shares > 0) placeOrder(dir, shares, sl, tp);
-        }
-      },
-      // add：在已有同向仓位的基础上再开一笔（允许叠仓/加仓/金字塔）
-      // opts 与 entry 完全相同：{ qty?, ratio?, sl?, tp? }
-      add(direction, opts = {}) {
-        if (!_strategyActive) return;
-        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
-        const lev = parseFloat(leverageSlider.value);
-        let shares;
-        if (opts.qty != null) {
-          shares = Math.floor(opts.qty);
-        } else {
-          const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
-          const budget = ratio * getFreeCash() - FEE_FIXED;
-          shares = Math.floor(budget / (currentPrice * (1/lev + FEE_RATE)));
-        }
-        const sl = opts.sl != null ? opts.sl : null;
-        const tp = opts.tp != null ? opts.tp : null;
-        if (shares > 0) placeOrder(dir, shares, sl, tp);
-      },
-      // close：平掉指定方向的所有仓位（安全副本，避免 splice 导致跳过）
-      close(direction) {
-        if (!_strategyActive) return;
-        const dir = direction.toLowerCase() === 'long' ? 1 : -1;
-        [...orders.filter(o => o.dir === dir).map(o => o.id)]
-          .forEach(id => closeOrderById(id, false));
-      },
-
-      // closeAll：平掉所有仓位（多空均平，不区分方向）
-      closeAll() {
-        if (!_strategyActive) return;
-        [...orders.map(o => o.id)].forEach(id => closeOrderById(id, false));
-      },
-
-      // position：只读属性，返回当前持仓快照
-      // 返回 { side: 'long'|'short'|'none', qty, avgPrice, unrealized }
-      get position() {
-        let lQty = 0, sQty = 0, lSum = 0, sSum = 0, lU = 0, sU = 0;
-        for (const o of orders) {
-          const u = o.dir * o.shares * (currentPrice - o.openPrice);
-          if (o.dir === 1) { lQty += o.shares; lSum += o.openPrice * o.shares; lU += u; }
-          else             { sQty += o.shares; sSum += o.openPrice * o.shares; sU += u; }
-        }
-        if (lQty > 0 && sQty === 0)
-          return { side: 'long',  qty: lQty, avgPrice: lSum / lQty, unrealized: lU };
-        if (sQty > 0 && lQty === 0)
-          return { side: 'short', qty: sQty, avgPrice: sSum / sQty, unrealized: sU };
-        return { side: 'none', qty: 0, avgPrice: 0, unrealized: 0 };
-      }
-    }
-  };
-
-  function compilePineScript(code) {
-    try {
-      return new Function('pineEnv', `with(pineEnv){${code}}`);
-    } catch(e) {
-      showToast('策略编译错误: ' + e.message, 'error');
-      return null;
-    }
-  }
-
-  function evaluateStrategy() {
-    if (!_strategyActive || !_strategyFn) return;
-    _crossIdx = 0; // 重置 crossover/crossunder 调用计数
-    try {
-      _strategyFn.call(_strategyCtx, pineEnv);
-    } catch(e) {
-      console.warn('策略执行异常', e);
-      showToast('策略执行错误，已停止: ' + e.message, 'error');
-      _strategyActive = false;
-      const st = document.getElementById('strategy-status');
-      st.textContent = '● IDLE'; st.classList.remove('running');
-    }
-    // 保证 strategy.close / closeAll 的平仓结果在本 tick 立即反映到 UI
-    refreshUI();
-  }
 
   // 策略按钮事件
   document.getElementById('btn-strategy-start').addEventListener('click', () => {
     const code = document.getElementById('pine-code').value.trim();
     if (!code) { showToast('⚠ 请先输入策略代码', 'warn'); return; }
-    const fn = compilePineScript(code);
-    if (fn) {
-      _strategyCtx = {}; _crossState.clear(); // 重置持久状态
-      _strategyFn = fn; _strategyActive = true;
+    if (StrategyEngine.start(code)) {
       const st = document.getElementById('strategy-status');
       st.textContent = '● RUNNING'; st.classList.add('running');
       showToast('策略已启动', 'success');
@@ -2957,7 +2520,7 @@ if (crossunder(fast, slow)) {
   });
 
   document.getElementById('btn-strategy-stop').addEventListener('click', () => {
-    _strategyActive = false;
+    StrategyEngine.stop();
     const st = document.getElementById('strategy-status');
     st.textContent = '● IDLE'; st.classList.remove('running');
     closeAll();  // 停止时自动平掉所有策略持仓
@@ -2989,6 +2552,21 @@ if (crossunder(fast, slow)) {
   /* ═══════════════════════════════════════════
      初始化 + 主循环
   ═══════════════════════════════════════════ */
+
+  // EMA Cache — inject dependencies（必须在 resetGame 之前，否则首次 update() 静默跳过）
+  if (window.EMACache) {
+    EMACache.init({
+      getPriceHistory:    () => priceHistory,
+      getOhlc:            () => ohlc,
+      getVolumeHistory:   () => volumeHistory,
+      getTotalTicks:      () => totalTicks,
+      getCandleSize:      () => candleSize,
+      getShowDetailedEMA: () => showDetailedEMA,
+      getShowRainbowEMA:  () => showRainbowEMA,
+      getMaxHistory:      () => MAX_HISTORY,
+    });
+  }
+
   resetGame();
 
   // Virtual Traders — expose shared market data via getters (live references)
@@ -2998,7 +2576,30 @@ if (crossunder(fast, slow)) {
       get ohlc()          { return ohlc; },
       get priceHistory()  { return priceHistory; },
       get volumeHistory() { return volumeHistory; },
-      get emaCache()      { return emaCache; },
+      get emaCache()      { return EMACache.getEMACache(); },
+    });
+  }
+
+  // Strategy Engine — inject dependencies
+  if (window.StrategyEngine) {
+    StrategyEngine.init({
+      getPrice:         () => currentPrice,
+      getOhlc:          () => ohlc,
+      getPriceHistory:  () => priceHistory,
+      getVolumeHistory: () => volumeHistory,
+      getOrders:        () => orders,
+      getFreeCash:      getFreeCash,
+      getLeverage:      () => parseFloat(leverageSlider.value),
+      placeOrder:       placeOrder,
+      closeOrderById:   closeOrderById,
+      showToast:        showToast,
+      onAfterTick:      refreshUI,
+      onStop:           () => {
+        const st = document.getElementById('strategy-status');
+        if (st) { st.textContent = '● IDLE'; st.classList.remove('running'); }
+      },
+      FEE_RATE,
+      FEE_FIXED,
     });
   }
 
