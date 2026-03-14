@@ -1396,7 +1396,6 @@ if (close > hh && this._p !== 1) {
   }
 
   function _remove(t, fromDet=false) {
-    if(!confirm(`Remove trader "${t.name}"?`)) return;
     _traders=_traders.filter(x=>x.id!==t.id);
     _gridVer++;
     if(fromDet) _closeDet();
