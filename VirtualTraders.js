@@ -862,7 +862,7 @@ if (close > hh && this._p !== 1) {
   <span class="vt-ph-title">🤖 VIRTUAL TRADERS</span>
   <div class="vt-ph-sep"></div>
   <button class="vt-ph-btn go"   id="vt-start-all">▶ START ALL</button>
-  <button class="vt-ph-btn halt" id="vt-stop-all" >⏹ STOP ALL</button>
+  <button class="vt-ph-btn halt" id="vt-stop-all" >■ STOP ALL</button>
   <div class="vt-ph-sep"></div>
   <button class="vt-ph-btn add"  id="vt-add-top"  >＋ ADD TRADER</button>
   <div class="vt-spacer"></div>
@@ -1111,7 +1111,7 @@ if (close > hh && this._p !== 1) {
 </div>
 <div class="vt-ca">
   ${t.isRunning
-    ? `<button class="vt-cb halt" data-a="stop"  data-id="${t.id}">⏹ STOP</button>`
+    ? `<button class="vt-cb halt" data-a="stop"  data-id="${t.id}">■ STOP</button>`
     : `<button class="vt-cb go"   data-a="start" data-id="${t.id}">▶ START</button>`
   }
   <button class="vt-cb" data-a="det" data-id="${t.id}">STATS</button>
@@ -1162,7 +1162,7 @@ if (close > hh && this._p !== 1) {
         if (t.isRunning && togBtn.dataset.a !== 'stop') {
           togBtn.dataset.a  = 'stop';
           togBtn.className  = 'vt-cb halt';
-          togBtn.textContent = '⏹ STOP';
+          togBtn.textContent = '■ STOP';
         } else if (!t.isRunning && togBtn.dataset.a !== 'start') {
           togBtn.dataset.a  = 'start';
           togBtn.className  = 'vt-cb go';
@@ -1270,7 +1270,7 @@ if (close > hh && this._p !== 1) {
     s('vt-d-ls',    String(t.stats.maxLossStreak));
     s('vt-d-pos',   t.orders.length+' open');
     const tog=_el('vt-d-tog');
-    if(tog){ tog.textContent=t.isRunning?'⏹ STOP':'▶ START'; tog.style.color=t.isRunning?'#ff2d78':'#39ff14'; tog.style.borderColor=t.isRunning?'rgba(255,45,120,.3)':'rgba(57,255,20,.3)'; }
+    if(tog){ tog.textContent=t.isRunning?'■ STOP':'▶ START'; tog.style.color=t.isRunning?'#ff2d78':'#39ff14'; tog.style.borderColor=t.isRunning?'rgba(255,45,120,.3)':'rgba(57,255,20,.3)'; }
     const errEl=_el('vt-d-err');
     if(errEl){ errEl.style.display=t._lastError?'block':'none'; if(t._lastError) errEl.textContent='⚠ '+t._lastError; }
 
