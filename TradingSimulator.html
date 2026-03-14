@@ -476,11 +476,7 @@
     #liq-flash.active { opacity:1; transition: none; }
 
     /* ── MISC ─────────────────────────────── */
-    .return-home { display: flex; justify-content: center; margin-top: 4px; }
-    #btn-home { padding: 5px 18px; background: transparent; border: 1px solid rgba(255,45,120,0.25);
-      color: rgba(255,45,120,0.4); font-family:'Share Tech Mono',monospace; font-size:0.7rem;
-      cursor:pointer; text-transform: uppercase; text-decoration: none; transition: all 0.15s; }
-    #btn-home:hover { border-color: var(--pink); color: var(--pink); box-shadow: 0 0 10px rgba(255,45,120,0.25); }
+
 
     .hint { font-size: 0.55rem; color: rgba(0,245,255,0.2); display: flex; gap: 18px; flex-wrap: wrap; padding: 0 2px; }
     .warning { color: #ff2d78; font-size: 0.7rem; animation: blink 1s infinite; text-align: center; width: 100%; }
@@ -514,7 +510,7 @@
     .settings-panel.open { display: flex; }
 
     /* ── Touch: eliminate 300ms delay ─────────── */
-    .cyber-button, .mode-btn, .close-order, #btn-home,
+    .cyber-button, .mode-btn, .close-order,
     .ema-check, .rainbow-check, .detailed-check,
     .settings-btn,
     input[type=range], input[type=number],
@@ -602,8 +598,6 @@
 
       /* ── Misc ── */
       .hint { font-size: 0.5rem; gap: 6px; flex-direction: column; }
-      #btn-home { padding: 8px 22px; font-size: 0.68rem; }
-
       /* ── Toast: 手机端略缩小字号 ── */
       #toast-container { max-width: 200px; }
       .toast { font-size: 0.68rem; }
@@ -989,7 +983,7 @@ if (crossunder(fast, slow)) {
     </div>
   </div>
 
-  <div class="return-home"><a href="../Nest.html" id="btn-home">← RETURN HOME</a></div>
+
   <div class="hint">
     <span>⚡ Isolated margin · Per-order leverage · Liquidation at 5% maintenance</span>
     <span>🔹 SL/TP use absolute price · leave blank to skip</span>
@@ -997,22 +991,9 @@ if (crossunder(fast, slow)) {
   </div>
 </div>
 
-<script>/* Load Crypto.html as JS — XHR bypasses .html MIME-type restriction */
-(function () {
-  try {
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', 'Crypto.html', false); // synchronous
-    xhr.send(null);
-    if (xhr.status === 0 || xhr.status === 200) {
-      var s = document.createElement('script');
-      s.textContent = xhr.responseText;
-      document.head.appendChild(s);
-    }
-  } catch (e) {
-    console.warn('[Crypto.html] loader error:', e);
-  }
-})();
-</script>
+<script src="Crypto.js"></script>
+<script src="MarketEngine.js"></script>
+<script src="VirtualTraders.js"></script>
 <script>
 (function () {
 
@@ -1070,86 +1051,13 @@ if (crossunder(fast, slow)) {
   resizeStockCanvas();
 
   /* ═══════════════════════════════════════════
-     价格模型参数
+     价格模型参数（时间步长）
+     情景 / 天鹅事件 / 随机参数 / 支撑压力位
+     → 由 MarketEngine.js 管理，通过 ME 访问
   ═══════════════════════════════════════════ */
-  let mu_user    = 0.02;
-  let sigma_user = 0.10;
-  let mu_base    = mu_user;
-  let sigma_base = sigma_user;
-  const DT_BASE  = 0.1;
-  let   dt       = DT_BASE / 4;   // 每 tick 的有效时间步长 = DT_BASE / simN，默认 N=4
-
-  let mu_t    = mu_user;
-  let sigma_t = sigma_user;
-
-  const VOL_KAPPA   = 2.5;
-  const VOL_OF_VOL  = 0.65;  // 增大：更明显的波动率聚集
-  const DRIFT_KAPPA = 0.8;
-  const DRIFT_VOL   = 0.15;  // 增大：漂移更活跃
-  const JUMP_PROB   = 0.025;
-  const JUMP_MEAN   = -0.005;
-  const JUMP_STD    = 0.04;
-
-  /* ═══════════════════════════════════════════
-     情景系统
-  ═══════════════════════════════════════════ */
-  const REGIMES = [
-    { name:'BULL', weight:0.33, color:'#39ff14', muMult:0.5,  muAdd:+0.09, sigMult:1.30, jumpMult:0.6 },
-    { name:'BEAR', weight:0.27, color:'#ff2d78', muMult:0.5,  muAdd:-0.11, sigMult:1.80, jumpMult:2.2 },
-    { name:'CHOP', weight:0.40, color:'#f5e642', muMult:0.08, muAdd: 0.00, sigMult:0.38, jumpMult:0.4 },
-  ];
-
-  let regimeIdx      = 2;
-  let prevRegimeIdx  = 2;
-  let regimeTick     = 0;
-  let regimeDuration = 120 + Math.floor(Math.random()*180);
-  let regimeBlend    = 1.0;
-  const REGIME_TRANSITION = 30;
-  let effectiveJumpProb = JUMP_PROB;
-
-  /* ═══════════════════════════════════════════
-     天鹅事件系统
-     f(t) = (e·sin(t/π^e) + π·cos(t/e^π) + 7·sin(t/17)) / (e+π+7)
-     level: ±2 = small/black swan, ±3 = large/epic swan
-  ═══════════════════════════════════════════ */
-  const SWAN_PI_E   = Math.pow(Math.PI, Math.E);   // π^e ≈ 22.46
-  const SWAN_E_PI   = Math.pow(Math.E,  Math.PI);  // e^π ≈ 23.14
-  const SWAN_DENOM  = Math.E + Math.PI + 7;        // ≈ 12.86
-  function swanF(t) {
-    return (Math.E  * Math.sin(t / SWAN_PI_E)
-          + Math.PI * Math.cos(t / SWAN_E_PI)
-          + 7       * Math.sin(t / 17)) / SWAN_DENOM;
-  }
-  let swanLevel     = 0;   // current swan level (-3/-2/0/+2/+3)
-  let prevSwanLevel = 0;   // for edge detection (toast only fires once per entry)
-  let swanTOffset   = 1 + Math.floor(Math.random() * 2999); // 随机相位偏移 [1,2999]
-
-  /* ═══════════════════════════════════════════
-     压力位 / 支撑位系统
-     用三条独立 EMA 作为动态 S/R 水平线：
-       EMA20  → 短期支撑/压力
-       EMA55  → 中期支撑/压力
-       EMA120 → 长期支撑/压力
-     邻近区域：均值回归力（靠近 → 受阻）
-     突破区域：动量加速力（穿越 → 惯性延续）
-  ═══════════════════════════════════════════ */
-  const SR_PERIODS    = [20, 55, 120];
-  const SR_ZONE       = 0.018;    // 相对距离阈值（±1.8%）
-  const SR_MAX_FORCE  = 0.0022;   // 最大近区回归力（proximity=1 时）
-  const SR_BREAK_BASE = 0.0035;   // 突破动量基础力（按 sqrt(period/20) 缩放）
-  const SR_BREAK_DECAY= 0.82;     // 每 tick 动量衰减系数
-
-  const srEmaValues = new Map();  // period → 实时 EMA 值（增量更新，独立于显示缓存）
-  const srPrevSide  = new Map();  // period → 上一 tick 相对侧 (1=above / -1=below)
-  let   srBreakDrift = 0;         // 当前累积突破动量 drift
-
-  function updateSREMA(price) {
-    for (const p of SR_PERIODS) {
-      const k    = 2 / (p + 1);
-      const prev = srEmaValues.get(p);
-      srEmaValues.set(p, prev === undefined ? price : prev + k * (price - prev));
-    }
-  }
+  const ME      = window.MarketEngine;
+  const DT_BASE = 0.1;
+  let   dt      = DT_BASE / 4;   // 每 tick 的有效时间步长 = DT_BASE / simN，默认 N=4
 
   /* ═══════════════════════════════════════════
      价格历史 & 动画插值
@@ -1351,8 +1259,7 @@ if (crossunder(fast, slow)) {
   let candleSize      = 4;   // ticks per displayed candle (= _activeTfMult * simN, default 1*4)
   let totalTicks      = 0;   // 单调递增数据点计数（每 tick +1，用于图表聚合/EMA 缓存）
   let simN            = 4;   // 每个原始 T 细分为 N 个 tick，默认 4
-  let _srDecay        = Math.pow(0.82, 1/4);  // Math.pow(SR_BREAK_DECAY, 1/simN)
-  let _srForceScale   = 1/4;                  // 1/simN，每 tick S/R 力缩放
+  // _srDecay / _srForceScale 已移入 MarketEngine，由 ME.applyN() 维护
   let _activeTfMult   = 1;     // 当前 TF 按钮对应的原始 T 倍数（1/5/15/30/60）
   let showEMA5        = true;
   let showEMA20       = false;
@@ -1373,43 +1280,7 @@ if (crossunder(fast, slow)) {
     return mag * Math.cos(2*Math.PI*v);
   }
 
-  /* ═══════════════════════════════════════════
-     情景步进
-  ═══════════════════════════════════════════ */
-  function stepRegime() {
-    regimeTick++;
-    regimeBlend = Math.min(1, regimeBlend + 1/(REGIME_TRANSITION * simN));
-    if (regimeTick >= regimeDuration) {
-      prevRegimeIdx = regimeIdx;
-      let next=regimeIdx, tries=0;
-      while(next===regimeIdx && tries++<20){
-        const r=Math.random(); let cum=0;
-        for(let i=0;i<REGIMES.length;i++){cum+=REGIMES[i].weight;if(r<cum){next=i;break;}}
-      }
-      regimeIdx=next; regimeTick=0;
-      regimeDuration=simN*(100+Math.floor(Math.random()*320));
-      regimeBlend=0;
-    }
-    const b=regimeBlend, curr=REGIMES[regimeIdx], prev=REGIMES[prevRegimeIdx];
-    mu_base    = Math.max(-0.5,Math.min(0.5, mu_user*(prev.muMult*(1-b)+curr.muMult*b) + (prev.muAdd*(1-b)+curr.muAdd*b)));
-    sigma_base = Math.max(0.005, sigma_user*(prev.sigMult*(1-b)+curr.sigMult*b));
-    effectiveJumpProb = JUMP_PROB*(prev.jumpMult*(1-b)+curr.jumpMult*b);
-  }
-
-  /* ═══════════════════════════════════════════
-     随机参数步进
-  ═══════════════════════════════════════════ */
-  function stepStochasticParams() {
-    const sqDt=Math.sqrt(dt);
-    sigma_t = Math.max(sigma_user*0.5,
-      Math.min(sigma_user*2.0,
-        sigma_t + VOL_KAPPA*(sigma_base-sigma_t)*dt + VOL_OF_VOL*sigma_t*normalRandom()*sqDt
-      )
-    );
-    mu_t = Math.max(-0.8,Math.min(0.8,
-      mu_t + DRIFT_KAPPA*(mu_base-mu_t)*dt + DRIFT_VOL*normalRandom()*sqDt
-    ));
-  }
+  // stepRegime / stepStochasticParams 已移入 MarketEngine.js
 
   /* ═══════════════════════════════════════════
      价格步进（每 200ms）
@@ -1422,86 +1293,27 @@ if (crossunder(fast, slow)) {
     prevTickPrice = currentPrice;        // 保存上帧价格，用于插值
     lastTickTime  = performance.now();
 
-    stepRegime();
-    stepStochasticParams();
+    // ── 价格计算核心（已封装至 MarketEngine.stepPriceCore）──
+    const { newPrice, swanEffect, relVol } = ME.stepPriceCore(currentPrice, totalTicks, simN, dt, normalRandom);
+    currentPrice = newPrice;
 
-    // ── 天鹅事件检测（相位除以 simN，保持每 T 周期频率不变） ──
-    const sf = swanF(totalTicks / simN + swanTOffset);
-    prevSwanLevel = swanLevel;
-    swanLevel = sf >  0.98 ?  3
-              : sf >  0.92 ?  2
-              : sf < -0.98 ? -3
-              : sf < -0.92 ? -2
-              : 0;
-    if (swanLevel !== 0 && swanLevel !== prevSwanLevel) {
+    // ── 天鹅事件 Toast（应用层 UI 副作用，保留在此）──
+    if (swanEffect.changed) {
       const SWAN_MSGS = {
          3: ['◆ LARGE WHITE SWAN ◆',  'Extreme bullish shock — major surge!',    'swan-white', 6000],
          2: ['▲ WHITE SWAN',           'Bullish shock — minor surge!',            'swan-white', 4500],
         '-2': ['▼ BLACK SWAN',          'Bearish shock — minor drop!',             'swan-black', 4500],
         '-3': ['◆◆ EPIC BLACK SWAN ◆◆','Epic crash — extreme bearish shock!',     'swan-black', 7000],
       };
-      const m = SWAN_MSGS[swanLevel];
+      const m = SWAN_MSGS[ME.swanLevel];
       if (m) showToast(`<b>${m[0]}</b><br>${m[1]}`, m[2], m[3]);
     }
 
-    // ── 天鹅参数修正 ──
-    const swanVolScale = swanLevel ===  3 ? 2.2
-                       : swanLevel ===  2 ? 1.6
-                       : swanLevel === -2 ? 2.0
-                       : swanLevel === -3 ? 3.2
-                       : 1.0;
-    const swanDriftAdd = swanLevel ===  3 ? +0.015
-                       : swanLevel ===  2 ? +0.008
-                       : swanLevel === -2 ? -0.010
-                       : swanLevel === -3 ? -0.022
-                       : 0;
-
-    // ── 压力位 / 支撑位外力 ──
-    // _srDecay = 0.82^(1/N)，保证 N 个 tick 后总衰减仍为 0.82
-    // 动量每 tick 释放量 = srBreakDrift*(1-_srDecay)/(1-0.82)
-    //   → N 个 tick 的总和恒等于 srBreakDrift，与 N 无关（可验证：几何级数求和）
-    // _srForceScale = 1/N，保证 SR 邻近力每 T 总和不变
-    let srForce  = srBreakDrift * (1 - _srDecay) / (1 - SR_BREAK_DECAY);
-    srBreakDrift *= _srDecay;
-    if (Math.abs(srBreakDrift) < 5e-5) srBreakDrift = 0;
-
-    for (const p of SR_PERIODS) {
-      const L = srEmaValues.get(p);
-      if (L === undefined || L <= 0) continue;
-      const d    = (currentPrice - L) / L;
-      const side = d >= 0 ? 1 : -1;
-      const prev = srPrevSide.get(p);
-
-      if (prev !== undefined && prev !== side) {
-        srBreakDrift += side * SR_BREAK_BASE * Math.sqrt(p / 20);
-      }
-      srPrevSide.set(p, side);
-
-      const absd = Math.abs(d);
-      if (absd < SR_ZONE) {
-        srForce += side * SR_MAX_FORCE * _srForceScale * (1 - absd / SR_ZONE);
-      }
-    }
-
-    const drift     = mu_t - 0.5*sigma_t*sigma_t;
-    const diffusion = sigma_t * swanVolScale * Math.sqrt(dt) * normalRandom();
-    // 跳跃概率按 1/N 缩放，保证每 T 期内期望跳跃次数不变
-    const jump      = Math.random() < effectiveJumpProb / simN ? JUMP_MEAN+JUMP_STD*normalRandom() : 0;
-
-    // swanDriftAdd 是每 T 的目标 log-return 偏移，需除以 simN 换算为每 sub-tick 量
-    currentPrice = currentPrice*Math.exp(drift*dt + diffusion + jump + swanDriftAdd/simN + srForce);
-    if(currentPrice<0.01) currentPrice=0.01;
-
-    updateSREMA(currentPrice);  // 价格确定后更新 S/R EMA
-
     // ── 数据点记录（每 tick 都记录，candleSize = _activeTfMult * simN） ──
-    // 成交量：天鹅事件期间量能激增
-    const swanVolBoost = swanLevel !== 0 ? swanVolScale * 1.4 : 1.0;
-    const relVol = (sigma_t/Math.max(sigma_user,0.001))*(0.7+0.6*Math.random()) * swanVolBoost;
     volumeHistory.push(relVol);
 
     const open=ohlc.length>0?ohlc[ohlc.length-1].c:currentPrice, close=currentPrice;
-    const micro=sigma_t*0.25*Math.random();
+    const micro=ME.sigma_t*0.25*Math.random();
     ohlc.push({o:open, h:Math.max(open,close)*(1+micro), l:Math.max(0.01,Math.min(open,close)*(1-micro)), c:close});
     priceHistory.push(close);
 
@@ -1523,6 +1335,8 @@ if (crossunder(fast, slow)) {
     if(netAssetHistory.length > 2000) netAssetHistory.shift();
     _recordNetAssetStat(_naNew, _naPrev);  // O(1) 增量更新 MDD / Sharpe
     evaluateStrategy();
+    // Virtual traders tick (independent bot accounts)
+    if (window.VirtualTraders) VirtualTraders.tick();
     // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
   }
 
@@ -1622,7 +1436,7 @@ if (crossunder(fast, slow)) {
       regimeEl.style.color      = '#ffaa00';
       regimeEl.style.textShadow = '0 0 10px rgba(255,170,0,0.7)';
     } else {
-      const reg = REGIMES[regimeIdx];
+      const reg = ME.REGIMES[ME.regimeIdx];
       regimeEl.textContent   = reg.name;
       regimeEl.style.color   = reg.color;
       regimeEl.style.textShadow = `0 0 10px ${reg.color}99`;
@@ -1826,13 +1640,7 @@ if (crossunder(fast, slow)) {
     initialCash=parseFloat(initAssetInput.value)||1000;
     cash=initialCash; realizedPnl=0; orders=[]; nextOrderId=1; liquidated=false;
     currentPrice=100; prevTickPrice=100; lastTickTime=performance.now();
-    regimeIdx=2; prevRegimeIdx=2; regimeTick=0;
-    regimeDuration=simN*(120+Math.floor(Math.random()*180)); regimeBlend=1;
-    mu_base=mu_user; sigma_base=sigma_user; effectiveJumpProb=JUMP_PROB;
-    mu_t=mu_user; sigma_t=sigma_user;
-    swanLevel=0; prevSwanLevel=0;
-    swanTOffset = 1 + Math.floor(Math.random() * 2999);
-    srEmaValues.clear(); srPrevSide.clear(); srBreakDrift=0;
+    ME.reset(simN);
     ordersDiv.innerHTML=''; cardRefs.clear();   // 清理所有卡片和缓存 refs
     tradeHistory=[]; netAssetHistory=[]; _smReset();
     historyList.innerHTML=''; historySummary.textContent='';
@@ -1859,27 +1667,12 @@ if (crossunder(fast, slow)) {
   ═══════════════════════════════════════════ */
   function initPrice(){
     ohlc=[]; priceHistory=[]; volumeHistory=[];
-    let p=100,s=sigma_user,m=mu_user;
-    const sqDt=Math.sqrt(dt);
-    const initLen = 100 * simN;   // 保证初始历史覆盖 100 个 T 周期，无论 N 为多少
-    for(let i=0;i<initLen;i++){
-      s=Math.max(sigma_user*0.5,Math.min(sigma_user*2.0,s+VOL_KAPPA*(sigma_user-s)*dt+VOL_OF_VOL*s*normalRandom()*sqDt));
-      m=Math.max(-0.8,Math.min(0.8,m+DRIFT_KAPPA*(mu_user-m)*dt+DRIFT_VOL*normalRandom()*sqDt));
-      const drift=m-0.5*s*s;
-      const jump=Math.random()<JUMP_PROB/simN?JUMP_MEAN+JUMP_STD*normalRandom():0;
-      p=p*Math.exp(drift*dt+s*sqDt*normalRandom()+jump);
-      if(p<0.01)p=0.01;
-      updateSREMA(p);  // 预热 S/R EMA，游戏开始时 srEmaValues 已收敛
-      const open=i===0?p:ohlc[i-1].c, micro=s*0.25*Math.random();
-      ohlc.push({o:open,h:Math.max(open,p)*(1+micro),l:Math.max(0.01,Math.min(open,p)*(1-micro)),c:p});
-      priceHistory.push(p);
-      volumeHistory.push((s/Math.max(sigma_user,0.001))*(0.7+0.6*Math.random()));
-    }
-    currentPrice=priceHistory[priceHistory.length-1];
-    prevTickPrice=currentPrice;
-    sigma_t=s; mu_t=m;
+    // ME.warmup 负责随机游走 + OHLC 生成 + S/R EMA 预热，返回最终价格
+    // 保证初始历史覆盖 100 个 T 周期，无论 N 为多少
+    currentPrice = ME.warmup(simN, dt, normalRandom, ohlc, priceHistory, volumeHistory);
+    prevTickPrice = currentPrice;
     // 对齐 totalTicks，使 getAggregated 的 partialSize 正确（防止 partialSize=0 死循环）
-    totalTicks=priceHistory.length;
+    totalTicks = priceHistory.length;
   }
 
   /* ═══════════════════════════════════════════
@@ -2257,25 +2050,25 @@ if (crossunder(fast, slow)) {
     ctx.fillText('$'+animP.toFixed(2),CW-105,dotY-9);
 
     // ── 情景标签（右上角）──
-    const rCurr=REGIMES[regimeIdx];
-    const inTrans=regimeBlend<0.95;
+    const rCurr=ME.REGIMES[ME.regimeIdx];
+    const inTrans=ME.regimeBlend<0.95;
     ctx.shadowColor=rCurr.color; ctx.shadowBlur=8;
     ctx.font='bold 10px "Orbitron"'; ctx.fillStyle=rCurr.color;
-    const lbl=inTrans?`${REGIMES[prevRegimeIdx].name}→${rCurr.name}`:`◈ ${rCurr.name}`;
+    const lbl=inTrans?`${ME.REGIMES[ME.prevRegimeIdx].name}→${rCurr.name}`:`◈ ${rCurr.name}`;
     ctx.fillText(lbl, CW-(inTrans?100:62), 16);
     ctx.shadowBlur=0;
 
     // ── 天鹅事件标签 ──
-    if(swanLevel !== 0){
+    if(ME.swanLevel !== 0){
       const swanMeta = {
          3: { label:'◆ LARGE WHITE SWAN ◆',  color:'#e0ffff', glow:'rgba(200,255,255,0.6)' },
          2: { label:'▲ WHITE SWAN',           color:'#b0f0ff', glow:'rgba(150,230,255,0.5)' },
         '-2': { label:'▼ BLACK SWAN',          color:'#ff66dd', glow:'rgba(200,0,150,0.5)'   },
         '-3': { label:'◆◆ EPIC BLACK SWAN ◆◆', color:'#ff33cc', glow:'rgba(220,0,120,0.7)'   },
       };
-      const sm = swanMeta[swanLevel];
+      const sm = swanMeta[ME.swanLevel];
       if(sm){
-        ctx.font = swanLevel===3||swanLevel===-3 ? 'bold 11px "Orbitron"' : 'bold 10px "Orbitron"';
+        ctx.font = ME.swanLevel===3||ME.swanLevel===-3 ? 'bold 11px "Orbitron"' : 'bold 10px "Orbitron"';
         ctx.fillStyle   = sm.color;
         ctx.shadowColor = sm.glow;
         ctx.shadowBlur  = 14;
@@ -2287,7 +2080,7 @@ if (crossunder(fast, slow)) {
 
     // ── 底部参数 ──
     ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(0,245,255,0.25)';
-    ctx.fillText(`σ:${(sigma_t*100).toFixed(2)}%  μ:${(mu_t>=0?'+':'')}${(mu_t*100).toFixed(2)}%`,
+    ctx.fillText(`σ:${(ME.sigma_t*100).toFixed(2)}%  μ:${(ME.mu_t>=0?'+':'')}${(ME.mu_t*100).toFixed(2)}%`,
       8, CH - 4);
   }
 
@@ -2745,13 +2538,12 @@ if (crossunder(fast, slow)) {
     summaryPanel.classList.toggle('open');
     renderSummary();
   });
-  muSlider.addEventListener('input',e=>{mu_user=parseFloat(e.target.value);muVal.textContent=(mu_user>=0?'+':'')+mu_user.toFixed(3);});
-  sigmaSlider.addEventListener('input',e=>{sigma_user=parseFloat(e.target.value);sigmaVal.textContent=sigma_user.toFixed(3);});
+  muSlider.addEventListener('input',e=>{ME.mu_user=parseFloat(e.target.value);muVal.textContent=(ME.mu_user>=0?'+':'')+ME.mu_user.toFixed(3);});
+  sigmaSlider.addEventListener('input',e=>{ME.sigma_user=parseFloat(e.target.value);sigmaVal.textContent=ME.sigma_user.toFixed(3);});
   function applySimN(n) {
     simN = n;
     dt   = DT_BASE / n;
-    _srDecay      = Math.pow(0.82, 1 / n);
-    _srForceScale = 1 / n;
+    ME.applyN(n);
     candleSize    = _activeTfMult * n;
 
     // 按 N 缩放历史容量，保证始终有约 200 个 T 周期的原始数据
@@ -2780,11 +2572,7 @@ if (crossunder(fast, slow)) {
     emaCacheTick.clear();
     _aggCache = null;
 
-    // 重置 regime 计时到新 N 的刻度，避免当前 regime 以旧 N 节奏跑完
-    regimeDuration = simN * (100 + Math.floor(Math.random() * 320));
-    regimeTick = 0;
-    regimeBlend = 1.0;
-
+    // regime 计时重置已包含在 ME.applyN(n) 中
     clearInterval(_tickInterval);
     _tickInterval = setInterval(stepPrice, TICK_MS_BASE / n);
   }
@@ -2825,7 +2613,7 @@ if (crossunder(fast, slow)) {
   document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;updateEMACache();});
 
   /* ═══════════════════════════════════════════
-     CRYPTO live mode  (module: Crypto.html)
+     CRYPTO live mode  (module: Crypto.js)
   ═══════════════════════════════════════════ */
   const _cryptoCtx = {
     // Scalar state — getter/setter so module writes propagate back to IIFE scope
@@ -2847,7 +2635,7 @@ if (crossunder(fast, slow)) {
     get volumeHistory()    { return volumeHistory; },     set volumeHistory(v)    { volumeHistory = v; },
     get _aggCache()        { return _aggCache; },         set _aggCache(v)        { _aggCache = v; },
     get trades()           { return trades; },            set trades(v)           { trades = v; },
-    get srBreakDrift()     { return srBreakDrift; },      set srBreakDrift(v)     { srBreakDrift = v; },
+    get srBreakDrift()     { return ME.srBreakDrift; },   set srBreakDrift(v)     { ME.srBreakDrift = v; },
     // Constants / read-only
     get MAX_HISTORY()      { return MAX_HISTORY; },
     get TICK_MS_BASE()     { return TICK_MS_BASE; },
@@ -2868,13 +2656,13 @@ if (crossunder(fast, slow)) {
     get aggEmaCache()      { return aggEmaCache; },
     get aggEmaScratch()    { return aggEmaScratch; },
     get emaCacheTick()     { return emaCacheTick; },
-    get srEmaValues()      { return srEmaValues; },
-    get srPrevSide()       { return srPrevSide; },
+    get srEmaValues()      { return ME.srEmaValues; },
+    get srPrevSide()       { return ME.srPrevSide; },
     // Methods
     refreshUI:           () => refreshUI(),
     triggerFlash:        () => triggerFlash(),
     showToast:           (msg, type, dur) => showToast(msg, type, dur),
-    updateSREMA:         (p) => updateSREMA(p),
+    updateSREMA:         (p) => ME.updateSREMA(p),
     updateEMACache:      () => updateEMACache(),
     checkSLTP:           () => checkSLTP(),
     evaluateStrategy:    () => evaluateStrategy(),
@@ -3203,6 +2991,17 @@ if (crossunder(fast, slow)) {
      初始化 + 主循环
   ═══════════════════════════════════════════ */
   resetGame();
+
+  // Virtual Traders — expose shared market data via getters (live references)
+  if (window.VirtualTraders) {
+    VirtualTraders.init({
+      get currentPrice()  { return currentPrice; },
+      get ohlc()          { return ohlc; },
+      get priceHistory()  { return priceHistory; },
+      get volumeHistory() { return volumeHistory; },
+      get emaCache()      { return emaCache; },
+    });
+  }
 
   // 价格 tick（每 TICK_MS_BASE/simN ms 更新一次）
   let _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
