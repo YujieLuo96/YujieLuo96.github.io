@@ -1010,6 +1010,49 @@ window.BackTest = (function () {
         .bt-cv { font-size: 0.92rem; }
         .bt-cl { font-size: 0.63rem; }
       }
+
+      /* ── Multi-Market Heatmap ── */
+      #bt-mm-tooltip {
+        position: fixed; display: none;
+        background: rgba(6,9,15,0.96);
+        border: 1px solid rgba(0,245,255,0.38);
+        color: #c0d0e0; font-size: 0.71rem;
+        padding: 4px 10px; border-radius: 3px;
+        pointer-events: none; z-index: 9999;
+        white-space: nowrap;
+        font-family: 'Share Tech Mono','Fira Code',monospace;
+        box-shadow: 0 0 12px rgba(0,245,255,0.18);
+        letter-spacing: 0.2px;
+      }
+      .bt-mm-row {
+        display: flex; gap: 10px;
+        margin-bottom: 14px; flex-wrap: wrap;
+      }
+      .bt-mm-wrap {
+        flex: 1 1 180px; min-width: 0;
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(0,245,255,0.10);
+        border-radius: 4px; overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .bt-mm-wrap:hover { border-color: rgba(0,245,255,0.22); }
+      .bt-mm-title {
+        font-size: 0.67rem; color: rgba(0,245,255,0.42);
+        padding: 5px 10px 3px;
+        border-bottom: 1px solid rgba(0,245,255,0.06);
+        letter-spacing: 0.5px;
+      }
+      .bt-mm-canvas {
+        display: block; width: 100%; height: 200px;
+        cursor: crosshair;
+      }
+      @media (max-width: 640px) {
+        .bt-mm-row { flex-direction: column; gap: 8px; }
+        .bt-mm-canvas { height: min(72vw, 280px); }
+      }
+      @media (max-width: 380px) {
+        .bt-mm-canvas { height: 200px; }
+      }
     `;
     document.head.appendChild(s);
   }
@@ -1054,6 +1097,7 @@ window.BackTest = (function () {
     wrap.innerHTML = `
       <button id="bt-msim"    class="bt-mbtn ${_mode === 'sim'    ? 'bt-mbtn-on' : ''}">SIM</button>
       <button id="bt-mcrypto" class="bt-mbtn ${_mode === 'crypto' ? 'bt-mbtn-on' : ''}">CRYPTO</button>
+      <button id="bt-mmulti"  class="bt-mbtn ${_mode === 'multi'  ? 'bt-mbtn-on' : ''}">MULTI</button>
     `;
     // 插到 title 后面、close 前面
     const closeBtn = _el('bt-close');
@@ -1062,12 +1106,21 @@ window.BackTest = (function () {
       _mode = 'sim';
       wrap.querySelector('#bt-msim').classList.add('bt-mbtn-on');
       wrap.querySelector('#bt-mcrypto').classList.remove('bt-mbtn-on');
+      wrap.querySelector('#bt-mmulti').classList.remove('bt-mbtn-on');
       _showForm();
     });
     wrap.querySelector('#bt-mcrypto').addEventListener('click', () => {
       _mode = 'crypto';
       wrap.querySelector('#bt-mcrypto').classList.add('bt-mbtn-on');
       wrap.querySelector('#bt-msim').classList.remove('bt-mbtn-on');
+      wrap.querySelector('#bt-mmulti').classList.remove('bt-mbtn-on');
+      _showForm();
+    });
+    wrap.querySelector('#bt-mmulti').addEventListener('click', () => {
+      _mode = 'multi';
+      wrap.querySelector('#bt-mmulti').classList.add('bt-mbtn-on');
+      wrap.querySelector('#bt-msim').classList.remove('bt-mbtn-on');
+      wrap.querySelector('#bt-mcrypto').classList.remove('bt-mbtn-on');
       _showForm();
     });
   }
@@ -1078,10 +1131,13 @@ window.BackTest = (function () {
     // 同步切换按钮状态（_mode 可能在 open() 时就确定了）
     const simBtn    = _el('bt-msim');
     const cryptoBtn = _el('bt-mcrypto');
+    const multiBtn  = _el('bt-mmulti');
     if (simBtn && cryptoBtn) {
       simBtn.classList.toggle('bt-mbtn-on',    _mode === 'sim');
       cryptoBtn.classList.toggle('bt-mbtn-on', _mode === 'crypto');
+      if (multiBtn) multiBtn.classList.toggle('bt-mbtn-on', _mode === 'multi');
     }
+    if (_mode === 'multi') { _showMultiForm(); return; }
 
     const p  = _initP;
     const mu = (p.mu ?? 0).toFixed(2);
@@ -1194,6 +1250,8 @@ window.BackTest = (function () {
       return;
     }
 
+    if (_mode === 'multi') { await _startMultiRun(code); return; }
+
     // 提前读取所有参数（表单保持可见，参数始终可读）
     const runs = _intVal('btp-runs', 1);
     const cash = _floatVal('btp-cash', 10000);
@@ -1266,7 +1324,9 @@ window.BackTest = (function () {
 
   function _resetBtn() {
     const btn = document.getElementById('bt-runbtn');
-    if (btn) { btn.disabled = false; btn.textContent = '▶ RUN BACKTEST'; }
+    if (!btn) return;
+    btn.disabled = false;
+    btn.textContent = _mode === 'multi' ? '▶ RUN MULTI-MARKET' : '▶ RUN BACKTEST';
   }
 
   function _showProgress(runs) {
@@ -1856,7 +1916,393 @@ window.BackTest = (function () {
   function _closePanel() {
     const container = document.getElementById('bt-inline');
     if (container) container.style.display = 'none';
+    if (_mmTooltipEl) _mmTooltipEl.style.display = 'none';
     _panel = null;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     12. Multi-Market Heatmap（40×40 参数网格回测）
+         X轴: μ ∈ [-0.40, +0.40]  Y轴: σ ∈ [0.025, 1.00]
+         每格跑 runsPerCell 次取均值，输出 3 张热力图：
+         totalReturn / winRate / profitFactor
+  ═══════════════════════════════════════════════════════════════ */
+  const MM_GRID   = 40;
+  const MM_MU_MIN = -0.4, MM_MU_MAX  = 0.4;
+
+  function _mmMuValues() {
+    return Array.from({length: MM_GRID}, (_, i) =>
+      MM_MU_MIN + i * (MM_MU_MAX - MM_MU_MIN) / (MM_GRID - 1));
+  }
+  function _mmSigValues() {
+    // σ: 0.025 ~ 1.0（避免 σ=0 退化情况）
+    return Array.from({length: MM_GRID}, (_, i) => (i + 1) / MM_GRID);
+  }
+
+  async function _runMultiMarket(params, onProgress) {
+    const { stratCode, ticks, runsPerCell, initialCash, leverage, includeRegimes } = params;
+    const GRID      = MM_GRID;
+    const muValues  = _mmMuValues();
+    const sigValues = _mmSigValues();
+    const total     = GRID * GRID;
+    const retGrid   = new Float32Array(GRID * GRID);
+    const wrGrid    = new Float32Array(GRID * GRID);
+    const pfGrid    = new Float32Array(GRID * GRID);
+
+    const sessionSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
+
+    for (let si = 0; si < GRID; si++) {
+      const sigma = sigValues[si];
+      for (let mi = 0; mi < GRID; mi++) {
+        const mu  = muValues[mi];
+        const idx = si * GRID + mi;
+        let sumRet = 0, sumWr = 0, sumPf = 0, validRuns = 0;
+
+        for (let r = 0; r < runsPerCell; r++) {
+          const seed   = (sessionSeed + (idx * runsPerCell + r + 1) * 0x9E3779B9) >>> 0;
+          const market = _simMarket({ mu, sigma, ticks, seed, includeRegimes });
+          const run    = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
+          if (!run.error) {
+            const stats = _computeRunStats(run);
+            sumRet += stats.totalReturn;
+            sumWr  += stats.winRate;
+            const pf = isFinite(stats.profitFactor) ? Math.min(stats.profitFactor, 10) : 10;
+            sumPf  += pf;
+            validRuns++;
+          }
+        }
+        retGrid[idx] = validRuns > 0 ? sumRet / validRuns : 0;
+        wrGrid[idx]  = validRuns > 0 ? sumWr  / validRuns : 0;
+        pfGrid[idx]  = validRuns > 0 ? sumPf  / validRuns : 0;
+      }
+      // 每行（40格）yield 一次，保持 UI 响应
+      onProgress(Math.min((si + 1) * GRID, total), total);
+      await _yield();
+    }
+    return { retGrid, wrGrid, pfGrid, muValues, sigValues };
+  }
+
+  // ── 色彩映射函数（t∈[0,1]，vMin/vMax 用于语义中心定位）─────
+
+  /** totalReturn：以 0% 为中心，负→红，正→绿 */
+  function _mmColorReturn(t, vMin, vMax) {
+    const vRange = (vMax - vMin) || 1;
+    const zeroT  = Math.max(0, Math.min(1, (0 - vMin) / vRange));
+    if (t <= zeroT) {
+      const u = zeroT > 0 ? t / zeroT : 0;
+      return [Math.round(220 - 150*u), Math.round(20 + 10*u), Math.round(40 + 80*u)];
+    } else {
+      const u = zeroT < 1 ? (t - zeroT) / (1 - zeroT) : 1;
+      return [Math.round(70*(1-u) + 10*u), Math.round(30 + 225*u), Math.round(120*(1-u) + 15*u)];
+    }
+  }
+
+  /** winRate：深蓝→亮青，单色递进 */
+  function _mmColorWinrate(t) {
+    return [6, Math.round(20 + 225*t), Math.round(30 + 215*t)];
+  }
+
+  /** profitFactor：以 1.0 为中心，< 1→红，> 1→绿 */
+  function _mmColorPF(t, vMin, vMax) {
+    const vRange = (vMax - vMin) || 1;
+    const oneT   = Math.max(0, Math.min(1, (1 - vMin) / vRange));
+    if (t <= oneT) {
+      const u = oneT > 0 ? t / oneT : 0;
+      return [Math.round(160 - 100*u), Math.round(10 + 15*u), Math.round(20 + 15*u)];
+    } else {
+      const u = oneT < 1 ? (t - oneT) / (1 - oneT) : 1;
+      return [Math.round(60*(1-u)), Math.round(25 + 230*u), Math.round(35*(1-u))];
+    }
+  }
+
+  // ── 热力图 Canvas 绘制 ─────────────────────────────────────────
+  function _drawHeatmap(canvas, grid, { GRID, muValues, sigValues, colorFn, fmtLbl }) {
+    const W = canvas.offsetWidth  || 260;
+    const H = canvas.offsetHeight || 200;
+    canvas.width  = W;
+    canvas.height = H;
+
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#06090f';
+    ctx.fillRect(0, 0, W, H);
+
+    const PAD = { t: 8, r: 58, b: 26, l: 32 };
+    const gW  = W - PAD.l - PAD.r;
+    const gH  = H - PAD.t - PAD.b;
+    const cW  = gW / GRID;
+    const cH  = gH / GRID;
+
+    // 值域（避免 spread 大数组）
+    let vMin = grid[0], vMax = grid[0];
+    for (let i = 1; i < grid.length; i++) {
+      if (grid[i] < vMin) vMin = grid[i];
+      if (grid[i] > vMax) vMax = grid[i];
+    }
+    const vRange = (vMax - vMin) || 1;
+
+    // 绘制格子
+    for (let si = 0; si < GRID; si++) {
+      for (let mi = 0; mi < GRID; mi++) {
+        const v  = grid[si * GRID + mi];
+        const t  = Math.max(0, Math.min(1, (v - vMin) / vRange));
+        const [r, g, b] = colorFn(t, vMin, vMax);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        // +0.5 消除子像素缝隙
+        ctx.fillRect(
+          PAD.l + mi * cW,
+          PAD.t + (GRID - 1 - si) * cH,
+          Math.ceil(cW) + 0.5, Math.ceil(cH) + 0.5
+        );
+      }
+    }
+
+    // ── 图例色条（右侧）
+    const barX = W - PAD.r + 8;
+    const barW = 10;
+    for (let j = 0; j < gH; j++) {
+      const t = 1 - j / gH;
+      const [r, g, b] = colorFn(t, vMin, vMax);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(barX, PAD.t + j, barW, 1);
+    }
+    ctx.strokeStyle = 'rgba(0,245,255,0.14)';
+    ctx.lineWidth   = 0.5;
+    ctx.strokeRect(barX, PAD.t, barW, gH);
+
+    // 图例标签
+    ctx.fillStyle    = 'rgba(192,208,224,0.50)';
+    ctx.font         = '9px "Share Tech Mono",monospace';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(fmtLbl(vMax),          barX + barW + 2, PAD.t + 5);
+    ctx.fillText(fmtLbl((vMin+vMax)/2), barX + barW + 2, PAD.t + gH / 2);
+    ctx.fillText(fmtLbl(vMin),          barX + barW + 2, PAD.t + gH - 5);
+
+    // ── μ 轴（X，底部）
+    ctx.fillStyle    = 'rgba(192,208,224,0.40)';
+    ctx.font         = '8px "Share Tech Mono",monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'top';
+    [0, 10, 20, 30, 39].forEach(i => {
+      ctx.fillText(muValues[i].toFixed(2), PAD.l + (i + 0.5) * cW, H - PAD.b + 2);
+    });
+    ctx.fillStyle = 'rgba(0,245,255,0.50)';
+    ctx.font      = '9px "Share Tech Mono",monospace';
+    ctx.fillText('μ (drift)', PAD.l + gW / 2, H - 11);
+
+    // ── σ 轴（Y，左侧）
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = 'rgba(192,208,224,0.40)';
+    ctx.font         = '8px "Share Tech Mono",monospace';
+    [0, 10, 20, 30, 39].forEach(i => {
+      const y = PAD.t + (GRID - 1 - i) * cH + cH / 2;
+      ctx.fillText(sigValues[i].toFixed(2), PAD.l - 3, y);
+    });
+    ctx.fillStyle = 'rgba(0,245,255,0.50)';
+    ctx.save();
+    ctx.translate(9, PAD.t + gH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font         = '9px "Share Tech Mono",monospace';
+    ctx.fillText('σ (vol)', 0, 0);
+    ctx.restore();
+  }
+
+  // ── Tooltip（共用 fixed div，body 级，避免 overflow:hidden 裁剪）──
+  let _mmTooltipEl = null;
+
+  function _ensureMMTooltip() {
+    if (!_mmTooltipEl) {
+      _mmTooltipEl = document.createElement('div');
+      _mmTooltipEl.id = 'bt-mm-tooltip';
+      document.body.appendChild(_mmTooltipEl);
+    }
+    return _mmTooltipEl;
+  }
+
+  function _attachHeatmapTooltip(canvas, grid, muValues, sigValues, fmtVal) {
+    const GRID = MM_GRID;
+    const tt   = _ensureMMTooltip();
+
+    function _pick(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const cx   = clientX - rect.left;
+      const cy   = clientY - rect.top;
+      const W    = rect.width, H = rect.height;
+      const PAD  = { t: 8, r: 58, b: 26, l: 32 };
+      const gW   = W - PAD.l - PAD.r;
+      const gH   = H - PAD.t - PAD.b;
+      if (cx < PAD.l || cx > PAD.l + gW || cy < PAD.t || cy > PAD.t + gH) return null;
+      const mi  = Math.min(GRID - 1, Math.floor((cx - PAD.l) / gW * GRID));
+      const si  = Math.min(GRID - 1, GRID - 1 - Math.floor((cy - PAD.t) / gH * GRID));
+      if (mi < 0 || si < 0) return null;
+      return { mi, si };
+    }
+
+    function onMove(e) {
+      const clientX = e.clientX !== undefined ? e.clientX : e.touches?.[0]?.clientX;
+      const clientY = e.clientY !== undefined ? e.clientY : e.touches?.[0]?.clientY;
+      if (clientX === undefined) return;
+      const cell = _pick(clientX, clientY);
+      if (!cell) { tt.style.display = 'none'; return; }
+      const { mi, si } = cell;
+      const val = grid[si * GRID + mi];
+      const mu  = muValues[mi];
+      const sig = sigValues[si];
+      tt.textContent = `μ=${mu>=0?'+':''}${mu.toFixed(3)}  σ=${sig.toFixed(3)}  →  ${fmtVal(val)}`;
+      tt.style.display = 'block';
+      tt.style.left    = (clientX + 14) + 'px';
+      tt.style.top     = (clientY - 36) + 'px';
+    }
+    canvas.addEventListener('mousemove',  onMove);
+    canvas.addEventListener('mouseleave', () => { tt.style.display = 'none'; });
+    canvas.addEventListener('touchmove',  onMove, { passive: true });
+    canvas.addEventListener('touchend',   () => { tt.style.display = 'none'; });
+  }
+
+  // ── Multi 参数表单 ─────────────────────────────────────────────
+  function _showMultiForm() {
+    const p  = _initP;
+    const lv = p.leverage ?? 1;
+    const ca = p.cash ?? 10000;
+    _el('bt-form').innerHTML = `
+      <div class="bt-sec">▸ MULTI-MARKET GRID</div>
+      <div style="font-size:0.65rem;color:rgba(192,208,224,0.36);padding:0 0 10px 8px;line-height:1.6">
+        40×40 网格：μ ∈ [−0.40, +0.40] × σ ∈ [0.025, 1.00]<br>
+        共 1600 格，每格独立回测取均值，绘制三张热力图。
+      </div>
+      <div class="bt-sec">▸ TEST PARAMETERS</div>
+      <div class="bt-form-grid">
+        <div class="bt-field">
+          <span class="bt-lbl">Duration (bars)</span>
+          <input class="bt-inp" id="btp-mm-ticks" type="number" min="50" max="2000" value="300">
+        </div>
+        <div class="bt-field">
+          <span class="bt-lbl">Runs / Cell</span>
+          <input class="bt-inp" id="btp-mm-rpc" type="number" min="1" max="10" value="2">
+        </div>
+        <div class="bt-field">
+          <span class="bt-lbl">Initial Cash ($)</span>
+          <input class="bt-inp" id="btp-mm-cash" type="number" min="100" value="${ca}">
+        </div>
+        <div class="bt-field">
+          <span class="bt-lbl">Leverage</span>
+          <input class="bt-inp" id="btp-mm-lev" type="number" min="1" max="100" value="${lv}">
+        </div>
+        <label class="bt-field-cb full">
+          <input class="bt-cb" id="btp-mm-reg" type="checkbox" checked>
+          <span>Include Regimes</span>
+        </label>
+      </div>
+      <div style="font-size:0.67rem;color:rgba(192,208,224,0.28);padding:4px 0 0 2px">
+        建议 Runs/Cell ≤ 3（总计 1600×runs 次回测）
+      </div>
+      <button class="bt-run" id="bt-runbtn">▶ RUN MULTI-MARKET</button>
+    `;
+    _el('bt-runbtn').addEventListener('click', _startRun);
+  }
+
+  // ── Multi 主运行入口 ───────────────────────────────────────────
+  async function _startMultiRun(code) {
+    const ticks       = _intVal('btp-mm-ticks', 300);
+    const runsPerCell = Math.min(10, Math.max(1, _intVal('btp-mm-rpc', 2)));
+    const cash        = _floatVal('btp-mm-cash', 10000);
+    const lev         = _floatVal('btp-mm-lev', 1);
+    const incReg      = document.getElementById('btp-mm-reg')?.checked ?? true;
+    const total       = MM_GRID * MM_GRID;
+
+    const runBtn = _el('bt-runbtn');
+    if (runBtn) { runBtn.disabled = true; runBtn.textContent = '⏳ RUNNING...'; }
+
+    _el('bt-res').style.display  = 'none';
+    _el('bt-prog').style.display = 'block';
+    _el('bt-prog').innerHTML = `
+      <div class="bt-pmsg" id="bt-pmsg">正在计算 1600 个市场参数组合...</div>
+      <div class="bt-pbar"><div class="bt-pfill" id="bt-pfill" style="width:0%"></div></div>
+      <div class="bt-plbl" id="bt-plbl">0 / ${total} cells</div>
+    `;
+
+    function onProgress(done, tot) {
+      const pct  = done / tot * 100;
+      const fill = _el('bt-pfill'), lbl = _el('bt-plbl'), msg = _el('bt-pmsg');
+      if (fill) fill.style.width = pct + '%';
+      if (lbl)  lbl.textContent  = `${done} / ${tot} cells`;
+      if (msg)  msg.textContent  = `Multi-Market: 已完成 ${done} / ${tot} 格`;
+    }
+
+    try {
+      const data = await _runMultiMarket({
+        stratCode: code, ticks, runsPerCell,
+        initialCash: cash, leverage: lev, includeRegimes: incReg,
+      }, onProgress);
+      _el('bt-prog').style.display = 'none';
+      _renderMultiResults(data);
+    } catch (e) {
+      _el('bt-prog').style.display = 'none';
+      _showError('Multi-Market 运行失败: ' + e.message);
+    }
+    _resetBtn();
+  }
+
+  // ── 结果渲染（3 张热力图）────────────────────────────────────
+  function _renderMultiResults({ retGrid, wrGrid, pfGrid, muValues, sigValues }) {
+    const r = _el('bt-res');
+    r.style.display = 'block';
+    r.innerHTML = `
+      <div class="bt-res-hdr">
+        ▸ MULTI-MARKET HEATMAP
+        <span style="font-size:0.67rem;color:rgba(192,208,224,0.38)">40×40 grid · hover/touch for values</span>
+      </div>
+      <div class="bt-mm-row">
+        <div class="bt-mm-wrap">
+          <div class="bt-mm-title">TOTAL RETURN (%)</div>
+          <canvas class="bt-mm-canvas" id="bt-mm-ret"></canvas>
+        </div>
+        <div class="bt-mm-wrap">
+          <div class="bt-mm-title">WIN RATE (%)</div>
+          <canvas class="bt-mm-canvas" id="bt-mm-wr"></canvas>
+        </div>
+        <div class="bt-mm-wrap">
+          <div class="bt-mm-title">PROFIT FACTOR (cap 10)</div>
+          <canvas class="bt-mm-canvas" id="bt-mm-pf"></canvas>
+        </div>
+      </div>
+    `;
+    r.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    requestAnimationFrame(() => {
+      const GRID = MM_GRID;
+      const retCanvas = _el('bt-mm-ret');
+      const wrCanvas  = _el('bt-mm-wr');
+      const pfCanvas  = _el('bt-mm-pf');
+
+      if (retCanvas) {
+        _drawHeatmap(retCanvas, retGrid, {
+          GRID, muValues, sigValues, colorFn: _mmColorReturn,
+          fmtLbl: v => (v >= 0 ? '+' : '') + v.toFixed(1) + '%',
+        });
+        _attachHeatmapTooltip(retCanvas, retGrid, muValues, sigValues,
+          v => (v >= 0 ? '+' : '') + v.toFixed(2) + '%');
+      }
+      if (wrCanvas) {
+        _drawHeatmap(wrCanvas, wrGrid, {
+          GRID, muValues, sigValues, colorFn: _mmColorWinrate,
+          fmtLbl: v => v.toFixed(1) + '%',
+        });
+        _attachHeatmapTooltip(wrCanvas, wrGrid, muValues, sigValues,
+          v => v.toFixed(1) + '% win rate');
+      }
+      if (pfCanvas) {
+        _drawHeatmap(pfCanvas, pfGrid, {
+          GRID, muValues, sigValues, colorFn: _mmColorPF,
+          fmtLbl: v => v.toFixed(2),
+        });
+        _attachHeatmapTooltip(pfCanvas, pfGrid, muValues, sigValues,
+          v => 'PF=' + v.toFixed(2));
+      }
+    });
   }
 
   /* ═══════════════════════════════════════════════════════════════
