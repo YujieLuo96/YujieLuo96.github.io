@@ -703,22 +703,22 @@ window.BackTest = (function () {
         flex: 1; overflow-y: auto; padding: 16px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: thin;
-        scrollbar-color: rgba(0,245,255,0.35) rgba(0,245,255,0.04);
+        scrollbar-color: rgba(0,245,255,0.38) rgba(0,245,255,0.03);
       }
-      #bt-body::-webkit-scrollbar { width: 6px; }
+      #bt-body::-webkit-scrollbar { width: 5px; }
       #bt-body::-webkit-scrollbar-track {
-        background: rgba(0,245,255,0.03);
+        background: rgba(0,245,255,0.025);
         border-left: 1px solid rgba(0,245,255,0.08);
       }
       #bt-body::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, rgba(0,245,255,0.55), rgba(255,45,120,0.45));
+        background: linear-gradient(180deg, rgba(0,245,255,0.52), rgba(255,45,120,0.42));
         border-radius: 0;
-        border-left: 1px solid rgba(0,245,255,0.25);
-        box-shadow: inset 0 0 4px rgba(0,245,255,0.2), 0 0 6px rgba(0,245,255,0.25);
+        border-left: 1px solid rgba(0,245,255,0.22);
+        box-shadow: inset 0 0 4px rgba(0,245,255,0.18), 0 0 6px rgba(0,245,255,0.22);
       }
       #bt-body::-webkit-scrollbar-thumb:hover {
         background: linear-gradient(180deg, rgba(0,245,255,0.80), rgba(255,45,120,0.65));
-        box-shadow: inset 0 0 4px rgba(0,245,255,0.3), 0 0 10px rgba(0,245,255,0.45);
+        box-shadow: inset 0 0 4px rgba(0,245,255,0.30), 0 0 10px rgba(0,245,255,0.42);
       }
       #bt-body::-webkit-scrollbar-corner { background: transparent; }
 
@@ -731,32 +731,61 @@ window.BackTest = (function () {
         border-bottom: 1px solid rgba(0,245,255,0.1);
         border-left: 2px solid rgba(0,245,255,0.45);
       }
-      .bt-row {
-        display: flex; align-items: center;
-        gap: 8px; margin-bottom: 10px;
+      /* ── 2-col parameter grid ── */
+      .bt-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 5px 8px;
+        margin-bottom: 4px;
       }
-      .bt-lbl {
-        font-size: 0.76rem; color: rgba(192,208,224,0.6);
-        width: 150px; flex-shrink: 0;
-      }
-      .bt-inp {
-        background: rgba(0,245,255,0.03);
-        border: 1px solid rgba(0,245,255,0.18);
-        border-radius: 2px; color: #c0d0e0;
-        padding: 7px 10px; font-family: inherit;
-        font-size: 0.82rem; flex: 1; min-width: 0;
-        min-height: 40px; outline: none;
-        -webkit-appearance: none; appearance: none;
-        touch-action: manipulation;
+      /* shared full-span helper */
+      .full { grid-column: 1 / -1; }
+      /* segmented field: [Label | input] in one bordered box */
+      .bt-field {
+        display: flex; align-items: stretch;
+        border: 1px solid rgba(0,245,255,0.15);
+        border-radius: 2px; overflow: hidden;
         transition: border-color 0.15s, box-shadow 0.15s;
       }
-      .bt-inp:focus {
-        border-color: rgba(0,245,255,0.55);
-        box-shadow: 0 0 0 1px rgba(0,245,255,0.12), 0 0 10px rgba(0,245,255,0.12);
+      .bt-field:focus-within {
+        border-color: rgba(0,245,255,0.48);
+        box-shadow: 0 0 0 1px rgba(0,245,255,0.09), 0 0 8px rgba(0,245,255,0.07);
       }
+      .bt-lbl {
+        font-size: 0.61rem; color: rgba(192,208,224,0.46);
+        white-space: nowrap; letter-spacing: 0.15px;
+        padding: 0 7px;
+        background: rgba(0,245,255,0.025);
+        border-right: 1px solid rgba(0,245,255,0.1);
+        flex-shrink: 0;
+        display: flex; align-items: center;
+      }
+      .bt-inp {
+        flex: 1; min-width: 0;
+        background: transparent; border: none; outline: none;
+        color: #c0d0e0;
+        padding: 7px 8px; font-family: inherit;
+        font-size: 0.80rem; min-height: 34px;
+        -webkit-appearance: none; appearance: none;
+        touch-action: manipulation;
+        transition: background 0.12s;
+      }
+      .bt-inp:focus { background: rgba(0,245,255,0.03); }
       select.bt-inp { background: #080e18; cursor: pointer; }
-      .bt-inp[type="date"] { color-scheme: dark; }
-      .bt-cb { width: 20px; height: 20px; accent-color: #00f5ff; cursor: pointer; flex-shrink: 0; }
+      .bt-inp[type="date"] { color-scheme: dark; background: transparent; }
+      /* checkbox row — sits directly in grid as a label element */
+      .bt-field-cb {
+        display: flex; align-items: center; gap: 8px;
+        padding: 6px 10px; cursor: pointer;
+        background: rgba(0,245,255,0.02);
+        border: 1px solid rgba(0,245,255,0.12);
+        border-radius: 2px;
+        font-size: 0.74rem; color: rgba(192,208,224,0.62);
+        user-select: none;
+        transition: border-color 0.15s;
+      }
+      .bt-field-cb:hover { border-color: rgba(0,245,255,0.28); }
+      .bt-cb { width: 14px; height: 14px; accent-color: #00f5ff; cursor: pointer; flex-shrink: 0; }
       .bt-run {
         background: linear-gradient(135deg, rgba(0,245,255,0.13), rgba(0,245,255,0.06));
         border: 1px solid rgba(0,245,255,0.38);
@@ -904,16 +933,25 @@ window.BackTest = (function () {
       /* ── Overflow table wrappers (horizontal cyber scrollbar) ── */
       [style*="overflow-x:auto"], [style*="overflow-x: auto"] {
         scrollbar-width: thin;
-        scrollbar-color: rgba(0,245,255,0.3) transparent;
+        scrollbar-color: rgba(0,245,255,0.38) rgba(0,245,255,0.03);
       }
       [style*="overflow-x:auto"]::-webkit-scrollbar,
       [style*="overflow-x: auto"]::-webkit-scrollbar { height: 4px; }
       [style*="overflow-x:auto"]::-webkit-scrollbar-track,
-      [style*="overflow-x: auto"]::-webkit-scrollbar-track { background: rgba(0,245,255,0.03); }
+      [style*="overflow-x: auto"]::-webkit-scrollbar-track {
+        background: rgba(0,245,255,0.025);
+        border-top: 1px solid rgba(0,245,255,0.08);
+      }
       [style*="overflow-x:auto"]::-webkit-scrollbar-thumb,
       [style*="overflow-x: auto"]::-webkit-scrollbar-thumb {
-        background: linear-gradient(90deg, rgba(0,245,255,0.45), rgba(255,45,120,0.35));
+        background: linear-gradient(90deg, rgba(0,245,255,0.52), rgba(255,45,120,0.42));
         border-radius: 0;
+        box-shadow: inset 0 0 3px rgba(0,245,255,0.15);
+      }
+      [style*="overflow-x:auto"]::-webkit-scrollbar-thumb:hover,
+      [style*="overflow-x: auto"]::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(90deg, rgba(0,245,255,0.80), rgba(255,45,120,0.65));
+        box-shadow: inset 0 0 3px rgba(0,245,255,0.25);
       }
 
       /* ── Section label ── */
@@ -942,17 +980,12 @@ window.BackTest = (function () {
       }
       .bt-radar-canvas { display: block; width: 180px; height: 180px; }
 
-      /* ══ Mobile ≤640px ══ */
+      /* ══ Tablet 481–640px: keep 2-col, bigger touch targets ══ */
       @media (max-width: 640px) {
         #bt-inline { max-height: none; }
-        #bt-body {
-          padding: 10px;
-          /* 移动端让系统处理滚动条，不强制宽度 */
-          scrollbar-width: none;
-        }
+        #bt-body { padding: 10px; scrollbar-width: none; }
         #bt-body::-webkit-scrollbar { display: none; }
-        .bt-lbl  { width: 100px; font-size: 0.71rem; }
-        .bt-inp  { font-size: 0.78rem; min-height: 44px; }
+        .bt-inp  { min-height: 40px; font-size: 0.78rem; }
         .bt-run  { min-height: 50px; }
         .bt-cards { grid-template-columns: repeat(2, 1fr); gap: 7px; }
         .bt-cv  { font-size: 1rem; }
@@ -962,15 +995,18 @@ window.BackTest = (function () {
         .bt-sr-row { flex-direction: column; }
         .bt-sr-radar { width: min(200px, 88vw); margin: 0 auto; }
         .bt-radar-canvas { width: 100%; height: auto; aspect-ratio: 1; }
-        /* 保留左边框所需的 left padding */
         .bt-res-hdr { padding: 10px 0 8px 8px; }
         .bt-sec { margin-top: 14px; }
       }
+      /* ══ Phone ≤480px: keep 2-col, larger touch ══ */
+      @media (max-width: 480px) {
+        .bt-form-grid { gap: 4px; }
+        .bt-lbl { font-size: 0.60rem; padding: 0 5px; }
+        .bt-inp  { min-height: 42px; padding: 6px 5px; font-size: 0.76rem; }
+      }
       @media (max-width: 380px) {
-        .bt-lbl { width: 84px; font-size: 0.68rem; }
         .bt-cards { grid-template-columns: repeat(2, 1fr); gap: 6px; }
         .bt-canvas { height: 110px; }
-        .bt-row { gap: 5px; margin-bottom: 8px; }
         .bt-cv { font-size: 0.92rem; }
         .bt-cl { font-size: 0.63rem; }
       }
@@ -1056,22 +1092,40 @@ window.BackTest = (function () {
     if (_mode === 'sim') {
       _el('bt-form').innerHTML = `
         <div class="bt-sec">▸ MARKET PARAMETERS</div>
-        <div class="bt-row"><label class="bt-lbl">Market Drift μ</label>
-          <input class="bt-inp" id="btp-mu" type="number" step="0.01" value="${mu}"></div>
-        <div class="bt-row"><label class="bt-lbl">Volatility σ</label>
-          <input class="bt-inp" id="btp-sigma" type="number" step="0.01" min="0.01" value="${sg}"></div>
-        <div class="bt-row"><label class="bt-lbl">Include Regimes</label>
-          <input class="bt-cb" id="btp-reg" type="checkbox" checked></div>
+        <div class="bt-form-grid">
+          <div class="bt-field">
+            <span class="bt-lbl">Market Drift μ</span>
+            <input class="bt-inp" id="btp-mu" type="number" step="0.01" value="${mu}">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Volatility σ</span>
+            <input class="bt-inp" id="btp-sigma" type="number" step="0.01" min="0.01" value="${sg}">
+          </div>
+          <label class="bt-field-cb full">
+            <input class="bt-cb" id="btp-reg" type="checkbox" checked>
+            <span>Include Regimes</span>
+          </label>
+        </div>
 
         <div class="bt-sec">▸ TEST PARAMETERS</div>
-        <div class="bt-row"><label class="bt-lbl">Duration (bars)</label>
-          <input class="bt-inp" id="btp-ticks" type="number" min="50" max="5000" value="500"></div>
-        <div class="bt-row"><label class="bt-lbl">Initial Cash ($)</label>
-          <input class="bt-inp" id="btp-cash" type="number" min="100" value="${ca}"></div>
-        <div class="bt-row"><label class="bt-lbl">Leverage</label>
-          <input class="bt-inp" id="btp-lev" type="number" min="1" max="100" value="${lv}"></div>
-        <div class="bt-row"><label class="bt-lbl">Number of Runs</label>
-          <input class="bt-inp" id="btp-runs" type="number" min="1" max="50" value="10"></div>
+        <div class="bt-form-grid">
+          <div class="bt-field">
+            <span class="bt-lbl">Duration (bars)</span>
+            <input class="bt-inp" id="btp-ticks" type="number" min="50" max="5000" value="500">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Initial Cash ($)</span>
+            <input class="bt-inp" id="btp-cash" type="number" min="100" value="${ca}">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Leverage</span>
+            <input class="bt-inp" id="btp-lev" type="number" min="1" max="100" value="${lv}">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Number of Runs</span>
+            <input class="bt-inp" id="btp-runs" type="number" min="1" max="50" value="10">
+          </div>
+        </div>
         <button class="bt-run" id="bt-runbtn">▶ RUN BACKTEST</button>
       `;
     } else {
@@ -1082,28 +1136,46 @@ window.BackTest = (function () {
 
       _el('bt-form').innerHTML = `
         <div class="bt-sec">▸ MARKET PARAMETERS</div>
-        <div class="bt-row"><label class="bt-lbl">Symbol</label>
-          <input class="bt-inp" id="btp-sym" type="text" value="${sym}" placeholder="BTCUSDT"></div>
-        <div class="bt-row"><label class="bt-lbl">Interval</label>
-          <select class="bt-inp" id="btp-iv">
-            <option value="1h" selected>1h</option>
-            <option value="4h">4h</option>
-            <option value="1d">1d</option>
-            <option value="15m">15m</option>
-            <option value="5m">5m</option>
-          </select></div>
-        <div class="bt-row"><label class="bt-lbl">Date From</label>
-          <input class="bt-inp" id="btp-from" type="date" value="${toStr(def90)}"></div>
-        <div class="bt-row"><label class="bt-lbl">Date To</label>
-          <input class="bt-inp" id="btp-to" type="date" value="${toStr(now)}"></div>
+        <div class="bt-form-grid">
+          <div class="bt-field">
+            <span class="bt-lbl">Symbol</span>
+            <input class="bt-inp" id="btp-sym" type="text" value="${sym}" placeholder="BTCUSDT">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Interval</span>
+            <select class="bt-inp" id="btp-iv">
+              <option value="1h" selected>1h</option>
+              <option value="4h">4h</option>
+              <option value="1d">1d</option>
+              <option value="15m">15m</option>
+              <option value="5m">5m</option>
+            </select>
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Date From</span>
+            <input class="bt-inp" id="btp-from" type="date" value="${toStr(def90)}">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Date To</span>
+            <input class="bt-inp" id="btp-to" type="date" value="${toStr(now)}">
+          </div>
+        </div>
 
         <div class="bt-sec">▸ TEST PARAMETERS</div>
-        <div class="bt-row"><label class="bt-lbl">Initial Cash ($)</label>
-          <input class="bt-inp" id="btp-cash" type="number" min="100" value="${ca}"></div>
-        <div class="bt-row"><label class="bt-lbl">Leverage</label>
-          <input class="bt-inp" id="btp-lev" type="number" min="1" max="100" value="${lv}"></div>
-        <div class="bt-row"><label class="bt-lbl">Runs (walk-fwd)</label>
-          <input class="bt-inp" id="btp-runs" type="number" min="1" max="12" value="1"></div>
+        <div class="bt-form-grid">
+          <div class="bt-field">
+            <span class="bt-lbl">Initial Cash ($)</span>
+            <input class="bt-inp" id="btp-cash" type="number" min="100" value="${ca}">
+          </div>
+          <div class="bt-field">
+            <span class="bt-lbl">Leverage</span>
+            <input class="bt-inp" id="btp-lev" type="number" min="1" max="100" value="${lv}">
+          </div>
+          <div class="bt-field full">
+            <span class="bt-lbl">Runs (walk-fwd)</span>
+            <input class="bt-inp" id="btp-runs" type="number" min="1" max="12" value="1">
+          </div>
+        </div>
         <button class="bt-run" id="bt-runbtn">▶ RUN BACKTEST</button>
       `;
     }
