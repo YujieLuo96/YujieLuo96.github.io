@@ -31,7 +31,6 @@
 
     #bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
 
-    /* scanline + vignette */
     body::after {
       content:''; position:fixed; inset:0; z-index:99; pointer-events:none;
       background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.13) 2px, rgba(0,0,0,0.13) 4px);
@@ -47,7 +46,6 @@
       display: flex; flex-direction: column; align-items: center; gap: 8px;
     }
 
-    /* ── TITLE ────────────────────────────── */
     .title-row { display: flex; align-items: center; gap: 18px; width: 100%; padding: 2px 4px; }
     .title {
       font-family: 'Orbitron', monospace; font-size: 1.9rem; font-weight: 900;
@@ -76,7 +74,6 @@
     .title-sep { flex:1; height:1px; background: linear-gradient(to right, rgba(0,245,255,0.3), transparent); }
     .title-tag { font-size: 0.6rem; color: rgba(0,245,255,0.35); letter-spacing: 0.18em; white-space: nowrap; }
 
-    /* ── HUD (6 cells) ────────────────────── */
     .hud { width: 100%; display: grid; grid-template-columns: repeat(6,1fr); gap: 5px; }
     .hud-cell {
       background: var(--panel);
@@ -103,7 +100,6 @@
       color: var(--cyan); text-shadow: 0 0 12px rgba(0,245,255,0.7);
       min-width: 3ch; text-align: center; transition: color 0.3s, text-shadow 0.3s;
     }
-    /* per-cell accent colors */
     .hud-cell:nth-child(2) .hud-label { color: rgba(0,245,255,0.75); }
     .hud-cell:nth-child(3) .hud-label { color: rgba(245,230,66,0.75); text-shadow: 0 0 8px rgba(245,230,66,0.3); }
     .hud-cell:nth-child(3) .hud-value  { color: var(--yellow); text-shadow: 0 0 12px rgba(245,230,66,0.7); }
@@ -111,10 +107,8 @@
     .hud-cell:nth-child(4) .hud-value  { color: var(--green);  text-shadow: 0 0 12px rgba(57,255,20,0.7); }
     .hud-cell:nth-child(5) .hud-label { color: rgba(223,95,255,0.75); text-shadow: 0 0 8px rgba(200,80,255,0.3); }
     .hud-cell:nth-child(5) .hud-value  { color: #df5fff;       text-shadow: 0 0 12px rgba(200,80,255,0.7); }
-    /* regime cell */
     .hud-cell:nth-child(6) .hud-label { color: rgba(255,255,255,0.55); text-shadow: none; }
 
-    /* ── CHART FRAME ──────────────────────── */
     .chart-frame { position: relative; width:100%; }
     .chart-frame::before, .chart-frame::after, .corner-bl, .corner-tr {
       content:''; position: absolute; width: 20px; height: 20px; z-index: 2; pointer-events: none;
@@ -129,7 +123,6 @@
       box-shadow: 0 0 40px rgba(0,245,255,0.08), inset 0 0 60px rgba(0,0,0,0.4);
     }
 
-    /* ── CHART TOOLBAR ────────────────────── */
     .chart-toolbar {
       width: 100%; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
       background: rgba(0,0,0,0.25); border: 1px solid var(--border2);
@@ -152,7 +145,6 @@
     .rainbow-check { display: flex; align-items: center; gap: 4px; font-size: 0.72rem; cursor: pointer; border-left: 1px solid var(--border2); padding-left: 10px; }
     .detailed-check { display: flex; align-items: center; gap: 4px; color: rgba(57,255,20,0.7); font-size: 0.72rem; cursor: pointer; }
 
-    /* ── CONTROL PANEL ────────────────────── */
     .control-panel {
       width: 100%; background: var(--panel);
       border: 1px solid var(--border);
@@ -160,13 +152,11 @@
       padding: 12px 14px; display: flex; flex-direction: row; gap: 0;
       box-shadow: 0 2px 16px rgba(0,0,0,0.4);
     }
-    /* Left: big action buttons */
     .action-col {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: 8px; padding-right: 18px; margin-right: 18px;
       border-right: 1px solid var(--border2); min-width: 130px;
     }
-    /* Right: two rows of params */
     .params-col { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
     .panel-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
     .panel-divider {
@@ -205,7 +195,6 @@
     .tp-input.err { border-color:#ffaa00!important; box-shadow:0 0 6px rgba(255,170,0,0.5); }
     .field-err { font-size:0.65rem; color:#ff6060; letter-spacing:0.05em; min-height:10px; margin-top:1px; }
 
-    /* ── ACTION BUTTONS (3D Cyber) ─────────── */
     .cyber-button {
       background: rgba(0,245,255,0.05);
       border: 1px solid rgba(0,245,255,0.3);
@@ -275,7 +264,6 @@
     }
     .cyber-button.reset-btn:hover { color: rgba(0,245,255,0.75); background: rgba(0,245,255,0.05); }
 
-    /* ── TOAST NOTIFICATIONS ──────────────── */
     #toast-container {
       position: absolute; top: 8px; left: 8px; z-index: 100;
       display: flex; flex-direction: column; gap: 5px; pointer-events: none;
@@ -299,7 +287,6 @@
     @keyframes toastIn  { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
     @keyframes toastOut { from { opacity:1; } to { opacity:0; transform:translateX(-8px); } }
 
-    /* ── ORDERS PANEL ─────────────────────── */
     .orders-panel {
       width: 100%; background: rgba(0,0,0,0.2);
       border: 1px solid var(--border2); border-radius: 3px; padding: 10px 12px;
@@ -339,7 +326,6 @@
     .order-row .lbl { color: rgba(0,245,255,0.4); }
     .order-row .value { color: rgba(245,230,66,0.85); }
     .order-divider { height: 1px; background: rgba(0,245,255,0.07); margin: 2px 0; }
-    /* equity progress bar */
     .equity-bar-wrap { height: 3px; background: rgba(0,245,255,0.07); margin: 3px 0 1px; border-radius: 1px; overflow: hidden; }
     .equity-bar { height: 100%; border-radius: 1px; transition: width 0.2s; }
     .close-order {
@@ -355,7 +341,6 @@
     .close-order:hover { background: rgba(255,45,120,0.15); border-color: var(--pink); color: var(--pink); box-shadow: 0 2px 12px rgba(255,45,120,0.3); }
     .close-order:active { transform: translateY(1px); border-bottom-width: 1px; }
 
-    /* ── TRADE HISTORY ────────────────────── */
     .history-btn {
       background: rgba(245,230,66,0.04); border: 1px solid rgba(245,230,66,0.22);
       border-bottom: 2px solid rgba(245,230,66,0.32);
@@ -417,7 +402,6 @@
       .history-panel { max-height: 220px; }
     }
 
-    /* ── SUMMARY ──────────────────────────── */
     .summary-btn {
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
       border-bottom: 2px solid rgba(0,245,255,0.3);
@@ -435,7 +419,6 @@
       border-top: 1px solid rgba(0,245,255,0.1);
     }
     .summary-panel.open { display: flex; }
-    /* 净值曲线 + 雷达图 并排行 */
     .sm-charts-row {
       display: flex; gap: 10px; align-items: stretch;
     }
@@ -479,16 +462,12 @@
       .stat-cell.wide { grid-column: span 1; }
     }
 
-    /* ── FLASH / LIQ ──────────────────────── */
     #trade-flash { position:fixed; inset:0; z-index:97; pointer-events:none; opacity:0;
       background: radial-gradient(ellipse at center, rgba(0,245,255,0.1) 0%, transparent 70%); transition: opacity 0.05s; }
     #trade-flash.flash { opacity:1; transition: none; }
     #liq-flash { position:fixed; inset:0; z-index:96; pointer-events:none; opacity:0;
       background: radial-gradient(ellipse at center, rgba(255,0,0,0.28) 0%, transparent 80%); transition: opacity 0.12s; }
     #liq-flash.active { opacity:1; transition: none; }
-
-    /* ── MISC ─────────────────────────────── */
-
 
     .warning {
       color: #ff2d78; font-size: 0.7rem; text-align: center; width: 100%;
@@ -506,11 +485,9 @@
       88%,100% { opacity: 1; }
     }
 
-    /* ── Position size inactive state ─────────── */
     .pos-inactive input[type=range] { opacity: 0.28; }
     .pos-inactive .slider-label { opacity: 0.35; }
 
-    /* ── Settings button & panel ──────────────── */
     .settings-btn {
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
       border-bottom: 2px solid rgba(0,245,255,0.3);
@@ -532,7 +509,6 @@
     }
     .settings-panel.open { display: flex; }
 
-    /* ── Touch: eliminate 300ms delay ─────────── */
     .cyber-button, .mode-btn, .close-order,
     .ema-check, .rainbow-check, .detailed-check,
     .settings-btn,
@@ -541,37 +517,28 @@
       touch-action: manipulation;
     }
 
-    /* ══════════════════════════════════════════
-       MOBILE STYLES  ≤ 768px
-    ══════════════════════════════════════════ */
     @media (max-width: 768px) {
       body { padding: 6px 5px; }
       .game-wrapper { gap: 5px; width: 99vw; }
 
-      /* ── Title ── */
       .title { font-size: 1.1rem; letter-spacing: 0.1em; }
       .title-tag { display: none; }
       .title-sep { flex: 0; width: 8px; }
 
-      /* ── HUD: 3 × 2 grid ── */
       .hud { grid-template-columns: repeat(3, 1fr); gap: 3px; }
       .hud-cell { padding: 5px 4px 4px; }
       .hud-label { font-size: 0.56rem; margin-bottom: 2px; letter-spacing: 0.09em; }
       .hud-value { font-size: 0.82rem; }
 
-      /* ── Chart toolbar ── */
       .chart-toolbar { padding: 5px 7px; gap: 5px 7px; }
       .tool-group { gap: 5px; flex-wrap: wrap; }
-      /* 44px tap target for all toolbar buttons */
       .mode-btn { font-size: 0.65rem; padding: 0 9px; min-height: 44px;
         display: inline-flex; align-items: center; justify-content: center; }
-      /* Checkbox labels: larger hit area */
       .ema-check, .detailed-check { font-size: 0.65rem; min-height: 44px; padding: 4px 4px; }
       .rainbow-check { font-size: 0.65rem; padding: 4px 4px 4px 7px; min-height: 44px; }
       .ema-check input, .rainbow-check input, .detailed-check input {
         width: 18px; height: 18px; flex-shrink: 0; }
 
-      /* ── Control panel: stack vertically ── */
       .control-panel { flex-direction: column; padding: 9px 9px; gap: 0; }
 
       .action-col {
@@ -588,7 +555,6 @@
       .action-col .cyber-button.short { flex: 1; min-width: 80px; padding: 13px 6px; }
       .action-col .cyber-button.util  { width: 100%; padding: 9px 6px; }
 
-      /* ── Sliders: 2 per row ── */
       .params-col { width: 100%; }
       .panel-row { gap: 8px 10px; }
       .slider-group { min-width: calc(50% - 8px); flex: 1 1 calc(50% - 8px); }
@@ -600,18 +566,14 @@
         background: var(--cyan); border: 2px solid rgba(0,0,0,0.6);
       }
 
-      /* ── Number inputs: ≥16px prevents iOS auto-zoom ── */
       .num-input { font-size: 1rem; height: 40px; padding: 4px 6px; width: 100%; }
       .field-err { font-size: 0.5rem; }
 
-      /* Reset button */
       .cyber-button.reset-btn { padding: 8px 12px; font-size: 0.62rem; }
 
-      /* ── Settings panel: override inline min-width ── */
       .settings-panel { gap: 10px 10px; padding: 9px 9px; }
       .settings-panel .slider-group { min-width: calc(50% - 6px) !important; flex: 1 1 calc(50% - 6px); }
 
-      /* ── Order cards: full width ── */
       .orders-container { flex-direction: column; gap: 7px; }
       .order-card { min-width: 0; width: 100%; font-size: 0.72rem; }
       .close-order {
@@ -619,27 +581,21 @@
         width: 100%; text-align: center; margin-top: 5px; min-height: 44px;
       }
 
-      /* ── Misc ── */
-      /* ── Toast: 手机端略缩小字号 ── */
       #toast-container { max-width: 200px; }
       .toast { font-size: 0.68rem; }
     }
 
-    /* ── Extra-small: ≤ 400px (iPhone SE etc.) ── */
     @media (max-width: 400px) {
       .hud-value { font-size: 0.72rem; }
       .hud-label { font-size: 0.38rem; }
       .slider-group { min-width: 100%; flex: 1 1 100%; }
       .settings-panel .slider-group { min-width: 100% !important; }
       .title { font-size: 0.95rem; }
-      /* LONG/SHORT全宽排列 */
       .action-col .cyber-button.long,
       .action-col .cyber-button.short { width: 100%; flex: 1 1 100%; padding: 14px 6px; }
-      /* 超窄工具栏: TF 按钮缩小 */
       .mode-btn { padding: 0 6px; font-size: 0.62rem; min-height: 40px; }
     }
 
-    /* ── PineScript 策略面板 ─────────────────── */
     .strategy-panel {
       width: 100%; background: rgba(0,0,0,0.22);
       border: 1px solid var(--border2); border-radius: 3px;
@@ -682,7 +638,6 @@
       scrollbar-color: rgba(0,245,255,0.35) rgba(0,245,255,0.04);
     }
     .strategy-code:focus { border-color: rgba(0,245,255,0.35); outline: none; }
-    /* Webkit 滚动条 — 赛博风 */
     .strategy-code::-webkit-scrollbar { width: 6px; }
     .strategy-code::-webkit-scrollbar-track {
       background: rgba(0,245,255,0.03);
@@ -705,7 +660,6 @@
       .strategy-status { margin-left: 0; }
     }
 
-    /* ── 策略编辑器模态窗口 ───────────────────── */
     .modal {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.88);
@@ -762,7 +716,6 @@
     <div class="title-sep"></div>
   </div>
 
-  <!-- HUD 6 cells -->
   <div class="hud">
     <div class="hud-cell"><div class="hud-label">NET ASSET</div><div class="hud-value" id="asset-value">1000.00</div></div>
     <div class="hud-cell"><div class="hud-label">TOTAL P&amp;L</div><div class="hud-value" id="pnl-value">+0.00</div></div>
@@ -809,7 +762,6 @@
     <button class="settings-btn" id="btn-settings">⚙ SETTINGS</button>
   </div>
 
-  <!-- Settings panel (collapsible) -->
   <div class="settings-panel" id="settings-panel">
     <div class="panel-section-label" style="width:100%;font-size:0.5rem;letter-spacing:0.25em;color:rgba(0,245,255,0.3);text-transform:uppercase;margin-bottom:2px;">◈ Market Parameters</div>
     <div class="slider-group" style="min-width:150px">
@@ -830,40 +782,32 @@
     </div>
   </div>
 
-  <!-- Control panel -->
   <div class="control-panel">
-    <!-- Left: action buttons -->
     <div class="action-col">
       <button class="cyber-button long"  id="btn-long">▲ LONG</button>
       <button class="cyber-button short" id="btn-short">▼ SHORT</button>
       <button class="cyber-button util" id="btn-close-all">⛌ CLOSE ALL</button>
     </div>
 
-    <!-- Right: two rows of parameters -->
     <div class="params-col">
-      <!-- Single row: sliders on top, inputs below, each column aligned -->
       <div class="panel-row" style="align-items:flex-start">
         <div class="panel-section-label">◈ Parameters</div>
-        <!-- POSITION SIZE → QTY input below -->
         <div class="slider-group pos-inactive" id="pos-ratio-group" style="min-width:140px">
           <div class="slider-label">POSITION SIZE <span id="pos-ratio-val">---</span></div>
           <input type="range" id="pos-ratio-slider" min="0.05" max="1" step="0.05" value="1">
           <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:70%;margin-top:10px" inputmode="numeric" autocomplete="off">
           <div class="field-err"></div>
         </div>
-        <!-- LEVERAGE (no input below) -->
         <div class="slider-group" style="min-width:140px">
           <div class="slider-label">LEVERAGE <span id="leverage-display">2.0x</span></div>
           <input type="range" id="leverage-slider" min="1" max="100" step="0.5" value="2.0">
         </div>
-        <!-- STOP LOSS slider → SL price input below -->
         <div class="slider-group pos-inactive" id="sl-ratio-group" style="min-width:140px">
           <div class="slider-label" style="color:rgba(255,96,96,0.55)">STOP LOSS <span id="sl-ratio-val" style="color:#ff6060">---</span></div>
           <input type="range" id="sl-ratio-slider" min="5" max="100" step="5" value="10">
           <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
           <div id="sl-err" class="field-err"></div>
         </div>
-        <!-- TAKE PROFIT slider → TP price input below -->
         <div class="slider-group pos-inactive" id="tp-ratio-group" style="min-width:140px">
           <div class="slider-label" style="color:rgba(85,255,153,0.55)">TAKE PROFIT <span id="tp-ratio-val" style="color:#55ff99">---</span></div>
           <input type="range" id="tp-ratio-slider" min="5" max="200" step="5" value="20">
@@ -874,7 +818,6 @@
     </div>
   </div>
 
-  <!-- PineScript 策略面板 -->
   <div class="strategy-panel">
     <div class="strategy-header">
       <span class="strategy-label">⚙ PINE STRATEGY</span>
@@ -884,7 +827,7 @@
       <span id="strategy-status" class="strategy-status">● IDLE</span>
     </div>
     <textarea id="pine-code" class="strategy-code" rows="5"
-      placeholder="// 示例：MA 金叉策略&#10;fast = ema(close, 9);&#10;slow = ema(close, 21);&#10;if (crossover(fast, slow)) { strategy.entry('long'); }&#10;if (crossunder(fast, slow)) { strategy.entry('short'); }">// MA Cross (default)
+      placeholder="// Example: MA crossover strategy&#10;fast = ema(close, 9);&#10;slow = ema(close, 21);&#10;if (crossover(fast, slow)) { strategy.entry('long'); }&#10;if (crossunder(fast, slow)) { strategy.entry('short'); }">// MA Cross (default)
 fast = ema(close, 9);
 slow = ema(close, 21);
 if (crossover(fast, slow)) {
@@ -895,7 +838,6 @@ if (crossunder(fast, slow)) {
 }</textarea>
   </div>
 
-  <!-- Positions -->
   <div class="orders-panel" id="orders-panel">
     <div class="orders-header">
       <span class="orders-title" id="btn-toggle-positions">
@@ -909,7 +851,7 @@ if (crossunder(fast, slow)) {
     </div>
     <div class="orders-body">
     <div id="orders-list" class="orders-container"></div>
-    </div><!-- /.orders-body -->
+    </div>
     <div class="history-panel" id="history-panel">
       <div class="history-summary" id="history-summary"></div>
       <div id="history-list"></div>
@@ -922,7 +864,6 @@ if (crossunder(fast, slow)) {
         </div>
       </div>
       <div class="summary-grid">
-        <!-- ── 收益与风险 ── -->
         <div class="stat-cell">
           <div class="stat-label">TOTAL RETURN</div>
           <div class="stat-value" id="sm-return">—</div>
@@ -939,7 +880,6 @@ if (crossunder(fast, slow)) {
           <div class="stat-sub" id="sm-calmar-sub"></div>
         </div>
         <div class="sm-sep"></div>
-        <!-- ── 交易质量 ── -->
         <div class="stat-cell">
           <div class="stat-label">WIN RATE</div>
           <div class="stat-value" id="sm-winrate">—</div>
@@ -956,7 +896,6 @@ if (crossunder(fast, slow)) {
           <div class="stat-sub">per trade</div>
         </div>
         <div class="sm-sep"></div>
-        <!-- ── 细节指标 ── -->
         <div class="stat-cell">
           <div class="stat-label">RISK / REWARD</div>
           <div class="stat-value" id="sm-rr">—</div>
@@ -973,7 +912,6 @@ if (crossunder(fast, slow)) {
           <div class="stat-sub">tick-level</div>
         </div>
         <div class="sm-sep"></div>
-        <!-- ── 汇总宽行 ── -->
         <div class="stat-cell wide">
           <div class="stat-item">
             <div class="stat-label">TOTAL TRADES</div>
@@ -996,7 +934,6 @@ if (crossunder(fast, slow)) {
     </div>
   </div>
 
-  <!-- 策略编辑器模态窗口 -->
   <div id="editor-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <div class="modal-header">
@@ -1009,8 +946,6 @@ if (crossunder(fast, slow)) {
     </div>
   </div>
 
-
-
 </div>
 
 <script src="Crypto.js"></script>
@@ -1022,9 +957,6 @@ if (crossunder(fast, slow)) {
 <script>
 (function () {
 
-  /* ═══════════════════════════════════════════
-     背景雨效
-  ═══════════════════════════════════════════ */
   const bgCanvas = document.getElementById('bg-canvas');
   const bgCtx    = bgCanvas.getContext('2d');
   let rainDrops  = [];
@@ -1056,9 +988,6 @@ if (crossunder(fast, slow)) {
   initBg(); drawBg();
   window.addEventListener('resize', () => { cancelAnimationFrame(bgRafId); initBg(); drawBg(); resizeStockCanvas(); });
 
-  /* ═══════════════════════════════════════════
-     Canvas
-  ═══════════════════════════════════════════ */
   const canvas = document.getElementById('stock-canvas');
   const ctx    = canvas.getContext('2d');
   let CW = canvas.width, CH = canvas.height;
@@ -1075,42 +1004,31 @@ if (crossunder(fast, slow)) {
   }
   resizeStockCanvas();
 
-  /* ═══════════════════════════════════════════
-     价格模型参数（时间步长）
-     情景 / 天鹅事件 / 随机参数 / 支撑压力位
-     → 由 MarketEngine.js 管理，通过 ME 访问
-  ═══════════════════════════════════════════ */
   const ME      = window.MarketEngine;
   const DT_BASE = 0.1;
-  let   dt      = DT_BASE / 4;   // 每 tick 的有效时间步长 = DT_BASE / simN，默认 N=4
+  let   dt      = DT_BASE / 4;
 
-  /* ═══════════════════════════════════════════
-     价格历史 & 动画插值
-  ═══════════════════════════════════════════ */
   let currentPrice  = 100.0;
-  let prevTickPrice = 100.0;   // 上一 tick 的价格（用于插值）
+  let prevTickPrice = 100.0;
   let lastTickTime  = performance.now();
-  const TICK_MS_BASE = 200;  // 原始 T（ms），setInterval 实际使用 TICK_MS_BASE / simN
+  const TICK_MS_BASE = 200;
 
   let ohlc          = [];
   let priceHistory  = [];
   let volumeHistory = [];
-  const MIN_VISIBLE_CANDLES = 200;  // 最少显示的K线数
-  const MAX_TF_MULT = 5;           // 最大时间周期倍数
-  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4;  // 默认 N=4
+  const MIN_VISIBLE_CANDLES = 200;
+  const MAX_TF_MULT = 5;
+  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4;
   let trades        = [];
-  let tradeHistory    = [];  // 已平仓记录
-  let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
-  const cardRefs    = new Map(); // id → { card, pEl, nowEl, barEl, eqEl }
-  let _histRenderedLen = 0;      // renderHistory 已渲染的行数（增量渲染用）
+  let tradeHistory    = [];
+  let netAssetHistory = [];
+  const cardRefs    = new Map();
+  let _histRenderedLen = 0;
 
-  /* ── P8：SUMMARY 增量统计状态 ──────────────────── */
-  // 交易统计（每笔平仓时增量更新）
   let _sm_n=0, _sm_wins=0, _sm_sumWinPnl=0, _sm_sumLossPnl=0;
   let _sm_best=-Infinity, _sm_worst=Infinity, _sm_totalFees=0;
   let _sm_maxConsecLoss=0, _sm_curConsecLoss=0;
   let _sm_maxConsecWin=0,  _sm_curConsecWin=0;
-  // 净资产统计（每 tick 增量更新）
   let _sm_peak=0, _sm_mdd=0, _sm_mddAmt=0;
   let _sm_sumR=0, _sm_sumR2=0, _sm_nR=0;
 
@@ -1123,7 +1041,6 @@ if (crossunder(fast, slow)) {
     _sm_sumR=0; _sm_sumR2=0; _sm_nR=0;
   }
 
-  /* 替代 tradeHistory.unshift，同步更新增量统计 */
   function _pushTrade(rec) {
     tradeHistory.unshift(rec);
     const p = rec.netPnl;
@@ -1142,7 +1059,6 @@ if (crossunder(fast, slow)) {
     if (p < _sm_worst) _sm_worst = p;
   }
 
-  /* 每 tick 在 push netAssetHistory 后调用 */
   function _recordNetAssetStat(newVal, prevVal) {
     if (newVal > _sm_peak) _sm_peak = newVal;
     const dd = _sm_peak > 0 ? (_sm_peak - newVal) / _sm_peak : 0;
@@ -1153,9 +1069,6 @@ if (crossunder(fast, slow)) {
     }
   }
 
-  /* ═══════════════════════════════════════════
-     账户
-  ═══════════════════════════════════════════ */
   let initialCash       = 1000.0;
   let cash              = 1000.0;
   let realizedPnl       = 0.0;
@@ -1163,16 +1076,13 @@ if (crossunder(fast, slow)) {
   let nextOrderId       = 1;
   let liquidated        = false;
   const MAINT_RATIO     = 0.05;
-  const FEE_RATE        = 0.0008;  // 千分之0.8（按名义价值）
-  const FEE_FIXED       = 1.0;     // 每笔固定费用 $1
+  const FEE_RATE        = 0.0008;
+  const FEE_FIXED       = 1.0;
 
   function calcFee(shares, price) {
     return shares * price * FEE_RATE + FEE_FIXED;
   }
 
-  /* ═══════════════════════════════════════════
-     UI refs
-  ═══════════════════════════════════════════ */
   const assetEl         = document.getElementById('asset-value');
   const pnlEl           = document.getElementById('pnl-value');
   const accLevEl        = document.getElementById('acc-leverage');
@@ -1181,7 +1091,6 @@ if (crossunder(fast, slow)) {
   const regimeEl        = document.getElementById('regime-value');
   const toastContainer  = document.getElementById('toast-container');
 
-  /* ── Toast 通知（不阻断流程，最多显示6条）── */
   function showToast(msg, type='warn', duration=3000){
     while(toastContainer.children.length >= 6) toastContainer.firstChild.remove();
     const el=document.createElement('div');
@@ -1203,10 +1112,10 @@ if (crossunder(fast, slow)) {
   const sharesInput     = document.getElementById('order-shares');
   const slInput         = document.getElementById('sl-input');
 
-  let posRatioMode = false; // true = position size drives order; false = QTY drives order
-  let slRatioMode  = false; // true = SL % slider active
-  let tpRatioMode  = false; // true = TP % slider active
-  let _slTpPreviewDir = 1;  // 1=long / -1=short：SL/TP 滑块价格预览方向（pointerdown 按钮时更新）
+  let posRatioMode = false;
+  let slRatioMode  = false;
+  let tpRatioMode  = false;
+  let _slTpPreviewDir = 1;
 
   const slRatioSlider = document.getElementById('sl-ratio-slider');
   const slRatioVal    = document.getElementById('sl-ratio-val');
@@ -1216,8 +1125,6 @@ if (crossunder(fast, slow)) {
   const tpRatioGroup  = document.getElementById('tp-ratio-group');
 
   function calcSlPrice(dir) {
-    // dir: 1=long, -1=short
-    // loss = pct% * margin; margin = shares*price/lev → sl offset = pct * price / lev
     const pct = parseFloat(slRatioSlider.value) / 100;
     const lev = parseFloat(leverageSlider.value);
     return currentPrice * (1 - dir * pct / lev);
@@ -1253,8 +1160,6 @@ if (crossunder(fast, slow)) {
   function calcPosRatioShares() {
     const ratio  = parseFloat(posRatioSlider.value);
     const lev    = parseFloat(leverageSlider.value);
-    // fee = shares*price*FEE_RATE + FEE_FIXED (notional-based), so solve for shares:
-    // shares * price * (1/lev + FEE_RATE) + FEE_FIXED <= ratio * freeCash
     const budget = ratio * getFreeCash() - FEE_FIXED;
     return Math.max(1, Math.floor(budget / (currentPrice * (1 / lev + FEE_RATE))));
   }
@@ -1281,19 +1186,15 @@ if (crossunder(fast, slow)) {
   const sharesSummary   = document.getElementById('shares-summary');
 
   let chartMode       = 'line';
-  let candleSize      = 4;   // ticks per displayed candle (= _activeTfMult * simN, default 1*4)
-  let totalTicks      = 0;   // 单调递增数据点计数（每 tick +1，用于图表聚合/EMA 缓存）
-  let simN            = 4;   // 每个原始 T 细分为 N 个 tick，默认 4
-  // _srDecay / _srForceScale 已移入 MarketEngine，由 ME.applyN() 维护
-  let _activeTfMult   = 1;     // 当前 TF 按钮对应的原始 T 倍数（1/5/15/30/60）
+  let candleSize      = 4;
+  let totalTicks      = 0;
+  let simN            = 4;
+  let _activeTfMult   = 1;
   let showEMA5        = true;
   let showEMA20       = false;
   let showDetailedEMA = false;
   let showRainbowEMA  = false;
 
-  /* ═══════════════════════════════════════════
-     数学工具
-  ═══════════════════════════════════════════ */
   let _nrSpare = 0, _nrHasSpare = false;
   function normalRandom() {
     if (_nrHasSpare) { _nrHasSpare = false; return _nrSpare; }
@@ -1305,24 +1206,16 @@ if (crossunder(fast, slow)) {
     return mag * Math.cos(2*Math.PI*v);
   }
 
-  // stepRegime / stepStochasticParams 已移入 MarketEngine.js
-
-  /* ═══════════════════════════════════════════
-     价格步进（每 200ms）
-  ═══════════════════════════════════════════ */
   function stepPrice() {
-    // ── CRYPTO mode: kline-event-driven, tick is stopped on entry ──
     if (Crypto.mode) return;
 
     totalTicks++;
-    prevTickPrice = currentPrice;        // 保存上帧价格，用于插值
+    prevTickPrice = currentPrice;
     lastTickTime  = performance.now();
 
-    // ── 价格计算核心（已封装至 MarketEngine.stepPriceCore）──
     const { newPrice, swanEffect, relVol } = ME.stepPriceCore(currentPrice, totalTicks, simN, dt, normalRandom);
     currentPrice = newPrice;
 
-    // ── 天鹅事件 Toast（应用层 UI 副作用，保留在此）──
     if (swanEffect.changed) {
       const SWAN_MSGS = {
          3: ['◆ LARGE WHITE SWAN ◆',  'Extreme bullish shock — major surge!',    'swan-white', 6000],
@@ -1334,7 +1227,6 @@ if (crossunder(fast, slow)) {
       if (m) showToast(`<b>${m[0]}</b><br>${m[1]}`, m[2], m[3]);
     }
 
-    // ── 数据点记录（每 tick 都记录，candleSize = _activeTfMult * simN） ──
     volumeHistory.push(relVol);
 
     const open=ohlc.length>0?ohlc[ohlc.length-1].c:currentPrice, close=currentPrice;
@@ -1352,28 +1244,21 @@ if (crossunder(fast, slow)) {
     EMACache.update();
     checkSLTP();
     refreshUI();
-    // 净资产快照（供 SUMMARY 图表使用）
     const snapEq  = orders.reduce((s,o)=>s+orderEquity(o),0);
     const _naNew  = cash + snapEq;
     const _naPrev = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length-1] : 0;
     netAssetHistory.push(_naNew);
     if(netAssetHistory.length > 2000) netAssetHistory.shift();
-    _recordNetAssetStat(_naNew, _naPrev);  // O(1) 增量更新 MDD / Sharpe
+    _recordNetAssetStat(_naNew, _naPrev);
     StrategyEngine.tick();
-    // Virtual traders tick (independent bot accounts)
     if (window.VirtualTraders) VirtualTraders.tick();
-    // 不在这里调用 drawChart —— 由 rAF 循环负责（60fps 插值渲染）
   }
 
-  /* ═══════════════════════════════════════════
-     SL / TP
-  ═══════════════════════════════════════════ */
   function checkSLTP() {
     const hits=[];
     orders.forEach(o=>{
       const hitSL=o.sl!==null&&((o.dir===1&&currentPrice<=o.sl)||(o.dir===-1&&currentPrice>=o.sl));
       const hitTP=o.tp!==null&&((o.dir===1&&currentPrice>=o.tp)||(o.dir===-1&&currentPrice<=o.tp));
-      // 直接保存 order 引用，避免后续 hits.forEach 中再次 orders.find()
       if(hitSL||hitTP) hits.push({order:o, reason:hitSL?'SL':'TP'});
     });
     hits.forEach(h=>{
@@ -1387,9 +1272,6 @@ if (crossunder(fast, slow)) {
     });
   }
 
-  /* ═══════════════════════════════════════════
-     仓位计算
-  ═══════════════════════════════════════════ */
   function orderUnrealized(o){ return o.dir*o.shares*(currentPrice-o.openPrice); }
   function orderEquity(o){ return o.margin+orderUnrealized(o); }
   function liqPrice(o){
@@ -1397,16 +1279,11 @@ if (crossunder(fast, slow)) {
     return o.openPrice-o.dir*room/o.shares;
   }
 
-  /* 可用保证金 = 现金 + 所有仓位浮盈（浮亏同样扣除），跨仓滚仓模式 */
   function getFreeCash(){
     const unrealized=orders.reduce((s,o)=>s+orderUnrealized(o),0);
     return Math.max(0, cash+unrealized);
   }
 
-  /* ═══════════════════════════════════════════
-     维持保证金检测
-  ═══════════════════════════════════════════ */
-  // 返回 { posEq, notional, unrealized }，均为强平处理完毕后的存活仓位数据
   function updateOrdersAndGetEquity() {
     let posEq=0, notional=0, unrealized=0;
     const toLiq=[];
@@ -1426,7 +1303,6 @@ if (crossunder(fast, slow)) {
         grossPnl:liqGross, openFee:o.openFee||0, closeFee:liqFee,
         netPnl:liqGross-(o.openFee||0)-liqFee, closeType:'LIQ'
       });
-      // 路径B：直接 splice 强平，须同步清理卡片和 refs
       const _refs=cardRefs.get(o.id);
       if(_refs){_refs.card.remove();cardRefs.delete(o.id);}
       orders.splice(toLiq[i],1);
@@ -1437,11 +1313,7 @@ if (crossunder(fast, slow)) {
     return {posEq, notional, unrealized};
   }
 
-  /* ═══════════════════════════════════════════
-     HUD 刷新
-  ═══════════════════════════════════════════ */
   function refreshUI() {
-    // updateOrdersAndGetEquity 一次遍历同时返回 posEq / notional / unrealized
     const {posEq, notional, unrealized} = updateOrdersAndGetEquity();
     const netAsset = cash+posEq;
     const accLev   = netAsset>0.001 ? notional/netAsset : 0;
@@ -1453,9 +1325,8 @@ if (crossunder(fast, slow)) {
     pnlEl.style.textShadow = totalPnl>=0?'0 0 10px rgba(57,255,20,0.6)':'0 0 10px rgba(255,45,120,0.6)';
     accLevEl.textContent = accLev.toFixed(2)+'x';
     spotEl.textContent   = currentPrice >= 1000 ? currentPrice.toFixed(1) : currentPrice.toFixed(2);
-    cashEl.textContent   = Math.max(0, cash+unrealized).toFixed(2); // 等价于 getFreeCash()
+    cashEl.textContent   = Math.max(0, cash+unrealized).toFixed(2);
 
-    // 情景 HUD (或 CRYPTO symbol)
     if (Crypto.mode) {
       regimeEl.textContent      = Crypto.symbol.replace('usdt','').toUpperCase();
       regimeEl.style.color      = '#ffaa00';
@@ -1468,16 +1339,13 @@ if (crossunder(fast, slow)) {
     }
 
     if(netAsset<=0.001&&!liquidated){
-      // 路径C：orders=[] 直接清空，须先清理所有卡片和 refs
       ordersDiv.innerHTML=''; cardRefs.clear();
       orders=[]; liquidated=true; liqIndicator.style.display='block';
       liqFlash.classList.add('active'); setTimeout(()=>liqFlash.classList.remove('active'),600);
       showToast('💀 ACCOUNT LIQUIDATED<br>All positions force-closed. Click ⟲ RESET to restart.<br><i style="opacity:0.6;">Welcome to the real world.</i>','error',6000);
     } else if(netAsset>0.001){ liquidated=false; liqIndicator.style.display='none'; }
 
-    // position size 激活时，QTY 随价格/净值实时更新
     if(posRatioMode) sharesInput.value = calcPosRatioShares();
-    // SL/TP 滑块激活时，价格随当前价实时更新（默认 long 方向预览）
     if(slRatioMode) { slRatioVal.textContent = parseFloat(slRatioSlider.value).toFixed(0)+'%'; slInput.value = calcSlPrice(_slTpPreviewDir).toFixed(2); }
     if(tpRatioMode) { tpRatioVal.textContent = parseFloat(tpRatioSlider.value).toFixed(0)+'%'; tpInput.value = calcTpPrice(_slTpPreviewDir).toFixed(2); }
 
@@ -1486,13 +1354,9 @@ if (crossunder(fast, slow)) {
     renderSummary();
   }
 
-  /* ═══════════════════════════════════════════
-     订单卡片（稳定 DOM：卡片只建一次，每帧只 patch 动态值）
-  ═══════════════════════════════════════════ */
   function renderOrders() {
     if(!ordersDiv) return;
 
-    // shares summary
     let lQ=0,sQ=0; orders.forEach(o=>{if(o.dir===1)lQ+=o.shares;else sQ+=o.shares;});
     sharesSummary.textContent=`L:${lQ.toFixed(2)} / S:${sQ.toFixed(2)} shares`;
 
@@ -1502,16 +1366,12 @@ if (crossunder(fast, slow)) {
       return;
     }
 
-    // 移除空状态占位
     const emptyMsg=ordersDiv.querySelector('.no-pos-msg');
     if(emptyMsg) emptyMsg.remove();
 
-    // 孤儿清理已由各平仓路径负责（closeOrderById / updateOrdersAndGetEquity路径B / refreshUI路径C）
-
     orders.forEach(o=>{
-      // o._equity 已由 updateOrdersAndGetEquity() 在本 tick 计算并缓存，直接复用
       const eq     = o._equity;
-      const unreal = eq - o.margin;          // 等价于 orderUnrealized(o)
+      const unreal = eq - o.margin;
       const retPct = (unreal/o.margin*100).toFixed(1);
       const pnlClr = unreal>=0?'#39ff14':'#ff2d78';
       const barPct = Math.max(0,Math.min(200,eq/o.margin*100));
@@ -1519,7 +1379,6 @@ if (crossunder(fast, slow)) {
 
       let refs = cardRefs.get(o.id);
       if(!refs){
-        // 首次创建：静态骨架 + 一次性绑定 close 事件，并缓存动态元素引用
         const liqP=liqPrice(o);
         const card=document.createElement('div');
         card.className=`order-card ${o.dir===1?'long':'short'}`;
@@ -1551,7 +1410,6 @@ if (crossunder(fast, slow)) {
         cardRefs.set(o.id, refs);
       }
 
-      // 每次只更新变动的值（不碰 DOM 结构，hover 状态不丢失）
       refs.pEl.textContent=`${unreal>=0?'+':''}${unreal.toFixed(2)} (${retPct}%)`;
       refs.pEl.style.color=pnlClr;
 
@@ -1565,9 +1423,6 @@ if (crossunder(fast, slow)) {
     });
   }
 
-  /* ═══════════════════════════════════════════
-     平仓
-  ═══════════════════════════════════════════ */
   function closeOrderById(id, doRefresh=true, closeReason='MANUAL'){
     const idx=orders.findIndex(o=>o.id===id); if(idx===-1)return;
     const o=orders[idx], unreal=orderUnrealized(o);
@@ -1580,27 +1435,20 @@ if (crossunder(fast, slow)) {
       netPnl: unreal - (o.openFee||0) - closeFee,
       closeType: closeReason
     });
-    // 路径A：主动平仓，同步清理卡片和 refs
     const _refs=cardRefs.get(id);
     if(_refs){_refs.card.remove();cardRefs.delete(id);}
     orders.splice(idx,1); triggerFlash();
     if(doRefresh) refreshUI();
   }
 
-  /* ═══════════════════════════════════════════
-     开仓
-  ═══════════════════════════════════════════ */
-  // forcedShares/forcedSl/forcedTp: when called from strategy executor (non-null = bypass UI)
   function placeOrder(direction, forcedShares=null, forcedSl=null, forcedTp=null){
     if(liquidated){showToast('⚠ ACCOUNT LIQUIDATED<br>Reset to continue','error');return;}
     const lev=parseFloat(leverageSlider.value);
     let shares, margin;
     if(forcedShares !== null){
-      // Strategy-driven: use provided share count
       shares=forcedShares;
       margin=(shares*currentPrice)/lev;
     } else {
-      // Manual UI: preserve normal position-size / ratio logic
       if(posRatioMode){
         shares=calcPosRatioShares();
         margin=(shares*currentPrice)/lev;
@@ -1613,7 +1461,6 @@ if (crossunder(fast, slow)) {
     const fee=calcFee(shares, currentPrice);
     const freeCash=getFreeCash();
     if(freeCash<margin+fee){showToast(`⚠ INSUFFICIENT CASH<br>Required: <b>$${(margin+fee).toFixed(2)}</b> (fee $${fee.toFixed(2)}) &nbsp;Available: <b>$${freeCash.toFixed(2)}</b>`,'warn');return;}
-    // SL/TP: strategy supplies explicit values; manual trades use ratio-mode auto-calc (original behavior)
     let sl, tp;
     if(forcedShares !== null){
       sl = forcedSl;
@@ -1625,7 +1472,6 @@ if (crossunder(fast, slow)) {
       tp = tpInput.value!==''?parseFloat(tpInput.value):null;
     }
     if(forcedShares === null){
-      // 手动订单：做 UI 验证，展示错误反馈
       const slErr=document.getElementById('sl-err');
       const tpErr=document.getElementById('tp-err');
       slErr.textContent=''; tpErr.textContent='';
@@ -1641,7 +1487,6 @@ if (crossunder(fast, slow)) {
       }
       if(hasErr)return;
     } else {
-      // 策略订单：跳过 UI 验证，静默丢弃无效的 SL/TP（不阻断开仓）
       if(sl!==null&&((direction===1&&sl>=currentPrice)||(direction===-1&&sl<=currentPrice))) sl=null;
       if(tp!==null&&((direction===1&&tp<=currentPrice)||(direction===-1&&tp>=currentPrice))) tp=null;
     }
@@ -1658,18 +1503,15 @@ if (crossunder(fast, slow)) {
     triggerFlash(); refreshUI();
   }
 
-  /* ═══════════════════════════════════════════
-     重置
-  ═══════════════════════════════════════════ */
   function resetGame(){
     initialCash=parseFloat(initAssetInput.value)||1000;
     cash=initialCash; realizedPnl=0; orders=[]; nextOrderId=1; liquidated=false;
     currentPrice=100; prevTickPrice=100; lastTickTime=performance.now();
     ME.reset(simN);
-    ordersDiv.innerHTML=''; cardRefs.clear();   // 清理所有卡片和缓存 refs
+    ordersDiv.innerHTML=''; cardRefs.clear();
     tradeHistory=[]; netAssetHistory=[]; _smReset();
     historyList.innerHTML=''; historySummary.textContent='';
-    _histRenderedLen=0;                        // 重置历史行计数器
+    _histRenderedLen=0;
     historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
     summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
     liqIndicator.style.display='none';
@@ -1677,7 +1519,6 @@ if (crossunder(fast, slow)) {
     initPrice(); EMACache.reset(); EMACache.update();
     trades=[]; refreshUI();
     triggerFlash();
-    // 停止策略（若已定义）
     if (window.StrategyEngine) {
       StrategyEngine.reset();
       const _sSt = document.getElementById('strategy-status');
@@ -1685,24 +1526,15 @@ if (crossunder(fast, slow)) {
     }
   }
 
-  function triggerFlash(){ /* flash removed */ }
+  function triggerFlash(){ }
 
-  /* ═══════════════════════════════════════════
-     初始化价格历史
-  ═══════════════════════════════════════════ */
   function initPrice(){
     ohlc=[]; priceHistory=[]; volumeHistory=[];
-    // ME.warmup 负责随机游走 + OHLC 生成 + S/R EMA 预热，返回最终价格
-    // 保证初始历史覆盖 100 个 T 周期，无论 N 为多少
     currentPrice = ME.warmup(simN, dt, normalRandom, ohlc, priceHistory, volumeHistory);
     prevTickPrice = currentPrice;
-    // 对齐 totalTicks，使 getAggregated 的 partialSize 正确（防止 partialSize=0 死循环）
     totalTicks = priceHistory.length;
   }
 
-  // EMA 缓存与 K 线聚合缓存已封装至 EMACache.js
-
-  /* 独立函数（不在 drawChart 内部定义），避免 60fps 重复创建函数对象 */
   function drawEMALine(period, color, lw, n, aggCloses, mapX, mapY) {
     const ema = candleSize <= 1 ? EMACache.computeEMA(period) : EMACache.getAggEMA(aggCloses, period);
     if (!ema.length) return;
@@ -1723,11 +1555,7 @@ if (crossunder(fast, slow)) {
     return `hsl(${h},100%,60%)`;
   }
 
-  /* ═══════════════════════════════════════════
-     绘图（60fps rAF 驱动，带插值平滑）
-  ═══════════════════════════════════════════ */
   function drawChart() {
-    // 插值动画价格
     const elapsed = performance.now() - lastTickTime;
     const t       = Math.min(1, elapsed / (TICK_MS_BASE / simN));
     const animP   = prevTickPrice + (currentPrice - prevTickPrice) * t;
@@ -1735,7 +1563,6 @@ if (crossunder(fast, slow)) {
     ctx.clearRect(0,0,CW,CH);
     ctx.fillStyle='#02000a'; ctx.fillRect(0,0,CW,CH);
 
-    // 网格
     ctx.lineWidth=0.5;
     for(let i=0;i<=12;i++){
       const x=(i/12)*CW;
@@ -1753,23 +1580,18 @@ if (crossunder(fast, slow)) {
     const CHART_TOP    = 24;
     const CHART_BOTTOM = CH * 0.78;
 
-    // ── 聚合数据 ──
     const { ag, vol: aggVol, closes: aggCloses } = EMACache.getAggregated(animP);
     const n = ag.length;
     if(n < 2) return;
 
-    // ── 固定槽宽：每个聚合 candle 始终占相同像素，不随 TF 缩放
-    // 参考：200 个 candle 撑满 CW（即 1T@simN=1 时正好填满）
     const SLOT_W   = CW / 200;
-    const nVis     = Math.min(n, 200);          // 最多显示 200 根
-    const startIdx = n - nVis;                  // 从最新 nVis 根开始
-    const xOff     = CW - nVis * SLOT_W;        // 右对齐偏移（不足 200 根时左侧留空）
+    const nVis     = Math.min(n, 200);
+    const startIdx = n - nVis;
+    const xOff     = CW - nVis * SLOT_W;
 
-    // mapX 和 barW 基于固定槽宽，而非 CW/n
     const mapX = i => xOff + (i - startIdx + 0.5) * SLOT_W;
     const barW = SLOT_W;
 
-    // minP/maxP 仅在可见范围内计算，避免不可见旧数据影响 Y 轴
     let minP=Infinity,maxP=-Infinity;
     for(let i=startIdx;i<n;i++){
       if(ag[i].l<minP)minP=ag[i].l;
@@ -1780,7 +1602,6 @@ if (crossunder(fast, slow)) {
 
     const mapY = p => CHART_TOP+(1-(p-minP)/(maxP-minP))*(CHART_BOTTOM-CHART_TOP);
 
-    // ── 成交量柱（仅绘制可见范围） ──
     let maxVol=0.001;
     for(let i=startIdx;i<n;i++)if(aggVol[i]>maxVol)maxVol=aggVol[i];
     const volZoneH = CH - CHART_BOTTOM - 6;
@@ -1789,11 +1610,9 @@ if (crossunder(fast, slow)) {
       ctx.fillStyle=(ag[i].c>=ag[i].o)?'rgba(57,255,20,0.22)':'rgba(255,45,120,0.22)';
       ctx.fillRect(mapX(i)-barW/2, CH-vh-2, Math.max(barW-1,1), vh);
     }
-    // 分割线
     ctx.strokeStyle='rgba(0,245,255,0.07)'; ctx.lineWidth=0.5;
     ctx.beginPath();ctx.moveTo(0,CHART_BOTTOM+2);ctx.lineTo(CW,CHART_BOTTOM+2);ctx.stroke();
 
-    // ── K线 / 折线（仅绘制可见范围 startIdx..n-1） ──
     if(chartMode==='candle'){
       const cw=Math.max(2,SLOT_W*0.6);
       for(let i=startIdx;i<n;i++){
@@ -1805,7 +1624,6 @@ if (crossunder(fast, slow)) {
         ctx.fillRect(cx-cw/2,Math.min(oY,cY),cw,Math.max(1,Math.abs(cY-oY)));
       }
     } else {
-      // 渐变填充
       const grad=ctx.createLinearGradient(0,CHART_TOP,0,CHART_BOTTOM);
       grad.addColorStop(0,'rgba(0,245,255,0.18)');
       grad.addColorStop(0.65,'rgba(0,245,255,0.04)');
@@ -1819,7 +1637,6 @@ if (crossunder(fast, slow)) {
       ctx.lineTo(mapX(startIdx),CHART_BOTTOM);
       ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
 
-      // 折线本身
       ctx.beginPath();
       ctx.strokeStyle='#00f5ff'; ctx.lineWidth=1.8;
       ctx.shadowColor='#00f5ff'; ctx.shadowBlur=7;
@@ -1830,22 +1647,18 @@ if (crossunder(fast, slow)) {
       ctx.stroke(); ctx.shadowBlur=0;
     }
 
-    // ── EMA (基于聚合收盘价) ──
     ctx.shadowBlur=0;
     if(showRainbowEMA)  for(let p=1;p<=60;p++) drawEMALine(p,rainbowColor(p),0.7,n,aggCloses,mapX,mapY);
     if(showDetailedEMA) [1,2,3,5,7,10,20,30,60].forEach(p=>drawEMALine(p,rainbowColor(p),1.4,n,aggCloses,mapX,mapY));
     if(showEMA5)  drawEMALine(5,'#f5e642',1.5,n,aggCloses,mapX,mapY);
     if(showEMA20) drawEMALine(20,'#ff2d78',1.5,n,aggCloses,mapX,mapY);
 
-    // ── Y 轴价格刻度 ──
     ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(0,245,255,0.3)';
     for(let i=0;i<=6;i++){
       const price=minP+(maxP-minP)*(i/6);
       ctx.fillText('$'+price.toFixed(2),4,mapY(price)-2);
     }
 
-
-    // ── 开仓标记（转换到聚合 index）──
     ctx.font='bold 12px "Orbitron"';
     trades.forEach(t=>{
       const aggIdx = Math.floor(t.index / candleSize);
@@ -1856,7 +1669,6 @@ if (crossunder(fast, slow)) {
       }
     });
 
-    // ── 当前价格点（用 animP）──
     const dotY=mapY(animP);
     ctx.shadowColor='#f5e642'; ctx.shadowBlur=14;
     ctx.fillStyle='#f5e642';
@@ -1865,7 +1677,6 @@ if (crossunder(fast, slow)) {
     ctx.font='bold 11px "Share Tech Mono"';ctx.fillStyle='#f5e642';
     ctx.fillText('$'+animP.toFixed(2),CW-105,dotY-9);
 
-    // ── 情景标签（右上角）──
     const rCurr=ME.REGIMES[ME.regimeIdx];
     const inTrans=ME.regimeBlend<0.95;
     ctx.shadowColor=rCurr.color; ctx.shadowBlur=8;
@@ -1874,7 +1685,6 @@ if (crossunder(fast, slow)) {
     ctx.fillText(lbl, CW-(inTrans?100:62), 16);
     ctx.shadowBlur=0;
 
-    // ── 天鹅事件标签 ──
     if(ME.swanLevel !== 0){
       const swanMeta = {
          3: { label:'◆ LARGE WHITE SWAN ◆',  color:'#e0ffff', glow:'rgba(200,255,255,0.6)' },
@@ -1894,15 +1704,11 @@ if (crossunder(fast, slow)) {
       }
     }
 
-    // ── 底部参数 ──
     ctx.font='9px "Share Tech Mono"'; ctx.fillStyle='rgba(0,245,255,0.25)';
     ctx.fillText(`σ:${(ME.sigma_t*100).toFixed(2)}%  μ:${(ME.mu_t>=0?'+':'')}${(ME.mu_t*100).toFixed(2)}%`,
       8, CH - 4);
   }
 
-  /* ═══════════════════════════════════════════
-     事件绑定
-  ═══════════════════════════════════════════ */
   document.querySelectorAll('.tf-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       _activeTfMult=parseInt(btn.dataset.tf);
@@ -1918,9 +1724,9 @@ if (crossunder(fast, slow)) {
     if(slRatioMode)  slInput.value = calcSlPrice(1).toFixed(2);
     if(tpRatioMode)  tpInput.value = calcTpPrice(1).toFixed(2);
   });
-  posRatioSlider.addEventListener('pointerdown', activatePosRatio); // 点击即激活
-  posRatioSlider.addEventListener('input', activatePosRatio);       // 拖动时持续更新 QTY
-  sharesInput.addEventListener('focus', deactivatePosRatio);         // 点击/聚焦 QTY 即 deactivate
+  posRatioSlider.addEventListener('pointerdown', activatePosRatio);
+  posRatioSlider.addEventListener('input', activatePosRatio);
+  sharesInput.addEventListener('focus', deactivatePosRatio);
   slRatioSlider.addEventListener('pointerdown', activateSlRatio);
   slRatioSlider.addEventListener('input', activateSlRatio);
   slInput.addEventListener('focus', deactivateSlRatio);
@@ -1934,13 +1740,11 @@ if (crossunder(fast, slow)) {
     panel.classList.toggle('open');
   });
 
-  /* ── OPEN POSITIONS 折叠 ── */
   const ordersPanel = document.getElementById('orders-panel');
   document.getElementById('btn-toggle-positions').addEventListener('click', () => {
     ordersPanel.classList.toggle('positions-collapsed');
   });
 
-  /* ── 交易历史面板 ── */
   const historyPanel   = document.getElementById('history-panel');
   const historyList    = document.getElementById('history-list');
   const historySummary = document.getElementById('history-summary');
@@ -1950,12 +1754,10 @@ if (crossunder(fast, slow)) {
     if(!historyPanel.classList.contains('open')) return;
     const TYPE_LABEL = { MANUAL:'CLOSE', SL:'STOP LOSS', TP:'TAKE PROFIT', LIQ:'LIQUIDATED' };
     const TYPE_CLS   = { MANUAL:'manual', SL:'sl', TP:'tp', LIQ:'liq' };
-    // summary row：直接读增量统计变量，O(1)，无需两次全量 reduce
     const totalFees = _sm_totalFees;
     const totalNet  = _sm_sumWinPnl + _sm_sumLossPnl;
     historySummary.textContent =
       `${tradeHistory.length} trades · Net P&L: ${totalNet>=0?'+':''}$${totalNet.toFixed(2)} · Total Fees: -$${totalFees.toFixed(2)}`;
-    // 增量渲染：只 prepend 自上次渲染以来新增的行（tradeHistory 用 unshift，最新在索引0）
     const newCount = tradeHistory.length - _histRenderedLen;
     if(newCount <= 0) return;
     const frag = document.createDocumentFragment();
@@ -1989,14 +1791,12 @@ if (crossunder(fast, slow)) {
     renderHistory();
   });
 
-  /* ── SUMMARY 面板 ── */
   const summaryPanel = document.getElementById('summary-panel');
   const btnSummary   = document.getElementById('btn-summary');
   const naCanvas     = document.getElementById('net-asset-canvas');
   const naCtx        = naCanvas.getContext('2d');
 
   function drawNetAssetChart() {
-    // 使用闭包中已有的 naCanvas / naCtx，无需重复 getElementById/getContext
     const data = netAssetHistory;
     const W = naCanvas.offsetWidth || 600;
     const H = 110;
@@ -2013,7 +1813,6 @@ if (crossunder(fast, slow)) {
       return;
     }
 
-    // 用循环代替 Math.min/max(...data)，避免大数组 spread 栈压力
     let minV = data[0], maxV = data[0];
     for (let i = 1; i < data.length; i++) {
       if (data[i] < minV) minV = data[i];
@@ -2025,11 +1824,9 @@ if (crossunder(fast, slow)) {
     const mapX = i => (i / (dLen - 1)) * W;
     const mapY = v => H - 6 - ((v - minV) / range) * (H - 12);
 
-    // background
     naCtx.fillStyle = 'rgba(0,0,0,0.3)';
     naCtx.fillRect(0, 0, W, H);
 
-    // initial cash reference line
     const refY = mapY(initialCash);
     naCtx.strokeStyle = 'rgba(255,255,255,0.12)';
     naCtx.lineWidth = 0.8;
@@ -2037,7 +1834,6 @@ if (crossunder(fast, slow)) {
     naCtx.beginPath(); naCtx.moveTo(0, refY); naCtx.lineTo(W, refY); naCtx.stroke();
     naCtx.setLineDash([]);
 
-    // gradient fill
     const last = data[dLen - 1];
     const isUp = last >= initialCash;
     const grad = naCtx.createLinearGradient(0, 0, 0, H);
@@ -2051,7 +1847,6 @@ if (crossunder(fast, slow)) {
     naCtx.fillStyle = grad;
     naCtx.fill();
 
-    // line
     naCtx.beginPath();
     naCtx.strokeStyle = isUp ? '#39ff14' : '#ff2d78';
     naCtx.lineWidth = 1.5;
@@ -2059,42 +1854,34 @@ if (crossunder(fast, slow)) {
     for (let i = 1; i < dLen; i++) naCtx.lineTo(mapX(i), mapY(data[i]));
     naCtx.stroke();
 
-    // labels
     naCtx.font = '9px "Share Tech Mono"';
     naCtx.fillStyle = 'rgba(0,245,255,0.35)';
     naCtx.fillText('$' + minV.toFixed(0), 3, H - 3);
     naCtx.fillText('$' + maxV.toFixed(0), 3, 11);
   }
 
-  /* ── 雷达图（六边形交易能力评估）─────────────────────────────────────
-     6 轴：EDGE / WIN% / RISK / R/R / STAB / EFF
-     scores: 长度6的数组，每项 0-100
-  ─────────────────────────────────────────────────────────────────── */
   function drawRadarChart(scores) {
     const rc = document.getElementById('radar-canvas');
     if (!rc) return;
     const rCtx = rc.getContext('2d');
 
-    // 让 canvas 像素分辨率与实际布局尺寸匹配（响应式）
     const S = rc.offsetWidth || 200;
     rc.width  = S;
     rc.height = S;
 
     const N  = 6;
     const cx = S / 2, cy = S / 2;
-    const R  = S * 0.27;          // 数据多边形最大半径
-    const LR = S * 0.375;         // 标签文字中心半径
-    const lFs = Math.max(7, Math.floor(S * 0.047)); // 标签字号
-    const lh  = lFs * 1.45;       // 两行行距
+    const R  = S * 0.27;
+    const LR = S * 0.375;
+    const lFs = Math.max(7, Math.floor(S * 0.047));
+    const lh  = lFs * 1.45;
 
-    // 轴角度：从顶部（-π/2）顺时针
     const axAngle = i => (i / N) * 2 * Math.PI - Math.PI / 2;
 
     rCtx.clearRect(0, 0, S, S);
     rCtx.fillStyle = 'rgba(0,0,0,0.25)';
     rCtx.fillRect(0, 0, S, S);
 
-    // ── 背景网格（5 层同心六边形）──────────────────────────────────
     for (let ring = 1; ring <= 5; ring++) {
       const r = R * ring / 5;
       rCtx.beginPath();
@@ -2108,7 +1895,6 @@ if (crossunder(fast, slow)) {
       rCtx.lineWidth = 0.7;
       rCtx.stroke();
     }
-    // 80分参考线（高亮）
     {
       const r80 = R * 0.8;
       rCtx.beginPath();
@@ -2123,7 +1909,6 @@ if (crossunder(fast, slow)) {
       rCtx.stroke();
     }
 
-    // ── 轴线 ────────────────────────────────────────────────────────
     rCtx.lineWidth = 0.7;
     rCtx.strokeStyle = 'rgba(0,245,255,0.1)';
     for (let i = 0; i < N; i++) {
@@ -2134,11 +1919,9 @@ if (crossunder(fast, slow)) {
       rCtx.stroke();
     }
 
-    // ── 综合分 + 颜色主题 ───────────────────────────────────────────
     const avg = scores.reduce((s, v) => s + v, 0) / N;
     const rgb = avg >= 65 ? '57,255,20' : avg >= 35 ? '245,230,66' : '255,45,120';
 
-    // ── 无数据提示 ──────────────────────────────────────────────────
     if (scores.every(s => s === 0)) {
       rCtx.fillStyle = 'rgba(0,245,255,0.25)';
       rCtx.font = `${lFs+1}px "Share Tech Mono"`;
@@ -2148,7 +1931,6 @@ if (crossunder(fast, slow)) {
       return;
     }
 
-    // ── 数据多边形：单次路径，fill 后直接 stroke，省去重复三角函数计算 ──
     rCtx.beginPath();
     for (let i = 0; i < N; i++) {
       const a = axAngle(i);
@@ -2167,7 +1949,6 @@ if (crossunder(fast, slow)) {
     rCtx.stroke();
     rCtx.shadowBlur = 0;
 
-    // ── 顶点圆点 ────────────────────────────────────────────────────
     for (let i = 0; i < N; i++) {
       const a = axAngle(i);
       const r = R * scores[i] / 100;
@@ -2177,7 +1958,6 @@ if (crossunder(fast, slow)) {
       rCtx.fill();
     }
 
-    // ── 轴标签 + 分数 ───────────────────────────────────────────────
     const LABELS = ['EDGE','WIN%','RISK','R/R','STAB','EFF'];
     rCtx.textBaseline = 'middle';
     for (let i = 0; i < N; i++) {
@@ -2185,15 +1965,12 @@ if (crossunder(fast, slow)) {
       const ax = Math.cos(a), ay = Math.sin(a);
       const lx = cx + LR * ax;
       const ly = cy + LR * ay;
-      // 水平对齐：左/右/居中
       rCtx.textAlign = ax > 0.3 ? 'left' : ax < -0.3 ? 'right' : 'center';
 
-      // 标签（上行）
       rCtx.font = `${lFs}px "Share Tech Mono"`;
       rCtx.fillStyle = 'rgba(0,245,255,0.7)';
       rCtx.fillText(LABELS[i], lx, ly - lh * 0.5);
 
-      // 分数（下行）
       const sc = scores[i];
       const scColor = sc >= 65 ? '#39ff14' : sc >= 35 ? '#f5e642' : '#ff2d78';
       rCtx.font = `bold ${lFs + 1}px "Share Tech Mono"`;
@@ -2201,7 +1978,6 @@ if (crossunder(fast, slow)) {
       rCtx.fillText(Math.round(sc), lx, ly + lh * 0.45);
     }
 
-    // ── 中心：综合评分 + 等级 ────────────────────────────────────────
     const grade = avg >= 80 ? 'S' : avg >= 65 ? 'A' : avg >= 50 ? 'B' : avg >= 35 ? 'C' : 'D';
     rCtx.textAlign = 'center'; rCtx.textBaseline = 'middle';
 
@@ -2222,12 +1998,10 @@ if (crossunder(fast, slow)) {
     if (!summaryPanel || !summaryPanel.classList.contains('open')) return;
     drawNetAssetChart();
 
-    // ── 净资产读取（O(1)）────────────────────────────────────────────
     const cur = netAssetHistory.length > 0 ? netAssetHistory[netAssetHistory.length - 1] : initialCash;
     const totalReturn = cur - initialCash;
     const returnPct   = initialCash > 0 ? (totalReturn / initialCash * 100) : 0;
 
-    // ── 从增量变量直接读取，无需遍历数组 ──────────────────────────────
     const mdd     = _sm_mdd;
     const mddAmt  = _sm_mddAmt;
     const nR      = _sm_nR;
@@ -2250,10 +2024,9 @@ if (crossunder(fast, slow)) {
     const maxConsecLoss = _sm_maxConsecLoss;
     const maxConsecWin  = _sm_maxConsecWin;
 
-    // ── 派生指标 ──────────────────────────────────────────────────────
     const losses  = n - wins;
     const avgWin  = wins   > 0 ? sumWinPnl  / wins   : 0;
-    const avgLoss = losses > 0 ? sumLossPnl / losses : 0;  // ≤ 0
+    const avgLoss = losses > 0 ? sumLossPnl / losses : 0;
     const winRate = n > 0 ? wins / n : 0;
     const pf = sumLossPnl < -1e-8 ? sumWinPnl / Math.abs(sumLossPnl)
              : (sumWinPnl > 0 ? 999 : null);
@@ -2261,7 +2034,6 @@ if (crossunder(fast, slow)) {
     const expectancy = n > 0 ? winRate * avgWin + (1 - winRate) * avgLoss : null;
     const calmar = mdd > 1e-6 ? returnPct / (mdd * 100) : null;
 
-    // ── 雷达图评分 ──────────────────────────────────────────────────
     {
       const sEdge = n === 0 ? 0 : pf === null ? 0 : Math.min(100, (pf >= 999 ? 100 : pf / 4 * 100));
       const sAcc  = winRate * 100;
@@ -2276,7 +2048,6 @@ if (crossunder(fast, slow)) {
       drawRadarChart([sEdge, sAcc, sRisk, sPay, sStab, sEff]);
     }
 
-    // ── DOM 更新 ──────────────────────────────────────────────────────
     const smReturn = document.getElementById('sm-return');
     smReturn.style.color = totalReturn >= 0 ? 'var(--green)' : 'var(--pink)';
     smReturn.textContent = (totalReturn >= 0 ? '+' : '') + '$' + totalReturn.toFixed(2);
@@ -2368,29 +2139,25 @@ if (crossunder(fast, slow)) {
     ME.applyN(n);
     candleSize    = _activeTfMult * n;
 
-    // 按 N 缩放历史容量，保证始终有约 200 个 T 周期的原始数据
-    const MAX_TF_MULT = 5;  // 最大时间周期倍数
+    const MAX_TF_MULT = 5;
     MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n;
 
-    // N 减小时历史数组可能超出新容量，需从头部裁剪
     const excess = ohlc.length - MAX_HISTORY;
     if (excess > 0) {
       ohlc.splice(0, excess);
       priceHistory.splice(0, excess);
       volumeHistory.splice(0, excess);
-      // 同步 trades 的 index（裁剪后旧索引偏移了 excess）
       let _w = 0;
       for (let _i = 0; _i < trades.length; _i++) {
         trades[_i].index -= excess;
         if (trades[_i].index >= 0) trades[_w++] = trades[_i];
       }
       trades.length = _w;
-      totalTicks = priceHistory.length;   // 重新对齐 totalTicks
+      totalTicks = priceHistory.length;
     }
 
-    EMACache.reset(); // scratch 缓冲区尺寸随 candleSize 变化，全量清空
+    EMACache.reset();
 
-    // regime 计时重置已包含在 ME.applyN(n) 中
     clearInterval(_tickInterval);
     _tickInterval = setInterval(stepPrice, TICK_MS_BASE / n);
   }
@@ -2399,7 +2166,6 @@ if (crossunder(fast, slow)) {
     document.getElementById('sim-n-val').textContent = n;
     applySimN(n);
   });
-  // pointerdown 先于 click 触发，确保开仓前预览方向已正确更新
   btnLong.addEventListener('pointerdown',  () => { _slTpPreviewDir =  1; });
   btnLong.addEventListener('click',  () => placeOrder(1));
   btnShort.addEventListener('pointerdown', () => { _slTpPreviewDir = -1; });
@@ -2408,7 +2174,6 @@ if (crossunder(fast, slow)) {
   slInput.addEventListener('input',()=>clearSlTpErr(slInput,'sl-err'));
   tpInput.addEventListener('input',()=>clearSlTpErr(tpInput,'tp-err'));
   btnCloseAll.addEventListener('click',closeAll);
-  // btnReset handler is registered below after Crypto module init (handles both modes)
   const initAssetVal = document.getElementById('init-asset-val');
   initAssetInput.addEventListener('input',()=>{
     const v=parseFloat(initAssetInput.value)||1000;
@@ -2430,11 +2195,7 @@ if (crossunder(fast, slow)) {
   document.getElementById('detailedEMA').addEventListener('change',e=>{showDetailedEMA=e.target.checked;EMACache.update();});
   document.getElementById('rainbowEMA').addEventListener('change', e=>{showRainbowEMA=e.target.checked;EMACache.update();});
 
-  /* ═══════════════════════════════════════════
-     CRYPTO live mode  (module: Crypto.js)
-  ═══════════════════════════════════════════ */
   const _cryptoCtx = {
-    // Scalar state — getter/setter so module writes propagate back to IIFE scope
     get currentPrice()     { return currentPrice; },     set currentPrice(v)     { currentPrice = v; },
     get prevTickPrice()    { return prevTickPrice; },     set prevTickPrice(v)    { prevTickPrice = v; },
     get lastTickTime()     { return lastTickTime; },      set lastTickTime(v)     { lastTickTime = v; },
@@ -2454,11 +2215,9 @@ if (crossunder(fast, slow)) {
     get _aggCache()        { return EMACache.getRawAggCache(); }, set _aggCache(v)       { EMACache.setRawAggCache(v); },
     get trades()           { return trades; },            set trades(v)           { trades = v; },
     get srBreakDrift()     { return ME.srBreakDrift; },   set srBreakDrift(v)     { ME.srBreakDrift = v; },
-    // Constants / read-only
     get MAX_HISTORY()      { return MAX_HISTORY; },
     get TICK_MS_BASE()     { return TICK_MS_BASE; },
     get simN()             { return simN; },
-    // DOM refs
     get initAssetInput()   { return initAssetInput; },
     get ordersDiv()        { return ordersDiv; },
     get cardRefs()         { return cardRefs; },
@@ -2469,14 +2228,12 @@ if (crossunder(fast, slow)) {
     get summaryPanel()     { return summaryPanel; },
     get btnSummary()       { return btnSummary; },
     get liqIndicator()     { return liqIndicator; },
-    // Cache Maps (mutated in-place by module)
     get emaCache()         { return EMACache.getEMACache(); },
     get aggEmaCache()      { return EMACache.getAggEMACache(); },
     get aggEmaScratch()    { return EMACache.getAggEmaScratch(); },
     get emaCacheTick()     { return EMACache.getEMACacheTick(); },
     get srEmaValues()      { return ME.srEmaValues; },
     get srPrevSide()       { return ME.srPrevSide; },
-    // Methods
     refreshUI:           () => refreshUI(),
     triggerFlash:        () => triggerFlash(),
     showToast:           (msg, type, dur) => showToast(msg, type, dur),
@@ -2501,35 +2258,27 @@ if (crossunder(fast, slow)) {
     Crypto = null;
   }
   if (!Crypto) {
-    // Fallback: no-op stub so the simulator always works without the module
     Crypto = { get mode(){ return false; }, get symbol(){ return ''; },
                step(){}, disconnect(){}, softReset(){} };
   }
 
-  // 暴露 Crypto 状态供 StrategyEditor iframe 读取（BackTest 模式检测）
   window._cryptoCtxPublic = {
     get mode()   { return Crypto ? Crypto.mode   : false; },
     get symbol() { return Crypto ? Crypto.symbol : '';    },
   };
 
-  // Override RESET button in crypto mode
   btnReset.addEventListener('click', () => {
     if (Crypto.mode) { Crypto.softReset(); }
     else             { resetGame(); }
   });
 
-  /* ═══════════════════════════════════════════
-     PineScript 策略执行器（逻辑已封装至 StrategyEngine.js）
-  ═══════════════════════════════════════════ */
-
-  // 策略按钮事件
   document.getElementById('btn-strategy-start').addEventListener('click', () => {
     const code = document.getElementById('pine-code').value.trim();
-    if (!code) { showToast('⚠ 请先输入策略代码', 'warn'); return; }
+    if (!code) { showToast('⚠ Enter strategy code', 'warn'); return; }
     if (StrategyEngine.start(code)) {
       const st = document.getElementById('strategy-status');
       st.textContent = '● RUNNING'; st.classList.add('running');
-      showToast('策略已启动', 'success');
+      showToast('Strategy started', 'success');
     }
   });
 
@@ -2537,11 +2286,10 @@ if (crossunder(fast, slow)) {
     StrategyEngine.stop();
     const st = document.getElementById('strategy-status');
     st.textContent = '● IDLE'; st.classList.remove('running');
-    closeAll();  // 停止时自动平掉所有策略持仓
-    showToast('策略已停止，持仓已全部平仓', 'info');
+    closeAll();
+    showToast('Strategy stopped, all positions closed', 'info');
   });
 
-  // 策略编辑器模态窗口
   (function(){
     const modal    = document.getElementById('editor-modal');
     const closeBtn = document.getElementById('modal-close');
@@ -2553,21 +2301,15 @@ if (crossunder(fast, slow)) {
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && modal.style.display === 'flex') modal.style.display = 'none';
     });
-    // 接收来自 StrategyEditor iframe 的"应用策略"消息
     window.addEventListener('message', e => {
       if (e.data && e.data.type === 'apply-strategy' && typeof e.data.code === 'string') {
         document.getElementById('pine-code').value = e.data.code;
         modal.style.display = 'none';
-        showToast('策略代码已从编辑器应用', 'success');
+        showToast('Strategy code applied from editor', 'success');
       }
     });
   })();
 
-  /* ═══════════════════════════════════════════
-     初始化 + 主循环
-  ═══════════════════════════════════════════ */
-
-  // EMA Cache — inject dependencies（必须在 resetGame 之前，否则首次 update() 静默跳过）
   if (window.EMACache) {
     EMACache.init({
       getPriceHistory:    () => priceHistory,
@@ -2583,7 +2325,6 @@ if (crossunder(fast, slow)) {
 
   resetGame();
 
-  // Virtual Traders — expose shared market data via getters (live references)
   if (window.VirtualTraders) {
     VirtualTraders.init({
       get currentPrice()  { return currentPrice; },
@@ -2594,7 +2335,6 @@ if (crossunder(fast, slow)) {
     });
   }
 
-  // Strategy Engine — inject dependencies
   if (window.StrategyEngine) {
     StrategyEngine.init({
       getPrice:         () => currentPrice,
@@ -2617,11 +2357,9 @@ if (crossunder(fast, slow)) {
     });
   }
 
-  // 价格 tick（每 TICK_MS_BASE/simN ms 更新一次）
   let _tickInterval = setInterval(stepPrice, TICK_MS_BASE / simN);
   window.addEventListener('beforeunload', () => { clearInterval(_tickInterval); Crypto.disconnect(); });
 
-  // 渲染循环（60fps，含插值平滑）
   function renderLoop(){ drawChart(); requestAnimationFrame(renderLoop); }
   requestAnimationFrame(renderLoop);
 
