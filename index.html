@@ -10,7 +10,8 @@
     <style>
         html {
             overflow-x: hidden;
-            background: #0a0a2a;
+            background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+            min-height: 100%;
         }
 
         body {
@@ -19,7 +20,7 @@
             line-height: 1.6;
             margin: 0;
             position: relative;
-            background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+            background: transparent;
             min-height: 100vh;
             -webkit-text-size-adjust: 100%; /* 防止移动端字体缩放 */
         }
@@ -323,7 +324,7 @@
         /* 移动端适配 - 保持立体阴影效果一致 */
         @media (max-width: 768px) {
             body {
-                background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+                background: transparent;
                 color: #f0f0f0;
             }
 
