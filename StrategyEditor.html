@@ -123,10 +123,51 @@
             color: rgba(0,245,255,0.5);
             letter-spacing: 0.12em;
         }
+        /* ── Error highlight overlay ───────────────────── */
+        #code-wrap {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        #code-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            background: #06090f;
+            font-family: 'Share Tech Mono', 'Fira Code', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+            padding: 14px 16px;
+            white-space: pre;
+            tab-size: 4;
+            scrollbar-width: none;
+        }
+        #code-overlay::-webkit-scrollbar { display: none; }
+        .ov-line         { display: block; min-height: 1.6em; color: transparent; }
+        .ov-line-error   {
+            background: rgba(255,45,120,0.13);
+            border-left: 2px solid rgba(255,45,120,0.85);
+            margin-left: -16px;
+            padding-left: 14px;
+            box-shadow: inset 0 0 14px rgba(255,45,120,0.05);
+        }
+        .ov-col-mark {
+            background: rgba(255,45,120,0.55);
+            outline: 1px solid rgba(255,45,120,0.9);
+            border-radius: 2px;
+            color: transparent;
+        }
+
         #code {
             width: 100%;
             flex: 1;
-            background: #06090f;
+            background: transparent;
+            position: relative;
+            z-index: 1;
             border: none;
             color: #b8d4f0;
             font-family: 'Share Tech Mono', 'Fira Code', monospace;
@@ -466,7 +507,10 @@
             <span>📝 STRATEGY CODE</span>
             <span style="opacity:0.5">Tab=autocomplete · Ctrl+S=check · Ctrl+Enter=apply</span>
         </div>
-        <textarea id="code" spellcheck="false" placeholder="// write strategy code here..."></textarea>
+        <div id="code-wrap">
+            <div id="code-overlay" aria-hidden="true"></div>
+            <textarea id="code" spellcheck="false" placeholder="// write strategy code here..."></textarea>
+        </div>
         <div class="status-bar">
             <span id="hint-msg">Ready</span>
             <span id="cursor-pos">Ln 1, Col 1</span>
@@ -798,14 +842,81 @@ if (fast > slow) {
 
 <script>
     (function() {
-        const editor        = document.getElementById('code');
-        const completionBox = document.getElementById('completion');
-        const syntaxResult  = document.getElementById('syntax-result');
-        const cursorPos     = document.getElementById('cursor-pos');
-        const hintMsg       = document.getElementById('hint-msg');
-        const toggleBtn     = document.getElementById('toggleInstruction');
+        const editor           = document.getElementById('code');
+        const overlay          = document.getElementById('code-overlay');
+        const completionBox    = document.getElementById('completion');
+        const syntaxResult     = document.getElementById('syntax-result');
+        const cursorPos        = document.getElementById('cursor-pos');
+        const hintMsg          = document.getElementById('hint-msg');
+        const toggleBtn        = document.getElementById('toggleInstruction');
         const instructionPanel = document.getElementById('instructionPanel');
-        const collapseIcon  = document.getElementById('collapseIcon');
+        const collapseIcon     = document.getElementById('collapseIcon');
+
+        // ── Error overlay helpers ──────────────────────────────────
+        function _escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        /** Extract 1-indexed {line, col} from a caught error.
+         *  Uses eval with //# sourceURL=strategy-check.js so both Chrome and
+         *  Firefox emit "strategy-check.js:N:M" in the stack.
+         *  eval wrapper adds 2 lines before user code:
+         *    Line 1: (function(pineEnv){
+         *    Line 2: with(pineEnv){
+         *    Line 3+: user code   → userLine = evalLine - 2 */
+        function _extractErrPos(e) {
+            // Chrome & Firefox with sourceURL eval
+            const mSrc = (e.stack || '').match(/strategy-check\.js:(\d+):(\d+)/);
+            if (mSrc) {
+                return { line: Math.max(1, +mSrc[1] - 2), col: +mSrc[2] };
+            }
+            // Firefox fallback: e.lineNumber from eval string (same offset)
+            if (typeof e.lineNumber === 'number' && e.lineNumber > 0) {
+                const col = typeof e.columnNumber === 'number' ? e.columnNumber : null;
+                return { line: Math.max(1, e.lineNumber - 2), col };
+            }
+            return null;
+        }
+
+        /** For Chrome SyntaxErrors (no line info in stack): scan from the LAST line
+         *  upward, removing one line at a time. The first line whose removal makes
+         *  the code parse cleanly is the error line.
+         *  This correctly handles "cause ≠ trigger" cases, e.g. a missing ')' on
+         *  line N that only surfaces as a SyntaxError when line N+1's '}' appears.
+         *  Uses fullCode (editor.value) so line indices match _renderOverlay. */
+        function _findErrLine(fullCode) {
+            const lines = fullCode.split('\n');
+            for (let n = lines.length - 1; n >= 0; n--) {
+                const modified = lines.filter((_, i) => i !== n).join('\n');
+                try {
+                    // eslint-disable-next-line no-new-func
+                    new Function('pineEnv', `with(pineEnv){\n${modified}\n}`);
+                    return n + 1; // 1-indexed: removing this line fixed it
+                } catch(e2) { /* still broken — keep scanning */ }
+            }
+            return 1;
+        }
+
+        function _renderOverlay(errLine0, errCol0) {
+            // errLine0: 0-indexed error line; errCol0: 0-indexed col (may be null)
+            const lines = editor.value.split('\n');
+            const html  = lines.map((ln, i) => {
+                const esc = _escHtml(ln) || ' ';
+                if (i !== errLine0) return `<span class="ov-line">${esc}</span>`;
+                if (errCol0 != null && errCol0 >= 0 && errCol0 < ln.length) {
+                    const pre  = _escHtml(ln.slice(0, errCol0));
+                    const ch   = _escHtml(ln[errCol0]);
+                    const post = _escHtml(ln.slice(errCol0 + 1)) || '';
+                    return `<span class="ov-line ov-line-error">${pre}<span class="ov-col-mark">${ch}</span>${post}</span>`;
+                }
+                return `<span class="ov-line ov-line-error">${esc}</span>`;
+            }).join('');   // block spans break lines themselves — no \n needed
+            overlay.innerHTML = html;
+            overlay.scrollTop  = editor.scrollTop;
+            overlay.scrollLeft = editor.scrollLeft;
+        }
+
+        function _clearOverlay() { overlay.innerHTML = ''; }
 
         // ----- Autocomplete keywords -----
         const keywords = [
@@ -933,8 +1044,12 @@ if (fast > slow) {
         });
 
         editor.addEventListener('click',  () => { hideCompletions(); updateCursorDisplay(); });
-        editor.addEventListener('input',  () => { hideCompletions(); updateCursorDisplay(); });
-        editor.addEventListener('scroll', () =>  hideCompletions());
+        editor.addEventListener('input',  () => { hideCompletions(); updateCursorDisplay(); _clearOverlay(); });
+        editor.addEventListener('scroll', () => {
+            hideCompletions();
+            overlay.scrollTop  = editor.scrollTop;
+            overlay.scrollLeft = editor.scrollLeft;
+        });
         document.addEventListener('click', e => {
             if (!editor.contains(e.target) && !completionBox.contains(e.target)) hideCompletions();
         });
@@ -954,10 +1069,7 @@ if (fast > slow) {
                 syntaxResult.className = 'check-result';
                 return;
             }
-            try {
-                // Build the same sandbox as the runtime: with(pineEnv){...}
-                // Mocked pineEnv exposes the same names as getters + methods
-                const mockEnv = {
+            const mockEnv = {
                     get open()   { return 100; },
                     get high()   { return 100; },
                     get low()    { return 100; },
@@ -984,21 +1096,72 @@ if (fast > slow) {
                     },
                     Math
                 };
-                const fn = new Function('pineEnv', `with(pineEnv){${code}}`);
+
+            // ── Phase 1: pure parse check via new Function (no eval wrapper) ──────
+            // Using new Function here avoids the eval wrapper's own closing ')' from
+            // producing a misleading "Unexpected token ')'" when the user's code is
+            // missing a closing bracket.
+            let parseErr = null;
+            try { new Function('pineEnv', `with(pineEnv){\n${code}\n}`); } // eslint-disable-line no-new-func
+            catch(e) { if (e instanceof SyntaxError) parseErr = e; }
+
+            if (parseErr) {
+                const _incomplete = msg =>
+                    msg.includes('unexpected end') || msg.includes('end of input') ||
+                    msg.includes('end of script')  || msg.includes('unexpected eof');
+
+                if (_incomplete(parseErr.message.toLowerCase())) {
+                    // Missing closing } or ( — point to last non-empty line
+                    const edLines = editor.value.split('\n');
+                    let lastLn = edLines.length;
+                    for (let i = edLines.length - 1; i >= 0; i--) {
+                        if (edLines[i].trim()) { lastLn = i + 1; break; }
+                    }
+                    const msg = 'Missing closing } or ) — check bracket balance';
+                    syntaxResult.textContent = '✗ ' + msg;
+                    syntaxResult.className = 'check-result status-error';
+                    hintMsg.textContent = msg;
+                    _renderOverlay(lastLn - 1, null);
+                } else {
+                    // Concrete syntax error — _findErrLine is browser-agnostic;
+                    // _extractErrPos is not used here because its offset is calibrated
+                    // for the eval wrapper (Phase 2), not new Function's single header line.
+                    const ln = _findErrLine(editor.value);
+                    const pos = ln ? { line: ln, col: null } : null;
+                    const lineInfo = pos ? ` (Ln ${pos.line}${pos.col != null ? `, Col ${pos.col}` : ''})` : '';
+                    syntaxResult.textContent = '✗ ' + parseErr.message + lineInfo;
+                    syntaxResult.className = 'check-result status-error';
+                    hintMsg.textContent = parseErr.message + lineInfo;
+                    if (pos) _renderOverlay(pos.line - 1, pos.col != null ? pos.col - 1 : null);
+                    else _clearOverlay();
+                }
+                return;
+            }
+
+            // ── Phase 2: runtime check — eval + sourceURL for ReferenceError lines ─
+            try {
+                // eslint-disable-next-line no-eval
+                const fn = eval(`(function(pineEnv){\nwith(pineEnv){\n${code}\n}\n})\n//# sourceURL=strategy-check.js`);
                 fn.call({}, mockEnv);
                 syntaxResult.textContent = '✓ OK';
                 syntaxResult.className = 'check-result status-success';
                 hintMsg.textContent = 'Syntax OK';
+                _clearOverlay();
             } catch(e) {
-                if (e instanceof SyntaxError || e instanceof ReferenceError) {
-                    syntaxResult.textContent = '✗ ' + e.message;
+                if (e instanceof ReferenceError) {
+                    const pos = _extractErrPos(e);
+                    const lineInfo = pos ? ` (Ln ${pos.line}${pos.col != null ? `, Col ${pos.col}` : ''})` : '';
+                    syntaxResult.textContent = '✗ ' + e.message + lineInfo;
                     syntaxResult.className = 'check-result status-error';
-                    hintMsg.textContent = e.message;
+                    hintMsg.textContent = e.message + lineInfo;
+                    if (pos) _renderOverlay(pos.line - 1, pos.col != null ? pos.col - 1 : null);
+                    else _clearOverlay();
                 } else {
-                    // Runtime errors from mocks are expected — code is structurally OK
+                    // Other runtime errors from mocks are expected — code is structurally OK
                     syntaxResult.textContent = '✓ OK (runtime ok)';
                     syntaxResult.className = 'check-result status-success';
                     hintMsg.textContent = 'Syntax OK';
+                    _clearOverlay();
                 }
             }
         }

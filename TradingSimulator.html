@@ -490,9 +490,21 @@
     /* ── MISC ─────────────────────────────── */
 
 
-    .hint { font-size: 0.55rem; color: rgba(0,245,255,0.2); display: flex; gap: 18px; flex-wrap: wrap; padding: 0 2px; }
-    .warning { color: #ff2d78; font-size: 0.7rem; animation: blink 1s infinite; text-align: center; width: 100%; }
-    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+    .warning {
+      color: #ff2d78; font-size: 0.7rem; text-align: center; width: 100%;
+      text-shadow: 0 0 10px rgba(255,45,120,0.55);
+      animation: blinkAlert 4s ease-out forwards;
+    }
+    @keyframes blinkAlert {
+      0%,8%  { opacity: 1; }
+      18%    { opacity: 0.1; }
+      28%    { opacity: 1; }
+      38%    { opacity: 0.1; }
+      50%    { opacity: 1; }
+      62%    { opacity: 0.1; }
+      72%    { opacity: 1; }
+      88%,100% { opacity: 1; }
+    }
 
     /* ── Position size inactive state ─────────── */
     .pos-inactive input[type=range] { opacity: 0.28; }
@@ -608,7 +620,6 @@
       }
 
       /* ── Misc ── */
-      .hint { font-size: 0.5rem; gap: 6px; flex-direction: column; }
       /* ── Toast: 手机端略缩小字号 ── */
       #toast-container { max-width: 200px; }
       .toast { font-size: 0.68rem; }
@@ -869,7 +880,7 @@
       <span class="strategy-label">⚙ PINE STRATEGY</span>
       <button class="cyber-button util" id="btn-strategy-start" style="width:auto;padding:4px 14px;"><span style="display:inline-block;width:0;height:0;border-style:solid;border-width:5px 0 5px 8px;border-color:transparent transparent transparent currentColor;vertical-align:middle;margin-right:5px;position:relative;top:-1px"></span>START</button>
       <button class="cyber-button util" id="btn-strategy-stop"  style="width:auto;padding:4px 14px;"><span style="display:inline-block;width:8px;height:8px;background:currentColor;vertical-align:middle;margin-right:5px;position:relative;top:-1px"></span>STOP</button>
-      <button class="cyber-button util" id="btn-strategy-editor" style="width:auto;padding:4px 14px;">📝 EDITOR</button>
+      <button class="cyber-button util" id="btn-strategy-editor" style="width:auto;padding:4px 14px;">&lt;/&gt; EDITOR</button>
       <span id="strategy-status" class="strategy-status">● IDLE</span>
     </div>
     <textarea id="pine-code" class="strategy-code" rows="5"
@@ -892,8 +903,8 @@ if (crossunder(fast, slow)) {
       </span>
       <span id="shares-summary" style="color:rgba(0,245,255,0.35)">L:0.00 / S:0.00 shares</span>
       <div style="display:flex;gap:6px;">
-        <button class="history-btn" id="btn-history">📋 HISTORY</button>
-        <button class="summary-btn" id="btn-summary">📊 SUMMARY</button>
+        <button class="history-btn" id="btn-history">≡ HISTORY</button>
+        <button class="summary-btn" id="btn-summary">◈ SUMMARY</button>
       </div>
     </div>
     <div class="orders-body">
@@ -989,7 +1000,7 @@ if (crossunder(fast, slow)) {
   <div id="editor-modal" class="modal" style="display:none;">
     <div class="modal-content">
       <div class="modal-header">
-        <span class="modal-title">⚡ STRATEGY EDITOR</span>
+        <span class="modal-title">» STRATEGY EDITOR</span>
         <button class="modal-close" id="modal-close" title="Close (Esc)">✕</button>
       </div>
       <div class="modal-body">
@@ -999,11 +1010,7 @@ if (crossunder(fast, slow)) {
   </div>
 
 
-  <div class="hint">
-    <span>⚡ Isolated margin · Per-order leverage · Liquidation at 5% maintenance</span>
-    <span>🔹 SL/TP use absolute price · leave blank to skip</span>
-    <span>📈 Stochastic volatility + jump diffusion + regime switching</span>
-  </div>
+
 </div>
 
 <script src="Crypto.js"></script>
