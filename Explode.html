@@ -6,7 +6,6 @@
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
     <title>Gravity · compact panel</title>
     <style>
-        /* 基础样式与原版保持一致，只修改/增强参数面板相关部分 */
         body {
             font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
             color: #f0f0f0;
@@ -31,7 +30,6 @@
             -webkit-filter: blur(0.3px) brightness(1.1);
         }
 
-        /* 参数按钮与面板 —— 重构为紧凑布局 */
         #params-toggle {
             position: fixed;
             top: 20px;
@@ -269,12 +267,10 @@
     <div id="particles-js"></div>
     <div id="explosion-indicator">⚠️ Black hole warning ... imminent explosion ⚠️</div>
 
-    <!-- 参数面板 - 紧凑英文界面，标签精简，控件同一行，三按钮同行 -->
     <div id="params-toggle" title="Gravity parameters">⚙️</div>
     <div id="params-panel">
         <h3>⚡ Gravity parameters (≥0)</h3>
 
-        <!-- G constant -->
         <div class="param-row">
             <label>G constant</label>
             <div class="param-control">
@@ -283,7 +279,6 @@
             </div>
         </div>
 
-        <!-- Center attraction strength -->
         <div class="param-row">
             <label>Center attract</label>
             <div class="param-control">
@@ -292,7 +287,6 @@
             </div>
         </div>
 
-        <!-- 粒子数量 -->
         <div class="param-row">
             <label>Count multiplier</label>
             <div class="param-control">
@@ -302,7 +296,6 @@
             </div>
         </div>
 
-        <!-- 坍缩阈值 m -->
         <div class="param-row">
             <label>Threshold m</label>
             <div class="param-control">
@@ -311,7 +304,6 @@
             </div>
         </div>
 
-        <!-- 牵引力 F -->
         <div class="param-row">
             <label>Traction F</label>
             <div class="param-control">
@@ -320,7 +312,6 @@
             </div>
         </div>
 
-        <!-- 爆炸半径因子 r -->
         <div class="param-row">
             <label>Explosion r</label>
             <div class="param-control">
@@ -329,7 +320,6 @@
             </div>
         </div>
 
-        <!-- 最大速度因子 -->
         <div class="param-row">
             <label>Max speed</label>
             <div class="param-control">
@@ -338,7 +328,6 @@
             </div>
         </div>
 
-        <!-- 三个按钮同一行 -->
         <div class="button-row">
             <div class="param-btn" id="apply-params">Apply</div>
             <div class="param-btn refresh" id="refresh-particles">Refresh</div>
@@ -348,7 +337,6 @@
 
     <script>
     (function() {
-        // ==================== 辅助函数 ====================
         function connectionColor(t, jitter) {
             var hue = Math.max(0, Math.min(360, t * 270 + (jitter || 0)));
             var sat = 80 + t * 18;
@@ -356,10 +344,8 @@
             return { hue: hue, sat: sat, lit: lit };
         }
 
-        // 随机抖动调整为 ±6 (原 ±14)
         function randJitter() { return (Math.random() - 0.5) * 12; }
 
-        // ==================== 获取屏幕类别 ====================
         function getScreenClass() {
             var w = window.innerWidth;
             return {
@@ -368,7 +354,6 @@
             };
         }
 
-        // ==================== 引力粒子系统 ====================
         class GravityParticleSystem {
             constructor(containerId, baseConfig, initialFactor = 1.5) {
                 this.container = document.getElementById(containerId);
@@ -381,7 +366,6 @@
                 this.animationId = null;
                 this.mouse = { x: 0, y: 0, isHovering: false };
 
-                // 可调节参数
                 this.G = 6.0;
                 this.attractStrength = 3.0;
                 this.m = 3;
@@ -389,15 +373,12 @@
                 this.explosionRadiusFactor = 0.5;
                 this.maxSpeedFactor = 2.7;
 
-                // 黑洞爆炸状态
                 this.state = 'normal';
                 this.warningStartTime = 0;
                 this.targetGlowScale = 10.0;
                 this.glowScale = 1.0;
 
-                // 初始平均质量（用于大质量粒子判断）
                 this.initialAvgMass = 1.0;
-                // 初始平均半径（用于颜色映射）
                 this.initialAvgSize = 1.0;
 
                 this.init();
@@ -415,7 +396,7 @@
                 this.ctx = this.canvas.getContext('2d');
                 this.resizeCanvas();
 
-                this.createParticles();   // 会根据当前 factor 生成粒子，并设置 initialAvgMass 和 initialAvgSize
+                this.createParticles();
                 this.setupMouseEvents();
 
                 this.state = 'normal';
@@ -460,12 +441,11 @@
                         size,
                         mass,
                         _jitter, _phase, _speed,
-                        connCount: 0  // 移除未使用的 baseOpacity
+                        connCount: 0
                     });
                 }
                 this.particles = newParticles;
 
-                // 计算初始平均质量（用于大质量粒子判断）
                 let totalMass = 0;
                 let totalSize = 0;
                 for (let p of this.particles) {
@@ -477,7 +457,7 @@
             }
 
             refreshParticles() {
-                this.createParticles(); // 重新生成并更新 initialAvgMass 和 initialAvgSize
+                this.createParticles();
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -485,7 +465,7 @@
 
             setFactor(newFactor) {
                 this.factor = newFactor;
-                this.createParticles(); // 重新生成并更新 initialAvgMass 和 initialAvgSize
+                this.createParticles();
                 this.state = 'normal';
                 this.glowScale = 1.0;
                 document.getElementById('explosion-indicator').classList.remove('show');
@@ -502,7 +482,6 @@
                 });
             }
 
-            // ========== 合并规则 ==========
             mergeParticles() {
                 if (this.particles.length < 2) return;
                 this.mergeByMassRatio();
@@ -643,7 +622,6 @@
                 this.particles = remaining.concat(newParticles);
             }
 
-            // ========== 爆炸函数 ==========
             explode() {
                 const lastParticle = this.particles[0];
                 const centerX = lastParticle.x;
@@ -869,7 +847,7 @@
                 return realMaxConn;
             }
 
-            drawParticles() {  // 移除未使用的参数 realMaxConn
+            drawParticles() {
                 let maxMass = 0;
                 for (let p of this.particles) if (p.mass > maxMass) maxMass = p.mass;
                 if (maxMass === 0) maxMass = 1;
@@ -879,7 +857,6 @@
                     if (this.particles[i].mass > this.particles[maxMassIdx].mass) maxMassIdx = i;
                 }
 
-                // 预计算的常量（基于固定范围 0.9 ~ 1.5）
                 const MIN_RATIO = 0.9;
                 const MAX_RATIO = 1.5;
                 const MIN_LOG = Math.log10(MIN_RATIO);
@@ -890,13 +867,11 @@
                     const p = this.particles[i];
                     const pulse = 0.5 + Math.sin(p._phase) * 0.5;
 
-                    // 黑洞预警粒子（保持原样）
                     if (this.state === 'warning' && i === maxMassIdx) {
                         const t = p.mass / maxMass;
                         const c = connectionColor(t, p._jitter);
                         const glowScale = this.glowScale;
 
-                        // 彩虹光晕
                         const glowR = p.size * (7.5 + pulse * 4.5) * glowScale;
                         const glowA = 0.18 + pulse * 0.22;
                         const rainbowGrad = this.ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
@@ -919,13 +894,11 @@
                         this.ctx.fillStyle = rainbowGrad;
                         this.ctx.fill();
 
-                        // 粒子核心
                         this.ctx.beginPath();
                         this.ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
                         this.ctx.fillStyle = 'hsl(' + c.hue + ',' + c.sat + '%,' + (c.lit + 14) + '%)';
                         this.ctx.fill();
 
-                        // 射线
                         const numRays = 36;
                         const baseLength = p.size * 22.5 * glowScale;
                         const now = performance.now() / 1000;
@@ -956,7 +929,6 @@
                         continue;
                     }
 
-                    // 超大质量粒子（非预警状态）—— 保持原深色渐变
                     if (p.mass > this.initialAvgMass * 50) {
                         const slowPulse = 0.5 + 0.5 * Math.sin(p._phase * 0.3);
                         const enhancedGlowR = p.size * (6.0 + slowPulse * 3.0);
@@ -983,7 +955,6 @@
                         continue;
                     }
 
-                    // ========== 普通粒子：基于半径的对数颜色映射，增加黄色占比 ==========
                     const ratio = p.size / this.initialAvgSize;
                     let f;
                     if (ratio <= MIN_RATIO) {
@@ -993,12 +964,10 @@
                     } else {
                         f = (Math.log10(ratio) - MIN_LOG) / RANGE_LOG;
                     }
-                    // 色调从红 (0°) 到紫 (300°)
                     const hue = f * 300 + p._jitter;
                     const sat = 80 + f * 18;
                     const lit = 72 - f * 18;
 
-                    // 光晕半径随 f 增大而略有增加
                     const glowR = p.size * (5.0 + pulse * 3.0) * (1 + 0.3 * f);
                     const glowA = 0.18 + pulse * 0.22;
 
@@ -1011,7 +980,6 @@
                     this.ctx.fillStyle = grad;
                     this.ctx.fill();
 
-                    // 绘制粒子核心（亮度稍高）
                     this.ctx.beginPath();
                     this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
                     this.ctx.fillStyle = `hsl(${hue}, ${sat}%, ${lit + 14}%)`;
@@ -1051,8 +1019,8 @@
                 this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
                 this.updateParticles();
-                this.drawConnectionsAndCount();  // 返回值未使用，所以不需要接收
-                this.drawParticles();            // 移除参数
+                this.drawConnectionsAndCount();
+                this.drawParticles();
                 this.handleMouseInteraction();
 
                 this.animationId = requestAnimationFrame(() => this.animate());
@@ -1078,7 +1046,6 @@
             }
         }
 
-        // ==================== 页面初始化 ====================
         document.addEventListener('DOMContentLoaded', function () {
             const screen = getScreenClass();
 
@@ -1114,7 +1081,6 @@
 
             window.particleSystem = new GravityParticleSystem('particles-js', baseConfig, 1.5);
 
-            // ---------- UI 绑定 (完全保留原逻辑) ----------
             const toggleBtn = document.getElementById('params-toggle');
             const panel = document.getElementById('params-panel');
 
