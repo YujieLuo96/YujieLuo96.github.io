@@ -22,10 +22,9 @@
             position: relative;
             background: transparent;
             min-height: 100vh;
-            -webkit-text-size-adjust: 100%; /* 防止移动端字体缩放 */
+            -webkit-text-size-adjust: 100%;
         }
 
-        /* 动态星空背景容器 */
         #particles-js {
             position: fixed;
             top: 0;
@@ -34,10 +33,9 @@
             height: 100%;
             z-index: -1;
             background: transparent;
-            pointer-events: none; /* 禁止粒子层交互 */
+            pointer-events: none;
         }
 
-        /* 添加一层微弱的星星闪烁层 */
         #stars-overlay {
             position: fixed;
             top: 0;
@@ -70,7 +68,6 @@
             padding: 20px 0;
         }
 
-        /* 访问统计放在容器内部的左上角 */
         .hit-counter {
             position: absolute;
             top: 10px;
@@ -83,7 +80,6 @@
             margin-bottom: 5px;
         }
 
-        /* 简洁导航样式 - 靠左排列 */
         .nav-menu {
             margin: 15px 0 25px 0;
             text-align: left;
@@ -99,7 +95,6 @@
             padding: 5px 0;
             position: relative;
             transition: color 0.2s ease, text-shadow 0.2s ease;
-            /* 增强立体阴影效果 - 3D凸起感 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                          0 2px 1px rgba(0, 0, 0, 0.5),
                          0 3px 3px rgba(0, 0, 0, 0.4),
@@ -142,7 +137,6 @@
             margin-bottom: 5px;
             font-weight: 700;
             font-size: 28px;
-            /* 增强立体阴影效果 - 3D凸起感 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
                          0 2px 2px rgba(0, 0, 0, 0.7),
                          0 3px 5px rgba(0, 0, 0, 0.6),
@@ -171,7 +165,6 @@
             font-weight: 700;
             font-size: 20px;
             transition: color 0.3s ease, text-shadow 0.3s ease;
-            /* 增强立体阴影效果 - 3D凸起感 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
                          0 2px 2px rgba(0, 0, 0, 0.6),
                          0 3px 4px rgba(0, 0, 0, 0.5),
@@ -214,7 +207,6 @@
             margin-bottom: 10px;
             line-height: 1.5;
             color: #f0f8ff;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.5),
                          0 2px 3px rgba(0, 0, 0, 0.3);
@@ -224,7 +216,6 @@
             color: #a0d5ff;
             text-decoration: none;
             transition: color 0.2s ease, text-shadow 0.2s ease;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.4),
                          0 2px 3px rgba(0, 0, 0, 0.2);
@@ -249,7 +240,6 @@
         .section-content {
             margin-bottom: 10px;
             color: #f0f8ff;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.4),
                          0 2px 3px rgba(0, 0, 0, 0.2);
@@ -266,7 +256,6 @@
             margin-bottom: 8px;
             color: #d0e5ff;
             font-weight: 700;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                          0 2px 2px rgba(0, 0, 0, 0.5),
                          0 3px 4px rgba(0, 0, 0, 0.3);
@@ -276,7 +265,6 @@
             margin-top: 15px;
             margin-bottom: 15px;
             color: #e8f8ff;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.4),
                          0 2px 3px rgba(0, 0, 0, 0.2);
@@ -288,7 +276,6 @@
 
         .profile-row span {
             color: #e8f8ff;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.4),
                          0 2px 3px rgba(0, 0, 0, 0.2);
@@ -296,20 +283,17 @@
 
         p {
             color: #f0f8ff;
-            /* 增强立体阴影效果 */
             text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                          0 1px 2px rgba(0, 0, 0, 0.4),
                          0 2px 3px rgba(0, 0, 0, 0.2);
         }
 
-        /* 确保图片在深色背景下可见 */
         .hit-counter img {
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 4px;
             padding: 5px;
         }
 
-        /* 添加星空闪烁动画 */
         @keyframes twinkle {
             0%, 100% { opacity: 0.1; }
             50% { opacity: 1; }
@@ -322,7 +306,6 @@
             animation: twinkle 3s infinite ease-in-out;
         }
 
-        /* 移动端适配 - 保持立体阴影效果一致 */
         @media (max-width: 768px) {
             body {
                 background: transparent;
@@ -350,7 +333,6 @@
             h2 {
                 font-size: 24px;
                 color: #ffffff;
-                /* 保持立体阴影效果，稍微减小阴影大小以适应小屏幕 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
                              0 1px 2px rgba(0, 0, 0, 0.7),
                              0 2px 4px rgba(0, 0, 0, 0.6),
@@ -384,7 +366,6 @@
                 font-size: 16px;
                 color: #b0d0ff;
                 padding: 8px 0;
-                /* 保持立体阴影效果，稍微减小阴影大小 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                              0 1px 2px rgba(0, 0, 0, 0.5),
                              0 2px 3px rgba(0, 0, 0, 0.4),
@@ -397,7 +378,6 @@
                 margin-top: 25px;
                 margin-bottom: 12px;
                 border-bottom: 1px solid rgba(120, 170, 220, 0.4);
-                /* 保持立体阴影效果，稍微减小阴影大小 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
                              0 1px 2px rgba(0, 0, 0, 0.6),
                              0 2px 3px rgba(0, 0, 0, 0.5),
@@ -408,7 +388,6 @@
                 color: #f0f8ff;
                 font-size: 15px;
                 line-height: 1.6;
-                /* 保持立体阴影效果 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                              0 1px 1px rgba(0, 0, 0, 0.5),
                              0 2px 2px rgba(0, 0, 0, 0.3);
@@ -429,7 +408,6 @@
             .teaching-section h5 {
                 font-size: 16px;
                 color: #d0e5ff;
-                /* 保持立体阴影效果 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                              0 1px 2px rgba(0, 0, 0, 0.5),
                              0 2px 3px rgba(0, 0, 0, 0.3);
@@ -442,7 +420,6 @@
             a {
                 color: #a0d5ff;
                 text-decoration: none;
-                /* 保持立体阴影效果 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
                              0 1px 1px rgba(0, 0, 0, 0.4),
                              0 2px 2px rgba(0, 0, 0, 0.2);
@@ -450,7 +427,6 @@
 
             a:hover {
                 color: #ffffff;
-                /* 保持立体阴影效果 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
                              0 1px 3px rgba(0, 0, 0, 0.6),
                              0 2px 5px rgba(0, 0, 0, 0.4),
@@ -460,7 +436,6 @@
             }
         }
 
-        /* 小屏幕手机适配 */
         @media (max-width: 480px) {
             .container {
                 padding: 15px 10px;
@@ -468,7 +443,6 @@
 
             h2 {
                 font-size: 22px;
-                /* 进一步调整小屏幕的立体阴影 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
                              0 1px 1px rgba(0, 0, 0, 0.7),
                              0 2px 3px rgba(0, 0, 0, 0.6),
@@ -480,7 +454,6 @@
             .nav-link {
                 font-size: 15px;
                 margin: 0 8px 8px;
-                /* 进一步调整小屏幕的立体阴影 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
                              0 1px 1px rgba(0, 0, 0, 0.5),
                              0 2px 2px rgba(0, 0, 0, 0.4),
@@ -489,7 +462,6 @@
 
             h4 {
                 font-size: 17px;
-                /* 进一步调整小屏幕的立体阴影 */
                 text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
                              0 1px 1px rgba(0, 0, 0, 0.6),
                              0 2px 2px rgba(0, 0, 0, 0.5),
@@ -505,7 +477,6 @@
             }
         }
 
-        /* 平板设备适配 */
         @media (min-width: 769px) and (max-width: 1024px) {
             .container {
                 padding: 25px 20px;
@@ -520,14 +491,10 @@
     </style>
 </head>
 <body>
-    <!-- 动态粒子背景容器 - 作为底层画布 -->
     <div id="particles-js"></div>
-
-    <!-- 静态星星闪烁层 -->
     <div id="stars-overlay"></div>
 
     <div class="container">
-        <!-- 访问统计放在容器内部的左上角 -->
         <div class="hit-counter">
             <a href="https://www.hitwebcounter.com" target="_blank">
                 <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0"
@@ -540,7 +507,6 @@
         </div>
 
         <header class="header">
-            <!-- Profile Header - 移除照片后调整布局 -->
             <div class="row header-content">
                 <div class="col-md-12">
                     <div class="profile-text">
@@ -558,12 +524,9 @@
                     </div>
                 </div>
             </div>
-
         </header>
 
-        <!-- Main Content -->
         <div class="content main-content-wrapper">
-            <!-- Biography -->
             <h4 data-toggle="collapse" data-target="#biography" aria-expanded="true">
                 Biography
             </h4>
@@ -578,7 +541,6 @@
                 </p>
             </div>
 
-            <!-- Research Interests -->
             <h4 data-toggle="collapse" data-target="#research" aria-expanded="true">
                 Research Interests
             </h4>
@@ -586,7 +548,6 @@
                 <p>I am interested in several areas of algebraic geometry, including birational geometry, algebraic dynamics, and minimal model program.</p>
             </div>
 
-            <!-- Publications & Preprints -->
             <h4 data-toggle="collapse" data-target="#publications" aria-expanded="false" class="collapsed">
                 Publications & Preprints
             </h4>
@@ -604,7 +565,6 @@
                 </ul>
             </div>
 
-            <!-- Invited Talks -->
             <h4 data-toggle="collapse" data-target="#talks" aria-expanded="false" class="collapsed">
                 Invited Talks
             </h4>
@@ -625,7 +585,6 @@
                 </ul>
             </div>
 
-            <!-- Lectures and Seminar Talks -->
             <h4 data-toggle="collapse" data-target="#lectures" aria-expanded="false" class="collapsed">
                 Lectures and Seminar Talks
             </h4>
@@ -637,7 +596,6 @@
                 </ul>
             </div>
 
-            <!-- Visitings -->
             <h4 data-toggle="collapse" data-target="#visitings" aria-expanded="false" class="collapsed">
                 Visitings
             </h4>
@@ -652,7 +610,6 @@
                 </ul>
             </div>
 
-            <!-- Teaching Experience -->
             <h4 data-toggle="collapse" data-target="#teaching" aria-expanded="false" class="collapsed">
                 Teaching Experience
             </h4>
@@ -685,7 +642,6 @@
                 </div>
             </div>
 
-            <!-- Miscellaneous -->
             <h4 data-toggle="collapse" data-target="#miscellaneous" aria-expanded="true">
                 Miscellaneous
             </h4>
@@ -699,35 +655,27 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS and jQuery -->
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
-
-    <!-- 粒子效果库 -->
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 
     <script>
-        // 创建静态闪烁星星
         function createStaticStars() {
             const starsContainer = document.getElementById('stars-overlay');
-            const starCount = window.innerWidth < 768 ? 50 : 100; // 移动端减少星星数量
+            const starCount = window.innerWidth < 768 ? 50 : 100;
 
             for (let i = 0; i < starCount; i++) {
                 const star = document.createElement('div');
                 star.className = 'twinkling-star';
 
-                // 随机位置
                 const left = Math.random() * 100;
                 const top = Math.random() * 100;
 
-                // 随机大小
                 const size = Math.random() * 3 + 1;
 
-                // 随机颜色
                 const colors = ['#ffffff', '#b0d0ff', '#8bc5ff', '#ffdd99', '#ffccaa'];
                 const color = colors[Math.floor(Math.random() * colors.length)];
 
-                // 随机动画延迟
                 const delay = Math.random() * 5;
 
                 star.style.left = left + '%';
@@ -742,20 +690,16 @@
             }
         }
 
-        // 粒子系统初始化
         document.addEventListener('DOMContentLoaded', function() {
-            // 创建静态星星
             createStaticStars();
 
-            // 根据设备类型调整粒子数量
             const isMobile = window.innerWidth < 768;
             const isSmallMobile = window.innerWidth < 480;
 
-            // 初始化粒子系统 - 修复移动端连接线问题
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 160 : (isMobile ? 200 : 300), // 调整移动端粒子数量
+                        value: isSmallMobile ? 160 : (isMobile ? 200 : 300),
                         density: {
                             enable: true,
                             value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
@@ -788,11 +732,11 @@
                         }
                     },
                     line_linked: {
-                        enable: true, // 确保连接线启用
-                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140), // 调整连接距离
+                        enable: true,
+                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140),
                         color: "#8bc5ff",
-                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6), // 增加连接线透明度
-                        width: isSmallMobile ? 0.6 : 0.8 // 稍微增加线宽
+                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6),
+                        width: isSmallMobile ? 0.6 : 0.8
                     },
                     move: {
                         enable: true,
@@ -837,59 +781,47 @@
                 retina_detect: true
             });
 
-            // 修改折叠功能，只有Biography和Research Interests初始展开
             $(document).ready(function() {
-                // Biography和Research Interests保持展开状态
                 $('#biography').addClass('in');
                 $('#research').addClass('in');
 
-                // 点击标题时切换折叠状态和图标
                 $('h4[data-toggle="collapse"]').click(function() {
                     $(this).toggleClass('collapsed');
                 });
 
-                // 移动端优化：触摸滚动更平滑
                 if ('ontouchstart' in window) {
                     document.body.style.webkitOverflowScrolling = 'touch';
                 }
             });
 
-            // 添加星星闪烁效果增强
             setInterval(() => {
                 const stars = document.querySelectorAll('.twinkling-star');
                 stars.forEach(star => {
-                    // 随机改变一些星星的亮度
                     if (Math.random() > 0.7) {
                         star.style.opacity = Math.random() * Math.random()*0.8+0.2;
                     }
                 });
             }, 1000);
 
-            // 窗口大小调整时重新初始化粒子（优化移动端）
             let resizeTimer;
             window.addEventListener('resize', function() {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(function() {
-                    // 重新创建静态星星
                     document.getElementById('stars-overlay').innerHTML = '';
                     createStaticStars();
 
-                    // 重新初始化粒子系统以适应新的屏幕尺寸
                     const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
                     if (pJS) {
                         const isMobileNow = window.innerWidth < 768;
                         const isSmallMobileNow = window.innerWidth < 480;
 
-                        // 更新粒子数量
                         pJS.particles.number.value = isSmallMobileNow ? 160 : (isMobileNow ? 200 : 300);
                         pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
 
-                        // 更新连接线参数
                         pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
                         pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
                         pJS.particles.line_linked.width = isSmallMobileNow ? 0.6 : 0.8;
 
-                        // 刷新粒子系统
                         pJS.fn.particlesRefresh();
                     }
                 }, 250);
