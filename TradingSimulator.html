@@ -2499,6 +2499,12 @@ if (crossunder(fast, slow)) {
                step(){}, disconnect(){}, softReset(){} };
   }
 
+  // 暴露 Crypto 状态供 StrategyEditor iframe 读取（BackTest 模式检测）
+  window._cryptoCtxPublic = {
+    get mode()   { return Crypto ? Crypto.mode   : false; },
+    get symbol() { return Crypto ? Crypto.symbol : '';    },
+  };
+
   // Override RESET button in crypto mode
   btnReset.addEventListener('click', () => {
     if (Crypto.mode) { Crypto.softReset(); }

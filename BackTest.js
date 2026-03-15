@@ -117,7 +117,7 @@ window.BackTest = (function () {
   function _buildPineEnv({
     prices, ohlc, volumes, barIdx,
     crossState, getCrossIdx,
-    orders, getFreeCash, leverage,
+    orders, getFreeCash, leverage, fractional,
     placeOrder, closeOrderById,
   }) {
     const price = prices[barIdx];
@@ -169,7 +169,10 @@ window.BackTest = (function () {
       const sl = _os(Math.max(len * 3, len + 10));
       if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
       const k = 1 / len;
-      let v = sl[1].h - sl[1].l;
+      // 初始 TR 包含前一根 close，避免仅用 HL range 低估波动
+      let v = Math.max(sl[1].h - sl[1].l,
+                       Math.abs(sl[1].h - sl[0].c),
+                       Math.abs(sl[1].l - sl[0].c));
       for (let i = 1; i < sl.length; i++) {
         const tr = Math.max(
           sl[i].h - sl[i].l,
@@ -275,10 +278,12 @@ window.BackTest = (function () {
     };
 
     function _calcShares(opts) {
-      if (opts.qty != null) return Math.max(0, Math.floor(opts.qty));
+      if (opts.qty != null) return Math.max(0, fractional ? opts.qty : Math.floor(opts.qty));
       const ratio  = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
       const budget = ratio * getFreeCash() - FEE_FIXED;
-      return Math.floor(budget / (price * (1 / leverage + FEE_RATE)));
+      const raw    = budget / (price * (1 / leverage + FEE_RATE));
+      // crypto 模式：保留 4 位小数（0.2497 BTC）；sim 模式：整数份额
+      return Math.max(0, fractional ? Math.floor(raw * 1e4) / 1e4 : Math.floor(raw));
     }
 
     return {
@@ -297,7 +302,7 @@ window.BackTest = (function () {
   /* ═══════════════════════════════════════════════════════════════
      4. Strategy Runner（单次回测循环）
   ═══════════════════════════════════════════════════════════════ */
-  function _runStrategy(stratCode, market, { initialCash, leverage }) {
+  function _runStrategy(stratCode, market, { initialCash, leverage, fractional = false }) {
     // 编译
     let fn;
     try { fn = new Function('pineEnv', `with(pineEnv){${stratCode}}`); }
@@ -336,12 +341,15 @@ window.BackTest = (function () {
     function closeOrderAt(id, closePrice, reason) {
       const idx = orders.findIndex(o => o.id === id);
       if (idx < 0) return;
-      const o     = orders.splice(idx, 1)[0];
-      const gross = o.dir * o.shares * (closePrice - o.openPrice);
-      const fee   = closePrice * o.shares * FEE_RATE + FEE_FIXED;
-      const net   = gross - fee;
+      const o        = orders.splice(idx, 1)[0];
+      const gross    = o.dir * o.shares * (closePrice - o.openPrice);
+      const closeFee = closePrice * o.shares * FEE_RATE + FEE_FIXED;
+      const net      = gross - closeFee;
       cash += o.margin + net;
-      trades.push({ dir: o.dir, open: o.openPrice, close: closePrice, net, reason });
+      trades.push({
+        dir: o.dir, open: o.openPrice, close: closePrice, net, reason,
+        shares: o.shares, openFee: o.openFee || 0, closeFee,
+      });
     }
 
     function closeOrderById(id) {
@@ -349,12 +357,12 @@ window.BackTest = (function () {
     }
 
     function placeOrder(dir, shares, sl, tp) {
-      if (shares <= 0) return;
+      if (shares < 1e-8) return; // 支持分数股，但过滤浮点噪声
       const margin = _cp * shares / leverage;
       const fee    = _cp * shares * FEE_RATE + FEE_FIXED;
       if (margin + fee > getFreeCash() + 0.01) return; // 资金不足
       cash -= (margin + fee);
-      orders.push({ id: nextId++, dir, shares, openPrice: _cp, sl, tp, margin });
+      orders.push({ id: nextId++, dir, shares, openPrice: _cp, sl, tp, margin, openFee: fee });
     }
 
     // ── 主 tick 循环
@@ -383,7 +391,7 @@ window.BackTest = (function () {
         prices, ohlc, volumes, barIdx: i,
         crossState,
         getCrossIdx: () => _crossIdx++,
-        orders, getFreeCash, leverage,
+        orders, getFreeCash, leverage, fractional,
         placeOrder, closeOrderById,
       });
 
@@ -440,6 +448,17 @@ window.BackTest = (function () {
     const bestTrade  = trades.reduce((m, t) => t.net > m ? t.net : m, -Infinity);
     const worstTrade = trades.reduce((m, t) => t.net < m ? t.net : m, Infinity);
 
+    // 手续费 & 换手率指标
+    const totalFees   = trades.reduce((s, t) => s + (t.openFee || 0) + (t.closeFee || 0), 0);
+    const feeDrag     = initialCash > 0 ? totalFees / initialCash * 100 : 0;
+    const grossTotal  = grossProfit + grossLoss;
+    const feeToGross  = grossTotal > 0 ? totalFees / grossTotal * 100 : 0;
+    // 换手率：每笔开仓名义价值之和 / 初始资金（倍数）
+    const turnover    = initialCash > 0
+      ? trades.reduce((s, t) => s + (t.shares || 0) * t.open, 0) / initialCash
+      : 0;
+    const avgTurnoverPerTrade = trades.length > 0 ? turnover / trades.length : 0;
+
     return {
       totalReturn,
       winRate,
@@ -455,11 +474,17 @@ window.BackTest = (function () {
       bestTrade   : isFinite(bestTrade)  ? bestTrade  : 0,
       worstTrade  : isFinite(worstTrade) ? worstTrade : 0,
       finalEquity : finalEq,
+      totalFees,
+      feeDrag,
+      feeToGross,
+      turnover,
+      avgTurnoverPerTrade,
     };
   }
 
   function _computeMultiStats(statsList) {
-    const KEYS = ['totalReturn', 'winRate', 'maxDD', 'sharpe', 'profitFactor', 'totalTrades'];
+    const KEYS = ['totalReturn', 'winRate', 'maxDD', 'sharpe', 'profitFactor', 'totalTrades',
+                  'totalFees', 'feeDrag', 'feeToGross', 'turnover'];
     const res  = {};
     for (const key of KEYS) {
       const vals = statsList.map(s => s[key]).filter(v => isFinite(v)).sort((a, b) => a - b);
@@ -526,7 +551,7 @@ window.BackTest = (function () {
       // 每个 run 在 sessionSeed 基础上偏移，保证同次调用内各 run 也互相独立
       const seed   = (sessionSeed + i * 0x9E3779B9) >>> 0;
       const market = _simMarket({ mu, sigma, ticks, seed, includeRegimes });
-      const run    = _runStrategy(stratCode, market, { initialCash, leverage });
+      const run    = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
       if (!run.error) {
         results.push({ ...run, runIdx: i });
         statsList.push(_computeRunStats(run));
@@ -553,7 +578,7 @@ window.BackTest = (function () {
     const statsList  = [];
 
     if (runs <= 1) {
-      const run = _runStrategy(stratCode, fullMarket, { initialCash, leverage });
+      const run = _runStrategy(stratCode, fullMarket, { initialCash, leverage, fractional: true });
       if (!run.error) {
         results.push({ ...run, runIdx: 0 });
         statsList.push(_computeRunStats(run));
@@ -571,7 +596,7 @@ window.BackTest = (function () {
           volumes : fullMarket.volumes.slice(start, end),
         };
         if (segment.prices.length < 10) { onProgress(i + 1, runs); continue; }
-        const run = _runStrategy(stratCode, segment, { initialCash, leverage });
+        const run = _runStrategy(stratCode, segment, { initialCash, leverage, fractional: true });
         if (!run.error) {
           results.push({ ...run, runIdx: i });
           statsList.push(_computeRunStats(run));
@@ -652,6 +677,26 @@ window.BackTest = (function () {
         box-shadow: 0 0 12px rgba(255,45,120,0.3);
       }
       #bt-close:active { transform: translateY(1px); border-bottom-width: 1px; }
+
+      /* ── 模式切换按钮 ── */
+      .bt-mbtn {
+        background: rgba(0,245,255,0.04);
+        border: 1px solid rgba(0,245,255,0.22);
+        border-bottom: 2px solid rgba(0,245,255,0.32);
+        color: rgba(0,245,255,0.5);
+        padding: 4px 10px; border-radius: 3px; cursor: pointer;
+        font-family: inherit; font-size: 0.72rem; letter-spacing: 0.08em;
+        min-height: 32px; touch-action: manipulation;
+        transition: all 0.12s;
+      }
+      .bt-mbtn:hover { background: rgba(0,245,255,0.1); color: #00f5ff; }
+      .bt-mbtn-on {
+        background: rgba(0,245,255,0.15);
+        border-color: rgba(0,245,255,0.7);
+        border-bottom-color: #00f5ff;
+        color: #00f5ff;
+        box-shadow: 0 0 10px rgba(0,245,255,0.2);
+      }
 
       /* ── Body（cyber scrollbar）── */
       #bt-body {
@@ -791,9 +836,10 @@ window.BackTest = (function () {
       }
       .bt-cv { font-size: 1.15rem; font-family: 'Orbitron',inherit; }
       .bt-cl { font-size: 0.67rem; color: rgba(192,208,224,0.45); margin-top: 4px; letter-spacing: 0.3px; }
-      .bt-pos { color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.35); }
-      .bt-neg { color: #ff2d78; text-shadow: 0 0 8px rgba(255,45,120,0.35); }
-      .bt-neu { color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.3); }
+      .bt-pos  { color: #39ff14; text-shadow: 0 0 8px rgba(57,255,20,0.35); }
+      .bt-neg  { color: #ff2d78; text-shadow: 0 0 8px rgba(255,45,120,0.35); }
+      .bt-neu  { color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.3); }
+      .bt-warn { color: #ffaa00; text-shadow: 0 0 8px rgba(255,170,0,0.35); }
 
       /* ── Multi-run table ── */
       .bt-mtbl { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-bottom: 14px; }
@@ -961,8 +1007,46 @@ window.BackTest = (function () {
     return container;
   }
 
+  // ── 模式切换按钮（注入一次到 header）──────────────────────────
+  function _injectModeToggle() {
+    if (_el('bt-mode-toggle')) return; // 已存在
+    const hdr = _el('bt-hdr');
+    if (!hdr) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'bt-mode-toggle';
+    wrap.style.cssText = 'display:flex;gap:4px;align-items:center;';
+    wrap.innerHTML = `
+      <button id="bt-msim"    class="bt-mbtn ${_mode === 'sim'    ? 'bt-mbtn-on' : ''}">SIM</button>
+      <button id="bt-mcrypto" class="bt-mbtn ${_mode === 'crypto' ? 'bt-mbtn-on' : ''}">CRYPTO</button>
+    `;
+    // 插到 title 后面、close 前面
+    const closeBtn = _el('bt-close');
+    hdr.insertBefore(wrap, closeBtn);
+    wrap.querySelector('#bt-msim').addEventListener('click', () => {
+      _mode = 'sim';
+      wrap.querySelector('#bt-msim').classList.add('bt-mbtn-on');
+      wrap.querySelector('#bt-mcrypto').classList.remove('bt-mbtn-on');
+      _showForm();
+    });
+    wrap.querySelector('#bt-mcrypto').addEventListener('click', () => {
+      _mode = 'crypto';
+      wrap.querySelector('#bt-mcrypto').classList.add('bt-mbtn-on');
+      wrap.querySelector('#bt-msim').classList.remove('bt-mbtn-on');
+      _showForm();
+    });
+  }
+
   // ── 参数表单 ─────────────────────────────────────────────────
   function _showForm() {
+    _injectModeToggle();
+    // 同步切换按钮状态（_mode 可能在 open() 时就确定了）
+    const simBtn    = _el('bt-msim');
+    const cryptoBtn = _el('bt-mcrypto');
+    if (simBtn && cryptoBtn) {
+      simBtn.classList.toggle('bt-mbtn-on',    _mode === 'sim');
+      cryptoBtn.classList.toggle('bt-mbtn-on', _mode === 'crypto');
+    }
+
     const p  = _initP;
     const mu = (p.mu ?? 0).toFixed(2);
     const sg = (p.sigma ?? 0.15).toFixed(2);
@@ -1029,6 +1113,9 @@ window.BackTest = (function () {
 
   // ── 开始运行 ─────────────────────────────────────────────────
   async function _startRun() {
+    // 每次 RUN 时从编辑器实时读取最新代码，防止面板开启后用户修改了策略
+    const editorEl = document.getElementById('code');
+    if (editorEl && editorEl.value.trim()) _stratCode = editorEl.value;
     const code = _stratCode;
     if (!code || !code.trim()) {
       alert('策略代码为空，请先编写策略再运行回测。');
@@ -1194,6 +1281,8 @@ window.BackTest = (function () {
     const f  = (v, pct) => (v >= 0 ? '+' : '') + v.toFixed(2) + (pct ? '%' : '');
     const c  = v => v >= 0 ? 'bt-pos' : 'bt-neg';
     const pf = isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞';
+    // 手续费越高越红；换手率用中性色
+    const feeCls = s.feeDrag > 5 ? 'bt-neg' : s.feeDrag > 2 ? 'bt-warn' : 'bt-neu';
     return `
       <div class="bt-sr-row">
         <div class="bt-sr-stats">
@@ -1210,6 +1299,13 @@ window.BackTest = (function () {
             ${_card('$' + s.avgLoss.toFixed(0), 'AVG LOSS', 'bt-neg')}
             ${_card('$' + s.bestTrade.toFixed(0), 'BEST TRADE', 'bt-pos')}
             ${_card('$' + s.worstTrade.toFixed(0), 'WORST TRADE', 'bt-neg')}
+          </div>
+          <div class="bt-cards" style="margin-bottom:6px">
+            ${_card('$' + s.totalFees.toFixed(0), 'TOTAL FEES', feeCls)}
+            ${_card(s.feeDrag.toFixed(2) + '%', 'FEE DRAG', feeCls)}
+            ${_card(s.feeToGross.toFixed(1) + '%', 'FEE/GROSS', feeCls)}
+            ${_card(s.turnover.toFixed(2) + 'x', 'TURNOVER', 'bt-neu')}
+            ${_card(s.avgTurnoverPerTrade.toFixed(3) + 'x', 'TURN/TRADE', 'bt-neu')}
           </div>
         </div>
         <div class="bt-sr-radar">
@@ -1260,12 +1356,17 @@ window.BackTest = (function () {
                 <th>Metric</th><th>Mean</th><th>±Std</th><th>Min</th><th>Median</th><th>Max</th>
               </tr></thead>
               <tbody>
-                ${row('totalReturn',  'Return',       true)}
-                ${row('winRate',      'Win Rate',     true)}
-                ${row('maxDD',        'Max Drawdown', true)}
-                ${row('sharpe',       'Sharpe',       false)}
-                ${row('profitFactor', 'Profit Factor',false)}
-                ${row('totalTrades',  'Trades',       false)}
+                ${row('totalReturn',  'Return',        true)}
+                ${row('winRate',      'Win Rate',      true)}
+                ${row('maxDD',        'Max Drawdown',  true)}
+                ${row('sharpe',       'Sharpe',        false)}
+                ${row('profitFactor', 'Profit Factor', false)}
+                ${row('totalTrades',  'Trades',        false)}
+                <tr><td colspan="6" style="height:4px;padding:0;border:none"></td></tr>
+                ${row('totalFees',    'Total Fees ($)', false)}
+                ${row('feeDrag',      'Fee Drag',      true)}
+                ${row('feeToGross',   'Fee/Gross',     true)}
+                ${row('turnover',     'Turnover (x)',  false)}
               </tbody>
             </table>
           </div>
@@ -1488,7 +1589,7 @@ window.BackTest = (function () {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'top';
     const maxLen = Math.max(...equityArrs.map(a => a.length));
-    [0, 0.25, 0.5, 0.75, 1].forEach((t, i) => {
+    [0, 0.25, 0.5, 0.75, 1].forEach(t => {
       const x = PAD.l + t * cW;
       const v = Math.round(t * (maxLen - 1));
       ctx.fillText(v, x, H - PAD.b + 4);

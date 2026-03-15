@@ -1151,9 +1151,11 @@ if (fast > slow) {
             let mode = 'sim', mu = 0, sigma = 0.15, leverage = 1, cash = 10000, symbol = 'BTCUSDT';
             try {
                 const p = window.parent;
-                if (p && p.cryptoAPI && p.cryptoAPI.mode) {
+                // 优先读取 TradingSimulator 暴露的 _cryptoCtxPublic，兼容旧 cryptoAPI
+                const ctx = p._cryptoCtxPublic || p.cryptoAPI;
+                if (ctx && ctx.mode) {
                     mode   = 'crypto';
-                    symbol = ((p.cryptoAPI.symbol || 'btcusdt').toUpperCase());
+                    symbol = ((ctx.symbol || 'btcusdt').toUpperCase());
                 }
                 if (p && p.MarketEngine) {
                     mu    = p.MarketEngine.mu_user    ?? 0;
