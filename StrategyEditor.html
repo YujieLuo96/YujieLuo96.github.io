@@ -634,11 +634,11 @@ if (close > bands.upper) {
 fast = ema(close, 9);
 slow = ema(close, 21);
 // Only enter long if stoch is not overbought
-if (crossover(fast, slow) &amp;&amp; s.k < 80) {
+if (crossover(fast, slow) && s.k < 80) {
     strategy.entry('long', { ratio: 1.0,
         sl: slow * 0.98, tp: close * 1.08 });
 }
-if (crossunder(fast, slow) &amp;&amp; s.k > 20) {
+if (crossunder(fast, slow) && s.k > 20) {
     strategy.entry('short', { ratio: 1.0,
         sl: slow * 1.02, tp: close * 0.92 });
 }</pre>
@@ -646,11 +646,11 @@ if (crossunder(fast, slow) &amp;&amp; s.k > 20) {
                 <pre>r = rsi(14);
 trend = ema(close, 50);
 // Only buy dips in an uptrend
-if (close > trend &amp;&amp; r < 35) {
+if (close > trend && r < 35) {
     strategy.entry('long', { ratio: 0.6,
         sl: close - 2*atr(14), tp: close * 1.10 });
 }
-if (close &lt; trend &amp;&amp; r > 65) {
+if (close < trend && r > 65) {
     strategy.entry('short', { ratio: 0.6,
         sl: close + 2*atr(14), tp: close * 0.90 });
 }</pre>
@@ -670,8 +670,8 @@ if (close &lt; trend &amp;&amp; r > 65) {
                     <tr><th>Field</th><th>Type</th><th>Notes</th></tr>
                     <tr><td><code>ratio</code></td><td>0–1</td><td>Fraction of free cash. Default <code>1.0</code>. Overridden by <code>qty</code>.</td></tr>
                     <tr><td><code>qty</code></td><td>number</td><td>Fixed share count. Takes priority over <code>ratio</code>.</td></tr>
-                    <tr><td><code>sl</code></td><td>price</td><td>Stop-loss. Long: must be &lt; entry. Short: must be &gt; entry.</td></tr>
-                    <tr><td><code>tp</code></td><td>price</td><td>Take-profit. Long: must be &gt; entry. Short: must be &lt; entry.</td></tr>
+                    <tr><td><code>sl</code></td><td>price</td><td>Stop-loss. Long: must be < entry. Short: must be > entry.</td></tr>
+                    <tr><td><code>tp</code></td><td>price</td><td>Take-profit. Long: must be > entry. Short: must be < entry.</td></tr>
                 </table>
                 <pre>strategy.entry('long', { ratio: 0.5, sl: close-2*atr(14), tp: close*1.10 });
 strategy.entry('short', { qty: 20, sl: close*1.03 });
@@ -691,17 +691,17 @@ if (close > this.lastAdd * 1.03) {
                     <tr><td><code>.side</code></td><td>string</td><td><code>'long'</code> / <code>'short'</code> / <code>'none'</code></td></tr>
                     <tr><td><code>.qty</code></td><td>number</td><td>Total shares on that side</td></tr>
                     <tr><td><code>.avgPrice</code></td><td>number</td><td>Volume-weighted average entry price</td></tr>
-                    <tr><td><code>.unrealized</code></td><td>number</td><td>Floating P&amp;L in $ at current price</td></tr>
+                    <tr><td><code>.unrealized</code></td><td>number</td><td>Floating P&L in $ at current price</td></tr>
                 </table>
                 <pre>pos = strategy.position;
 
 // Gate: only add if already long and profitable
-if (pos.side === 'long' &amp;&amp; pos.unrealized > 0) {
+if (pos.side === 'long' && pos.unrealized > 0) {
     strategy.add('long', { ratio: 0.2 });
 }
 
 // Rolling: close and reopen to compound gains
-if (pos.side === 'long' &amp;&amp; close > pos.avgPrice * 1.05) {
+if (pos.side === 'long' && close > pos.avgPrice * 1.05) {
     strategy.close('long');
     strategy.entry('long', { ratio: 1.0,
         sl: ema(close,21)*0.975, tp: close*1.10 });
@@ -725,7 +725,7 @@ if (close > this.lastAdd * 1.03) {
 // Previous value comparison (when crossover() isn't enough)
 if (this.prevRsi === undefined) this.prevRsi = rsi(14);
 r = rsi(14);
-if (this.prevRsi > 50 &amp;&amp; r &lt; 50) { /* RSI crossed below 50 */ }
+if (this.prevRsi > 50 && r < 50) { /* RSI crossed below 50 */ }
 this.prevRsi = r;</pre>
                 <p><span class="badge">When to use</span> Custom rolling sums, counters, previous arbitrary values, cooldown timers. For standard crossovers/indicators, use the built-in functions instead.</p>
             </div>
@@ -764,7 +764,7 @@ if (r > 70) {
     strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });
 }</pre>
                 <button class="example-btn" data-example="rsi">Load</button>
-                <p>RSI &lt; 30 触发入场，RSI 在 30–40 之间继续加仓（每次 10%），RSI &gt; 70 全部平多。<span class="badge">ATR stop</span> 动态止损。</p>
+                <p>RSI < 30 触发入场，RSI 在 30–40 之间继续加仓（每次 10%），RSI > 70 全部平多。<span class="badge">ATR stop</span> 动态止损。</p>
             </div>
 
             <div class="doc-section">
@@ -1344,7 +1344,6 @@ if (fast > slow) {
             let mode = 'sim', mu = 0, sigma = 0.15, leverage = 1, cash = 10000, symbol = 'BTCUSDT';
             try {
                 const p = window.parent;
-                // 优先读取 TradingSimulator 暴露的 _cryptoCtxPublic，兼容旧 cryptoAPI
                 const ctx = p._cryptoCtxPublic || p.cryptoAPI;
                 if (ctx && ctx.mode) {
                     mode   = 'crypto';
