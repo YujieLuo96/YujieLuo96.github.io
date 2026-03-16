@@ -20,6 +20,7 @@
             overflow: hidden;
         }
 
+        /* header */
         .header {
             background: #0e1520;
             padding: 8px 16px;
@@ -61,6 +62,7 @@
         .btn, .btn-outline, .example-btn, .instruction-header {
             touch-action: manipulation;
         }
+        /* Apply button — green accent */
         .btn-apply {
             background: rgba(57,255,20,0.07);
             border-color: rgba(57,255,20,0.4);
@@ -92,6 +94,7 @@
             white-space: nowrap;
         }
 
+        /* main area */
         .main {
             display: flex;
             flex: 1;
@@ -99,6 +102,7 @@
             overflow: hidden;
         }
 
+        /* editor panel (left) */
         .editor-panel {
             flex: 1;
             display: flex;
@@ -119,6 +123,7 @@
             color: rgba(0,245,255,0.5);
             letter-spacing: 0.12em;
         }
+        /* ── Error highlight overlay ───────────────────── */
         #code-wrap {
             flex: 1;
             position: relative;
@@ -173,6 +178,7 @@
             tab-size: 4;
             line-height: 1.6;
             caret-color: #00f5ff;
+            /* cyber scrollbar */
             scrollbar-width: thin;
             scrollbar-color: rgba(0,245,255,0.38) rgba(0,245,255,0.03);
         }
@@ -207,6 +213,7 @@
         .status-error   { color: #ff7070; text-shadow: 0 0 8px rgba(255,112,112,0.4); }
         .status-success { color: #5cdd5c; text-shadow: 0 0 8px rgba(92,221,92,0.4); }
 
+        /* instruction panel (right) - collapsible */
         .instruction-panel {
             width: 310px;
             background: #0e1520;
@@ -269,6 +276,7 @@
             box-shadow: inset 0 0 4px rgba(0,245,255,0.30), 0 0 10px rgba(0,245,255,0.42);
         }
 
+        /* styles for docs inside instruction */
         .doc-section { margin-bottom: 1.4rem; }
         .doc-section h4 {
             color: #00f5ff;
@@ -355,6 +363,7 @@
             border: 1px solid rgba(57,255,20,0.2);
         }
 
+        /* completion box */
         .completion-box {
             position: absolute;
             background: #0c1520;
@@ -405,6 +414,9 @@
             border-left-color: #00f5ff;
         }
 
+        /* ══════════════════════════════════════
+           MOBILE  ≤ 768px
+        ══════════════════════════════════════ */
         @media (max-width: 768px) {
             body {
                 height: auto;
@@ -431,6 +443,7 @@
                 box-shadow: inset 0 0 4px rgba(0,245,255,0.30), 0 0 10px rgba(0,245,255,0.42);
             }
 
+            /* Header: allow wrapping, bigger tap targets */
             .header { padding: 8px 10px; gap: 6px; }
 
             .btn {
@@ -452,6 +465,7 @@
             .examples-label { font-size: 0.72rem; }
             .check-result { order: 10; flex-basis: 100%; }
 
+            /* Stack editor + instruction vertically */
             .main {
                 flex-direction: column;
                 overflow: visible;
@@ -464,8 +478,10 @@
                 min-height: 0;
             }
 
+            /* Prevent iOS auto-zoom on focus (requires ≥16px) */
             #code { font-size: 1rem; min-height: 40vh; }
 
+            /* Instruction panel: full-width, collapses by height */
             .instruction-panel,
             .instruction-panel.collapsed {
                 width: 100%;
@@ -474,6 +490,7 @@
                 border-left: none;
                 border-top: 1px solid rgba(0,245,255,0.1);
             }
+            /* Show title even when collapsed (now horizontal bar) */
             .instruction-panel.collapsed .instruction-header h3 {
                 display: block;
             }
@@ -482,11 +499,14 @@
                 padding: 10px;
             }
 
+            /* Completion box: clamp width to viewport */
             .completion-box { max-width: min(280px, 85vw); }
 
+            /* Instruction header: larger tap area */
             .instruction-header { padding: 12px 14px; min-height: 44px; }
         }
 
+        /* ── Extra-small ≤ 400px ── */
         @media (max-width: 400px) {
             .btn { padding: 10px 9px; font-size: 0.75rem; }
             #code { font-size: 1rem; }
@@ -511,6 +531,7 @@
 </div>
 
 <div class="main">
+    <!-- left editor -->
     <div class="editor-panel">
         <div class="editor-header">
             <span>📝 STRATEGY CODE</span>
@@ -527,12 +548,14 @@
         <div id="completion" class="completion-box"></div>
     </div>
 
+    <!-- right instruction panel (collapsible) -->
     <div class="instruction-panel" id="instructionPanel">
         <div class="instruction-header" id="toggleInstruction">
             <h3>📘 INSTRUCTION</h3>
             <span class="collapse-icon" id="collapseIcon">◀</span>
         </div>
         <div class="instruction-content" id="instructionContent">
+            <!-- detailed documentation -->
             <div class="doc-section">
                 <h4>🔹 SYNTAX RULES</h4>
                 <p>Code is valid <strong>JavaScript</strong> executed every tick inside a <code>with(env){...}</code> sandbox. All built-in names below are injected automatically — no imports needed.</p>
@@ -724,7 +747,7 @@ if (crossunder(fast, slow)) {
     strategy.add('short',   { ratio: 0.1, sl: slow * 1.03 });
 }</pre>
                 <button class="example-btn" data-example="ma">Load</button>
-                <p>Entry with <code>entry</code> (10%), then each tick while trend persists use <code>add</code> to accumulate 10% more. Stops automatically when cash is exhausted.</p>
+                <p>入场用 <code>entry</code>（10%），之后每 tick 只要趋势保持就用 <code>add</code> 继续加仓 10%。资金耗尽时自动停止加仓。</p>
             </div>
 
             <div class="doc-section">
@@ -741,7 +764,7 @@ if (r > 70) {
     strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });
 }</pre>
                 <button class="example-btn" data-example="rsi">Load</button>
-                <p>RSI < 30 triggers entry, RSI between 30–40 adds (10% each time), RSI > 70 closes all longs. <span class="badge">ATR stop</span> dynamic stop.</p>
+                <p>RSI &lt; 30 触发入场，RSI 在 30–40 之间继续加仓（每次 10%），RSI &gt; 70 全部平多。<span class="badge">ATR stop</span> 动态止损。</p>
             </div>
 
             <div class="doc-section">
@@ -763,7 +786,7 @@ if (close < l20) {
     strategy.add('short',   { ratio: 0.1, sl: h20 });
 }</pre>
                 <button class="example-btn" data-example="breakout">Load</button>
-                <p>After breakout entry, add 10% each tick as price moves favorably (above avg for long / below avg for short). SL fixed at range extreme.</p>
+                <p>突破入场后，只要价格继续向有利方向（多仓高于均价 / 空仓低于均价）就每 tick 加仓 10%。SL 锁定在区间极值。</p>
             </div>
 
             <div class="doc-section">
@@ -790,7 +813,7 @@ if (this.prevFast === undefined) {
     this.prevFast = fast; this.prevSlow = slow;
 }</pre>
                 <button class="example-btn" data-example="persist">Load</button>
-                <p>First tick safe initialization, golden/death cross triggers entry (10%), then each tick while MA direction persists continues adding. <code>this.prevFast/Slow</code> persist across ticks.</p>
+                <p>首 tick 安全初始化，金叉/死叉触发入场（10%），之后每 tick 均线方向不变就继续加仓。<code>this.prevFast/Slow</code> 跨 tick 持久化。</p>
             </div>
 
             <div class="doc-section">
@@ -812,7 +835,7 @@ if (fast > slow) {
     strategy.closeAll();
 }</pre>
                 <button class="example-btn" data-example="roll">Load</button>
-                <p>While trend holds add 10% each tick. When avg price gains +3% roll (close + reopen) to compound principal. Close all on trend reversal.</p>
+                <p>趋势持续时每 tick 加仓 10%。当均价盈利 +3% 时滚仓（平仓 + 重开），以复利方式扩大本金。均线反转时全平。</p>
             </div>
 
             <div class="doc-section">
@@ -859,15 +882,25 @@ if (fast > slow) {
         const instructionPanel = document.getElementById('instructionPanel');
         const collapseIcon     = document.getElementById('collapseIcon');
 
+        // ── Error overlay helpers ──────────────────────────────────
         function _escHtml(s) {
             return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
 
+        /** Extract 1-indexed {line, col} from a caught error.
+         *  Uses eval with //# sourceURL=strategy-check.js so both Chrome and
+         *  Firefox emit "strategy-check.js:N:M" in the stack.
+         *  eval wrapper adds 2 lines before user code:
+         *    Line 1: (function(pineEnv){
+         *    Line 2: with(pineEnv){
+         *    Line 3+: user code   → userLine = evalLine - 2 */
         function _extractErrPos(e) {
+            // Chrome & Firefox with sourceURL eval
             const mSrc = (e.stack || '').match(/strategy-check\.js:(\d+):(\d+)/);
             if (mSrc) {
                 return { line: Math.max(1, +mSrc[1] - 2), col: +mSrc[2] };
             }
+            // Firefox fallback: e.lineNumber from eval string (same offset)
             if (typeof e.lineNumber === 'number' && e.lineNumber > 0) {
                 const col = typeof e.columnNumber === 'number' ? e.columnNumber : null;
                 return { line: Math.max(1, e.lineNumber - 2), col };
@@ -875,19 +908,27 @@ if (fast > slow) {
             return null;
         }
 
+        /** For Chrome SyntaxErrors (no line info in stack): scan from the LAST line
+         *  upward, removing one line at a time. The first line whose removal makes
+         *  the code parse cleanly is the error line.
+         *  This correctly handles "cause ≠ trigger" cases, e.g. a missing ')' on
+         *  line N that only surfaces as a SyntaxError when line N+1's '}' appears.
+         *  Uses fullCode (editor.value) so line indices match _renderOverlay. */
         function _findErrLine(fullCode) {
             const lines = fullCode.split('\n');
             for (let n = lines.length - 1; n >= 0; n--) {
                 const modified = lines.filter((_, i) => i !== n).join('\n');
                 try {
+                    // eslint-disable-next-line no-new-func
                     new Function('pineEnv', `with(pineEnv){\n${modified}\n}`);
-                    return n + 1;
-                } catch(e2) { }
+                    return n + 1; // 1-indexed: removing this line fixed it
+                } catch(e2) { /* still broken — keep scanning */ }
             }
             return 1;
         }
 
         function _renderOverlay(errLine0, errCol0) {
+            // errLine0: 0-indexed error line; errCol0: 0-indexed col (may be null)
             const lines = editor.value.split('\n');
             const html  = lines.map((ln, i) => {
                 const esc = _escHtml(ln) || ' ';
@@ -899,7 +940,7 @@ if (fast > slow) {
                     return `<span class="ov-line ov-line-error">${pre}<span class="ov-col-mark">${ch}</span>${post}</span>`;
                 }
                 return `<span class="ov-line ov-line-error">${esc}</span>`;
-            }).join('');
+            }).join('');   // block spans break lines themselves — no \n needed
             overlay.innerHTML = html;
             overlay.scrollTop  = editor.scrollTop;
             overlay.scrollLeft = editor.scrollLeft;
@@ -907,6 +948,7 @@ if (fast > slow) {
 
         function _clearOverlay() { overlay.innerHTML = ''; }
 
+        // ----- Autocomplete keywords -----
         const keywords = [
             'open', 'high', 'low', 'close', 'volume',
             'sma(', 'ema(', 'rsi(', 'atr(', 'highest(', 'lowest(', 'bb(', 'stoch(',
@@ -925,13 +967,14 @@ if (fast > slow) {
         function getCursorPos(ta) { return ta.selectionStart; }
         function setCursorPos(ta, p) { ta.setSelectionRange(p, p); }
 
+        // Simple caret coordinate estimate (no DOM mirror needed)
         function getCaretXY(ta) {
             const rect = ta.getBoundingClientRect();
             const pos  = getCursorPos(ta);
             const text = ta.value.substring(0, pos);
             const lines = text.split('\n');
             const lineH = parseFloat(getComputedStyle(ta).lineHeight) || 18;
-            const charW = 9.5;
+            const charW = 9.5; // approximate for monospace ~0.88rem
             const col  = lines[lines.length-1].length;
             const row  = lines.length - 1;
             return {
@@ -958,7 +1001,7 @@ if (fast > slow) {
             });
 
             const xy     = getCaretXY(editor);
-            const edRect = editor.getBoundingClientRect();
+            const edRect = editor.getBoundingClientRect();  // 缓存一次，避免重复触发布局回流
             completionBox.style.display = 'block';
             completionBox.style.left = (xy.left - edRect.left - 4) + 'px';
             completionBox.style.top  = (xy.top  - edRect.top  + 2) + 'px';
@@ -979,6 +1022,7 @@ if (fast > slow) {
         }
 
         editor.addEventListener('keydown', e => {
+            // Navigate completion list
             if (completionBox.style.display === 'block') {
                 const items = completionBox.querySelectorAll('.completion-item');
                 if (e.key === 'ArrowDown') {
@@ -1012,15 +1056,18 @@ if (fast > slow) {
                     if (matches.length === 1) { insertCompletion(prefix, matches[0]); return; }
                     if (matches.length > 1)   { showCompletions(prefix); return; }
                 }
+                // Indent: insert spaces
                 editor.value = editor.value.substring(0, pos) + '    ' + editor.value.substring(pos);
                 setCursorPos(editor, pos + 4);
                 updateCursorDisplay();
                 return;
             }
 
+            // Ctrl+S → check syntax
             if ((e.ctrlKey||e.metaKey) && e.key === 's') {
                 e.preventDefault(); checkSyntax(); return;
             }
+            // Ctrl+Enter → apply to trader
             if ((e.ctrlKey||e.metaKey) && e.key === 'Enter') {
                 e.preventDefault(); applyToTrader(); return;
             }
@@ -1044,6 +1091,7 @@ if (fast > slow) {
             cursorPos.textContent = `Ln ${lns.length}, Col ${lns[lns.length-1].length + 1}`;
         }
 
+        // ----- Syntax checker — simulates the actual pineEnv via with() -----
         function checkSyntax() {
             const code = editor.value.trim();
             if (!code) {
@@ -1079,8 +1127,12 @@ if (fast > slow) {
                     Math
                 };
 
+            // ── Phase 1: pure parse check via new Function (no eval wrapper) ──────
+            // Using new Function here avoids the eval wrapper's own closing ')' from
+            // producing a misleading "Unexpected token ')'" when the user's code is
+            // missing a closing bracket.
             let parseErr = null;
-            try { new Function('pineEnv', `with(pineEnv){\n${code}\n}`); }
+            try { new Function('pineEnv', `with(pineEnv){\n${code}\n}`); } // eslint-disable-line no-new-func
             catch(e) { if (e instanceof SyntaxError) parseErr = e; }
 
             if (parseErr) {
@@ -1089,6 +1141,7 @@ if (fast > slow) {
                     msg.includes('end of script')  || msg.includes('unexpected eof');
 
                 if (_incomplete(parseErr.message.toLowerCase())) {
+                    // Missing closing } or ( — point to last non-empty line
                     const edLines = editor.value.split('\n');
                     let lastLn = edLines.length;
                     for (let i = edLines.length - 1; i >= 0; i--) {
@@ -1100,6 +1153,9 @@ if (fast > slow) {
                     hintMsg.textContent = msg;
                     _renderOverlay(lastLn - 1, null);
                 } else {
+                    // Concrete syntax error — _findErrLine is browser-agnostic;
+                    // _extractErrPos is not used here because its offset is calibrated
+                    // for the eval wrapper (Phase 2), not new Function's single header line.
                     const ln = _findErrLine(editor.value);
                     const pos = ln ? { line: ln, col: null } : null;
                     const lineInfo = pos ? ` (Ln ${pos.line}${pos.col != null ? `, Col ${pos.col}` : ''})` : '';
@@ -1112,7 +1168,9 @@ if (fast > slow) {
                 return;
             }
 
+            // ── Phase 2: runtime check — eval + sourceURL for ReferenceError lines ─
             try {
+                // eslint-disable-next-line no-eval
                 const fn = eval(`(function(pineEnv){\nwith(pineEnv){\n${code}\n}\n})\n//# sourceURL=strategy-check.js`);
                 fn.call({}, mockEnv);
                 syntaxResult.textContent = '✓ OK';
@@ -1129,6 +1187,7 @@ if (fast > slow) {
                     if (pos) _renderOverlay(pos.line - 1, pos.col != null ? pos.col - 1 : null);
                     else _clearOverlay();
                 } else {
+                    // Other runtime errors from mocks are expected — code is structurally OK
                     syntaxResult.textContent = '✓ OK (runtime ok)';
                     syntaxResult.className = 'check-result status-success';
                     hintMsg.textContent = 'Syntax OK';
@@ -1137,6 +1196,7 @@ if (fast > slow) {
             }
         }
 
+        // ----- Apply to Trader (postMessage to parent iframe) -----
         function applyToTrader() {
             const code = editor.value.trim();
             if (!code) { hintMsg.textContent = 'Nothing to apply'; return; }
@@ -1158,6 +1218,7 @@ if (fast > slow) {
                 hintMsg.textContent = '✓ Copied to clipboard';
                 setTimeout(() => { hintMsg.textContent = 'Ready'; }, 2000);
             }).catch(() => {
+                // fallback
                 editor.select();
                 document.execCommand('copy');
                 hintMsg.textContent = '✓ Copied';
@@ -1165,6 +1226,7 @@ if (fast > slow) {
             });
         });
 
+        // ----- Examples -----
         const EXAMPLES = {
             ma: [
                 "// MA Cross + Pyramid — enter on crossover, add 10% each tick while trend holds",
@@ -1271,15 +1333,18 @@ if (fast > slow) {
             });
         });
 
+        // ----- Collapse instruction panel -----
         toggleBtn.addEventListener('click', () => {
             instructionPanel.classList.toggle('collapsed');
             collapseIcon.innerHTML = instructionPanel.classList.contains('collapsed') ? '▶' : '◀';
         });
 
+        // ----- BackTest -----
         document.getElementById('btn-backtest').addEventListener('click', () => {
             let mode = 'sim', mu = 0, sigma = 0.15, leverage = 1, cash = 10000, symbol = 'BTCUSDT';
             try {
                 const p = window.parent;
+                // 优先读取 TradingSimulator 暴露的 _cryptoCtxPublic，兼容旧 cryptoAPI
                 const ctx = p._cryptoCtxPublic || p.cryptoAPI;
                 if (ctx && ctx.mode) {
                     mode   = 'crypto';
@@ -1292,15 +1357,16 @@ if (fast > slow) {
                 if (p && p.leverage  != null) leverage = p.leverage;
                 if (p && p.cash      != null) cash     = p.cash;
                 if (p && p.initialCash != null) cash   = p.initialCash;
-            } catch (e) { }
+            } catch (e) { /* cross-origin — 使用默认值 */ }
 
             if (typeof BackTest !== 'undefined') {
                 BackTest.open({ stratCode: editor.value, mode, mu, sigma, leverage, cash, symbol });
             } else {
-                alert('BackTest module not loaded. Please ensure BackTest.js is in the same directory as StrategyEditor.html.');
+                alert('BackTest 模块未加载，请检查 BackTest.js 是否与 StrategyEditor.html 同目录。');
             }
         });
 
+        // ----- Init -----
         editor.value = EXAMPLES.ma;
         updateCursorDisplay();
         checkSyntax();

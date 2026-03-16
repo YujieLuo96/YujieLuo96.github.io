@@ -116,7 +116,7 @@ window.BackTest = (function () {
   ═══════════════════════════════════════════════════════════════ */
   function _buildPineEnv({
     prices, ohlc, volumes, barIdx,
-    crossState, getCrossIdx,
+    crossState, crossLastTick, getCrossIdx,
     orders, getFreeCash, leverage, fractional,
     placeOrder, closeOrderById,
   }) {
@@ -223,16 +223,18 @@ window.BackTest = (function () {
     function crossover(a, b) {
       const idx = getCrossIdx();
       const s   = crossState.get(idx);
-      const res = s != null && s.a <= s.b && a > b;
+      const res = s != null && crossLastTick.get(idx) === barIdx - 1 && s.a <= s.b && a > b;
       crossState.set(idx, { a, b });
+      crossLastTick.set(idx, barIdx);
       return res;
     }
 
     function crossunder(a, b) {
       const idx = getCrossIdx();
       const s   = crossState.get(idx);
-      const res = s != null && s.a >= s.b && a < b;
+      const res = s != null && crossLastTick.get(idx) === barIdx - 1 && s.a >= s.b && a < b;
       crossState.set(idx, { a, b });
+      crossLastTick.set(idx, barIdx);
       return res;
     }
 
@@ -318,8 +320,9 @@ window.BackTest = (function () {
     const equity  = [initialCash];
 
     const stratCtx  = {};
-    const crossState = new Map();
-    let   _crossIdx  = 0;
+    const crossState    = new Map();
+    const crossLastTick = new Map();
+    let   _crossIdx     = 0;
 
     // ── 当前价格（闭包共享，每 bar 更新）
     let _cp = prices[0];
@@ -380,16 +383,17 @@ window.BackTest = (function () {
         }
       }
 
-      // 爆仓检查
-      if (orders.length > 0 && _equity() < initialCash * MAINT) {
-        for (const o of [...orders]) closeOrderAt(o.id, _cp, 'LIQ');
+      // 爆仓检查（逐仓隔离保证金，与 TradingSimulator.html 一致）
+      for (const o of [...orders]) {
+        const eq = o.margin + o.dir * o.shares * (_cp - o.openPrice);
+        if (eq <= o.margin * MAINT) closeOrderAt(o.id, _cp, 'LIQ');
       }
 
       // 运行策略
       _crossIdx = 0;
       const env = _buildPineEnv({
         prices, ohlc, volumes, barIdx: i,
-        crossState,
+        crossState, crossLastTick,
         getCrossIdx: () => _crossIdx++,
         orders, getFreeCash, leverage, fractional,
         placeOrder, closeOrderById,
@@ -1987,8 +1991,8 @@ window.BackTest = (function () {
   function _mmColorReturn(t, vMin, vMax) {
     const vRange = (vMax - vMin) || 1;
     const zeroT  = Math.max(0, Math.min(1, (0 - vMin) / vRange));
-    if (t <= zeroT) {
-      const u = zeroT > 0 ? t / zeroT : 0;
+    if (zeroT > 0 && t <= zeroT) {
+      const u = t / zeroT;
       return [Math.round(220 - 150*u), Math.round(20 + 10*u), Math.round(40 + 80*u)];
     } else {
       const u = zeroT < 1 ? (t - zeroT) / (1 - zeroT) : 1;
@@ -2005,8 +2009,8 @@ window.BackTest = (function () {
   function _mmColorPF(t, vMin, vMax) {
     const vRange = (vMax - vMin) || 1;
     const oneT   = Math.max(0, Math.min(1, (1 - vMin) / vRange));
-    if (t <= oneT) {
-      const u = oneT > 0 ? t / oneT : 0;
+    if (oneT > 0 && t <= oneT) {
+      const u = t / oneT;
       return [Math.round(160 - 100*u), Math.round(10 + 15*u), Math.round(20 + 15*u)];
     } else {
       const u = oneT < 1 ? (t - oneT) / (1 - oneT) : 1;

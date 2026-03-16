@@ -173,7 +173,7 @@ if (close > hh && this._p !== 1) {
       initialCash: cash, cash,
       orders: [], history: [],
       isRunning: false,
-      _stratCtx: {}, _crossState: new Map(), _crossIdx: 0,
+      _stratCtx: {}, _crossState: new Map(), _crossLastTick: new Map(), _crossTick: 0, _crossIdx: 0,
       _stratFn: null, _compiled: false,
       _lastError: null, _errCount: 0,
       stats: {
@@ -307,11 +307,13 @@ if (close > hh && this._p !== 1) {
     }
     function crossover(a, b) {
       const i=t._crossIdx++, s=t._crossState.get(i);
-      const r=s!=null&&s.a<=s.b&&a>b; t._crossState.set(i,{a,b}); return r;
+      const r=s!=null&&t._crossLastTick.get(i)===t._crossTick-1&&s.a<=s.b&&a>b;
+      t._crossState.set(i,{a,b}); t._crossLastTick.set(i,t._crossTick); return r;
     }
     function crossunder(a, b) {
       const i=t._crossIdx++, s=t._crossState.get(i);
-      const r=s!=null&&s.a>=s.b&&a<b; t._crossState.set(i,{a,b}); return r;
+      const r=s!=null&&t._crossLastTick.get(i)===t._crossTick-1&&s.a>=s.b&&a<b;
+      t._crossState.set(i,{a,b}); t._crossLastTick.set(i,t._crossTick); return r;
     }
     const cb = ohlc.length ? ohlc[ohlc.length-1]
                            : {o:currentPrice,h:currentPrice,l:currentPrice,c:currentPrice};
@@ -403,6 +405,7 @@ if (close > hh && this._p !== 1) {
   ═══════════════════════════════════════════════════════════════════ */
   function _eval(t) {
     if (!t.isRunning || !t._compiled || !t._stratFn) return;
+    t._crossTick++;
     t._crossIdx = 0;
     const api = {
       entry(dir, opts) {
@@ -1442,7 +1445,7 @@ if (close > hh && this._p !== 1) {
       const t=_traders.find(x=>x.id===_editId); if(!t) return;
       const code=_el('vt-edit-code').value.trim(); t.stratCode=code;
       let sn='Custom'; for(const[n,s] of Object.entries(PRESETS)) if(s.code.trim()===code){sn=n;break;}
-      t.stratName=sn; t._stratCtx={}; t._crossState=new Map(); t._errCount=0; t._lastError=null;
+      t.stratName=sn; t._stratCtx={}; t._crossState=new Map(); t._crossLastTick=new Map(); t._crossTick=0; t._errCount=0; t._lastError=null;
       _compile(t); _closeEdit(); _renderGrid();
       if(_detailId===t.id) _renderDetail(t);
     });

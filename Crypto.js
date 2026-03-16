@@ -241,7 +241,7 @@
         // First WS message for this bar: push a new placeholder
         ohlcArr.push({ o: bar.o, h: bar.h, l: bar.l, c: bar.c });
         ctx.priceHistory.push(bar.c);
-        ctx.volumeHistory.push(0.1);
+        ctx.volumeHistory.push(_normalizeVol(bar.v));
       } else {
         // Subsequent messages: update the last bar in-place
         const last = ohlcArr[ohlcArr.length - 1];
@@ -249,6 +249,13 @@
         last.l = Math.min(last.l, bar.l);
         last.c = bar.c;
         ctx.priceHistory[ctx.priceHistory.length - 1] = bar.c;
+        ctx.volumeHistory[ctx.volumeHistory.length - 1] = _normalizeVol(bar.v);
+        // Sync partial candle hi/lo into agg cache (totalTicks & ohlc.length unchanged → no auto-rebuild)
+        const ac = ctx._aggCache;
+        if (ac !== null) {
+          if (last.h > ac.partialBaseH) ac.partialBaseH = last.h;
+          if (last.l < ac.partialBaseL) ac.partialBaseL = last.l;
+        }
       }
       ctx.currentPrice = bar.c;
       if (ctx.prevTickPrice <= 0) ctx.prevTickPrice = bar.c;
@@ -360,6 +367,7 @@
     async function _enterCryptoMode(symbol, interval) {
       const rev = ++_cryptoLoadRevision;
       _cryptoMode     = true;
+      ctx.onEnterCryptoMode?.();
       _cryptoSymbol   = symbol;
       _cryptoInterval = interval || _cryptoInterval;
       _cryptoLiveBar  = null;
@@ -394,6 +402,7 @@
     function _exitCryptoMode() {
       _cryptoLoadRevision++;   // cancel any in-flight fetch
       _cryptoMode    = false;
+      ctx.onExitCryptoMode?.();
       _cryptoLiveBar = null;
       _disconnectCryptoWS();
 

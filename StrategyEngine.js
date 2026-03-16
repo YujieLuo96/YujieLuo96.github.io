@@ -25,6 +25,7 @@
  *   onStop()            — 策略因错误自动停止时调用（更新状态 DOM）
  *   FEE_RATE            — number
  *   FEE_FIXED           — number
+ *   fractional()        → bool   true = crypto 模式（允许小数份额），false = 股票模式（整数份额）
  */
 window.StrategyEngine = (function () {
   'use strict';
@@ -36,8 +37,10 @@ window.StrategyEngine = (function () {
   let _ctx      = {};     // 策略持久状态（策略代码中 this.xxx）
 
   // crossover/crossunder 每 tick 重置调用序号，跨 tick 保存前值
-  let _crossIdx     = 0;
-  const _crossState = new Map(); // callIdx → { a, b }
+  let _crossIdx      = 0;
+  let _crossTick     = 0;          // 每 tick 递增，用于检测上一 tick 是否有调用
+  const _crossState    = new Map(); // callIdx → { a, b }
+  const _crossLastTick = new Map(); // callIdx → 写入时的 _crossTick
 
   /* ── 构建 pineEnv ──────────────────────────────────────── */
   // 每次 tick 调用时构建，所有数据通过 _deps getter 实时读取
@@ -71,15 +74,17 @@ window.StrategyEngine = (function () {
       crossover(a, b) {
         const idx = _crossIdx++;
         const s = _crossState.get(idx);
-        const result = s != null && s.a <= s.b && a > b;
+        const result = s != null && _crossLastTick.get(idx) === _crossTick - 1 && s.a <= s.b && a > b;
         _crossState.set(idx, { a, b });
+        _crossLastTick.set(idx, _crossTick);
         return result;
       },
       crossunder(a, b) {
         const idx = _crossIdx++;
         const s = _crossState.get(idx);
-        const result = s != null && s.a >= s.b && a < b;
+        const result = s != null && _crossLastTick.get(idx) === _crossTick - 1 && s.a >= s.b && a < b;
         _crossState.set(idx, { a, b });
+        _crossLastTick.set(idx, _crossTick);
         return result;
       },
 
@@ -184,14 +189,16 @@ window.StrategyEngine = (function () {
           }
           oppositeIds.forEach(id => d.closeOrderById(id, false));
           if (!hasSame) {
-            const lev = d.getLeverage();
+            const lev  = d.getLeverage();
+            const frac = d.fractional();
             let shares;
             if (opts.qty != null) {
-              shares = Math.floor(opts.qty);
+              shares = frac ? opts.qty : Math.floor(opts.qty);
             } else {
               const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
               const budget = ratio * d.getFreeCash() - d.FEE_FIXED;
-              shares = Math.floor(budget / (d.getPrice() * (1 / lev + d.FEE_RATE)));
+              const raw    = budget / (d.getPrice() * (1 / lev + d.FEE_RATE));
+              shares = frac ? raw : Math.floor(raw);
             }
             const sl = opts.sl != null ? opts.sl : null;
             const tp = opts.tp != null ? opts.tp : null;
@@ -203,15 +210,17 @@ window.StrategyEngine = (function () {
         // opts 与 entry 完全相同：{ qty?, ratio?, sl?, tp? }
         add(direction, opts = {}) {
           if (!_active) return;
-          const dir = direction.toLowerCase() === 'long' ? 1 : -1;
-          const lev = d.getLeverage();
+          const dir  = direction.toLowerCase() === 'long' ? 1 : -1;
+          const lev  = d.getLeverage();
+          const frac = d.fractional();
           let shares;
           if (opts.qty != null) {
-            shares = Math.floor(opts.qty);
+            shares = frac ? opts.qty : Math.floor(opts.qty);
           } else {
             const ratio = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
             const budget = ratio * d.getFreeCash() - d.FEE_FIXED;
-            shares = Math.floor(budget / (d.getPrice() * (1 / lev + d.FEE_RATE)));
+            const raw    = budget / (d.getPrice() * (1 / lev + d.FEE_RATE));
+            shares = frac ? raw : Math.floor(raw);
           }
           const sl = opts.sl != null ? opts.sl : null;
           const tp = opts.tp != null ? opts.tp : null;
@@ -274,6 +283,8 @@ window.StrategyEngine = (function () {
     if (!fn) return false;
     _ctx = {};
     _crossState.clear();
+    _crossLastTick.clear();
+    _crossTick = 0;
     _fn = fn;
     _active = true;
     return true;
@@ -290,12 +301,15 @@ window.StrategyEngine = (function () {
     _fn     = null;
     _ctx    = {};
     _crossState.clear();
+    _crossLastTick.clear();
+    _crossTick = 0;
     _crossIdx = 0;
   }
 
   /** 每 tick 执行一次（替代 evaluateStrategy）*/
   function tick() {
     if (!_active || !_fn) return;
+    _crossTick++;  // 递增 tick 计数，用于 crossover/crossunder 陈旧值检测
     _crossIdx = 0; // 重置 crossover/crossunder 调用计数
     try {
       _fn.call(_ctx, _buildEnv());
