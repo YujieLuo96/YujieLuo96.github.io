@@ -1,29 +1,62 @@
 /**
- * StrategyEngine.js — PineScript
+ * StrategyEngine.js — PineScript 策略执行引擎（独立模块）
+ *
+ * 依赖注入方式（init 一次，之后调用即可）：
+ *
+ *   StrategyEngine.init(deps)   — 注入所有依赖
+ *   StrategyEngine.start(code)  — 编译并激活策略，返回 bool
+ *   StrategyEngine.stop()       — 停用策略（不平仓，平仓由主文件负责）
+ *   StrategyEngine.reset()      — 完全重置内部状态（用于 resetGame）
+ *   StrategyEngine.tick()       — 每 tick 执行一次（替代 evaluateStrategy）
+ *   StrategyEngine.isActive()   — 返回当前激活状态
+ *
+ * deps 对象字段：
+ *   getPrice()          → number          当前价格
+ *   getOhlc()           → Array<{o,h,l,c}>
+ *   getPriceHistory()   → number[]
+ *   getVolumeHistory()  → number[]
+ *   getOrders()         → Array<order>
+ *   getFreeCash()       → number
+ *   getLeverage()       → number
+ *   placeOrder(dir, shares, sl, tp)
+ *   closeOrderById(id, doRefresh)
+ *   showToast(msg, type, dur?)
+ *   onAfterTick()       — 每次 tick 结束后调用（通常是 refreshUI）
+ *   onStop()            — 策略因错误自动停止时调用（更新状态 DOM）
+ *   FEE_RATE            — number
+ *   FEE_FIXED           — number
+ *   fractional()        → bool   true = crypto 模式（允许小数份额），false = 股票模式（整数份额）
  */
 window.StrategyEngine = (function () {
   'use strict';
 
+  /* ── 私有状态 ──────────────────────────────────────────── */
   let _deps     = null;
   let _active   = false;
   let _fn       = null;
-  let _ctx      = {};
+  let _ctx      = {};     // 策略持久状态（策略代码中 this.xxx）
 
+  // crossover/crossunder 每 tick 重置调用序号，跨 tick 保存前值
   let _crossIdx      = 0;
-  let _crossTick     = 0;
-  const _crossState    = new Map();
-  const _crossLastTick = new Map();
+  let _crossTick     = 0;          // 每 tick 递增，用于检测上一 tick 是否有调用
+  const _crossState    = new Map(); // callIdx → { a, b }
+  const _crossLastTick = new Map(); // callIdx → 写入时的 _crossTick
 
+  /* ── 构建 pineEnv ──────────────────────────────────────── */
+  // 每次 tick 调用时构建，所有数据通过 _deps getter 实时读取
   function _buildEnv() {
     const d = _deps;
 
     return {
+      // ── OHLC / Volume（以数字属性暴露，策略可直接写 close > 100）──
       get open()   { const o = d.getOhlc(); return o.length ? o[o.length-1].o : d.getPrice(); },
       get high()   { const o = d.getOhlc(); return o.length ? o[o.length-1].h : d.getPrice(); },
       get low()    { const o = d.getOhlc(); return o.length ? o[o.length-1].l : d.getPrice(); },
       get close()  { return d.getPrice(); },
       get volume() { const v = d.getVolumeHistory(); return v.length ? v[v.length-1] : 0; },
 
+      // ── 移动均线 ──────────────────────────────────────────
+      // src 参数保留兼容性（策略可写 sma(close, 20)），但数据源始终为收盘价序列
       sma(src, len) {
         const arr = d.getPriceHistory().slice(-len);
         return arr.length >= len ? arr.reduce((a, b) => a + b, 0) / len : d.getPrice();
@@ -37,6 +70,7 @@ window.StrategyEngine = (function () {
         return e;
       },
 
+      // ── 交叉信号（通过调用序号记忆前值，第一次调用返回 false）──
       crossover(a, b) {
         const idx = _crossIdx++;
         const s = _crossState.get(idx);
@@ -54,6 +88,7 @@ window.StrategyEngine = (function () {
         return result;
       },
 
+      // ── RSI（Wilder，无状态从价格历史计算）──
       rsi(len = 14) {
         const arr = d.getPriceHistory().slice(-Math.max(len * 3, len + 10));
         if (arr.length < 2) return 50;
@@ -73,6 +108,7 @@ window.StrategyEngine = (function () {
         return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100 / (1 + uA / dA);
       },
 
+      // ── ATR（Wilder 平均真实波幅）──
       atr(len = 14) {
         const ohlc = d.getOhlc();
         if (ohlc.length < 2) return 0;
@@ -91,6 +127,7 @@ window.StrategyEngine = (function () {
         return v;
       },
 
+      // ── Highest / Lowest（最近 len 根已完结 K 线，不含当前开放K线）──
       highest(len = 20) {
         const ohlc = d.getOhlc();
         const end = ohlc.length - 1;
@@ -104,6 +141,7 @@ window.StrategyEngine = (function () {
         return sl.length ? Math.min(...sl.map(b => b.l)) : d.getPrice();
       },
 
+      // ── 布林带，返回 { upper, mid, lower }──
       bb(len = 20, mult = 2.0) {
         const price = d.getPrice();
         const arr = d.getPriceHistory().slice(-len);
@@ -113,6 +151,7 @@ window.StrategyEngine = (function () {
         return { upper: mid + mult * std, mid, lower: mid - mult * std };
       },
 
+      // ── 随机指标，返回 { k, d }（均为 0-100）──
       stoch(kLen = 14, dLen = 3) {
         const ohlc = d.getOhlc();
         if (ohlc.length < kLen) return { k: 50, d: 50 };
@@ -132,9 +171,13 @@ window.StrategyEngine = (function () {
         return { k, d: dCnt ? dSum / dCnt : k };
       },
 
+      // ── bar_index：已完结 K 线根数（0 起始）──
       get bar_index() { return Math.max(0, d.getOhlc().length - 1); },
 
+      // ── strategy 对象：开平仓 API ──────────────────────────
       strategy: {
+        // entry：平掉反向仓位，若该方向已有仓位则不重复开仓（幂等）
+        // opts: { qty?, ratio?, sl?, tp? }
         entry(direction, opts = {}) {
           if (!_active) return;
           const dir = direction.toLowerCase() === 'long' ? 1 : -1;
@@ -163,6 +206,8 @@ window.StrategyEngine = (function () {
           }
         },
 
+        // add：允许叠仓/加仓（不平反向，直接开新仓）
+        // opts 与 entry 完全相同：{ qty?, ratio?, sl?, tp? }
         add(direction, opts = {}) {
           if (!_active) return;
           const dir  = direction.toLowerCase() === 'long' ? 1 : -1;
@@ -182,6 +227,7 @@ window.StrategyEngine = (function () {
           if (shares > 0) d.placeOrder(dir, shares, sl, tp);
         },
 
+        // close：平掉指定方向的所有仓位
         close(direction) {
           if (!_active) return;
           const dir = direction.toLowerCase() === 'long' ? 1 : -1;
@@ -189,11 +235,13 @@ window.StrategyEngine = (function () {
             .forEach(id => d.closeOrderById(id, false));
         },
 
+        // closeAll：平掉所有仓位（多空均平）
         closeAll() {
           if (!_active) return;
           [...d.getOrders().map(o => o.id)].forEach(id => d.closeOrderById(id, false));
         },
 
+        // position：只读快照，返回 { side, qty, avgPrice, unrealized }
         get position() {
           const price = d.getPrice();
           let lQty = 0, sQty = 0, lSum = 0, sSum = 0, lU = 0, sU = 0;
@@ -212,10 +260,14 @@ window.StrategyEngine = (function () {
     };
   }
 
+  /* ── 公开 API ──────────────────────────────────────────── */
+
+  /** 注入依赖（页面初始化时调用一次） */
   function init(deps) {
     _deps = deps;
   }
 
+  /** 编译 Pine 代码，返回 Function 或 null（失败时显示 toast） */
   function compile(code) {
     try {
       return new Function('pineEnv', `with(pineEnv){${code}}`);
@@ -225,6 +277,7 @@ window.StrategyEngine = (function () {
     }
   }
 
+  /** 编译并激活策略，返回 true 表示成功 */
   function start(code) {
     const fn = compile(code);
     if (!fn) return false;
@@ -237,10 +290,12 @@ window.StrategyEngine = (function () {
     return true;
   }
 
+  /** 停用策略（不平仓，平仓由主文件在调用 stop 后自行处理） */
   function stop() {
     _active = false;
   }
 
+  /** 完全重置内部状态（用于 resetGame，清除策略函数和跨 tick 状态） */
   function reset() {
     _active = false;
     _fn     = null;
@@ -251,10 +306,11 @@ window.StrategyEngine = (function () {
     _crossIdx = 0;
   }
 
+  /** 每 tick 执行一次（替代 evaluateStrategy）*/
   function tick() {
     if (!_active || !_fn) return;
-    _crossTick++;
-    _crossIdx = 0;
+    _crossTick++;  // 递增 tick 计数，用于 crossover/crossunder 陈旧值检测
+    _crossIdx = 0; // 重置 crossover/crossunder 调用计数
     try {
       _fn.call(_ctx, _buildEnv());
     } catch (e) {
@@ -263,9 +319,11 @@ window.StrategyEngine = (function () {
       _active = false;
       if (_deps.onStop) _deps.onStop();
     }
+    // 保证 strategy.close/closeAll 的结果在本 tick 立即反映到 UI
     _deps.onAfterTick();
   }
 
+  /** 返回策略当前激活状态 */
   function isActive() {
     return _active;
   }
