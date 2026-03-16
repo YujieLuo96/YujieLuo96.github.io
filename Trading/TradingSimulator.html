@@ -1014,7 +1014,10 @@ if (crossunder(fast, slow)) {
 </div>
 
 <script src="Crypto.js"></script>
-<script src="MarketEngine.js"></script>
+<script src="Market/RegimeEngine.js"></script>
+<script src="Market/SwanEngine.js"></script>
+<script src="Market/SREngine.js"></script>
+<script src="Market/MarketEngine.js"></script>
 <script src="VirtualTraders.js"></script>
 <script src="EMACache.js"></script>
 <script src="StrategyEngine.js"></script>
@@ -1097,7 +1100,7 @@ if (crossunder(fast, slow)) {
   let volumeHistory = [];
   const MIN_VISIBLE_CANDLES = 200;  // 最少显示的K线数
   const MAX_TF_MULT = 5;           // 最大时间周期倍数
-  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4;  // 默认 N=4
+  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4 * 6;  // 默认 N=4，保留 6000 T
   let trades        = [];
   let tradeHistory    = [];  // 已平仓记录
   let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
@@ -2371,8 +2374,7 @@ if (crossunder(fast, slow)) {
     candleSize    = _activeTfMult * n;
 
     // 按 N 缩放历史容量，保证始终有约 200 个 T 周期的原始数据
-    const MAX_TF_MULT = 5;  // 最大时间周期倍数
-    MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n;
+    MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n * 6;  // 保留 6000 T
 
     // N 减小时历史数组可能超出新容量，需从头部裁剪
     const excess = ohlc.length - MAX_HISTORY;
