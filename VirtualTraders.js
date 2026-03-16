@@ -348,14 +348,20 @@ if (close > hh && this._p !== 1) {
     opts = opts || {};
     const price  = _ctx.currentPrice;
     const d      = dir === 'long' ? 1 : -1;
-    const lev    = opts.lev   != null ? opts.lev : 1;
-    const ratio  = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 0.9;
-    const budget = ratio * _free(t) - FEE_FIXED;
-    if (budget <= 0) return;
-    const shares = budget / (price * (1/lev + FEE_RATE));
+    const lev    = opts.lev != null ? opts.lev : 1;
+    let shares;
+    if (opts.qty != null) {
+      shares = Math.max(0, opts.qty);
+    } else {
+      const ratio  = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 0.9;
+      const budget = ratio * _free(t) - FEE_FIXED;
+      if (budget <= 0) return;
+      shares = budget / (price * (1/lev + FEE_RATE));
+    }
     if (shares <= 0) return;
     const margin = shares * price / lev;
     const fee    = shares * price * FEE_RATE + FEE_FIXED;
+    if (margin + fee > _free(t) + 0.01) return; // insufficient funds check for qty path
     t.cash -= margin + fee;
     t.stats.totalFees += fee;
     t.orders.push({

@@ -884,7 +884,7 @@
       <span id="strategy-status" class="strategy-status">● IDLE</span>
     </div>
     <textarea id="pine-code" class="strategy-code" rows="5"
-      placeholder="// 示例：MA 金叉策略&#10;fast = ema(close, 9);&#10;slow = ema(close, 21);&#10;if (crossover(fast, slow)) { strategy.entry('long'); }&#10;if (crossunder(fast, slow)) { strategy.entry('short'); }">// MA Cross (default)
+      placeholder="// Example: MA Crossover Strategy&#10;fast = ema(close, 9);&#10;slow = ema(close, 21);&#10;if (crossover(fast, slow)) { strategy.entry('long'); }&#10;if (crossunder(fast, slow)) { strategy.entry('short'); }">// MA Cross (default)
 fast = ema(close, 9);
 slow = ema(close, 21);
 if (crossover(fast, slow)) {
@@ -2541,11 +2541,11 @@ if (crossunder(fast, slow)) {
   // 策略按钮事件
   document.getElementById('btn-strategy-start').addEventListener('click', () => {
     const code = document.getElementById('pine-code').value.trim();
-    if (!code) { showToast('⚠ 请先输入策略代码', 'warn'); return; }
+    if (!code) { showToast('⚠ Please enter strategy code first', 'warn'); return; }
     if (StrategyEngine.start(code)) {
       const st = document.getElementById('strategy-status');
       st.textContent = '● RUNNING'; st.classList.add('running');
-      showToast('策略已启动', 'success');
+      showToast('Strategy started', 'success');
     }
   });
 
@@ -2554,7 +2554,7 @@ if (crossunder(fast, slow)) {
     const st = document.getElementById('strategy-status');
     st.textContent = '● IDLE'; st.classList.remove('running');
     closeAll();  // 停止时自动平掉所有策略持仓
-    showToast('策略已停止，持仓已全部平仓', 'info');
+    showToast('Strategy stopped, all positions closed', 'info');
   });
 
   // 策略编辑器模态窗口
@@ -2574,7 +2574,7 @@ if (crossunder(fast, slow)) {
       if (e.data && e.data.type === 'apply-strategy' && typeof e.data.code === 'string') {
         document.getElementById('pine-code').value = e.data.code;
         modal.style.display = 'none';
-        showToast('策略代码已从编辑器应用', 'success');
+        showToast('Strategy code applied from editor', 'success');
       }
     });
   })();

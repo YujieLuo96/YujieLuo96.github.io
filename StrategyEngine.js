@@ -272,7 +272,7 @@ window.StrategyEngine = (function () {
     try {
       return new Function('pineEnv', `with(pineEnv){${code}}`);
     } catch (e) {
-      _deps.showToast('策略编译错误: ' + e.message, 'error');
+      _deps.showToast('Strategy compile error: ' + e.message, 'error');
       return null;
     }
   }
@@ -314,8 +314,8 @@ window.StrategyEngine = (function () {
     try {
       _fn.call(_ctx, _buildEnv());
     } catch (e) {
-      console.warn('策略执行异常', e);
-      _deps.showToast('策略执行错误，已停止: ' + e.message, 'error');
+      console.warn('Strategy execution error', e);
+      _deps.showToast('Strategy execution error, stopped: ' + e.message, 'error');
       _active = false;
       if (_deps.onStop) _deps.onStop();
     }

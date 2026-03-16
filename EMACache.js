@@ -175,11 +175,10 @@ window.EMACache = (function () {
 
       // 增量路径：steady 态 + 上一次恰好是紧邻 tick（差值=1）
       // 若 period 曾被关闭多个 tick 再重新启用，prev 已过期，必须全量重建
+      // 原地左移复用 prev 数组，避免每 tick 分配新 Float64Array（copyWithin 保证重叠安全）
       if (steady && prev && prev.length === n && (tt - lastTick === 1)) {
-        const e = new Float64Array(n);
-        e.set(prev.subarray(1));
-        e[n-1] = (ph[n-1] - e[n-2]) * k + e[n-2];
-        emaCache.set(period, e);
+        prev.copyWithin(0, 1);
+        prev[n-1] = (ph[n-1] - prev[n-2]) * k + prev[n-2];
       } else {
         const e = new Float64Array(n);
         e[0] = ph[0];

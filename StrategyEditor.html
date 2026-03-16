@@ -1362,7 +1362,7 @@ if (fast > slow) {
             if (typeof BackTest !== 'undefined') {
                 BackTest.open({ stratCode: editor.value, mode, mu, sigma, leverage, cash, symbol });
             } else {
-                alert('BackTest 模块未加载，请检查 BackTest.js 是否与 StrategyEditor.html 同目录。');
+                alert('BackTest module not loaded. Please check that BackTest.js is in the same directory as StrategyEditor.html.');
             }
         });
 

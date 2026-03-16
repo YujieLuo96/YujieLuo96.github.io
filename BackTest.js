@@ -575,7 +575,7 @@ window.BackTest = (function () {
     const { stratCode, symbol, interval, startMs, endMs, runs, initialCash, leverage } = params;
 
     const fullMarket = await _fetchKlines(symbol, interval, startMs, endMs);
-    if (!fullMarket) return { error: '未获取到数据，请检查日期范围与网络。' };
+    if (!fullMarket) return { error: 'No data received. Please check the date range and your network.' };
 
     const N          = fullMarket.prices.length;
     const results    = [];
@@ -1250,7 +1250,7 @@ window.BackTest = (function () {
     if (editorEl && editorEl.value.trim()) _stratCode = editorEl.value;
     const code = _stratCode;
     if (!code || !code.trim()) {
-      alert('策略代码为空，请先编写策略再运行回测。');
+      alert('Strategy code is empty. Please write a strategy before running backtest.');
       return;
     }
 
@@ -1274,10 +1274,10 @@ window.BackTest = (function () {
       const iv   = _el('btp-iv')?.value   || '1h';
       const from = _el('btp-from')?.value;
       const to   = _el('btp-to')?.value;
-      if (!from || !to) { alert('请填写日期范围。'); return; }
+      if (!from || !to) { alert('Please fill in the date range.'); return; }
       const startMs = new Date(from).getTime();
       const endMs   = new Date(to).getTime() + 864e5;
-      if (endMs <= startMs) { alert('结束日期必须晚于开始日期。'); return; }
+      if (endMs <= startMs) { alert('End date must be later than start date.'); return; }
       cryptoP = { sym, iv, startMs, endMs };
     }
 
@@ -1303,7 +1303,7 @@ window.BackTest = (function () {
         }, onProgress);
       } else {
         const pmsg = document.getElementById('bt-pmsg');
-        if (pmsg) pmsg.textContent = `正在下载 ${cryptoP.sym} ${cryptoP.iv} 历史数据...`;
+        if (pmsg) pmsg.textContent = `Downloading ${cryptoP.sym} ${cryptoP.iv} historical data...`;
         res = await _runCryptoBacktest({
           stratCode: code, symbol: cryptoP.sym, interval: cryptoP.iv,
           startMs: cryptoP.startMs, endMs: cryptoP.endMs,
@@ -1320,7 +1320,7 @@ window.BackTest = (function () {
       }
     } catch (e) {
       _el('bt-prog').style.display = 'none';
-      _showError('运行失败: ' + e.message);
+      _showError('Run failed: ' + e.message);
     }
 
     _resetBtn();
@@ -1338,7 +1338,7 @@ window.BackTest = (function () {
     _el('bt-res').style.display  = 'none';
     _el('bt-prog').style.display = 'block';
     _el('bt-prog').innerHTML = `
-      <div class="bt-pmsg" id="bt-pmsg">正在运行回测...</div>
+      <div class="bt-pmsg" id="bt-pmsg">Running backtest...</div>
       <div class="bt-pbar"><div class="bt-pfill" id="bt-pfill" style="width:0%"></div></div>
       <div class="bt-plbl" id="bt-plbl">0 / ${runs} runs</div>
     `;
@@ -1362,7 +1362,7 @@ window.BackTest = (function () {
     if (!results.length) {
       r.innerHTML = `
         <div class="bt-res-hdr">▸ RESULT</div>
-        <div style="color:#ff2d78;padding:10px 0">策略未产生任何交易。</div>
+        <div style="color:#ff2d78;padding:10px 0">Strategy produced no trades.</div>
       `;
       r.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       return;
@@ -1557,7 +1557,7 @@ window.BackTest = (function () {
   }
 
   function _htmlTradesTable(trades) {
-    if (!trades.length) return '<div class="bt-ttitle">无交易记录。</div>';
+    if (!trades.length) return '<div class="bt-ttitle">No trade records.</div>';
     const shown = trades.slice(-MAX_TRADES_SHOW);
     const rows  = shown.map((t, i) => `
       <tr>
@@ -2174,8 +2174,8 @@ window.BackTest = (function () {
     _el('bt-form').innerHTML = `
       <div class="bt-sec">▸ MULTI-MARKET GRID</div>
       <div style="font-size:0.65rem;color:rgba(192,208,224,0.36);padding:0 0 10px 8px;line-height:1.6">
-        40×40 网格：μ ∈ [−0.40, +0.40] × σ ∈ [0.025, 1.00]<br>
-        共 1600 格，每格独立回测取均值，绘制三张热力图。
+        40×40 grid: μ ∈ [−0.40, +0.40] × σ ∈ [0.025, 1.00]<br>
+        1600 cells total, each independently backtested, plotting three heatmaps.
       </div>
       <div class="bt-sec">▸ TEST PARAMETERS</div>
       <div class="bt-form-grid">
@@ -2201,7 +2201,7 @@ window.BackTest = (function () {
         </label>
       </div>
       <div style="font-size:0.67rem;color:rgba(192,208,224,0.28);padding:4px 0 0 2px">
-        建议 Runs/Cell ≤ 3（总计 1600×runs 次回测）
+        Recommended: Runs/Cell ≤ 3 (total 1600×runs backtests)
       </div>
       <button class="bt-run" id="bt-runbtn">▶ RUN MULTI-MARKET</button>
     `;
@@ -2223,7 +2223,7 @@ window.BackTest = (function () {
     _el('bt-res').style.display  = 'none';
     _el('bt-prog').style.display = 'block';
     _el('bt-prog').innerHTML = `
-      <div class="bt-pmsg" id="bt-pmsg">正在计算 1600 个市场参数组合...</div>
+      <div class="bt-pmsg" id="bt-pmsg">Computing 1600 market parameter combinations...</div>
       <div class="bt-pbar"><div class="bt-pfill" id="bt-pfill" style="width:0%"></div></div>
       <div class="bt-plbl" id="bt-plbl">0 / ${total} cells</div>
     `;
@@ -2233,7 +2233,7 @@ window.BackTest = (function () {
       const fill = _el('bt-pfill'), lbl = _el('bt-plbl'), msg = _el('bt-pmsg');
       if (fill) fill.style.width = pct + '%';
       if (lbl)  lbl.textContent  = `${done} / ${tot} cells`;
-      if (msg)  msg.textContent  = `Multi-Market: 已完成 ${done} / ${tot} 格`;
+      if (msg)  msg.textContent  = `Multi-Market: ${done} / ${tot} cells done`;
     }
 
     try {
@@ -2245,7 +2245,7 @@ window.BackTest = (function () {
       _renderMultiResults(data);
     } catch (e) {
       _el('bt-prog').style.display = 'none';
-      _showError('Multi-Market 运行失败: ' + e.message);
+      _showError('Multi-Market run failed: ' + e.message);
     }
     _resetBtn();
   }
