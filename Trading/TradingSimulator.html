@@ -532,10 +532,54 @@
     }
     .settings-panel.open { display: flex; }
 
+    /* ── Markets button + panel ────────────────── */
+    .markets-btn {
+      background: rgba(180,0,255,0.05); border: 1px solid rgba(180,0,255,0.28);
+      border-bottom: 2px solid rgba(180,0,255,0.40);
+      color: rgba(200,80,255,0.65); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; padding: 3px 12px; cursor: pointer; border-radius: 2px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3); transition: all 0.15s;
+      letter-spacing: 0.1em;
+    }
+    .markets-btn:hover, .markets-btn:active {
+      color: #c050ff; background: rgba(180,0,255,0.12); border-color: rgba(200,0,255,0.55);
+    }
+    .markets-btn.active {
+      background: rgba(180,0,255,0.16); border-color: #b030ff;
+      border-bottom-color: #b030ff; color: #d070ff;
+      box-shadow: 0 2px 12px rgba(160,0,255,0.30);
+    }
+    .markets-panel {
+      width: 100%; background: rgba(0,0,0,0.22);
+      border: 1px solid rgba(180,0,255,0.15); border-radius: 3px;
+      padding: 8px 14px; display: none; flex-wrap: wrap; gap: 8px; align-items: center;
+    }
+    .markets-panel.open { display: flex; }
+    .markets-panel-label {
+      font-size: 0.52rem; color: rgba(200,80,255,0.45);
+      letter-spacing: 0.22em; text-transform: uppercase; margin-right: 6px; white-space: nowrap;
+    }
+    .market-engine-btn {
+      background: rgba(180,0,255,0.05); border: 1px solid rgba(180,0,255,0.22);
+      border-bottom: 2px solid rgba(180,0,255,0.32);
+      color: rgba(200,80,255,0.65); font-family: 'Orbitron', monospace;
+      font-size: 0.66rem; font-weight: 700; padding: 4px 14px;
+      cursor: pointer; border-radius: 2px; letter-spacing: 0.12em;
+      transition: all 0.13s; white-space: nowrap;
+    }
+    .market-engine-btn:hover {
+      color: #cc60ff; background: rgba(180,0,255,0.14); border-color: rgba(200,0,255,0.5);
+    }
+    .market-engine-btn.active {
+      background: rgba(180,0,255,0.20); border-color: #b030ff;
+      border-bottom-color: #b030ff; color: #d880ff;
+      box-shadow: 0 0 10px rgba(160,0,255,0.28);
+    }
+
     /* ── Touch: eliminate 300ms delay ─────────── */
     .cyber-button, .mode-btn, .close-order,
     .ema-check, .rainbow-check, .detailed-check,
-    .settings-btn,
+    .settings-btn, .markets-btn, .market-engine-btn,
     input[type=range], input[type=number],
     .strategy-panel button {
       touch-action: manipulation;
@@ -791,8 +835,8 @@
     </div>
     <div class="tool-group">
       <span class="tool-label">MODE</span>
-      <button id="btn-line" class="mode-btn active">LINE</button>
-      <button id="btn-candle" class="mode-btn">CANDLE</button>
+      <button id="btn-line" class="mode-btn">LINE</button>
+      <button id="btn-candle" class="mode-btn active">CANDLE</button>
     </div>
     <div class="tool-group">
       <span class="tool-label">EMA</span>
@@ -806,7 +850,14 @@
       </label>
     </div>
     <button class="cyber-button reset-btn" id="btn-reset" style="margin-left:auto">⟲ RESET</button>
+    <button class="markets-btn" id="btn-markets">◉ MARKETS</button>
     <button class="settings-btn" id="btn-settings">⚙ SETTINGS</button>
+  </div>
+
+  <!-- Markets panel (collapsible) -->
+  <div class="markets-panel" id="markets-panel">
+    <span class="markets-panel-label">◈ Market Engine</span>
+    <!-- Buttons are injected by JS on load via ME.getEngineList() -->
   </div>
 
   <!-- Settings panel (collapsible) -->
@@ -1014,10 +1065,19 @@ if (crossunder(fast, slow)) {
 </div>
 
 <script src="Crypto.js"></script>
-<script src="Market/RegimeEngine.js"></script>
-<script src="Market/SwanEngine.js"></script>
-<script src="Market/SREngine.js"></script>
-<script src="Market/MarketEngine.js"></script>
+<!-- OrdinaryMarket 引擎（依赖顺序：子引擎先于协调器） -->
+<script src="Market/OrdinaryMarket/RegimeEngine.js"></script>
+<script src="Market/OrdinaryMarket/SwanEngine.js"></script>
+<script src="Market/OrdinaryMarket/SREngine.js"></script>
+<script src="Market/OrdinaryMarket/OrdinaryMarketEngine.js"></script>
+<!-- OppMarket 引擎（完全自包含，无外部依赖） -->
+<script src="Market/OppMarket/OppMarketEngine.js"></script>
+<!-- FollowMarket 引擎（完全自包含，无外部依赖） -->
+<script src="Market/FollowMarket/FollowMarketEngine.js"></script>
+<!-- StormMarket 引擎（完全自包含，无外部依赖） -->
+<script src="Market/StormMarket/StormMarketEngine.js"></script>
+<!-- MarketHub 总线（须在所有引擎之后加载） -->
+<script src="Market/MarketHub.js"></script>
 <script src="VirtualTraders.js"></script>
 <script src="EMACache.js"></script>
 <script src="StrategyEngine.js"></script>
@@ -1285,7 +1345,7 @@ if (crossunder(fast, slow)) {
   const ordersDiv       = document.getElementById('orders-list');
   const sharesSummary   = document.getElementById('shares-summary');
 
-  let chartMode       = 'line';
+  let chartMode       = 'candle';
   let candleSize      = 4;   // ticks per displayed candle (= _activeTfMult * simN, default 1*4)
   let totalTicks      = 0;   // 单调递增数据点计数（每 tick +1，用于图表聚合/EMA 缓存）
   let simN            = 4;   // 每个原始 T 细分为 N 个 tick，默认 4
@@ -1654,6 +1714,8 @@ if (crossunder(fast, slow)) {
     realizedPnl -= fee;
     orders.push({id:nextOrderId++,dir:direction,openPrice:currentPrice,shares,lev,margin,sl,tp,_equity:margin,openFee:fee});
     trades.push({type:direction===1?'L':'S',price:currentPrice,index:ohlc.length-1});
+    /* 玩家信号注入（OppMarket 等引擎可感知并反向施力） */
+    ME.notifyTrade(direction, shares);
     showToast(`${direction===1?'▲ LONG':'▼ SHORT'} ×${shares} @ $${currentPrice.toFixed(2)}<br>Fee: <b>-$${fee.toFixed(2)}</b>`,'info',2500);
     triggerFlash(); refreshUI();
   }
@@ -1938,6 +2000,40 @@ if (crossunder(fast, slow)) {
     btn.classList.toggle('active');
     panel.classList.toggle('open');
   });
+
+  /* ── MARKETS 面板 ── */
+  (function initMarketsPanel() {
+    const btnMarkets   = document.getElementById('btn-markets');
+    const marketsPanel = document.getElementById('markets-panel');
+
+    /* 动态生成引擎选择按钮（根据 ME.getEngineList() 自动扩展） */
+    ME.getEngineList().forEach(({ id, name }) => {
+      const btn = document.createElement('button');
+      btn.className = 'market-engine-btn';
+      btn.dataset.engine = id;
+      btn.textContent = name;
+      if (id === ME.getActiveEngineId()) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        if (id === ME.getActiveEngineId()) return;   // 已是当前引擎
+        ME.setActiveEngine(id);
+        /* 更新按钮高亮 */
+        marketsPanel.querySelectorAll('.market-engine-btn').forEach(b =>
+          b.classList.toggle('active', b.dataset.engine === id)
+        );
+        /* 切换引擎后重置游戏 */
+        resetGame();
+        /* 关闭面板 */
+        btnMarkets.classList.remove('active');
+        marketsPanel.classList.remove('open');
+      });
+      marketsPanel.appendChild(btn);
+    });
+
+    btnMarkets.addEventListener('click', () => {
+      btnMarkets.classList.toggle('active');
+      marketsPanel.classList.toggle('open');
+    });
+  })();
 
   /* ── OPEN POSITIONS 折叠 ── */
   const ordersPanel = document.getElementById('orders-panel');

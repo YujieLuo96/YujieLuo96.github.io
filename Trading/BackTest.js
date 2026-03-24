@@ -23,80 +23,242 @@ window.BackTest = (function () {
   const MAX_TRADES_SHOW = 60;      // 交易记录最大显示条数
 
   /* ═══════════════════════════════════════════════════════════════
-     1. 工具：Seeded PRNG + Box-Muller
+     1. 引擎名称查询（纯只读，不触碰任何引擎状态）
   ═══════════════════════════════════════════════════════════════ */
-  function _mulberry32(seed) {
-    let s = (seed >>> 0) || 1;
-    return function () {
-      s |= 0; s = s + 0x6D2B79F5 | 0;
-      let t = Math.imul(s ^ (s >>> 15), 1 | s);
-      t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function _normalRandom(rng) {
-    let u, v;
-    do { u = rng(); v = rng(); } while (u === 0);
-    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+  /** 返回当前活跃引擎的显示名称（用于 UI 提示，纯只读） */
+  function _getEngineName() {
+    try {
+      const hub = window.parent && window.parent.MarketHub;
+      if (!hub) return 'SIM';
+      const id    = hub.getActiveEngineId();
+      const entry = hub.getEngineList().find(e => e.id === id);
+      return entry ? entry.name : id.toUpperCase();
+    } catch (e) { return 'SIM'; }
   }
 
   /* ═══════════════════════════════════════════════════════════════
-     2. Mini Market Simulator（独立 GBM，不碰主 MarketEngine）
+     2. 隔离市场模拟器（_IsolatedSim）
+        自包含实现，与 OrdinaryMarketEngine 数学完全对齐：
+          · Heston-OU 随机波动率（含杠杆效应 Cholesky 分解）
+          · 五情景 Markov 切换（BULL/BEAR/CHOP/V.BULL/Q.BEAR）
+          · Merton 跳跃扩散（含聚类衰减 + 肥尾放大器）
+          · 行为动量反转力
+          · 长期均值回归（OU 过程，缓速 EMA 锚）
+        完全不读取或修改任何全局引擎状态，可安全地并发/反复调用。
+        @param {number} mu_user    年化漂移率
+        @param {number} sigma_user 年化波动率
+        @returns {{ step(price) → {newPrice, relVol, sigma_t}, reset() }}
   ═══════════════════════════════════════════════════════════════ */
-  function _simMarket({ mu, sigma, ticks, seed, includeRegimes }) {
-    const rng      = _mulberry32(seed || 42);
-    const nr       = () => _normalRandom(rng);
-    const dt       = 1 / 252;
-    const sqDt     = Math.sqrt(dt);
-    const prices   = [];
-    const ohlc     = [];
-    const volumes  = [];
+  function _IsolatedSim(mu_user, sigma_user) {
+    const SIM_N = 4;
+    const DT    = 0.1 / SIM_N;          // 0.025（与游戏 simN=4 一致）
+    const sqDT  = Math.sqrt(DT);
 
-    // Simplified regimes: BEAR / CHOP / BULL
+    /* ── Heston OU 参数（镜像 OrdinaryMarketEngine）── */
+    const VOL_KAPPA    = 2.5;
+    const VOL_OF_VOL   = 0.55;
+    const DRIFT_KAPPA  = 0.8;
+    const DRIFT_VOL    = 0.15;
+    const LEV_RHO      = -0.65;
+    const LEV_SQ1RHO2  = Math.sqrt(1 - 0.65 * 0.65); // ≈ 0.7599
+
+    /* ── 跳跃扩散参数（镜像 OrdinaryMarketEngine）── */
+    const JUMP_PROB          = 0.030;
+    const JUMP_MEAN          = -0.005;
+    const JUMP_STD           = 0.06;
+    const JUMP_CLUSTER_BOOST = 0.06;
+    const JUMP_CLUSTER_CAP   = 0.15;
+    const J_CLUSTER_DECAY_PT = Math.pow(0.78, 1 / SIM_N); // 每 tick 聚类衰减系数
+    const JUMP_FAT_TAIL_PROB  = 0.12;
+    const JUMP_FAT_TAIL_SCALE = 0.08;
+
+    /* ── 行为动量反转（镜像 OrdinaryMarketEngine）── */
+    const MOM_DECAY_PT = Math.pow(0.92, 1 / SIM_N);
+    const MOM_THRESH   = 1.5;
+    const MOM_FORCE    = 0.0045;
+
+    /* ── 长期均值回归 OU（镜像 OrdinaryMarketEngine）── */
+    const MR_KAPPA0 = 0.25;
+    const MR_SLOW_K = 2 / 20001; // ≈500T 慢速 EMA 系数
+    const MR_NOISE  = 0.15;
+
+    /* ── 五情景定义（镜像 RegimeEngine REGIMES）── */
     const REGIMES = [
-      { muAdd: -0.08, sigMult: 1.70 },
-      { muAdd:  0.00, sigMult: 0.45 },
-      { muAdd: +0.07, sigMult: 1.25 },
+      { muMult:0.50, muAdd:+0.10, sigMult:0.90, jumpMult:0.6, sigCap:1.6, mrMult:0.55 }, // BULL
+      { muMult:0.50, muAdd:-0.13, sigMult:1.25, jumpMult:2.2, sigCap:2.2, mrMult:0.22 }, // BEAR
+      { muMult:0.08, muAdd: 0.00, sigMult:0.30, jumpMult:0.4, sigCap:0.9, mrMult:0.90 }, // CHOP
+      { muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, mrMult:0.40 }, // V.BULL
+      { muMult:0.30, muAdd:-0.08, sigMult:0.50, jumpMult:1.5, sigCap:1.7, mrMult:0.28 }, // Q.BEAR
     ];
-    let regimeIdx  = 1;  // start CHOP
-    let regimeTick = 0;
-    let regimeDur  = 80 + Math.floor(rng() * 120);
+    /* ── 情景转移矩阵（镜像 RegimeEngine TRANSITION）── */
+    const TRANSITION = [
+      [0.00, 0.10, 0.30, 0.40, 0.20], // from BULL
+      [0.10, 0.00, 0.40, 0.05, 0.45], // from BEAR
+      [0.28, 0.17, 0.00, 0.27, 0.28], // from CHOP
+      [0.00, 0.05, 0.40, 0.00, 0.55], // from V.BULL
+      [0.15, 0.40, 0.35, 0.05, 0.05], // from Q.BEAR
+    ];
+    const REGIME_TRANS_TICKS = 30 * SIM_N; // 情景过渡期 ticks（镜像 REGIME_TRANSITION×simN）
 
-    let price    = 100;
-    let sigma_t  = Math.max(0.01, sigma);
-    let mu_t     = mu;
+    /* ── 私有状态 ── */
+    let _mu_t    = mu_user;
+    let _sigma_t = sigma_user;
+    let _refPrice      = 0;
+    let _jumpCluster   = 0;
+    let _momentumScore = 0;
 
-    for (let i = 0; i < ticks; i++) {
-      // Regime transition
-      if (includeRegimes && ++regimeTick >= regimeDur) {
-        let next = regimeIdx;
-        let tries = 0;
-        while (next === regimeIdx && tries++ < 10) next = Math.floor(rng() * 3);
-        regimeIdx  = next;
-        regimeTick = 0;
-        regimeDur  = 80 + Math.floor(rng() * 150);
+    /* ── 情景状态（轻量 RegimeEngine 等价实现）── */
+    let _rIdx        = 2;  // 初始情景：CHOP（镜像引擎 reset 后行为）
+    let _rPrev       = 2;
+    let _rBlend      = 1.0;
+    let _rTransTick  = REGIME_TRANS_TICKS; // 已完成过渡
+    let _rTicksLeft  = 0;
+    let _muAddNoise   = 0;
+    let _sigMultNoise = 1;
+
+    function _randRegimeDur() {
+      // 镜像 RegimeEngine：每情景持续 120~300 T，单位转换为 ticks
+      return (120 + Math.floor(Math.random() * 180)) * SIM_N;
+    }
+
+    function _blend(prop) {
+      return REGIMES[_rPrev][prop] + _rBlend * (REGIMES[_rIdx][prop] - REGIMES[_rPrev][prop]);
+    }
+
+    function _stepRegime() {
+      /* 情景过渡混合进度 */
+      if (_rTransTick < REGIME_TRANS_TICKS) {
+        _rTransTick++;
+        _rBlend = _rTransTick / REGIME_TRANS_TICKS;
+        if (_rTransTick >= REGIME_TRANS_TICKS) { _rBlend = 1.0; _rPrev = _rIdx; }
+      }
+      /* 情景剩余时间 */
+      if (_rTicksLeft > 0) { _rTicksLeft--; return; }
+      /* 按转移矩阵采样下一情景 */
+      const row    = TRANSITION[_rIdx];
+      const rowSum = row.reduce((a, b) => a + b, 0);
+      let r = Math.random() * rowSum, cum = 0, next = _rIdx;
+      for (let i = 0; i < row.length; i++) { cum += row[i]; if (r <= cum) { next = i; break; } }
+      _rPrev = _rIdx; _rIdx = next;
+      _rBlend = 0; _rTransTick = 0;
+      _rTicksLeft   = _randRegimeDur();
+      _muAddNoise   = 0.020 * (Math.random() * 2 - 1);
+      _sigMultNoise = Math.max(0.80, 1 + 0.20 * (Math.random() * 2 - 1));
+    }
+
+    function _normRand() {
+      let u; do { u = Math.random(); } while (u === 0);
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+    }
+
+    /** 推进一个 tick，返回 { newPrice, relVol, sigma_t } */
+    function step(price) {
+      _stepRegime();
+
+      /* 情景感知派生参数 */
+      const mu_base    = Math.max(-0.5, Math.min(0.5,
+        mu_user * _blend('muMult') + _blend('muAdd') + _muAddNoise));
+      const sigma_base = Math.max(0.005, sigma_user * _blend('sigMult') * _sigMultNoise);
+      const sigCap     = sigma_user * _blend('sigCap');
+      const sigMin     = sigma_user * 0.30;
+
+      /* ① Heston-OU 随机 vol/drift（杠杆效应 Cholesky 分解） */
+      const W1 = _normRand();
+      const W2 = LEV_RHO * W1 + LEV_SQ1RHO2 * _normRand();
+      _sigma_t = Math.max(sigMin, Math.min(sigCap,
+        _sigma_t + VOL_KAPPA  * (sigma_base - _sigma_t) * DT
+                 + VOL_OF_VOL * _sigma_t * W2 * sqDT
+      ));
+      _mu_t = Math.max(-0.8, Math.min(0.8,
+        _mu_t + DRIFT_KAPPA * (mu_base - _mu_t) * DT
+              + DRIFT_VOL * _normRand() * sqDT
+      ));
+
+      /* ② 增强跳跃扩散（聚类衰减 + 肥尾放大器） */
+      _jumpCluster *= J_CLUSTER_DECAY_PT;
+      const jumpProb = (JUMP_PROB * _blend('jumpMult') + _jumpCluster) / SIM_N;
+      let jump = 0;
+      if (Math.random() < jumpProb) {
+        const volRatio = _sigma_t / Math.max(sigma_user, 0.001);
+        jump = JUMP_MEAN + JUMP_STD * volRatio * _normRand();
+        if (Math.random() < JUMP_FAT_TAIL_PROB) {
+          const tailMag = -Math.log(1 - Math.random()) * JUMP_FAT_TAIL_SCALE;
+          jump += (Math.random() < 0.25 ? 1 : -1) * tailMag;
+        }
+        _jumpCluster = Math.min(JUMP_CLUSTER_CAP, _jumpCluster + JUMP_CLUSTER_BOOST);
       }
 
-      const r        = REGIMES[regimeIdx];
-      const muBase   = mu + r.muAdd;
-      const sigBase  = Math.max(0.01, sigma * r.sigMult);
+      const drift     = _mu_t - 0.5 * _sigma_t * _sigma_t;
+      const rawLogRet = drift * DT + _sigma_t * sqDT * W1 + jump;
 
-      // Heston-style vol / drift mean-reversion
-      sigma_t = Math.max(sigma * 0.4, Math.min(sigma * 2.2,
-        sigma_t + 2.5 * (sigBase - sigma_t) * dt + 0.65 * sigma_t * nr() * sqDt
-      ));
-      mu_t = Math.max(-0.8, Math.min(0.8,
-        mu_t + 0.8 * (muBase - mu_t) * dt + 0.15 * nr() * sqDt
-      ));
+      /* ③ 行为动量反转力 */
+      _momentumScore = _momentumScore * MOM_DECAY_PT + Math.sign(rawLogRet) / SIM_N;
+      let momForce = 0;
+      const absM = Math.abs(_momentumScore);
+      if (absM > MOM_THRESH) {
+        momForce = -Math.sign(_momentumScore) * (MOM_FORCE / SIM_N)
+                   * Math.min(1, (absM - MOM_THRESH) / MOM_THRESH);
+      }
 
-      const drift = mu_t - 0.5 * sigma_t * sigma_t;
-      const diff  = sigma_t * sqDt * nr();
-      const jump  = rng() < 0.025 ? -0.005 + 0.04 * nr() : 0;
-      price = Math.max(0.01, price * Math.exp(drift * dt + diff + jump));
+      /* ④ 长期均值回归力（OU） */
+      let mrForce = 0;
+      if (_refPrice > 0) {
+        const noise = MR_NOISE * (Math.random() * 2 - 1);
+        mrForce = -MR_KAPPA0 * _blend('mrMult') * (1 + noise)
+                  * Math.log(price / _refPrice) * DT;
+      }
 
-      const open  = i === 0 ? price : ohlc[i - 1].c;
-      const micro = sigma_t * 0.25 * rng();
+      /* ⑤ GBM 价格更新 */
+      const newPrice = Math.max(0.01, price * Math.exp(rawLogRet + momForce + mrForce));
+      _refPrice = _refPrice === 0 ? newPrice : _refPrice + MR_SLOW_K * (newPrice - _refPrice);
+
+      /* ⑥ 增强成交量（与波动率正相关） */
+      const relVol = (_sigma_t / Math.max(sigma_user, 0.001))
+                     * (0.55 + 0.45 * Math.random());
+      return { newPrice, relVol, sigma_t: _sigma_t };
+    }
+
+    /** 完整重置所有内部状态（每个 Monte Carlo run 开始前调用） */
+    function reset() {
+      _mu_t          = mu_user;
+      _sigma_t       = sigma_user;
+      _refPrice      = 0;
+      _jumpCluster   = 0;
+      _momentumScore = 0;
+      _rIdx  = 2; _rPrev = 2; _rBlend = 1.0;
+      _rTransTick = REGIME_TRANS_TICKS; // 立即完成过渡，从 CHOP 起始
+      _rTicksLeft = _randRegimeDur();
+      _muAddNoise = 0; _sigMultNoise = 1;
+    }
+
+    return { step, reset };
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     3. 市场数据生成（使用 _IsolatedSim，零引擎状态污染）
+  ═══════════════════════════════════════════════════════════════ */
+  function _simMarketFromEngine({ mu, sigma, ticks }) {
+    const sim = _IsolatedSim(mu, sigma);
+    sim.reset();
+
+    /* 预热：让情景系统从初始 CHOP 状态过渡到正常分布（≥1320 tick 才能脱离 CHOP）
+       取 1500 留足余量，此处使用隔离模拟器，不影响游戏引擎任何状态。 */
+    const PRE_WARM = 1500;
+    let price = 100;
+    for (let i = 0; i < PRE_WARM; i++) {
+      ({ newPrice: price } = sim.step(price));
+    }
+    price = 100; // 重置起始价格，让回测从 100 开始
+
+    const prices  = [];
+    const ohlc    = [];
+    const volumes = [];
+
+    for (let i = 0; i < ticks; i++) {
+      const open = i === 0 ? price : ohlc[i - 1].c;
+      const { newPrice, relVol, sigma_t } = sim.step(price);
+      price = newPrice;
+      const micro = sigma_t * 0.25 * Math.random();
       ohlc.push({
         o: open,
         h: Math.max(open, price) * (1 + micro),
@@ -104,7 +266,7 @@ window.BackTest = (function () {
         c: price,
       });
       prices.push(price);
-      volumes.push((sigma_t / Math.max(sigma, 0.001)) * (0.7 + 0.6 * rng()));
+      volumes.push(relVol);
     }
 
     return { prices, ohlc, volumes };
@@ -173,7 +335,7 @@ window.BackTest = (function () {
       let v = Math.max(sl[1].h - sl[1].l,
                        Math.abs(sl[1].h - sl[0].c),
                        Math.abs(sl[1].l - sl[0].c));
-      for (let i = 1; i < sl.length; i++) {
+      for (let i = 2; i < sl.length; i++) {
         const tr = Math.max(
           sl[i].h - sl[i].l,
           Math.abs(sl[i].h - sl[i - 1].c),
@@ -417,7 +579,11 @@ window.BackTest = (function () {
   /* ═══════════════════════════════════════════════════════════════
      5. 统计计算
   ═══════════════════════════════════════════════════════════════ */
-  function _computeRunStats({ trades, equity, initialCash }) {
+  /**
+   * @param {number} barsPerYear  每年交易 bar 数（用于 Sharpe 年化）
+   *   SIM 模式默认 252（日线假设）；Crypto 按实际周期传入。
+   */
+  function _computeRunStats({ trades, equity, initialCash }, barsPerYear = 252) {
     const finalEq     = equity[equity.length - 1];
     const totalReturn = (finalEq - initialCash) / initialCash * 100;
 
@@ -446,7 +612,7 @@ window.BackTest = (function () {
     if (rets.length > 1) {
       const mean = rets.reduce((s, r) => s + r, 0) / rets.length;
       const std  = Math.sqrt(rets.reduce((s, r) => s + (r - mean) ** 2, 0) / rets.length);
-      sharpe = std > 0 ? (mean / std) * Math.sqrt(252) : 0;
+      sharpe = std > 0 ? (mean / std) * Math.sqrt(barsPerYear) : 0;
     }
 
     const bestTrade  = trades.reduce((m, t) => t.net > m ? t.net : m, -Infinity);
@@ -544,18 +710,13 @@ window.BackTest = (function () {
      7. 主运行器
   ═══════════════════════════════════════════════════════════════ */
   async function _runSimBacktest(params, onProgress) {
-    const { stratCode, mu, sigma, ticks, runs, initialCash, leverage, includeRegimes } = params;
+    const { stratCode, mu, sigma, ticks, runs, initialCash, leverage } = params;
     const results    = [];
     const statsList  = [];
 
-    // 每次调用生成唯一 session seed，保证多次点击 RUN 结果真正不同
-    const sessionSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
-
     for (let i = 0; i < runs; i++) {
-      // 每个 run 在 sessionSeed 基础上偏移，保证同次调用内各 run 也互相独立
-      const seed   = (sessionSeed + i * 0x9E3779B9) >>> 0;
-      const market = _simMarket({ mu, sigma, ticks, seed, includeRegimes });
-      const run    = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
+      const market = _simMarketFromEngine({ mu, sigma, ticks });
+      const run = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
       if (!run.error) {
         results.push({ ...run, runIdx: i });
         statsList.push(_computeRunStats(run));
@@ -577,6 +738,13 @@ window.BackTest = (function () {
     const fullMarket = await _fetchKlines(symbol, interval, startMs, endMs);
     if (!fullMarket) return { error: 'No data received. Please check the date range and your network.' };
 
+    /* Sharpe 年化系数：按实际 K 线周期计算每年 bar 数（交易所约 365 天全年交易） */
+    const _bpy = { '1m': 525600, '3m': 175200, '5m': 105120, '15m': 35040,
+                   '30m': 17520, '1h': 8760,   '2h': 4380,   '4h': 2190,
+                   '6h': 1460,   '8h': 1095,   '12h': 730,   '1d': 365,
+                   '3d': 122,    '1w': 52,      '1M': 12 };
+    const barsPerYear = _bpy[interval] || 365;
+
     const N          = fullMarket.prices.length;
     const results    = [];
     const statsList  = [];
@@ -585,7 +753,7 @@ window.BackTest = (function () {
       const run = _runStrategy(stratCode, fullMarket, { initialCash, leverage, fractional: true });
       if (!run.error) {
         results.push({ ...run, runIdx: 0 });
-        statsList.push(_computeRunStats(run));
+        statsList.push(_computeRunStats(run, barsPerYear));
       }
       onProgress(1, 1);
     } else {
@@ -603,7 +771,7 @@ window.BackTest = (function () {
         const run = _runStrategy(stratCode, segment, { initialCash, leverage, fractional: true });
         if (!run.error) {
           results.push({ ...run, runIdx: i });
-          statsList.push(_computeRunStats(run));
+          statsList.push(_computeRunStats(run, barsPerYear));
         }
         onProgress(i + 1, runs);
         await _yield();
@@ -727,7 +895,6 @@ window.BackTest = (function () {
       #bt-body::-webkit-scrollbar-corner { background: transparent; }
 
       /* ── Form ── */
-      #bt-form { }
       .bt-sec {
         color: rgba(0,245,255,0.7);
         font-size: 0.72rem; letter-spacing: 1.2px;
@@ -846,7 +1013,6 @@ window.BackTest = (function () {
 
       /* ── Form wrap + Results ── */
       #bt-form-wrap { max-width: 540px; margin: 0 auto; }
-      #bt-res { }
 
       /* ── Stat cards ── */
       .bt-cards {
@@ -1161,10 +1327,10 @@ window.BackTest = (function () {
             <span class="bt-lbl">Volatility σ</span>
             <input class="bt-inp" id="btp-sigma" type="number" step="0.01" min="0.01" value="${sg}">
           </div>
-          <label class="bt-field-cb full">
-            <input class="bt-cb" id="btp-reg" type="checkbox" checked>
-            <span>Include Regimes</span>
-          </label>
+          <div class="bt-field full" style="padding:4px 0">
+            <span class="bt-lbl">Engine</span>
+            <span id="btp-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">${_getEngineName()}</span>
+          </div>
         </div>
 
         <div class="bt-sec">▸ TEST PARAMETERS</div>
@@ -1267,7 +1433,6 @@ window.BackTest = (function () {
         mu     : _floatVal('btp-mu', 0),
         sigma  : Math.max(0.01, _floatVal('btp-sigma', 0.15)),
         ticks  : _intVal('btp-ticks', 500),
-        incReg : document.getElementById('btp-reg')?.checked ?? true,
       };
     } else {
       const sym  = (_el('btp-sym')?.value || 'BTCUSDT').trim().toUpperCase();
@@ -1299,7 +1464,7 @@ window.BackTest = (function () {
       if (_mode === 'sim') {
         res = await _runSimBacktest({
           stratCode: code, mu: simP.mu, sigma: simP.sigma, ticks: simP.ticks,
-          runs, initialCash: cash, leverage: lev, includeRegimes: simP.incReg,
+          runs, initialCash: cash, leverage: lev,
         }, onProgress);
       } else {
         const pmsg = document.getElementById('bt-pmsg');
@@ -1943,7 +2108,7 @@ window.BackTest = (function () {
   }
 
   async function _runMultiMarket(params, onProgress) {
-    const { stratCode, ticks, runsPerCell, initialCash, leverage, includeRegimes } = params;
+    const { stratCode, ticks, runsPerCell, initialCash, leverage } = params;
     const GRID      = MM_GRID;
     const muValues  = _mmMuValues();
     const sigValues = _mmSigValues();
@@ -1951,8 +2116,6 @@ window.BackTest = (function () {
     const retGrid   = new Float32Array(GRID * GRID);
     const wrGrid    = new Float32Array(GRID * GRID);
     const pfGrid    = new Float32Array(GRID * GRID);
-
-    const sessionSeed = (Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0;
 
     for (let si = 0; si < GRID; si++) {
       const sigma = sigValues[si];
@@ -1962,8 +2125,7 @@ window.BackTest = (function () {
         let sumRet = 0, sumWr = 0, sumPf = 0, validRuns = 0;
 
         for (let r = 0; r < runsPerCell; r++) {
-          const seed   = (sessionSeed + (idx * runsPerCell + r + 1) * 0x9E3779B9) >>> 0;
-          const market = _simMarket({ mu, sigma, ticks, seed, includeRegimes });
+          const market = _simMarketFromEngine({ mu, sigma, ticks });
           const run    = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
           if (!run.error) {
             const stats = _computeRunStats(run);
@@ -2195,10 +2357,10 @@ window.BackTest = (function () {
           <span class="bt-lbl">Leverage</span>
           <input class="bt-inp" id="btp-mm-lev" type="number" min="1" max="100" value="${lv}">
         </div>
-        <label class="bt-field-cb full">
-          <input class="bt-cb" id="btp-mm-reg" type="checkbox" checked>
-          <span>Include Regimes</span>
-        </label>
+        <div class="bt-field full" style="padding:4px 0">
+          <span class="bt-lbl">Engine</span>
+          <span id="btp-mm-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">${_getEngineName()}</span>
+        </div>
       </div>
       <div style="font-size:0.67rem;color:rgba(192,208,224,0.28);padding:4px 0 0 2px">
         Recommended: Runs/Cell ≤ 3 (total 1600×runs backtests)
@@ -2214,7 +2376,6 @@ window.BackTest = (function () {
     const runsPerCell = Math.min(10, Math.max(1, _intVal('btp-mm-rpc', 2)));
     const cash        = _floatVal('btp-mm-cash', 10000);
     const lev         = _floatVal('btp-mm-lev', 1);
-    const incReg      = document.getElementById('btp-mm-reg')?.checked ?? true;
     const total       = MM_GRID * MM_GRID;
 
     const runBtn = _el('bt-runbtn');
@@ -2239,7 +2400,7 @@ window.BackTest = (function () {
     try {
       const data = await _runMultiMarket({
         stratCode: code, ticks, runsPerCell,
-        initialCash: cash, leverage: lev, includeRegimes: incReg,
+        initialCash: cash, leverage: lev,
       }, onProgress);
       _el('bt-prog').style.display = 'none';
       _renderMultiResults(data);

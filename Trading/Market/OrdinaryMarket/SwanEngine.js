@@ -54,10 +54,10 @@
                    （实际跳空 = base × 随机因子 0.6~1.4，模拟缺口大小不确定性）
                    负向天鹅跳空幅度故意大于正向（恐慌不对称性）。 */
   const SWAN_PARAMS = {
-    '3' : { swanVolScale: 2.2, swanDriftAdd: +0.015, swanGapBase: +0.080 },  // 白天鹅大：+8% 跳空（sigma=0.25 基准）
-    '2' : { swanVolScale: 1.6, swanDriftAdd: +0.008, swanGapBase: +0.040 },  // 白天鹅小：+4% 跳空
-    '-2': { swanVolScale: 2.0, swanDriftAdd: -0.010, swanGapBase: -0.070 },  // 黑天鹅小：-7% 跳空
-    '-3': { swanVolScale: 3.2, swanDriftAdd: -0.022, swanGapBase: -0.150 },  // 黑天鹅大：-15% 跳空（崩盘级）
+    '3' : { swanVolScale: 4.4, swanDriftAdd: +0.030, swanGapBase: +0.160 },  // 白天鹅大：+16% 跳空（sigma=0.25 基准）
+    '2' : { swanVolScale: 3.2, swanDriftAdd: +0.016, swanGapBase: +0.080 },  // 白天鹅小：+8% 跳空
+    '-2': { swanVolScale: 4.0, swanDriftAdd: -0.020, swanGapBase: -0.140 },  // 黑天鹅小：-14% 跳空
+    '-3': { swanVolScale: 6.4, swanDriftAdd: -0.044, swanGapBase: -0.300 },  // 黑天鹅大：-30% 跳空（崩盘级）
   };
 
   /* ── 控制函数（私有辅助）：f(t) ∈ [-1, 1] ── */
@@ -121,12 +121,13 @@
           const isLevel3  = Math.random() < (isPositive ? SWAN_L3_POS_PROB : SWAN_L3_NEG_PROB);
           const proposed  = isPositive ? (isLevel3 ? 3 : 2) : (isLevel3 ? -3 : -2);
 
-          /* ⑤ 控制函数门控：计算 f(totalTicks)，按拟触发等级选取阈值后判断
+          /* ⑤ 控制函数门控：计算 f(totalTicks + swanTOffset)，按拟触发等级选取阈值后判断
              正向：f(t) > threshold；负向：f(t) < -threshold
+             swanTOffset 在每局 reset() 时随机化，保证每局起始相位不同，防止早期天鹅规律固化。
              未通过时静默忽略（不写 swanLevel / _ticksLeft，不进入冷却，下 tick 可再试） */
           const threshold = (proposed === 3 || proposed === -3)
                             ? SWAN_CTRL_THRESH_L3 : SWAN_CTRL_THRESH_L2;
-          const ctrl      = _swanCtrl(totalTicks);
+          const ctrl      = _swanCtrl(totalTicks + swanTOffset);
           const passes    = proposed > 0 ? ctrl > threshold : ctrl < -threshold;
 
           if (passes) {

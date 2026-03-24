@@ -183,7 +183,7 @@
   /* ════════════════════════════════════════════════════════════
      公开 API（与原版 window.MarketEngine 接口完全兼容）
   ════════════════════════════════════════════════════════════ */
-  window.MarketEngine = {
+  window.OrdinaryMarketEngine = {
 
     /* ── 导出常量（供主文件 / Crypto.js 引用） ── */
     get REGIMES()    { return RE.REGIMES; },
