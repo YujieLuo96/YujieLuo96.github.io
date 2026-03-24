@@ -22,8 +22,8 @@
   /* ── 常量 ── */
   const SR_PERIODS     = [20, 55, 120];
   const SR_ZONE        = 0.018;    // 近区相对距离阈值（±1.8%）
-  const SR_MAX_FORCE   = 0.0022;   // 最大近区回归力（proximity=1 时，已乘 _srForceScale）
-  const SR_BREAK_BASE  = 0.0035;   // 突破动量基础力（按 sqrt(period/20) 缩放）
+  const SR_MAX_FORCE   = 0.0050;   // 最大近区回归力（已乘 _srForceScale；随 sigma_user 放大以保持感知效果）
+  const SR_BREAK_BASE  = 0.0080;   // 突破动量基础力（按 sqrt(period/20) 缩放；sigma_user=0.25 下调至可见）
   const SR_BREAK_DECAY = 0.82;     // 每 T 的突破动量衰减系数
 
   /* 自适应参数 */

@@ -16,28 +16,35 @@
        sigCap  : sigma_t 上界 = sigma_user × sigCap（情景感知上限）
        color   : HUD / 图表标签颜色
   ══════════════════════════════════════════════════════════════ */
+  /* meanRevMult 经 OU 均衡公式校准：P_eq = refPrice × exp(μ_base/(κ₀·meanRevMult))，κ₀=0.25
+     以 mu_user=0.08、sigma_user=0.25 为基准：
+     CHOP≈103、BULL≈277、V.BULL≈360、Q.BEAR≈45、BEAR≈19，覆盖股价 1~1000 区间。 */
+  /* 均衡价格（refPrice≈100，κ₀=0.25，mu_user=0.08）：
+       CHOP≈103，BULL≈277，V.BULL≈360，Q.BEAR≈45，BEAR≈19
+     sigMult/sigCap 已按 sigma_user=0.25 校准（÷≈1.75）：
+       V.BULL 年化波动率上限 = 0.25×2.5 = 62.5%（原设计 45%），per-tick std（N=4）= 20%（可玩）。 */
   const REGIMES = [
     {
       name:'BULL',   weight:0.26, color:'#39ff14',
-      muMult:0.50, muAdd:+0.09, sigMult:1.30, jumpMult:0.6, sigCap:2.0,
+      muMult:0.50, muAdd:+0.10, sigMult:0.90, jumpMult:0.6, sigCap:1.6, meanRevMult:0.55,
     },
     {
       name:'BEAR',   weight:0.20, color:'#ff2d78',
-      muMult:0.50, muAdd:-0.11, sigMult:1.80, jumpMult:2.2, sigCap:3.2,
+      muMult:0.50, muAdd:-0.13, sigMult:1.25, jumpMult:2.2, sigCap:2.2, meanRevMult:0.22,
     },
     {
       name:'CHOP',   weight:0.28, color:'#f5e642',
-      muMult:0.08, muAdd: 0.00, sigMult:0.38, jumpMult:0.4, sigCap:1.2,
+      muMult:0.08, muAdd: 0.00, sigMult:0.30, jumpMult:0.4, sigCap:0.9, meanRevMult:0.90,
     },
     {
       // 高波动牛市：强上涨但波动剧烈，适合追趋势但止损需宽
       name:'V.BULL', weight:0.14, color:'#00ffcc',
-      muMult:0.60, muAdd:+0.07, sigMult:2.20, jumpMult:1.0, sigCap:3.5,
+      muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, meanRevMult:0.40,
     },
     {
       // 阴跌熊市：跌幅温和但持续，反弹力弱，适合空单持有
       name:'Q.BEAR', weight:0.12, color:'#ff6060',
-      muMult:0.30, muAdd:-0.06, sigMult:0.70, jumpMult:1.5, sigCap:2.2,
+      muMult:0.30, muAdd:-0.08, sigMult:0.50, jumpMult:1.5, sigCap:1.7, meanRevMult:0.28,
     },
   ];
 
@@ -54,6 +61,26 @@
   const REGIME_NOISE_SIGMULT  = 0.20;
   const REGIME_NOISE_JUMPMULT = 0.30;
   const REGIME_NOISE_WEIGHT   = 0.05;
+
+  /* ══════════════════════════════════════════════════════════════
+     情景转移矩阵（Markov Transition Matrix）
+     TRANSITION[i][j] = 从情景 i 转向情景 j 的基础权重（对角线恒为 0）。
+     行顺序与 REGIMES 一致：BULL(0) BEAR(1) CHOP(2) V.BULL(3) Q.BEAR(4)
+
+     设计原则（基于真实市场路径规律）：
+       · 强趋势（BULL/BEAR）通常经 CHOP 过渡，鲜少骤然逆转
+       · V.BULL 最常淡化为 BULL，而非直跳 BEAR
+       · Q.BEAR 可加速为 BEAR，也可在 CHOP 中稳定
+       · CHOP 作为"中性地带"可向任意方向发展
+  ══════════════════════════════════════════════════════════════ */
+  const TRANSITION = [
+  //   BULL   BEAR   CHOP  V.BULL Q.BEAR
+    [ 0.00,  0.10,  0.30,  0.40,  0.20 ],  // from BULL  : 多往 V.BULL 或 CHOP
+    [ 0.10,  0.00,  0.40,  0.05,  0.45 ],  // from BEAR  : 多往 Q.BEAR 或 CHOP
+    [ 0.28,  0.17,  0.00,  0.27,  0.28 ],  // from CHOP  : 均衡发散，各方向均可
+    [ 0.45,  0.05,  0.28,  0.00,  0.22 ],  // from V.BULL: 多淡化为 BULL
+    [ 0.15,  0.38,  0.42,  0.05,  0.00 ],  // from Q.BEAR: 多稳定于 CHOP 或加速为 BEAR
+  ];
 
   /* ── 情景状态 ── */
   let regimeIdx      = 2;   // 当前情景索引（默认 CHOP）
@@ -78,9 +105,13 @@
     };
   }
 
-  /* ── 辅助：生成带噪声的归一化权重，增加不同历史时期情景切换路径的多样性 ── */
-  function _noisyWeights() {
-    const w = REGIMES.map(r => Math.max(0.01, r.weight + REGIME_NOISE_WEIGHT * (Math.random() * 2 - 1)));
+  /* ── 辅助：根据转移矩阵当前行生成带噪声的归一化权重 ── */
+  function _nextWeights() {
+    const row = TRANSITION[regimeIdx];
+    const w = row.map((base, j) => {
+      if (j === regimeIdx) return 0;                                       // 对角线恒为 0
+      return Math.max(0.001, base + REGIME_NOISE_WEIGHT * (Math.random() * 2 - 1));
+    });
     const sum = w.reduce((a, b) => a + b, 0);
     return w.map(x => x / sum);
   }
@@ -111,7 +142,7 @@
         _prevSnap     = _currSnap;
 
         /* 加权随机选取下一情景（权重带噪声，禁止选到同一情景） */
-        const weights = _noisyWeights();
+        const weights = _nextWeights();
         let next = regimeIdx, tries = 0;
         while (next === regimeIdx && tries++ < 20) {
           const r = Math.random();

@@ -1698,7 +1698,7 @@ if (crossunder(fast, slow)) {
   function initPrice(){
     ohlc=[]; priceHistory=[]; volumeHistory=[];
     // ME.warmup 负责随机游走 + OHLC 生成 + S/R EMA 预热，返回最终价格
-    // 保证初始历史覆盖 100 个 T 周期，无论 N 为多少
+    // 保证初始历史覆盖 6000 个 T 周期，铺满屏幕约 30 根 T 线
     currentPrice = ME.warmup(simN, dt, normalRandom, ohlc, priceHistory, volumeHistory);
     prevTickPrice = currentPrice;
     // 对齐 totalTicks，使 getAggregated 的 partialSize 正确（防止 partialSize=0 死循环）
