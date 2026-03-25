@@ -36,33 +36,35 @@
   /* ══════════════════════════════════════════════════════════════
      跳跃常量（Merton Jump-Diffusion）
   ══════════════════════════════════════════════════════════════ */
-  const JUMP_PROB  = 0.042;  // 每 T（天）的基础跳跃概率↑0.030→0.042（CHOP≈6次/年；BEAR≈33次/年）
-  const JUMP_MEAN  = -0.005; // 跳跃均值（略偏负，模拟恐慌性下跌更常见）
-  const JUMP_STD   = 0.080;  // 跳跃标准差↑0.06→0.08，单次跳跃幅度更显著
+  const JUMP_PROB  = 0.018;  // 每 T（天）的基础跳跃概率（≈6.6次/年），BEAR 约 12次/年
+  const JUMP_MEAN  = 0.000;  // 跳跃均值改为中性：方向由肥尾/熊市偏置决定，消除系统性负漂移
+  const JUMP_STD   = 0.060;  // 跳跃标准差，单次跳幅适中
 
   /* 跳跃聚类（Jump Clustering）—— 危机传染效应
      一次跳跃后短期内跳跃概率显著上升，以指数衰减恢复正常。
      CLUSTER_BOOST : 单次跳跃触发后向 jumpCluster 叠加的概率量（per-T 单位）
      CLUSTER_DECAY : 每 T 的衰减系数；per-tick 衍生量见 _jumpClusterDecayPerTick */
-  const JUMP_CLUSTER_BOOST = 0.10;  // ↑0.06→0.10，跳跃后危机传染效应更强
+  const JUMP_CLUSTER_BOOST = 0.07;  // 跳跃后聚类概率叠加量（per-T），配合 JUMP_PROB 降低后校准
   const JUMP_CLUSTER_DECAY = 0.78;  // 每 T（天）衰减；半衰期 ≈ 3.9 天（跳跃余震集中在约 1 周内）
 
   /* 跳跃方向偏置（情景感知）
      当情景 muAdd < JUMP_BEAR_THRESH 时（熊市/阴跌），负跳跃概率额外上升。 */
   const JUMP_BEAR_THRESH    = -0.03;
-  const JUMP_BEAR_BIAS      = 0.004;  // 添加到 JUMP_MEAN 的额外负偏置
+  const JUMP_BEAR_BIAS      = 0.006;  // 添加到 JUMP_MEAN 的额外负偏置（JUMP_MEAN=0时是唯一方向来源）
 
   /* 跳跃肥尾放大器（Fat-tail amplifier）
      8% 概率触发指数分布额外幅度，75% 向下 / 25% 向上，模拟极端事件肥尾性。 */
-  const JUMP_FAT_TAIL_PROB  = 0.18;   // 触发肥尾放大的概率↑0.12→0.18，极端事件更频繁
-  const JUMP_FAT_TAIL_SCALE = 0.11;   // 指数分布均值↑0.08→0.11，极端跳跃幅度更大
+  const JUMP_FAT_TAIL_PROB  = 0.12;   // 触发肥尾放大的概率（约每 8-9 次跳跃触发一次）
+  const JUMP_FAT_TAIL_SCALE = 0.08;   // 指数分布均值，极端跳跃幅度适中
 
   /* ══════════════════════════════════════════════════════════════
      长期均值回归（OU 过程）
      对数价格连续 OU 约束：每 tick 施加 -κ·blend(meanRevMult)·log(P/ref)·dt 的漂移修正。
      无阈值、无截断：价格偏离越大力越强，自然形成有界均衡区间。
-     均衡价格 = refPrice × exp(μ_base/(κ₀·meanRevMult))（mu_user=0.30，κ₀=0.25）：
-       CHOP≈111，BULL≈617，V.BULL≈1350，Q.BEAR≈115，BEAR≈144。
+     真实均衡（含 Itô 修正 -0.5σ² 和跳跃拖拽）：
+       log(P_eq/ref) = (μ_base − 0.5σ̄² + E[jumps/year]) / (κ₀·meanRevMult)
+     均衡价格（refPrice≈100，mu_user=0.30，JUMP_MEAN=0）：
+       CHOP≈107，BULL≈422，V.BULL≈332，Q.BEAR≈93，BEAR≈74
      refPrice 用超慢 EMA（≈5000T 收敛，N 无关）作锚，游戏期间几乎不动；
      warmup 与 stepPriceCore 使用完全相同的情景感知 meanRevMult，价格自然收敛到各情景均衡。
      noise ±15% 随机扰动 kappa，防止形成可套利的确定性规律。
@@ -93,7 +95,7 @@
   ══════════════════════════════════════════════════════════════ */
   const JUMP_NOISE_PROB = 0.30;
   const JUMP_NOISE_MEAN = 0.003;
-  const JUMP_NOISE_STD  = 0.25;
+  const JUMP_NOISE_STD  = 0.20;
 
   /* ══════════════════════════════════════════════════════════════
      用户参数（由 UI 滑块读写）
@@ -328,7 +330,7 @@
 
         /* 触发聚类（危机传染：此跳后短期跳跃概率上升，以 per-T 单位累积） */
         jumpCluster += JUMP_CLUSTER_BOOST;
-        if (jumpCluster > 0.25) jumpCluster = 0.25;  // 上限↑0.15→0.25，配合更强的 BOOST
+        if (jumpCluster > 0.18) jumpCluster = 0.18;  // 聚类上限，配合 JUMP_PROB 与 BOOST 校准
       }
 
       /* ⑥ 行为动量反转力（N 无关性修正）

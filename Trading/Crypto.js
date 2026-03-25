@@ -110,6 +110,7 @@
     let _cryptoLiveBar      = null;   // current open kline bar from WS (null = no bar yet)
     let _cryptoVolMedian    = 1;      // median volume from history (for normalisation)
     let _cryptoLoadRevision = 0;      // incremented on each entry/exit to cancel stale fetches
+    let _savedActiveTfMult  = 1;      // sim-mode _activeTfMult, restored when leaving crypto mode
 
     /* ── DOM Injection ──────────────────────────────────────────── */
     const cryptoModeBtn = document.createElement('button');
@@ -151,6 +152,43 @@
 
     function _normalizeVol(v) {
       return Math.max(0.1, Math.min(4, v / Math.max(_cryptoVolMedian, 1e-9)));
+    }
+
+    /* ── Chart data provider (bypasses EMACache aggregation) ────── */
+    // candleSize=1 → each Binance bar is one candle (raw, no grouping).
+    // candleSize=N → every N Binance bars are merged into one candle.
+    // EMA: candleSize=1 → computeEMA(priceHistory); >1 → getAggEMA(aggCloses).
+    function _getChartData(animP) {
+      const raw = ctx.ohlc;
+      const rawVol = ctx.volumeHistory;
+      const n = raw.length;
+      if (n === 0) return { ag: [], vol: [], closes: [] };
+
+      const sz = ctx.candleSize;
+      if (sz <= 1) {
+        return { ag: raw, vol: rawVol, closes: ctx.priceHistory };
+      }
+
+      // Aggregate: group every sz raw Binance bars into one displayed candle.
+      // The last (partial) group uses animP as its close price.
+      const ag = [], vol = [], closes = [];
+      for (let start = 0; start < n; start += sz) {
+        const end  = Math.min(start + sz, n);
+        const last = (end === n);
+        let o = raw[start].o, h = raw[start].h, l = raw[start].l, v = 0;
+        for (let i = start; i < end; i++) {
+          if (raw[i].h > h) h = raw[i].h;
+          if (raw[i].l < l) l = raw[i].l;
+          v += rawVol[i];
+        }
+        const c = last ? animP : raw[end - 1].c;
+        if (last && animP > h) h = animP;
+        if (last && animP < l) l = animP;
+        ag.push({ o, h, l, c });
+        vol.push(v / (end - start));
+        closes.push(c);
+      }
+      return { ag, vol, closes };
     }
 
     function _resetAccountState() {
@@ -242,6 +280,24 @@
         ohlcArr.push({ o: bar.o, h: bar.h, l: bar.l, c: bar.c });
         ctx.priceHistory.push(bar.c);
         ctx.volumeHistory.push(_normalizeVol(bar.v));
+        // ── EMA alignment fix ────────────────────────────────────────
+        // emaCache is only updated on kline-close, but ohlc/priceHistory
+        // just grew by 1.  Without correction:
+        //   n = ohlc.length = M+1,  ema.length = M  →  offset = 1
+        //   → EMA line shifts one bar to the right for the entire kline.
+        // Fix: extend every cached EMA array by one step so ema.length
+        // stays equal to ohlc.length.  The next kline-close will call
+        // EMACache.update() which overwrites this extension with the
+        // properly computed value.
+        const newC = bar.c;
+        ctx.emaCache.forEach((arr, period) => {
+          if (arr.length === 0) return;
+          const ext = new Float64Array(arr.length + 1);
+          ext.set(arr);
+          const k = 2 / (period + 1);
+          ext[arr.length] = arr[arr.length - 1] + k * (newC - arr[arr.length - 1]);
+          ctx.emaCache.set(period, ext);
+        });
       } else {
         // Subsequent messages: update the last bar in-place
         const last = ohlcArr[ohlcArr.length - 1];
@@ -319,7 +375,7 @@
       _setCryptoWsStatus('connecting', '⬡ LOADING');
       try {
         const url = `https://api.binance.com/api/v3/klines` +
-                    `?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=500`;
+                    `?symbol=${symbol.toUpperCase()}&interval=${interval}&limit=1000`;
         const resp = await fetch(url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
@@ -385,6 +441,15 @@
       cryptoModeBtn.textContent = '⬡ LIVE';
       document.getElementById('sim-n-slider').disabled = true;
 
+      // Override chart rendering: inject crypto data provider, reset TF to 1T
+      _savedActiveTfMult = ctx.activeTfMult;
+      ctx.activeTfMult = 1;
+      ctx.candleSize = 1;
+      ctx.setChartDataFn(_getChartData);
+      document.querySelectorAll('.tf-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tf === '1');
+      });
+
       // Stop sim tick — this module drives updates via kline-close events
       ctx.stopTick();
       ctx.refreshUI();
@@ -410,6 +475,14 @@
       cryptoModeBtn.classList.remove('active');
       cryptoModeBtn.textContent = '⬡ CRYPTO';
       document.getElementById('sim-n-slider').disabled = false;
+
+      // Restore chart rendering and TF state to simulation mode
+      ctx.setChartDataFn(null);
+      ctx.activeTfMult = _savedActiveTfMult;
+      ctx.candleSize   = _savedActiveTfMult * ctx.simN;
+      document.querySelectorAll('.tf-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.tf) === _savedActiveTfMult);
+      });
 
       ctx.stopTick();
       ctx.resetGame();

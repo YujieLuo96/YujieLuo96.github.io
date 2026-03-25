@@ -17,7 +17,7 @@
   'use strict';
 
   /* ── 全局配置（MarketConfig.js 须先加载） ── */
-  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T } = window.MarketConfig;
+  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T, WARMUP_T } = window.MarketConfig;
 
   /* ══════════════════════════════════════════════════════════════
      风暴参数
@@ -294,9 +294,7 @@
     },
 
     warmup(simN, dt, normalRandom, outOhlc, outPrice, outVolume) {
-      /* 风暴市场 warmup 缩短为 1000T，避免价格在极端随机游走下
-         漂离到不合理区间（无强均值回归，6000T 可能漂至接近 0 或 ∞） */
-      const initLen = 1000 * simN;
+      const initLen = WARMUP_T * simN;
       let p = 100;
 
       const sqDt = Math.sqrt(dt);

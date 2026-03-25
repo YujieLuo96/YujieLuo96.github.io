@@ -1161,9 +1161,10 @@ if (crossunder(fast, slow)) {
   let ohlc          = [];
   let priceHistory  = [];
   let volumeHistory = [];
+  let _cryptoChartDataFn = null;  // set by Crypto.js on enter, cleared on exit
   const MIN_VISIBLE_CANDLES = 200;  // 最少显示的K线数
-  const MAX_TF_MULT = 5;           // 最大时间周期倍数
-  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * simN * 6; // 保留 6000 T（随 simN 动态）
+  const MAX_TF_MULT = 60;          // 最大时间周期倍数（60T）
+  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * simN;     // 保留 12000 T（随 simN 动态）
   let trades        = [];
   let tradeHistory    = [];  // 已平仓记录
   let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
@@ -1823,7 +1824,8 @@ if (crossunder(fast, slow)) {
     const CHART_BOTTOM = CH * 0.78;
 
     // ── 聚合数据 ──
-    const { ag, vol: aggVol, closes: aggCloses } = EMACache.getAggregated(animP);
+    const { ag, vol: aggVol, closes: aggCloses } =
+      _cryptoChartDataFn ? _cryptoChartDataFn(animP) : EMACache.getAggregated(animP);
     const n = ag.length;
     if(n < 2) return;
 
@@ -1975,7 +1977,7 @@ if (crossunder(fast, slow)) {
   document.querySelectorAll('.tf-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       _activeTfMult=parseInt(btn.dataset.tf);
-      candleSize=_activeTfMult * simN;
+      candleSize=(Crypto && Crypto.mode) ? _activeTfMult : _activeTfMult * simN;
       EMACache.invalidateAgg();
       document.querySelectorAll('.tf-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
@@ -2471,8 +2473,8 @@ if (crossunder(fast, slow)) {
     ME.applyN(n);
     candleSize    = _activeTfMult * n;
 
-    // 按 N 缩放历史容量，保证始终有约 200 个 T 周期的原始数据
-    MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n * 6;  // 保留 6000 T
+    // 按 N 缩放历史容量，保证 60T 时仍能显示 200 根蜡烛
+    MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * n;      // 保留 12000 T
 
     // N 减小时历史数组可能超出新容量，需从头部裁剪
     const excess = ohlc.length - MAX_HISTORY;
@@ -2556,6 +2558,13 @@ if (crossunder(fast, slow)) {
     get _aggCache()        { return EMACache.getRawAggCache(); }, set _aggCache(v)       { EMACache.setRawAggCache(v); },
     get trades()           { return trades; },            set trades(v)           { trades = v; },
     get srBreakDrift()     { return ME.srBreakDrift; },   set srBreakDrift(v)     { ME.srBreakDrift = v; },
+    // candleSize / activeTfMult — Crypto.js manages these on enter/exit
+    get candleSize()       { return candleSize; },
+    set candleSize(v)      { candleSize = v; EMACache.invalidateAgg(); },
+    get activeTfMult()     { return _activeTfMult; },
+    set activeTfMult(v)    { _activeTfMult = v; },
+    // Chart data override — Crypto.js injects its own provider to bypass EMACache aggregation
+    setChartDataFn:        fn => { _cryptoChartDataFn = fn; },
     // Constants / read-only
     get MAX_HISTORY()      { return MAX_HISTORY; },
     get TICK_MS_BASE()     { return TICK_MS_BASE; },
