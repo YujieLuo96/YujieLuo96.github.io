@@ -18,7 +18,7 @@
 
   /* ══════════════════════════════════════════════════════════════
      泊松到达参数
-       SWAN_BASE_PROB    : 每 T 的基础天鹅触发概率（≈每 25T 一次，空闲期）
+       SWAN_BASE_PROB    : 每 T（天）的基础天鹅触发概率（≈每 100 天一次，约 3-4 次/年）
        SWAN_POS_BASE     : 无情景偏置时正向天鹅基础概率（略偏负，恐慌更常见）
        SWAN_L3_POS_PROB  : 白天鹅升级为 +3 级的概率
        SWAN_L3_NEG_PROB  : 黑天鹅升级为 -3 级的概率（高于正向：崩盘比暴涨更极端）
@@ -29,12 +29,12 @@
        SWAN_MU_NORM      : muAddBlend 归一化参考值（= 新参数下最大 |muAdd| = 0.13）
        SWAN_FREQ_BOOST   : 极端情景下触发频率额外放大系数（|bias|=1 时最多 +50%）
   ══════════════════════════════════════════════════════════════ */
-  const SWAN_BASE_PROB     = 0.040;  // ≈ 每 25T 一次（空闲期基础概率）
+  const SWAN_BASE_PROB     = 0.014;  // ↑0.010→0.014，≈每70T一次（空闲期）；约4-5次/年有效
   const SWAN_POS_BASE      = 0.42;   // 负向天鹅略多于正向（恐慌不对称性）
-  const SWAN_L3_POS_PROB   = 0.20;   // 白天鹅：20% 概率升级为 +3 级
-  const SWAN_L3_NEG_PROB   = 0.30;   // 黑天鹅：30% 概率升级为 -3 级（崩盘更易极端化）
+  const SWAN_L3_POS_PROB   = 0.22;   // 白天鹅：22% 概率升级为 +3 级（↑0.20）
+  const SWAN_L3_NEG_PROB   = 0.35;   // 黑天鹅：35% 概率升级为 -3 级↑0.30（崩盘更易极端化）
   const SWAN_DUR_MIN_T     = 3;      // 最短 3T
-  const SWAN_DUR_MAX_T     = 12;     // 最长 12T
+  const SWAN_DUR_MAX_T     = 16;     // 最长↑12→16T，极端事件持续时间延长
   const SWAN_COOLDOWN_T    = 8;      // 冷却 8T
   const SWAN_BIAS_STRENGTH = 0.28;   // 情景偏置强度（muAdd 满偏时最多 ±28%）
   const SWAN_MU_NORM       = 0.13;   // muAddBlend 归一化参考值（新 BEAR muAdd = -0.13）
@@ -54,10 +54,12 @@
                    （实际跳空 = base × 随机因子 0.6~1.4，模拟缺口大小不确定性）
                    负向天鹅跳空幅度故意大于正向（恐慌不对称性）。 */
   const SWAN_PARAMS = {
-    '3' : { swanVolScale: 4.4, swanDriftAdd: +0.030, swanGapBase: +0.160 },  // 白天鹅大：+16% 跳空（sigma=0.25 基准）
-    '2' : { swanVolScale: 3.2, swanDriftAdd: +0.016, swanGapBase: +0.080 },  // 白天鹅小：+8% 跳空
-    '-2': { swanVolScale: 4.0, swanDriftAdd: -0.020, swanGapBase: -0.140 },  // 黑天鹅小：-14% 跳空
-    '-3': { swanVolScale: 6.4, swanDriftAdd: -0.044, swanGapBase: -0.300 },  // 黑天鹅大：-30% 跳空（崩盘级）
+    // swanDriftAdd：每 T（天）额外漂移（1T=1天；持续 3-16 天，总累积 = DriftAdd × 天数）
+    // swanGapBase：触发瞬间一次性跳空 log-return（参考：1987 黑色星期一 -22.6%，COVID 单日 -12%）
+    '3' : { swanVolScale: 5.5, swanDriftAdd: +0.014, swanGapBase: +0.090 },  // 白天鹅大↑：+9%跳空，+1.4%/天，波动×5.5
+    '2' : { swanVolScale: 4.2, swanDriftAdd: +0.007, swanGapBase: +0.045 },  // 白天鹅小↑：+4.5%跳空，+0.7%/天
+    '-2': { swanVolScale: 5.2, swanDriftAdd: -0.011, swanGapBase: -0.090 },  // 黑天鹅小↑：-9%跳空，-1.1%/天
+    '-3': { swanVolScale: 8.0, swanDriftAdd: -0.024, swanGapBase: -0.160 },  // 黑天鹅大↑：-16%跳空，-2.4%/天（崩盘级）
   };
 
   /* ── 控制函数（私有辅助）：f(t) ∈ [-1, 1] ── */

@@ -19,11 +19,14 @@
 (function () {
   'use strict';
 
+  /* ── 全局配置（MarketConfig.js 须先加载） ── */
+  const { SIM_N_DEFAULT } = window.MarketConfig;
+
   /* ── 常量 ── */
   const SR_PERIODS     = [20, 55, 120];
   const SR_ZONE        = 0.018;    // 近区相对距离阈值（±1.8%）
-  const SR_MAX_FORCE   = 0.0050;   // 最大近区回归力（已乘 _srForceScale；随 sigma_user 放大以保持感知效果）
-  const SR_BREAK_BASE  = 0.0080;   // 突破动量基础力（按 sqrt(period/20) 缩放；sigma_user=0.25 下调至可见）
+  const SR_MAX_FORCE   = 0.0015;   // 最大近区回归力（≈ 11% 日均扩散噪声，保证可见但不主导）
+  const SR_BREAK_BASE  = 0.0025;   // 突破动量基础力（按 sqrt(period/20) 缩放；1T=1天下校准）
   const SR_BREAK_DECAY = 0.82;     // 每 T 的突破动量衰减系数
 
   /* 自适应参数 */
@@ -35,9 +38,9 @@
   const TOUCH_BREAK_T = 5;   // 突破力饱和所需 T 数（N=4 时对应原 ~20 ticks）
 
   // N 相关衍生量：_touchProxScale / _touchBreakScale = T数 × simN（tick 数）
-  // 初始值对应默认 N=4
-  let _touchProxScale  = TOUCH_PROX_T  * 4;
-  let _touchBreakScale = TOUCH_BREAK_T * 4;
+  // 初始值对应默认 simN=20
+  let _touchProxScale  = TOUCH_PROX_T  * SIM_N_DEFAULT;
+  let _touchBreakScale = TOUCH_BREAK_T * SIM_N_DEFAULT;
 
   /* ── 状态 ── */
   const srEmaValues  = new Map();  // period → 实时 EMA 值
@@ -45,9 +48,11 @@
   const srTouchCount = new Map();  // period → 近区停留 tick 数（突破后归零）
   let   srBreakDrift = 0;          // 当前累积突破动量 drift
 
-  // N 相关衍生量（初始值对应 N=4）
-  let _srDecay      = Math.pow(SR_BREAK_DECAY, 1 / 4);
-  let _srForceScale = 1 / 4;
+  // N 相关衍生量（初始值对应默认 simN=20）
+  // _srEmaK: period → EMA系数；EMA周期以 T 为单位，乘以 simN 换算为 tick 数，保证 N 无关性
+  let _srDecay      = Math.pow(SR_BREAK_DECAY, 1 / SIM_N_DEFAULT);
+  let _srForceScale = 1 / SIM_N_DEFAULT;
+  let _srEmaK       = new Map(SR_PERIODS.map(p => [p, 2 / (p * SIM_N_DEFAULT + 1)]));
 
   /* ════════════════════════════════════════════════════════
      公开 API
@@ -68,7 +73,7 @@
     ════════════════════════════════════════════════════════ */
     updateEMA(price) {
       for (const p of SR_PERIODS) {
-        const k    = 2 / (p + 1);
+        const k    = _srEmaK.get(p);
         const prev = srEmaValues.get(p);
         srEmaValues.set(p, prev === undefined ? price : prev + k * (price - prev));
       }
@@ -127,10 +132,11 @@
        切换 simN 时重新推导衍生量，保证 N 无关性。
     ════════════════════════════════════════════════════════ */
     applyN(simN) {
-      _srDecay        = Math.pow(SR_BREAK_DECAY, 1 / simN);
-      _srForceScale   = 1 / simN;
-      _touchProxScale  = TOUCH_PROX_T  * simN;   // T 数 → tick 数，保证 N 无关性
+      _srDecay         = Math.pow(SR_BREAK_DECAY, 1 / simN);
+      _srForceScale    = 1 / simN;
+      _touchProxScale  = TOUCH_PROX_T  * simN;
       _touchBreakScale = TOUCH_BREAK_T * simN;
+      _srEmaK          = new Map(SR_PERIODS.map(p => [p, 2 / (p * simN + 1)]));
     },
 
     /* ════════════════════════════════════════════════════════

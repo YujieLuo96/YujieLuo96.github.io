@@ -864,20 +864,20 @@
   <div class="settings-panel" id="settings-panel">
     <div class="panel-section-label" style="width:100%;font-size:0.5rem;letter-spacing:0.25em;color:rgba(0,245,255,0.3);text-transform:uppercase;margin-bottom:2px;">◈ Market Parameters</div>
     <div class="slider-group" style="min-width:150px">
-      <div class="slider-label">DRIFT (μ) <span id="mu-val">+0.020</span></div>
-      <input type="range" id="mu-slider" min="-0.2" max="0.2" step="0.005" value="0.02">
+      <div class="slider-label">DRIFT (μ) <span id="mu-val">+0.300</span></div>
+      <input type="range" id="mu-slider" min="-0.2" max="0.4" step="0.005" value="0.30">
     </div>
     <div class="slider-group" style="min-width:150px">
-      <div class="slider-label">VOLATILITY (σ) <span id="sigma-val">0.100</span></div>
-      <input type="range" id="sigma-slider" min="0.005" max="0.3" step="0.005" value="0.10">
+      <div class="slider-label">VOLATILITY (σ) <span id="sigma-val">0.250</span></div>
+      <input type="range" id="sigma-slider" min="0.005" max="0.6" step="0.005" value="0.25">
     </div>
     <div class="slider-group" style="min-width:150px">
       <div class="slider-label">INIT ASSET <span id="init-asset-val">$1000</span></div>
       <input type="range" id="init-asset" min="1000" max="10000" step="500" value="1000">
     </div>
     <div class="slider-group" style="min-width:150px">
-      <div class="slider-label">CHART SPEED (N=<span id="sim-n-val">4</span>)</div>
-      <input type="range" id="sim-n-slider" min="1" max="8" step="1" value="4">
+      <div class="slider-label">CHART SPEED (N=<span id="sim-n-val">20</span>)</div>
+      <input type="range" id="sim-n-slider" min="10" max="50" step="5" value="20">
     </div>
   </div>
 
@@ -1065,6 +1065,8 @@ if (crossunder(fast, slow)) {
 </div>
 
 <script src="Crypto.js"></script>
+<!-- 全局市场基础参数（必须最先加载，所有引擎从此读取默认值） -->
+<script src="Market/MarketConfig.js"></script>
 <!-- OrdinaryMarket 引擎（依赖顺序：子引擎先于协调器） -->
 <script src="Market/OrdinaryMarket/RegimeEngine.js"></script>
 <script src="Market/OrdinaryMarket/SwanEngine.js"></script>
@@ -1144,8 +1146,9 @@ if (crossunder(fast, slow)) {
      → 由 MarketEngine.js 管理，通过 ME 访问
   ═══════════════════════════════════════════ */
   const ME      = window.MarketEngine;
-  const DT_BASE = 0.1;
-  let   dt      = DT_BASE / 4;   // 每 tick 的有效时间步长 = DT_BASE / simN，默认 N=4
+  const DT_BASE = MarketConfig.DT_BASE;        // 1T = 1天（见 MarketConfig.js）
+  let   simN    = MarketConfig.SIM_N_DEFAULT;  // 每 T 细分 tick 数（见 MarketConfig.js）
+  let   dt      = DT_BASE / simN;              // 每 tick 有效时间步长
 
   /* ═══════════════════════════════════════════
      价格历史 & 动画插值
@@ -1153,14 +1156,14 @@ if (crossunder(fast, slow)) {
   let currentPrice  = 100.0;
   let prevTickPrice = 100.0;   // 上一 tick 的价格（用于插值）
   let lastTickTime  = performance.now();
-  const TICK_MS_BASE = 200;  // 原始 T（ms），setInterval 实际使用 TICK_MS_BASE / simN
+  const TICK_MS_BASE = MarketConfig.TICK_MS_BASE; // 1T 实际毫秒数（见 MarketConfig.js）
 
   let ohlc          = [];
   let priceHistory  = [];
   let volumeHistory = [];
   const MIN_VISIBLE_CANDLES = 200;  // 最少显示的K线数
   const MAX_TF_MULT = 5;           // 最大时间周期倍数
-  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * 4 * 6;  // 默认 N=4，保留 6000 T
+  let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * simN * 6; // 保留 6000 T（随 simN 动态）
   let trades        = [];
   let tradeHistory    = [];  // 已平仓记录
   let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
@@ -1346,9 +1349,8 @@ if (crossunder(fast, slow)) {
   const sharesSummary   = document.getElementById('shares-summary');
 
   let chartMode       = 'candle';
-  let candleSize      = 4;   // ticks per displayed candle (= _activeTfMult * simN, default 1*4)
+  let candleSize      = simN; // ticks per displayed candle (= _activeTfMult * simN)
   let totalTicks      = 0;   // 单调递增数据点计数（每 tick +1，用于图表聚合/EMA 缓存）
-  let simN            = 4;   // 每个原始 T 细分为 N 个 tick，默认 4
   // _srDecay / _srForceScale 已移入 MarketEngine，由 ME.applyN() 维护
   let _activeTfMult   = 1;     // 当前 TF 按钮对应的原始 T 倍数（1/5/15/30/60）
   let showEMA5        = true;
@@ -1403,7 +1405,7 @@ if (crossunder(fast, slow)) {
     volumeHistory.push(relVol);
 
     const open=ohlc.length>0?ohlc[ohlc.length-1].c:currentPrice, close=currentPrice;
-    const micro=ME.sigma_t*0.25*Math.random();
+    const micro=ME.sigma_t*Math.sqrt(dt)*Math.random(); // tick 级波动尺度（sigma_t * sqrt(dt)），而非年化波动率乘价格
     ohlc.push({o:open, h:Math.max(open,close)*(1+micro), l:Math.max(0.01,Math.min(open,close)*(1-micro)), c:close});
     priceHistory.push(close);
 
@@ -1760,7 +1762,7 @@ if (crossunder(fast, slow)) {
   function initPrice(){
     ohlc=[]; priceHistory=[]; volumeHistory=[];
     // ME.warmup 负责随机游走 + OHLC 生成 + S/R EMA 预热，返回最终价格
-    // 保证初始历史覆盖 6000 个 T 周期，铺满屏幕约 30 根 T 线
+    // 保证初始历史覆盖 6000 个 T 周期（= MAX_HISTORY 条原始 tick），屏幕显示最近 200 根 T 线
     currentPrice = ME.warmup(simN, dt, normalRandom, ohlc, priceHistory, volumeHistory);
     prevTickPrice = currentPrice;
     // 对齐 totalTicks，使 getAggregated 的 partialSize 正确（防止 partialSize=0 死循环）
@@ -2695,6 +2697,13 @@ if (crossunder(fast, slow)) {
     });
   }
 
+  // 从 MarketConfig 初始化滑块与引擎默认值（只需改 MarketConfig.js 即可全局生效）
+  muSlider.value    = MarketConfig.MU_DEFAULT;
+  sigmaSlider.value = MarketConfig.SIGMA_DEFAULT;
+  muVal.textContent    = (MarketConfig.MU_DEFAULT >= 0 ? '+' : '') + MarketConfig.MU_DEFAULT.toFixed(3);
+  sigmaVal.textContent = MarketConfig.SIGMA_DEFAULT.toFixed(3);
+  ME.mu_user    = MarketConfig.MU_DEFAULT;
+  ME.sigma_user = MarketConfig.SIGMA_DEFAULT;
   resetGame();
 
   // Virtual Traders — expose shared market data via getters (live references)

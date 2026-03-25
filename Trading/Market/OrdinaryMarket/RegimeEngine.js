@@ -17,34 +17,41 @@
        color   : HUD / 图表标签颜色
   ══════════════════════════════════════════════════════════════ */
   /* meanRevMult 经 OU 均衡公式校准：P_eq = refPrice × exp(μ_base/(κ₀·meanRevMult))，κ₀=0.25
-     以 mu_user=0.08、sigma_user=0.25 为基准：
-     CHOP≈103、BULL≈277、V.BULL≈360、Q.BEAR≈45、BEAR≈19，覆盖股价 1~1000 区间。 */
-  /* 均衡价格（refPrice≈100，κ₀=0.25，mu_user=0.08）：
-       CHOP≈103，BULL≈277，V.BULL≈360，Q.BEAR≈45，BEAR≈19
+     以 mu_user=0.30、sigma_user=0.25 为基准：
+     BULL≈617、V.BULL≈1350、CHOP≈111、Q.BEAR≈115、BEAR≈144
+     注：mu_user=0.30 使所有情景 mu_base 均为正值（BEAR≈+0.02，Q.BEAR≈+0.01），
+         各情景均衡价均高于 refPrice，warmup 后价格不再跌破 1。 */
+  /* 均衡价格（refPrice≈100，κ₀=0.25，mu_user=0.30）：
+       CHOP≈111，BULL≈617，V.BULL≈1350，Q.BEAR≈115，BEAR≈144
      sigMult/sigCap 已按 sigma_user=0.25 校准（÷≈1.75）：
-       V.BULL 年化波动率上限 = 0.25×2.5 = 62.5%（原设计 45%），per-tick std（N=4）= 20%（可玩）。 */
+       V.BULL 年化波动率上限 = 0.25×3.2 = 80%，per-tick std（N=4）= 25%（极端可玩）。 */
   const REGIMES = [
     {
       name:'BULL',   weight:0.26, color:'#39ff14',
-      muMult:0.50, muAdd:+0.10, sigMult:0.90, jumpMult:0.6, sigCap:1.6, meanRevMult:0.55,
+      muMult:0.50, muAdd:+0.10, sigMult:1.05, jumpMult:0.6, sigCap:1.9, meanRevMult:0.55,
+      // sigMult↑0.90→1.05，sigCap↑1.6→1.9：牛市波动略增，顺势行情更有节奏感
     },
     {
       name:'BEAR',   weight:0.20, color:'#ff2d78',
-      muMult:0.50, muAdd:-0.13, sigMult:1.25, jumpMult:2.2, sigCap:2.2, meanRevMult:0.22,
+      muMult:0.50, muAdd:-0.13, sigMult:1.55, jumpMult:2.2, sigCap:2.8, meanRevMult:0.22,
+      // sigMult↑1.25→1.55，sigCap↑2.2→2.8：熊市杀跌更猛，恐慌波动更剧烈
     },
     {
       name:'CHOP',   weight:0.28, color:'#f5e642',
-      muMult:0.08, muAdd: 0.00, sigMult:0.30, jumpMult:0.4, sigCap:0.9, meanRevMult:0.90,
+      muMult:0.08, muAdd: 0.00, sigMult:0.50, jumpMult:0.5, sigCap:1.2, meanRevMult:0.90,
+      // sigMult↑0.30→0.50，sigCap↑0.9→1.2：震荡期不再过于平静，偶有小波动
     },
     {
       // 高波动牛市：强上涨但波动剧烈，适合追趋势但止损需宽
       name:'V.BULL', weight:0.14, color:'#00ffcc',
-      muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, meanRevMult:0.40,
+      muMult:0.60, muAdd:+0.08, sigMult:1.90, jumpMult:1.0, sigCap:3.2, meanRevMult:0.40,
+      // sigMult↑1.60→1.90，sigCap↑2.5→3.2：极度牛市波动显著放大
     },
     {
       // 阴跌熊市：跌幅温和但持续，反弹力弱，适合空单持有
       name:'Q.BEAR', weight:0.12, color:'#ff6060',
-      muMult:0.30, muAdd:-0.08, sigMult:0.50, jumpMult:1.5, sigCap:1.7, meanRevMult:0.28,
+      muMult:0.30, muAdd:-0.08, sigMult:0.70, jumpMult:1.5, sigCap:2.2, meanRevMult:0.28,
+      // sigMult↑0.50→0.70，sigCap↑1.7→2.2：阴跌期波动更明显，破位跳空风险上升
     },
   ];
 

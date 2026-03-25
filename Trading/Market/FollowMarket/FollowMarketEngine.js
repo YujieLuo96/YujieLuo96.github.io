@@ -19,6 +19,9 @@
 (function () {
   'use strict';
 
+  /* ── 全局配置（MarketConfig.js 须先加载） ── */
+  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T, WARMUP_T } = window.MarketConfig;
+
   /* ══════════════════════════════════════════════════════════════
      顺势压力参数
   ══════════════════════════════════════════════════════════════ */
@@ -46,8 +49,8 @@
   ══════════════════════════════════════════════════════════════ */
   const MEAN_REV_KAPPA0  = 0.20;
   const MEAN_REV_NOISE   = 0.10;
-  const MEAN_REV_SLOW_K  = 2 / 20001;
-  const MEAN_REV_EMA_K   = 2 / 201;
+  let MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * SIM_N_DEFAULT + 1);
+  let MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * SIM_N_DEFAULT + 1);
 
   /* ══════════════════════════════════════════════════════════════
      虚拟情景定义（单情景，供 HUD / 图表兼容）
@@ -64,16 +67,16 @@
   /* ══════════════════════════════════════════════════════════════
      引擎状态（闭包隔离）
   ══════════════════════════════════════════════════════════════ */
-  let mu_user    = 0.08;
-  let sigma_user = 0.25;
-  let mu_t       = 0.08;
+  let mu_user    = window.MarketConfig.MU_DEFAULT;
+  let sigma_user = window.MarketConfig.SIGMA_DEFAULT;
+  let mu_t       = window.MarketConfig.MU_DEFAULT;
   let sigma_t    = 0.25;
   let longEma    = 0;
   let refPrice   = 0;
 
   /** 玩家顺势压力（正 = 上行，负 = 下行） */
   let _playerPressure     = 0;
-  let _followDecayPerTick = Math.pow(FOLLOW_PRESSURE_DECAY, 1 / 4);
+  let _followDecayPerTick = Math.pow(FOLLOW_PRESSURE_DECAY, 1 / SIM_N_DEFAULT);
 
   const _noSwan = {
     changed: false, swanLevel: 0,
@@ -119,6 +122,8 @@
 
     applyN(simN) {
       _followDecayPerTick = Math.pow(FOLLOW_PRESSURE_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K     = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K      = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     reset(simN) {
@@ -128,6 +133,8 @@
       refPrice           = 0;
       _playerPressure    = 0;
       _followDecayPerTick = Math.pow(FOLLOW_PRESSURE_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K     = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K      = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     /* ════════════════════════════════════════════════════════════
@@ -190,14 +197,15 @@
     },
 
     warmup(simN, dt, normalRandom, outOhlc, outPrice, outVolume) {
-      const initLen = 6000 * simN;
+      const initLen = WARMUP_T * simN;
+      const sqDt    = Math.sqrt(dt);
       let p = 100;
 
       for (let i = 0; i < initLen; i++) {
         const open = p;
         const { newPrice, relVol } = this.stepPriceCore(p, i, simN, dt, normalRandom);
         p = newPrice;
-        const micro = sigma_t * 0.25 * Math.random();
+        const micro = sigma_t * sqDt * Math.random();
         outOhlc.push({
           o: open,
           h: Math.max(open, p) * (1 + micro),

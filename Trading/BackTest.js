@@ -50,8 +50,8 @@ window.BackTest = (function () {
         @returns {{ step(price) → {newPrice, relVol, sigma_t}, reset() }}
   ═══════════════════════════════════════════════════════════════ */
   function _IsolatedSim(mu_user, sigma_user) {
-    const SIM_N = 4;
-    const DT    = 0.1 / SIM_N;          // 0.025（与游戏 simN=4 一致）
+    const SIM_N = 20;                   // 与游戏默认 simN 保持一致（10~50 可调；此处取默认值 20）
+    const DT    = (1 / 365) / SIM_N;    // 每 tick 模型时间步长（1T = 1天，1年 = 365T = 7300 ticks）
     const sqDT  = Math.sqrt(DT);
 
     /* ── Heston OU 参数（镜像 OrdinaryMarketEngine）── */
@@ -75,11 +75,11 @@ window.BackTest = (function () {
     /* ── 行为动量反转（镜像 OrdinaryMarketEngine）── */
     const MOM_DECAY_PT = Math.pow(0.92, 1 / SIM_N);
     const MOM_THRESH   = 1.5;
-    const MOM_FORCE    = 0.0045;
+    const MOM_FORCE    = 0.0020;  // 与 OrdinaryMarketEngine MOMENTUM_FORCE 保持一致
 
     /* ── 长期均值回归 OU（镜像 OrdinaryMarketEngine）── */
     const MR_KAPPA0 = 0.25;
-    const MR_SLOW_K = 2 / 20001; // ≈500T 慢速 EMA 系数
+    const MR_SLOW_K = 2 / (5000 * SIM_N + 1); // ≈5000T 慢速 EMA 系数（period=5000T × SIM_N ticks）
     const MR_NOISE  = 0.15;
 
     /* ── 五情景定义（镜像 RegimeEngine REGIMES）── */
@@ -90,13 +90,13 @@ window.BackTest = (function () {
       { muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, mrMult:0.40 }, // V.BULL
       { muMult:0.30, muAdd:-0.08, sigMult:0.50, jumpMult:1.5, sigCap:1.7, mrMult:0.28 }, // Q.BEAR
     ];
-    /* ── 情景转移矩阵（镜像 RegimeEngine TRANSITION）── */
+    /* ── 情景转移矩阵（镜像 RegimeEngine TRANSITION，保持严格一致）── */
     const TRANSITION = [
-      [0.00, 0.10, 0.30, 0.40, 0.20], // from BULL
-      [0.10, 0.00, 0.40, 0.05, 0.45], // from BEAR
-      [0.28, 0.17, 0.00, 0.27, 0.28], // from CHOP
-      [0.00, 0.05, 0.40, 0.00, 0.55], // from V.BULL
-      [0.15, 0.40, 0.35, 0.05, 0.05], // from Q.BEAR
+      [0.00, 0.10, 0.30, 0.40, 0.20], // from BULL  : 多往 V.BULL 或 CHOP
+      [0.10, 0.00, 0.40, 0.05, 0.45], // from BEAR  : 多往 Q.BEAR 或 CHOP
+      [0.28, 0.17, 0.00, 0.27, 0.28], // from CHOP  : 均衡发散
+      [0.45, 0.05, 0.28, 0.00, 0.22], // from V.BULL: 多淡化为 BULL
+      [0.15, 0.38, 0.42, 0.05, 0.00], // from Q.BEAR: 多稳定于 CHOP 或加速为 BEAR
     ];
     const REGIME_TRANS_TICKS = 30 * SIM_N; // 情景过渡期 ticks（镜像 REGIME_TRANSITION×simN）
 
@@ -241,9 +241,9 @@ window.BackTest = (function () {
     const sim = _IsolatedSim(mu, sigma);
     sim.reset();
 
-    /* 预热：让情景系统从初始 CHOP 状态过渡到正常分布（≥1320 tick 才能脱离 CHOP）
-       取 1500 留足余量，此处使用隔离模拟器，不影响游戏引擎任何状态。 */
-    const PRE_WARM = 1500;
+    /* 预热：让情景系统从初始 CHOP 状态过渡到正常分布（≥66T 才能脱离 CHOP）
+       取 75T（= 1500 tick，SIM_N=20）留足余量，此处使用隔离模拟器，不影响游戏引擎任何状态。 */
+    const PRE_WARM = 75 * SIM_N; // 75T，与 SIM_N 无关
     let price = 100;
     for (let i = 0; i < PRE_WARM; i++) {
       ({ newPrice: price } = sim.step(price));
@@ -711,6 +711,8 @@ window.BackTest = (function () {
   ═══════════════════════════════════════════════════════════════ */
   async function _runSimBacktest(params, onProgress) {
     const { stratCode, mu, sigma, ticks, runs, initialCash, leverage } = params;
+    // SIM 模式 Sharpe 年化系数：1年 = 365T × 20 ticks/T = 7300 ticks（DT_BASE=1/365，SIM_N=20）
+    const SIM_BARS_PER_YEAR = 365 * 20; // = 7300
     const results    = [];
     const statsList  = [];
 
@@ -719,7 +721,7 @@ window.BackTest = (function () {
       const run = _runStrategy(stratCode, market, { initialCash, leverage, fractional: false });
       if (!run.error) {
         results.push({ ...run, runIdx: i });
-        statsList.push(_computeRunStats(run));
+        statsList.push(_computeRunStats(run, SIM_BARS_PER_YEAR));
       }
       onProgress(i + 1, runs);
       await _yield(); // UI 不卡顿

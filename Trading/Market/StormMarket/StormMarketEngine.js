@@ -16,6 +16,9 @@
 (function () {
   'use strict';
 
+  /* ── 全局配置（MarketConfig.js 须先加载） ── */
+  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T } = window.MarketConfig;
+
   /* ══════════════════════════════════════════════════════════════
      风暴参数
   ══════════════════════════════════════════════════════════════ */
@@ -47,7 +50,7 @@
   /** 跳跃聚类增益：单次跳跃后，下一跳概率暴增此量 */
   const STORM_CLUSTER_BOOST = 0.20;
 
-  /** 跳跃聚类每 T 衰减系数（0.65 → 约 1.5 T 半衰期，余震持续时间较短但强度高） */
+  /** 跳跃聚类每 T（天）衰减系数（0.65 → 半衰期约 1.7 天，余震高度集中） */
   const STORM_CLUSTER_DECAY = 0.65;
 
   /** 肥尾触发概率（普通市场 0.12；风暴市场 0.35 → 每 3 次跳跃约 1 次触发肥尾） */
@@ -57,8 +60,8 @@
   const STORM_FAT_TAIL_SCALE = 0.25;
 
   /** 动量放大器强度（正值 = 顺势加速，与普通市场动量反转方向相反）
-      每 T 顺势最大额外推力；越大趋势越难停下来 */
-  const STORM_MOMENTUM_AMP   = 0.012;
+      每 T 顺势最大额外推力；1T=1天，风暴市场日均噪声约 4.6%，0.005 ≈ 10%日噪声 */
+  const STORM_MOMENTUM_AMP   = 0.005;
 
   /** 动量信号衰减（每 T；越大信号记忆越短 → 随机翻转越频繁） */
   const STORM_MOMENTUM_DECAY = 0.88;
@@ -84,9 +87,9 @@
   const LEVERAGE_RHO       = -0.30;
   const LEVERAGE_SQRT1RHO2 = Math.sqrt(1 - 0.30 * 0.30);  // ≈ 0.9539
 
-  /* EMA 锚 */
-  const MEAN_REV_SLOW_K  = 2 / 20001;
-  const MEAN_REV_EMA_K   = 2 / 201;
+  /* EMA 锚（以 T 为单位定义目标周期，applyN / reset 时按 simN 动态重算） */
+  let MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * SIM_N_DEFAULT + 1);
+  let MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * SIM_N_DEFAULT + 1);
 
   /* ══════════════════════════════════════════════════════════════
      虚拟情景定义（单情景，供 HUD / 图表兼容）
@@ -103,17 +106,17 @@
   /* ══════════════════════════════════════════════════════════════
      引擎状态（闭包隔离）
   ══════════════════════════════════════════════════════════════ */
-  let mu_user    = 0.08;
-  let sigma_user = 0.25;
-  let mu_t       = 0.08;
+  let mu_user    = window.MarketConfig.MU_DEFAULT;
+  let sigma_user = window.MarketConfig.SIGMA_DEFAULT;
+  let mu_t       = window.MarketConfig.MU_DEFAULT;
   let sigma_t    = 0.25;
   let longEma    = 0;
   let refPrice   = 0;
 
   let jumpCluster             = 0;
   let momentumScore           = 0;
-  let _clusterDecayPerTick    = Math.pow(STORM_CLUSTER_DECAY,  1 / 4);
-  let _momentumDecayPerTick   = Math.pow(STORM_MOMENTUM_DECAY, 1 / 4);
+  let _clusterDecayPerTick    = Math.pow(STORM_CLUSTER_DECAY,  1 / SIM_N_DEFAULT);
+  let _momentumDecayPerTick   = Math.pow(STORM_MOMENTUM_DECAY, 1 / SIM_N_DEFAULT);
 
   const _noSwan = {
     changed: false, swanLevel: 0,
@@ -160,6 +163,8 @@
     applyN(simN) {
       _clusterDecayPerTick  = Math.pow(STORM_CLUSTER_DECAY,  1 / simN);
       _momentumDecayPerTick = Math.pow(STORM_MOMENTUM_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K       = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K        = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     reset(simN) {
@@ -172,6 +177,8 @@
       momentumScore = 0;
       _clusterDecayPerTick  = Math.pow(STORM_CLUSTER_DECAY,  1 / simN);
       _momentumDecayPerTick = Math.pow(STORM_MOMENTUM_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K       = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K        = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     /* notifyTrade：风暴市场不受玩家信号影响，保持纯随机混乱 */
@@ -292,11 +299,12 @@
       const initLen = 1000 * simN;
       let p = 100;
 
+      const sqDt = Math.sqrt(dt);
       for (let i = 0; i < initLen; i++) {
         const open = p;
         const { newPrice, relVol } = this.stepPriceCore(p, i, simN, dt, normalRandom);
         p = newPrice;
-        const micro = sigma_t * 0.25 * Math.random();
+        const micro = sigma_t * sqDt * Math.random();
         outOhlc.push({
           o: open,
           h: Math.max(open, p) * (1 + micro),

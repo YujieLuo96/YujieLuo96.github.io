@@ -19,6 +19,9 @@
 (function () {
   'use strict';
 
+  /* ── 全局配置（MarketConfig.js 须先加载） ── */
+  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T, WARMUP_T } = window.MarketConfig;
+
   /* ══════════════════════════════════════════════════════════════
      逆压力参数
   ══════════════════════════════════════════════════════════════ */
@@ -47,10 +50,10 @@
   /* ══════════════════════════════════════════════════════════════
      长期均值回归（OU 锚）
   ══════════════════════════════════════════════════════════════ */
-  const MEAN_REV_KAPPA0  = 0.20;      // 年化 OU 回归速度
-  const MEAN_REV_NOISE   = 0.10;      // ±10% kappa 随机扰动
-  const MEAN_REV_SLOW_K  = 2 / 20001; // refPrice 超慢 EMA（≈5000T 收敛）
-  const MEAN_REV_EMA_K   = 2 / 201;   // longEma 200T EMA（HUD 显示）
+  const MEAN_REV_KAPPA0  = 0.20;   // 年化 OU 回归速度
+  const MEAN_REV_NOISE   = 0.10;   // ±10% kappa 随机扰动
+  let MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * SIM_N_DEFAULT + 1);
+  let MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * SIM_N_DEFAULT + 1);
 
   /* ══════════════════════════════════════════════════════════════
      虚拟情景定义（单情景，供 HUD / 图表兼容）
@@ -68,16 +71,16 @@
   /* ══════════════════════════════════════════════════════════════
      引擎状态（所有状态均在此闭包内，完全隔离）
   ══════════════════════════════════════════════════════════════ */
-  let mu_user    = 0.08;
-  let sigma_user = 0.25;
-  let mu_t       = 0.08;
+  let mu_user    = window.MarketConfig.MU_DEFAULT;
+  let sigma_user = window.MarketConfig.SIGMA_DEFAULT;
+  let mu_t       = window.MarketConfig.MU_DEFAULT;
   let sigma_t    = 0.25;
   let longEma    = 0;
   let refPrice   = 0;
 
   /** 玩家压力积累器（负 = 下行压力，正 = 上行压力） */
   let _playerPressure        = 0;
-  let _oppDecayPerTick       = Math.pow(OPP_PRESSURE_DECAY, 1 / 4);
+  let _oppDecayPerTick       = Math.pow(OPP_PRESSURE_DECAY, 1 / SIM_N_DEFAULT);
 
   /* 无天鹅事件，始终返回此哑对象 */
   const _noSwan = {
@@ -134,6 +137,8 @@
     ════════════════════════════════════════════════════════════ */
     applyN(simN) {
       _oppDecayPerTick = Math.pow(OPP_PRESSURE_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K  = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K   = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     /* ════════════════════════════════════════════════════════════
@@ -147,6 +152,8 @@
       refPrice        = 0;
       _playerPressure = 0;
       _oppDecayPerTick = Math.pow(OPP_PRESSURE_DECAY, 1 / simN);
+      MEAN_REV_SLOW_K  = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K   = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     /* ════════════════════════════════════════════════════════════
@@ -235,14 +242,15 @@
        预热 6000×simN 个 tick，同 OrdinaryMarketEngine 逻辑对齐。
     ════════════════════════════════════════════════════════════ */
     warmup(simN, dt, normalRandom, outOhlc, outPrice, outVolume) {
-      const initLen = 6000 * simN;
+      const initLen = WARMUP_T * simN;
+      const sqDt    = Math.sqrt(dt);
       let p = 100;
 
       for (let i = 0; i < initLen; i++) {
         const open = p;
         const { newPrice, relVol } = this.stepPriceCore(p, i, simN, dt, normalRandom);
         p = newPrice;
-        const micro = sigma_t * 0.25 * Math.random();
+        const micro = sigma_t * sqDt * Math.random();
         outOhlc.push({
           o: open,
           h: Math.max(open, p) * (1 + micro),

@@ -6,12 +6,15 @@
      ② 跳跃升级：波动率相关大小 + 跳跃聚类（危机传染）+ 情景方向偏置 + 肥尾放大
      ③ 行为金融动量反转：连续单向运动后施加反向修正力
      ④ 成交量增强：与价格变动幅度正相关
-     ⑤ 长期均值回归（OU）：连续 OU 漂移约束，以慢速参考锚（~500T EMA）为均值，防止价格无限漂移
+     ⑤ 长期均值回归（OU）：连续 OU 漂移约束，以慢速参考锚（~5000T EMA）为均值，防止价格无限漂移
      ⑥ 杠杆效应（Leverage Effect）：价格与波动率扰动负相关（Cholesky ρ = -0.65）
    挂载为 window.MarketEngine，与原版 API 完全兼容。
 ═══════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
+
+  /* ── 全局配置（MarketConfig.js 须先加载） ── */
+  const { SIM_N_DEFAULT, MEAN_REV_SLOW_T, MEAN_REV_LONG_T, WARMUP_T } = window.MarketConfig;
 
   /* ── 子引擎快捷引用（三个文件须在本文件之前加载） ── */
   const RE = window.RegimeEngine;
@@ -22,7 +25,7 @@
      随机参数常量（Heston-style OU 过程）
   ══════════════════════════════════════════════════════════════ */
   const VOL_KAPPA   = 2.5;   // sigma_t 均值回归速度
-  const VOL_OF_VOL  = 0.55;  // sigma_t 的随机扰动强度（vol-of-vol）
+  const VOL_OF_VOL  = 0.70;  // sigma_t 的随机扰动强度（vol-of-vol）↑0.55→0.70，波动率聚类更明显
   const DRIFT_KAPPA = 0.8;   // mu_t 均值回归速度
   const DRIFT_VOL   = 0.15;  // mu_t 的随机扰动强度
 
@@ -33,16 +36,16 @@
   /* ══════════════════════════════════════════════════════════════
      跳跃常量（Merton Jump-Diffusion）
   ══════════════════════════════════════════════════════════════ */
-  const JUMP_PROB  = 0.030;  // 每 T 的基础跳跃概率
+  const JUMP_PROB  = 0.042;  // 每 T（天）的基础跳跃概率↑0.030→0.042（CHOP≈6次/年；BEAR≈33次/年）
   const JUMP_MEAN  = -0.005; // 跳跃均值（略偏负，模拟恐慌性下跌更常见）
-  const JUMP_STD   = 0.06;   // 跳跃标准差（在基础 sigma_user 下）
+  const JUMP_STD   = 0.080;  // 跳跃标准差↑0.06→0.08，单次跳跃幅度更显著
 
   /* 跳跃聚类（Jump Clustering）—— 危机传染效应
      一次跳跃后短期内跳跃概率显著上升，以指数衰减恢复正常。
      CLUSTER_BOOST : 单次跳跃触发后向 jumpCluster 叠加的概率量（per-T 单位）
      CLUSTER_DECAY : 每 T 的衰减系数；per-tick 衍生量见 _jumpClusterDecayPerTick */
-  const JUMP_CLUSTER_BOOST = 0.06;
-  const JUMP_CLUSTER_DECAY = 0.78;
+  const JUMP_CLUSTER_BOOST = 0.10;  // ↑0.06→0.10，跳跃后危机传染效应更强
+  const JUMP_CLUSTER_DECAY = 0.78;  // 每 T（天）衰减；半衰期 ≈ 3.9 天（跳跃余震集中在约 1 周内）
 
   /* 跳跃方向偏置（情景感知）
      当情景 muAdd < JUMP_BEAR_THRESH 时（熊市/阴跌），负跳跃概率额外上升。 */
@@ -51,23 +54,24 @@
 
   /* 跳跃肥尾放大器（Fat-tail amplifier）
      8% 概率触发指数分布额外幅度，75% 向下 / 25% 向上，模拟极端事件肥尾性。 */
-  const JUMP_FAT_TAIL_PROB  = 0.12;   // 触发肥尾放大的概率
-  const JUMP_FAT_TAIL_SCALE = 0.08;   // 指数分布均值（额外 log-return 幅度）
+  const JUMP_FAT_TAIL_PROB  = 0.18;   // 触发肥尾放大的概率↑0.12→0.18，极端事件更频繁
+  const JUMP_FAT_TAIL_SCALE = 0.11;   // 指数分布均值↑0.08→0.11，极端跳跃幅度更大
 
   /* ══════════════════════════════════════════════════════════════
      长期均值回归（OU 过程）
      对数价格连续 OU 约束：每 tick 施加 -κ·blend(meanRevMult)·log(P/ref)·dt 的漂移修正。
      无阈值、无截断：价格偏离越大力越强，自然形成有界均衡区间。
-     均衡价格 = refPrice × exp(μ_base/(κ₀·meanRevMult))（mu_user=0.08，κ₀=0.25）：
-       CHOP≈103，BULL≈277，V.BULL≈360，Q.BEAR≈45，BEAR≈19。
-     refPrice 用超慢 EMA（≈5000T 收敛，simN=4）作锚，游戏期间几乎不动；
+     均衡价格 = refPrice × exp(μ_base/(κ₀·meanRevMult))（mu_user=0.30，κ₀=0.25）：
+       CHOP≈111，BULL≈617，V.BULL≈1350，Q.BEAR≈115，BEAR≈144。
+     refPrice 用超慢 EMA（≈5000T 收敛，N 无关）作锚，游戏期间几乎不动；
      warmup 与 stepPriceCore 使用完全相同的情景感知 meanRevMult，价格自然收敛到各情景均衡。
      noise ±15% 随机扰动 kappa，防止形成可套利的确定性规律。
   ══════════════════════════════════════════════════════════════ */
-  const MEAN_REV_KAPPA0  = 0.25;      // OU 年化回归速度（per year，弱化以拓宽价格区间至 1~1000）
-  const MEAN_REV_SLOW_K  = 2 / 20001; // refPrice 超慢 EMA 系数（≈5000T 收敛，simN=4）
-  const MEAN_REV_EMA_K   = 2 / 201;   // longEma 200T EMA 系数（HUD 显示用）
-  const MEAN_REV_NOISE   = 0.15;      // kappa 随机噪声幅度（±15%均匀分布）
+  const MEAN_REV_KAPPA0  = 0.25;  // OU 年化回归速度（per year）
+  const MEAN_REV_NOISE   = 0.15;  // kappa 随机噪声幅度（±15%均匀分布）
+  // 以下两个系数在 applyN / reset 时按 simN 动态重算，保证 T 周期 N 无关
+  let MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * SIM_N_DEFAULT + 1);
+  let MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * SIM_N_DEFAULT + 1);
 
   /* ══════════════════════════════════════════════════════════════
      行为金融：动量反转（Overreaction & Reversal）
@@ -77,9 +81,9 @@
                        每 tick 累积 ±1/simN，连续趋势约 THRESH T 后触发）
      MOMENTUM_FORCE  : 反转力最大量（momentumScore 越强越大，线性，per-T）
   ══════════════════════════════════════════════════════════════ */
-  const MOMENTUM_DECAY  = 0.92;
-  const MOMENTUM_THRESH = 1.5;   // ≈ 1.5 T 连续趋势后触发（与 N 无关）
-  const MOMENTUM_FORCE  = 0.0045;  // 反转力随 sigma_user 放大（0.0018 在 sigma=0.25 下几乎无感）
+  const MOMENTUM_DECAY  = 0.92;   // 每 T（天）衰减；半衰期 ≈ 8.3 天（动量"记忆"约 1-2 周，符合真实市场）
+  const MOMENTUM_THRESH = 1.5;   // 连续趋势 1.5 天后触发反转力（与 N 无关）
+  const MOMENTUM_FORCE  = 0.0020;  // 反转力最大量（≈ 15% 日均扩散噪声，可感知但不主导）
 
   /* ══════════════════════════════════════════════════════════════
      跳跃参数随机噪声（每次情景切换时重新采样，模拟不同市场周期的跳跃特性）
@@ -94,8 +98,8 @@
   /* ══════════════════════════════════════════════════════════════
      用户参数（由 UI 滑块读写）
   ══════════════════════════════════════════════════════════════ */
-  let mu_user    = 0.08;
-  let sigma_user = 0.25;
+  let mu_user    = window.MarketConfig.MU_DEFAULT;
+  let sigma_user = window.MarketConfig.SIGMA_DEFAULT;
 
   /* ══════════════════════════════════════════════════════════════
      衍生状态（由 stepRegime 维护）
@@ -117,14 +121,14 @@
   let _jumpMeanOffset = 0.0;  // JUMP_MEAN 加法偏置
   let _jumpStdFactor  = 1.0;  // JUMP_STD 乘数
 
-  /* ── N 相关衍生量（初始值对应 N=4，由 applyN / reset 维护） ──
+  /* ── N 相关衍生量（初始值对应默认 simN=20，由 applyN / reset 维护） ──
      _jumpClusterDecayPerTick = JUMP_CLUSTER_DECAY^(1/N)
        保证 N ticks 后聚类残余的总衰减恒等于 JUMP_CLUSTER_DECAY（每 T 衰减量不变）
      _momentumDecayPerTick    = MOMENTUM_DECAY^(1/N)
        保证动量信号的记忆长度（半衰期）按 T 而非 tick 度量，与 N 无关
   ── */
-  let _jumpClusterDecayPerTick = Math.pow(JUMP_CLUSTER_DECAY, 1 / 4);
-  let _momentumDecayPerTick    = Math.pow(MOMENTUM_DECAY,     1 / 4);
+  let _jumpClusterDecayPerTick = Math.pow(JUMP_CLUSTER_DECAY, 1 / SIM_N_DEFAULT);
+  let _momentumDecayPerTick    = Math.pow(MOMENTUM_DECAY,     1 / SIM_N_DEFAULT);
 
   /* ── 辅助：情景切换时重新采样跳跃参数噪声 ── */
   function _resampleJumpNoise() {
@@ -236,6 +240,8 @@
       RE.applyN(simN);
       _jumpClusterDecayPerTick = Math.pow(JUMP_CLUSTER_DECAY, 1 / simN);
       _momentumDecayPerTick    = Math.pow(MOMENTUM_DECAY,     1 / simN);
+      MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * simN + 1);
     },
 
     /* ════════════════════════════════════════════════════════
@@ -255,6 +261,8 @@
       refPrice          = 0;
       _jumpClusterDecayPerTick = Math.pow(JUMP_CLUSTER_DECAY, 1 / simN);
       _momentumDecayPerTick    = Math.pow(MOMENTUM_DECAY,     1 / simN);
+      MEAN_REV_SLOW_K = 2 / (MEAN_REV_SLOW_T * simN + 1);
+      MEAN_REV_EMA_K  = 2 / (MEAN_REV_LONG_T  * simN + 1);
       _resampleJumpNoise();       // 重置时为新局采样跳跃参数噪声
       _syncRegimeDerived();       // 以重置后的 CHOP 情景正确初始化 mu_base / sigma_base / effectiveJumpProb
     },
@@ -320,7 +328,7 @@
 
         /* 触发聚类（危机传染：此跳后短期跳跃概率上升，以 per-T 单位累积） */
         jumpCluster += JUMP_CLUSTER_BOOST;
-        if (jumpCluster > 0.15) jumpCluster = 0.15;  // 防止无限累积
+        if (jumpCluster > 0.25) jumpCluster = 0.25;  // 上限↑0.15→0.25，配合更强的 BOOST
       }
 
       /* ⑥ 行为动量反转力（N 无关性修正）
@@ -403,7 +411,8 @@
        返回最终价格（由 initPrice() 写入 currentPrice）。
     ════════════════════════════════════════════════════════ */
     warmup(simN, dt, normalRandom, outOhlc, outPrice, outVolume) {
-      const initLen = 6000 * simN;
+      const initLen = WARMUP_T * simN;
+      const sqDt    = Math.sqrt(dt);   // 预计算，避免循环内重复 sqrt
       let p = 100;
 
       for (let i = 0; i < initLen; i++) {
@@ -411,8 +420,10 @@
         const { newPrice, relVol } = this.stepPriceCore(p, i, simN, dt, normalRandom);
         p = newPrice;
 
-        /* OHLC 封装（高低用 sigma_t 微扰模拟 tick 内波动，stepPriceCore 已更新 sigma_t） */
-        const micro = sigma_t * 0.25 * Math.random();
+        /* OHLC 封装（高低用 sigma_t 微扰模拟 tick 内波动，stepPriceCore 已更新 sigma_t）
+           micro 以 sigma_t * sqrt(dt) 为尺度（= tick 级实际波动量级），
+           而非乘以年化波动率 × 价格水平（后者会造成影线远大于实体）。 */
+        const micro = sigma_t * sqDt * Math.random();
         outOhlc.push({
           o: open,
           h: Math.max(open, p) * (1 + micro),
