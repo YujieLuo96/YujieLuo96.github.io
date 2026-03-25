@@ -952,7 +952,7 @@ if (crossunder(fast, slow)) {
       <span class="orders-title" id="btn-toggle-positions">
         ◈ OPEN POSITIONS <span class="orders-chevron">▼</span>
       </span>
-      <span id="shares-summary" style="color:rgba(0,245,255,0.35)">L:0.00 / S:0.00 shares</span>
+      <span id="shares-summary" style="color:rgba(0,245,255,0.65)">Long:0.00 / Short:0.00 shares</span>
       <div style="display:flex;gap:6px;">
         <button class="history-btn" id="btn-history">≡ HISTORY</button>
         <button class="summary-btn" id="btn-summary">◈ SUMMARY</button>
@@ -1562,7 +1562,7 @@ if (crossunder(fast, slow)) {
 
     // shares summary
     let lQ=0,sQ=0; orders.forEach(o=>{if(o.dir===1)lQ+=o.shares;else sQ+=o.shares;});
-    sharesSummary.textContent=`L:${lQ.toFixed(2)} / S:${sQ.toFixed(2)} shares`;
+    sharesSummary.textContent=`Long:${lQ.toFixed(2)} / Short:${sQ.toFixed(2)} shares`;
 
     if(orders.length===0){
       if(!ordersDiv.querySelector('.no-pos-msg'))

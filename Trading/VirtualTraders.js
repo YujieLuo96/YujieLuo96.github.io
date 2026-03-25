@@ -1078,13 +1078,7 @@ if (close > hh && this._p !== 1) {
     if (!grid) return;
     [...grid.children].forEach(el => { if (el !== addCard) el.remove(); });
 
-    if (_traders.length === 0) {
-      const emp = document.createElement('div');
-      emp.className = 'vt-grid-empty';
-      emp.textContent = 'No virtual traders yet — click "+ ADD TRADER" to create one.';
-      grid.insertBefore(emp, addCard);
-      return;
-    }
+    if (_traders.length === 0) return;
     for (const t of _traders) grid.insertBefore(_buildCard(t), addCard);
   }
 

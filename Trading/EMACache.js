@@ -112,7 +112,7 @@ window.EMACache = (function () {
         vSum += volumeHistory[j] || 0;
       }
       ag.push({ o: ohlc[gStart].o, h: hi, l: lo, c: ohlc[gEnd - 1].c });
-      vol.push(vSum / (gEnd - gStart));
+      vol.push(vSum);
       closes.push(ohlc[gEnd - 1].c);
     }
 
@@ -124,13 +124,12 @@ window.EMACache = (function () {
       if (c.l < partialBaseL) partialBaseL = c.l;
       partialVSum += volumeHistory[j] || 0;
     }
-    const partialVolAvg = partialVSum / (pEnd - pStart);
     const partialOpen   = ohlc[pStart].o;
     const stableCount   = ag.length;
 
     // partial 槽：占位对象，h/l/c 在每帧由 getAggregated 填写
     ag.push({ o: partialOpen, h: 0, l: 0, c: 0 });
-    vol.push(partialVolAvg);
+    vol.push(partialVSum);
     closes.push(0); // placeholder，每帧更新为 animP
 
     _aggCache = {

@@ -185,7 +185,7 @@
         if (last && animP > h) h = animP;
         if (last && animP < l) l = animP;
         ag.push({ o, h, l, c });
-        vol.push(v / (end - start));
+        vol.push(v);
         closes.push(c);
       }
       return { ag, vol, closes };
