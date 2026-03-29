@@ -188,3 +188,35 @@
     font-weight: bold;
     letter-spacing: 1px;
 }
+
+@media (max-width: 480px) {
+    .rsa-param-label {
+        width: 52px;
+        font-size: 0.58rem;
+    }
+
+    .rsa-param-input {
+        font-size: 0.68rem;
+        padding: 3px 4px;
+    }
+
+    .rsa-icon-btn {
+        padding: 3px 5px;
+        font-size: 0.62rem;
+    }
+
+    .rsa-layer-auto {
+        padding: 3px 6px !important;
+        font-size: 0.55rem !important;
+    }
+
+    .rsa-opmode {
+        font-size: 0.58rem;
+        padding: 6px 6px;
+        letter-spacing: 0.5px;
+    }
+
+    .rsa-progress-footer {
+        font-size: 0.58rem;
+    }
+}

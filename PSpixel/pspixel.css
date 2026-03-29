@@ -376,3 +376,115 @@ input[type="range"]::-webkit-slider-thumb {
 .mode-panel.active {
     display: block;
 }
+
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .top-bar {
+        gap: 8px;
+        padding: 10px 10px;
+        flex-wrap: wrap;
+    }
+
+    .mode-btn {
+        font-size: 0.62rem;
+        padding: 7px 10px;
+        letter-spacing: 1px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .root {
+        flex-direction: column;
+        padding: 12px 12px;
+        gap: 16px;
+    }
+
+    .panel-left {
+        width: 100%;
+    }
+
+    .panel-right {
+        min-width: 0;
+        width: 100%;
+    }
+
+    input[type="range"] {
+        height: 4px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+    }
+
+    .mix-options {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .mix-option {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+    }
+
+    .canvas-container {
+        min-height: 140px;
+    }
+
+    .filter-row {
+        gap: 6px;
+    }
+
+    .filter-btn {
+        font-size: 0.62rem;
+        padding: 6px 4px;
+        letter-spacing: 0.5px;
+    }
+}
+
+@media (max-width: 480px) {
+    .top-bar {
+        gap: 5px;
+        padding: 8px 8px;
+    }
+
+    .mode-btn {
+        font-size: 0.55rem;
+        padding: 6px 6px;
+        letter-spacing: 0;
+    }
+
+    .card {
+        padding: 14px 14px;
+    }
+
+    .slider-header {
+        font-size: 0.72rem;
+        gap: 8px;
+    }
+
+    .numeric-input {
+        width: 56px;
+        font-size: 0.72rem;
+        padding: 4px 4px;
+    }
+
+    .neon-btn {
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        padding: 8px 8px;
+    }
+
+    .img-title {
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+    }
+
+    .card-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.15em;
+    }
+}
