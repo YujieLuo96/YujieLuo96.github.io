@@ -1,3 +1,9 @@
+/* ════════════════════════════════════════════════════════════════
+   rsa.css — RSA 像素加密模块专属样式
+   依赖 pspixel.css 中的 CSS 变量（--cyan / --pink / --green 等）
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── 操作模式切换（ENCRYPT / DECRYPT）─────────────────────────── */
 .rsa-opmode-row {
     display: flex;
     gap: 10px;
@@ -33,10 +39,64 @@
     box-shadow: 0 0 10px rgba(62, 255, 158, 0.22);
 }
 
-.rsa-layer-card {
-    margin-bottom: 0;
+/* ── 层参数 Carousel ─────────────────────────────────────────── */
+.rsa-layer-carousel {
+    /* 复用 .card 的外框样式，无额外覆盖 */
 }
 
+.rsa-carousel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.rsa-carousel-indicator {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    color: var(--cyan);
+    letter-spacing: 1.5px;
+    text-align: center;
+    flex: 1;
+}
+
+.rsa-carousel-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--cyan);
+    cursor: pointer;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    font-family: inherit;
+    transition: border-color 0.15s, background 0.15s;
+    clip-path: polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px));
+    flex-shrink: 0;
+}
+
+.rsa-carousel-btn:hover:not([style*="hidden"]) {
+    border-color: var(--cyan);
+    background: rgba(0, 242, 255, 0.10);
+}
+
+.rsa-carousel-viewport {
+    overflow: hidden;
+    width: 100%;
+}
+
+.rsa-carousel-track {
+    display: flex;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.rsa-carousel-slide {
+    min-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── 参数层卡片（slide 内部）────────────────────────────────── */
 .rsa-layer-header {
     display: flex;
     justify-content: space-between;
@@ -57,6 +117,7 @@
     color: var(--green) !important;
 }
 
+/* ── 参数网格 ──────────────────────────────────────────────────── */
 .rsa-param-grid {
     display: flex;
     flex-direction: column;
@@ -134,6 +195,7 @@
 .rsa-param-status.valid   { color: var(--green); }
 .rsa-param-status.invalid { color: var(--pink);  }
 
+/* ── 密钥文件信息展示框 ────────────────────────────────────────── */
 .rsa-key-info-box {
     margin-top: 10px;
     background: rgba(0, 0, 0, 0.35);
@@ -149,6 +211,7 @@
 .rsa-key-info-box .kv-pink  { color: var(--pink);  }
 .rsa-key-info-box .kv-green { color: var(--green); }
 
+/* ── 进度条 ────────────────────────────────────────────────────── */
 .rsa-progress-wrap {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -187,36 +250,4 @@
     color: var(--cyan);
     font-weight: bold;
     letter-spacing: 1px;
-}
-
-@media (max-width: 480px) {
-    .rsa-param-label {
-        width: 52px;
-        font-size: 0.58rem;
-    }
-
-    .rsa-param-input {
-        font-size: 0.68rem;
-        padding: 3px 4px;
-    }
-
-    .rsa-icon-btn {
-        padding: 3px 5px;
-        font-size: 0.62rem;
-    }
-
-    .rsa-layer-auto {
-        padding: 3px 6px !important;
-        font-size: 0.55rem !important;
-    }
-
-    .rsa-opmode {
-        font-size: 0.58rem;
-        padding: 6px 6px;
-        letter-spacing: 0.5px;
-    }
-
-    .rsa-progress-footer {
-        font-size: 0.58rem;
-    }
 }

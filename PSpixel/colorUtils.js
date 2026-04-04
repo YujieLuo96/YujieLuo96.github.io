@@ -1,3 +1,10 @@
+/**
+ * ColorUtils — RGB ↔ HSV 颜色空间转换工具
+ *
+ * 接口：
+ *   window.ColorUtils.rgbToHsv(r, g, b)  → [h, s, v]  (h/s/v ∈ [0,1])
+ *   window.ColorUtils.hsvToRgb(h, s, v)  → [r, g, b]  (r/g/b ∈ [0,255])
+ */
 (function () {
     function rgbToHsv(r, g, b) {
         r /= 255; g /= 255; b /= 255;

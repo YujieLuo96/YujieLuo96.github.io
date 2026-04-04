@@ -1,11 +1,19 @@
+/**
+ * CyberBackground — 赛博风格背景动画（网格 + 数字雨）
+ *
+ * 接口：
+ *   window.CyberBackground.init(canvas)  绑定 canvas 元素并初始化雨滴
+ *   window.CyberBackground.start()       启动 rAF 动画循环
+ */
 (function () {
     let bgCanvas  = null;
     let bgCtx     = null;
     let rainDrops = [];
-    let _rafId    = null;
-    let _resizeFn = null;
+    let _rafId    = null;        // requestAnimationFrame 句柄，用于 stop()
+    let _resizeFn = null;        // 当前绑定的 resize 监听器，防重复注册
 
     function init(canvas) {
+        // 若已绑定过 resize 监听器，先移除旧的
         if (_resizeFn) window.removeEventListener('resize', _resizeFn);
         bgCanvas  = canvas;
         bgCtx     = canvas.getContext('2d');
@@ -36,6 +44,7 @@
         bgCtx.fillStyle = '#010001';
         bgCtx.fillRect(0, 0, bgCanvas.width, bgCanvas.height);
 
+        // 网格线（竖/横各用一条合并路径，减少 GPU flush 次数）
         const step = 40;
         bgCtx.lineWidth   = 0.4;
         bgCtx.strokeStyle = 'rgba(0, 242, 255, 0.06)';
@@ -50,6 +59,7 @@
         }
         bgCtx.stroke();
 
+        // 数字雨滴
         rainDrops.forEach(d => {
             d.y += d.speed;
             if (d.y - d.length > bgCanvas.height) {
@@ -67,6 +77,7 @@
             bgCtx.stroke();
         });
 
+        // 故障光条
         const t = Date.now() / 1800;
         const glitchX = bgCanvas.width * 0.3 + Math.sin(t) * 15;
         bgCtx.fillStyle = 'rgba(255, 45, 158, 0.02)';
@@ -78,7 +89,7 @@
     }
 
     function start() {
-        if (_rafId !== null) return;
+        if (_rafId !== null) return;   // 防止重复启动
         _draw();
     }
 

@@ -1,6 +1,18 @@
+/**
+ * app.js — PSpixel 主控制器
+ *
+ * 依赖（需在此文件前加载）：
+ *   PixelEngine  (pixelEngine.js)
+ *   ColorUtils   (colorUtils.js)
+ *   CyberBackground (background.js)
+ *
+ * 负责：状态管理、图片加载、滤镜应用、UI 控制、事件绑定、初始化
+ */
 (function () {
-    let currentMode = 'single';
+    // ─── 应用状态 ────────────────────────────────────────────────
+    let currentMode = 'single';   // 'single' | 'mix'
 
+    // 单图模式
     let singleImgData = null;
     let singleWidth = 0, singleHeight = 0;
     let singleLoaded = false;
@@ -10,6 +22,7 @@
     let hdrShadows = 0.4, hdrHighlights = 0.4;
     let hdrClarityAmt = 1.0;
 
+    // 双图模式
     let mixImg1Data = null, mixImg2Data = null;
     let mixWidth1 = 0, mixHeight1 = 0, mixWidth2 = 0, mixHeight2 = 0;
     let mixLoaded1 = false, mixLoaded2 = false;
@@ -19,8 +32,16 @@
     let funcSubMode = 'unified';
     let mixFuncR = 'a + b', mixFuncG = 'a + b', mixFuncB = 'a + b', mixFuncA = '255';
 
+    // 当前像素画原始数据（用于滤镜基准）
     let currentPixelData = null;
+    // 调整管线基准（generate 后保存，不含 Average/HDR）
+    let basePixelData = null;
+    // 单步 undo（滤镜前保存）
+    let prevPixelData = null;
+    // 防抖 timer
+    let _adjustTimer = null;
 
+    // ─── DOM 引用 ────────────────────────────────────────────────
     const singleModeBtn       = document.getElementById('singleModeBtn');
     const mixModeBtn          = document.getElementById('mixModeBtn');
     const singlePanel         = document.getElementById('singlePanel');
@@ -37,11 +58,13 @@
     const grayscaleBtn        = document.getElementById('grayscaleBtn');
     const invertBtn           = document.getElementById('invertBtn');
     const resetFilterBtn      = document.getElementById('resetFilterBtn');
+    const undoBtn             = document.getElementById('undoBtn');
     const hueSlider           = document.getElementById('hueSlider');
     const hueValue            = document.getElementById('hueValue');
     const saveBtn             = document.getElementById('saveBtn');
     const resetPixelBtn       = document.getElementById('resetPixelBtn');
 
+    // funcMix 相关 DOM（与其它 DOM 引用统一放在模块作用域）
     const funcMixInputArea = document.getElementById('funcMixInputArea');
     const funcUnifiedArea  = document.getElementById('funcUnifiedArea');
     const funcChannelArea  = document.getElementById('funcChannelArea');
@@ -51,6 +74,7 @@
     const funcMixBInput    = document.getElementById('funcMixB');
     const funcMixAInput    = document.getElementById('funcMixA');
 
+    // ─── 工具函数 ────────────────────────────────────────────────
     function showToast(msg) {
         const toast = document.createElement('div');
         toast.innerText = msg;
@@ -70,6 +94,7 @@
         setTimeout(() => toast.remove(), 1500);
     }
 
+    // ─── 图片加载 ────────────────────────────────────────────────
     function loadSingleImage(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -91,6 +116,13 @@
                 const ctx = tmp.getContext('2d');
                 ctx.drawImage(img, 0, 0);
                 singleImgData = ctx.getImageData(0, 0, singleWidth, singleHeight);
+
+                // 新图上传 → 清空画布和像素状态
+                basePixelData = null;
+                prevPixelData = null;
+                currentPixelData = null;
+                pixelCanvas.width = 0;
+                pixelCanvas.height = 0;
 
                 document.getElementById('singleFileInfo').innerHTML =
                     `✅ ${file.name} | ${singleWidth}×${singleHeight}`;
@@ -165,6 +197,7 @@
         reader.readAsDataURL(file);
     }
 
+    // ─── 单图模式 UI ─────────────────────────────────────────────
     function updateSingleLimits() {
         const maxN = singleLoaded ? singleWidth  : 2000;
         const maxM = singleLoaded ? singleHeight : 2000;
@@ -202,14 +235,11 @@
     function generateSinglePixelArt() {
         if (!singleLoaded) { showToast('Please upload an image first'); return; }
         pixelStatusSpan.innerText = '⚡ RENDERING...';
-        const pixelData = PixelEngine.generatePixelDataFromImage(
+        basePixelData = PixelEngine.generatePixelDataFromImage(
             singleImgData, singleWidth, singleHeight, singleN, singleM);
-        pixelCanvas.width  = pixelData.width;
-        pixelCanvas.height = pixelData.height;
-        pixelCtx.putImageData(pixelData, 0, 0);
-        currentPixelData = pixelData;
-        pixelStatusSpan.innerText = `Single Pixel Art (${singleN}x${singleM})`;
+        prevPixelData = null;
         hueSlider.value = 0; hueValue.innerText = '0°';
+        _applyAdjustments();
     }
 
     function setSingleAvgD(val) {
@@ -220,15 +250,27 @@
         document.getElementById('singleAvgDValue').innerText = v;
     }
 
-    function applyPixelAverage() {
-        if (!currentPixelData) { showToast('No pixel art generated yet'); return; }
-        const averaged = PixelEngine.pixelAverageData(currentPixelData, singleAvgD);
-        pixelCtx.putImageData(averaged, 0, 0);
-        currentPixelData = averaged;
-        pixelStatusSpan.innerText = `PIXEL AVERAGE d=${singleAvgD} (${singleN}x${singleM})`;
-        hueSlider.value = 0; hueValue.innerText = '0°';
+    function _applyAdjustments() {
+        if (!basePixelData) return;
+        let result = basePixelData;
+        if (singleAvgD > 0) result = PixelEngine.pixelAverageData(result, singleAvgD);
+        result = PixelEngine.saturateData(result, hdrSaturation);
+        result = PixelEngine.toneMapData(result, hdrShadows, hdrHighlights);
+        if (hdrClarityAmt > 0) result = PixelEngine.unsharpMaskData(result, 1, hdrClarityAmt);
+        pixelCanvas.width  = result.width;
+        pixelCanvas.height = result.height;
+        pixelCtx.putImageData(result, 0, 0);
+        currentPixelData = result;
+        prevPixelData = null;
+        pixelStatusSpan.innerText = `Single Pixel Art (${singleN}x${singleM})`;
     }
 
+    function _scheduleAdjust() {
+        if (_adjustTimer) clearTimeout(_adjustTimer);
+        _adjustTimer = setTimeout(_applyAdjustments, 200);
+    }
+
+    // ─── HDR 参数 setter ─────────────────────────────────────────
     function setHdrSaturation(val) {
         const v = Math.min(200, Math.max(0, parseInt(val) || 0));
         hdrSaturation = v / 100;
@@ -261,25 +303,8 @@
         document.getElementById('hdrClarityAmtValue').innerText = hdrClarityAmt.toFixed(2);
     }
 
-    function applyHDR() {
-        if (!currentPixelData) { showToast('No pixel art generated yet'); return; }
-        pixelStatusSpan.innerText = '⚡ HDR PROCESSING...';
 
-        let result = PixelEngine.saturateData(currentPixelData, hdrSaturation);
-        result = PixelEngine.toneMapData(result, hdrShadows, hdrHighlights);
-        if (hdrClarityAmt > 0) {
-            result = PixelEngine.unsharpMaskData(result, 1, hdrClarityAmt);
-        }
-
-        pixelCtx.putImageData(result, 0, 0);
-        currentPixelData = result;
-        pixelStatusSpan.innerText =
-            `HDR SAT=${hdrSaturation.toFixed(1)} ` +
-            `SHD=${hdrShadows.toFixed(1)} HLT=${hdrHighlights.toFixed(1)} ` +
-            `CLA=${hdrClarityAmt.toFixed(1)}`;
-        hueSlider.value = 0; hueValue.innerText = '0°';
-    }
-
+    // ─── 双图模式 UI ─────────────────────────────────────────────
     function updateMixLimits() {
         let maxN = 2000, maxM = 2000;
         if (mixLoaded1 && mixLoaded2) {
@@ -356,6 +381,7 @@
         hueSlider.value = 0; hueValue.innerText = '0°';
     }
 
+    // ─── 模式切换 ────────────────────────────────────────────────
     function switchToSingle() {
         currentMode = 'single';
         singleModeBtn.classList.add('active');
@@ -393,8 +419,10 @@
         pixelStatusSpan.innerText = 'MIX MODE';
     }
 
+    // ─── 滤镜 ────────────────────────────────────────────────────
     function applyGrayscale() {
         if (!currentPixelData) { showToast('No pixel data available'); return; }
+        prevPixelData = currentPixelData;
         const { width: w, height: h } = currentPixelData;
         const newData = pixelCtx.createImageData(w, h);
         const src = currentPixelData.data, dst = newData.data;
@@ -404,11 +432,13 @@
             dst[i+3] = 255;
         }
         pixelCtx.putImageData(newData, 0, 0);
+        currentPixelData = newData;
         pixelStatusSpan.innerText = 'FILTER: GRAYSCALE';
     }
 
     function applyInvert() {
         if (!currentPixelData) { showToast('No pixel data available'); return; }
+        prevPixelData = currentPixelData;
         const { width: w, height: h } = currentPixelData;
         const newData = pixelCtx.createImageData(w, h);
         const src = currentPixelData.data, dst = newData.data;
@@ -417,14 +447,22 @@
             dst[i+2] = 255 - src[i+2]; dst[i+3] = 255;
         }
         pixelCtx.putImageData(newData, 0, 0);
+        currentPixelData = newData;
         pixelStatusSpan.innerText = 'FILTER: INVERT';
     }
 
     function resetToOriginal() {
-        if (!currentPixelData) { showToast('No original data'); return; }
-        pixelCtx.putImageData(currentPixelData, 0, 0);
+        if (!basePixelData) { showToast('No original data'); return; }
         hueSlider.value = 0; hueValue.innerText = '0°';
-        pixelStatusSpan.innerText = 'RESET TO ORIGINAL';
+        _applyAdjustments();
+    }
+
+    function applyUndo() {
+        if (!prevPixelData) { showToast('Nothing to undo'); return; }
+        currentPixelData = prevPixelData;
+        prevPixelData = null;
+        pixelCtx.putImageData(currentPixelData, 0, 0);
+        pixelStatusSpan.innerText = 'UNDO';
     }
 
     let hueTimeout = null;
@@ -450,6 +488,8 @@
 
     function applyDuoToneMix() {
         if (!currentPixelData) { showToast('No pixel art generated yet. Please generate pixel art first.'); return; }
+        prevPixelData = currentPixelData;
+        // 直接复用 RSAModule.duoMix（相同的棋盘格反色逻辑，自逆变换）
         const newData = RSAModule.duoMix(currentPixelData);
         pixelCtx.putImageData(newData, 0, 0);
         currentPixelData = newData;
@@ -457,6 +497,7 @@
         hueSlider.value = 0; hueValue.innerText = '0°';
     }
 
+    // ─── 事件绑定 ────────────────────────────────────────────────
     function _setupDropZone(dropEl, fileInput, onFile) {
         dropEl.addEventListener('click', () => fileInput.click());
         dropEl.addEventListener('dragover',  e => { e.preventDefault(); dropEl.classList.add('active'); });
@@ -472,32 +513,34 @@
         singleModeBtn.addEventListener('click', switchToSingle);
         mixModeBtn.addEventListener('click', switchToMix);
 
+        // 单图控件
         document.getElementById('singleNSlider').addEventListener('input',  e => setSingleN(e.target.value));
         document.getElementById('singleNInput').addEventListener('change',  e => setSingleN(e.target.value));
         document.getElementById('singleMSlider').addEventListener('input',  e => setSingleM(e.target.value));
         document.getElementById('singleMInput').addEventListener('change',  e => setSingleM(e.target.value));
         document.getElementById('singleGenerateBtn').addEventListener('click', generateSinglePixelArt);
         document.getElementById('singleDuoToneBtn').addEventListener('click',  applyDuoToneMix);
-        document.getElementById('singleAvgDSlider').addEventListener('input',  e => setSingleAvgD(e.target.value));
-        document.getElementById('singleAvgDInput').addEventListener('change',  e => setSingleAvgD(e.target.value));
-        document.getElementById('singleAvgBtn').addEventListener('click', applyPixelAverage);
+        document.getElementById('singleAvgDSlider').addEventListener('input',  e => { setSingleAvgD(e.target.value); _scheduleAdjust(); });
+        document.getElementById('singleAvgDInput').addEventListener('change',  e => { setSingleAvgD(e.target.value); _scheduleAdjust(); });
 
-        document.getElementById('hdrSatSlider').addEventListener('input',        e => setHdrSaturation(e.target.value));
-        document.getElementById('hdrSatInput').addEventListener('change',         e => setHdrSaturation(e.target.value));
-        document.getElementById('hdrShadowsSlider').addEventListener('input',    e => setHdrShadows(e.target.value));
-        document.getElementById('hdrShadowsInput').addEventListener('change',    e => setHdrShadows(e.target.value));
-        document.getElementById('hdrHighlightsSlider').addEventListener('input', e => setHdrHighlights(e.target.value));
-        document.getElementById('hdrHighlightsInput').addEventListener('change', e => setHdrHighlights(e.target.value));
-        document.getElementById('hdrClarityAmtSlider').addEventListener('input', e => setHdrClarityAmt(e.target.value));
-        document.getElementById('hdrClarityAmtInput').addEventListener('change', e => setHdrClarityAmt(e.target.value));
-        document.getElementById('singleHDRBtn').addEventListener('click', applyHDR);
+        // HDR 控件（实时防抖触发调整管线）
+        document.getElementById('hdrSatSlider').addEventListener('input',        e => { setHdrSaturation(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrSatInput').addEventListener('change',         e => { setHdrSaturation(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrShadowsSlider').addEventListener('input',    e => { setHdrShadows(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrShadowsInput').addEventListener('change',    e => { setHdrShadows(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrHighlightsSlider').addEventListener('input', e => { setHdrHighlights(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrHighlightsInput').addEventListener('change', e => { setHdrHighlights(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrClarityAmtSlider').addEventListener('input', e => { setHdrClarityAmt(e.target.value); _scheduleAdjust(); });
+        document.getElementById('hdrClarityAmtInput').addEventListener('change', e => { setHdrClarityAmt(e.target.value); _scheduleAdjust(); });
 
+        // 单图上传区
         _setupDropZone(
             document.getElementById('singleDropZone'),
             document.getElementById('singleFileInput'),
             loadSingleImage
         );
 
+        // 双图上传区
         _setupDropZone(
             document.getElementById('mixDropZone1'),
             document.getElementById('mixFileInput1'),
@@ -509,12 +552,14 @@
             f => loadMixImage(f, false)
         );
 
+        // 双图控件
         document.getElementById('mixNSlider').addEventListener('input',  e => setMixN(e.target.value));
         document.getElementById('mixNInput').addEventListener('change',  e => setMixN(e.target.value));
         document.getElementById('mixMSlider').addEventListener('input',  e => setMixM(e.target.value));
         document.getElementById('mixMInput').addEventListener('change',  e => setMixM(e.target.value));
         document.getElementById('mixGenerateBtn').addEventListener('click', generateMixedPixelArt);
 
+        // 主模式切换（row / col / checker / func）
         document.querySelectorAll('#mixOptions .mix-option').forEach(opt => {
             opt.addEventListener('click', () => {
                 document.querySelectorAll('#mixOptions .mix-option').forEach(o => o.classList.remove('active'));
@@ -524,6 +569,7 @@
             });
         });
 
+        // func 子模式切换（unified / channel）
         document.querySelectorAll('#funcSubModeOptions .mix-option').forEach(opt => {
             opt.addEventListener('click', () => {
                 document.querySelectorAll('#funcSubModeOptions .mix-option').forEach(o => o.classList.remove('active'));
@@ -534,9 +580,11 @@
             });
         });
 
+        // Unified 输入
         funcMixInput.addEventListener('input',  e => { mixFuncStr = e.target.value.trim() || 'a + b'; });
         funcMixInput.addEventListener('change', e => { mixFuncStr = e.target.value.trim() || 'a + b'; });
 
+        // Per-channel 输入（空时退回通道直传）
         funcMixRInput.addEventListener('input',  e => { mixFuncR = e.target.value.trim() || 'a'; });
         funcMixRInput.addEventListener('change', e => { mixFuncR = e.target.value.trim() || 'a'; });
         funcMixGInput.addEventListener('input',  e => { mixFuncG = e.target.value.trim() || 'a'; });
@@ -546,11 +594,14 @@
         funcMixAInput.addEventListener('input',  e => { mixFuncA = e.target.value.trim() || '255'; });
         funcMixAInput.addEventListener('change', e => { mixFuncA = e.target.value.trim() || '255'; });
 
-        grayscaleBtn.addEventListener('click',  applyGrayscale);
-        invertBtn.addEventListener('click',     applyInvert);
+        // 滤镜
+        grayscaleBtn.addEventListener('click',   applyGrayscale);
+        invertBtn.addEventListener('click',      applyInvert);
         resetFilterBtn.addEventListener('click', resetToOriginal);
+        undoBtn.addEventListener('click',        applyUndo);
         hueSlider.addEventListener('input', e => onHueChange(parseInt(e.target.value)));
 
+        // 保存 / 重新生成
         saveBtn.addEventListener('click', () => {
             if (pixelCanvas.width === 0) { showToast('No pixel art to save'); return; }
             const link = document.createElement('a');
@@ -566,10 +617,13 @@
         });
     }
 
+    // ─── 初始化入口 ──────────────────────────────────────────────
     function init() {
+        // 背景动画
         CyberBackground.init(document.getElementById('bg-canvas'));
         CyberBackground.start();
 
+        // UI 初始状态
         singlePanel.classList.add('active');
         mixPanel.classList.remove('active');
         singlePreviewCanvas.style.display = 'block';

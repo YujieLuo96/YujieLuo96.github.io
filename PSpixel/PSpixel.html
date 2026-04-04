@@ -10,6 +10,7 @@
 <body>
     <canvas id="bg-canvas"></canvas>
 
+    <!-- ── 顶部导航栏 ─────────────────────────────────────────────── -->
     <div class="top-bar">
         <button id="singleModeBtn" class="mode-btn active">⚡ SINGLE PIXEL STUDIO</button>
         <button id="mixModeBtn"    class="mode-btn">🌀 DUAL IMAGE MIX</button>
@@ -18,8 +19,12 @@
 
     <div class="root">
 
+        <!-- ════════════════════════════════════════════════════════
+             左侧面板容器
+             ════════════════════════════════════════════════════════ -->
         <div class="panel-left">
 
+            <!-- ── 单图模式面板（不改动）────────────────────────── -->
             <div id="singlePanel" class="mode-panel active">
                 <div class="card">
                     <div class="card-label">🎴 UPLOAD IMAGE</div>
@@ -65,28 +70,33 @@
                         <span id="singleTotalBlocks" style="color: var(--pink);">1024</span>
                     </div>
                     <button id="singleGenerateBtn" class="neon-btn btn-pixelate">⚡ GENERATE PIXEL ART</button>
-                    <button id="singleDuoToneBtn"  class="neon-btn"
-                            style="border-color: var(--yellow); color: var(--yellow);">◈ DUO TONE MIX</button>
+                </div>
 
-                    <div class="slider-group" style="margin-top:14px;">
+                <!-- ── 调整区（实时，Average + DuoTone + HDR）────── -->
+                <div class="card">
+                    <div class="card-label">🎛 ADJUSTMENTS // LIVE</div>
+
+                    <!-- Pixel Average -->
+                    <div class="slider-group">
                         <div class="slider-header">
-                            <span>◉ AVERAGE RADIUS [d]</span>
+                            <span>◉ PIXEL AVERAGE [d]</span>
                             <input type="number" id="singleAvgDInput" class="numeric-input"
                                    min="0" max="20" step="1" value="1">
                             <span id="singleAvgDValue" class="slider-value">1</span>
                         </div>
                         <input type="range" id="singleAvgDSlider" min="0" max="20" value="1" step="1">
                         <div style="font-size:0.6rem; color:var(--dim); margin-top:4px;">
-                            d=0 no change &nbsp;|&nbsp; Apply Manhattan neighborhood RGB average to pixel art
+                            d=0 关闭 &nbsp;|&nbsp; 曼哈顿邻域 RGB 均值，实时生效
                         </div>
                     </div>
-                    <button id="singleAvgBtn" class="neon-btn"
-                            style="border-color: var(--green); color: var(--green);">◉ PIXEL AVERAGE</button>
-                </div>
 
-                <div class="card">
-                    <div class="card-label">✦ HDR TONE MAPPING</div>
+                    <button id="singleDuoToneBtn" class="neon-btn"
+                            style="border-color: var(--yellow); color: var(--yellow);">◈ DUO TONE MIX</button>
 
+                    <div style="height:1px; background:var(--border); margin:14px 0;"></div>
+                    <div class="card-label" style="font-size:0.62rem; margin-bottom:8px;">✦ HDR TONE MAPPING</div>
+
+                    <!-- 饱和度 -->
                     <div class="slider-group">
                         <div class="slider-header">
                             <span>◈ SATURATION</span>
@@ -96,10 +106,11 @@
                         </div>
                         <input type="range" id="hdrSatSlider" min="0" max="200" value="130" step="1">
                         <div style="font-size:0.6rem; color:var(--dim); margin-top:4px;">
-                            0=grayscale &nbsp;|&nbsp; 100=original &nbsp;|&nbsp; 200=double saturation
+                            0=灰度 &nbsp;|&nbsp; 100=原始 &nbsp;|&nbsp; 200=双倍饱和
                         </div>
                     </div>
 
+                    <!-- 暗部提亮 -->
                     <div class="slider-group">
                         <div class="slider-header">
                             <span>◐ SHADOWS</span>
@@ -109,10 +120,11 @@
                         </div>
                         <input type="range" id="hdrShadowsSlider" min="0" max="100" value="40" step="1">
                         <div style="font-size:0.6rem; color:var(--dim); margin-top:4px;">
-                            Shadow lift &nbsp;|&nbsp; 0=no change &nbsp;|&nbsp; 100=maximum lift
+                            暗部提亮 &nbsp;|&nbsp; 0=无变化 &nbsp;|&nbsp; 100=最大提亮
                         </div>
                     </div>
 
+                    <!-- 亮部压缩 -->
                     <div class="slider-group">
                         <div class="slider-header">
                             <span>◑ HIGHLIGHTS</span>
@@ -122,10 +134,11 @@
                         </div>
                         <input type="range" id="hdrHighlightsSlider" min="0" max="100" value="40" step="1">
                         <div style="font-size:0.6rem; color:var(--dim); margin-top:4px;">
-                            Highlight compress &nbsp;|&nbsp; 0=no change &nbsp;|&nbsp; 100=max compress
+                            亮部压缩 &nbsp;|&nbsp; 0=无变化 &nbsp;|&nbsp; 100=最大压缩
                         </div>
                     </div>
 
+                    <!-- Clarity -->
                     <div class="slider-group">
                         <div class="slider-header">
                             <span>◈ CLARITY AMOUNT</span>
@@ -135,16 +148,14 @@
                         </div>
                         <input type="range" id="hdrClarityAmtSlider" min="0" max="200" value="100" step="1">
                         <div style="font-size:0.6rem; color:var(--dim); margin-top:4px;">
-                            Local contrast intensity &nbsp;|&nbsp; 0=off &nbsp;|&nbsp; 100=standard
+                            局部对比度增强 &nbsp;|&nbsp; 0=关闭 &nbsp;|&nbsp; 100=标准
                         </div>
                     </div>
-
-                    <button id="singleHDRBtn" class="neon-btn"
-                            style="border-color: var(--pink); color: var(--pink);">✦ APPLY HDR</button>
                 </div>
 
             </div>
 
+            <!-- ── 双图混合模式面板（不改动）───────────────────── -->
             <div id="mixPanel" class="mode-panel">
                 <div class="card">
                     <div class="card-label">🎴 IMAGE 1 // SOURCE</div>
@@ -206,13 +217,16 @@
                         <div data-mode="func"    class="mix-option">∫ FUNC MIX</div>
                     </div>
 
+                    <!-- FUNC MIX 函数输入区（仅 func 模式显示） -->
                     <div id="funcMixInputArea" style="display:none; margin-top:12px;">
 
+                        <!-- 子模式切换：统一函数 / 分通道函数 -->
                         <div class="mix-options" id="funcSubModeOptions" style="margin-bottom:10px;">
                             <div data-submode="unified" class="mix-option active">∫ UNIFIED</div>
                             <div data-submode="channel" class="mix-option">⊕ PER-CHANNEL</div>
                         </div>
 
+                        <!-- UNIFIED 子面板：一个函数作用于全部通道 -->
                         <div id="funcUnifiedArea">
                             <div class="slider-header" style="margin-bottom:6px;">
                                 <span>∫ f(a, b) =</span>
@@ -226,12 +240,14 @@
                                           font-size:0.8rem; padding:6px 10px;
                                           outline:none; letter-spacing:0.05em;">
                             <div style="font-size:0.58rem; color:var(--dim); margin-top:5px; line-height:1.6;">
-                                a, b = channel values [0-255] &nbsp;|&nbsp; result auto mod 256 &nbsp;|&nbsp; Alpha fixed 255<br>
-                                Available: abs, max, min, floor, ceil, round, sqrt, pow, sin, cos, log
+                                a, b = 通道值 [0-255] &nbsp;|&nbsp; 结果自动 mod 256 &nbsp;|&nbsp; Alpha 固定 255<br>
+                                可用：abs, max, min, floor, ceil, round, sqrt, pow, sin, cos, log
                             </div>
                         </div>
 
+                        <!-- PER-CHANNEL 子面板：R/G/B/A 各用独立函数 -->
                         <div id="funcChannelArea" style="display:none;">
+                            <!-- R -->
                             <div style="margin-bottom:6px;">
                                 <div class="slider-header" style="margin-bottom:4px;">
                                     <span style="color:#ff5555;">⬤ R(a, b) =</span>
@@ -244,6 +260,7 @@
                                               font-size:0.8rem; padding:6px 10px;
                                               outline:none; letter-spacing:0.05em;">
                             </div>
+                            <!-- G -->
                             <div style="margin-bottom:6px;">
                                 <div class="slider-header" style="margin-bottom:4px;">
                                     <span style="color:#55ff88;">⬤ G(a, b) =</span>
@@ -256,6 +273,7 @@
                                               font-size:0.8rem; padding:6px 10px;
                                               outline:none; letter-spacing:0.05em;">
                             </div>
+                            <!-- B -->
                             <div style="margin-bottom:6px;">
                                 <div class="slider-header" style="margin-bottom:4px;">
                                     <span style="color:#5599ff;">⬤ B(a, b) =</span>
@@ -268,6 +286,7 @@
                                               font-size:0.8rem; padding:6px 10px;
                                               outline:none; letter-spacing:0.05em;">
                             </div>
+                            <!-- A -->
                             <div style="margin-bottom:4px;">
                                 <div class="slider-header" style="margin-bottom:4px;">
                                     <span style="color:var(--dim);">⬤ A(a, b) =</span>
@@ -281,8 +300,8 @@
                                               outline:none; letter-spacing:0.05em;">
                             </div>
                             <div style="font-size:0.58rem; color:var(--dim); margin-top:5px; line-height:1.6;">
-                                a, b = channel values [0-255] &nbsp;|&nbsp; result auto mod 256<br>
-                                Available: abs, max, min, floor, ceil, round, sqrt, pow, sin, cos, log
+                                a, b = 通道值 [0-255] &nbsp;|&nbsp; 结果自动 mod 256<br>
+                                可用：abs, max, min, floor, ceil, round, sqrt, pow, sin, cos, log
                             </div>
                         </div>
 
@@ -292,12 +311,16 @@
                 </div>
             </div>
 
+            <!-- ── 通用滤镜（给 id 供 RSA 模式隐藏）────────────── -->
             <div class="card" id="sharedFilterCard">
                 <div class="card-label">🎨 FILTER // NEON PROCESS</div>
                 <div class="filter-row">
-                    <button id="grayscaleBtn"  class="neon-btn filter-btn">⚫ BLACK & WHITE</button>
-                    <button id="invertBtn"     class="neon-btn filter-btn">🌈 INVERT COLOR</button>
+                    <button id="grayscaleBtn" class="neon-btn filter-btn">⚫ BLACK & WHITE</button>
+                    <button id="invertBtn"    class="neon-btn filter-btn">🌈 INVERT COLOR</button>
+                </div>
+                <div class="filter-row" style="margin-top: 7px;">
                     <button id="resetFilterBtn" class="neon-btn filter-btn">⟳ RESET</button>
+                    <button id="undoBtn"        class="neon-btn filter-btn" style="border-color:#f5c518;color:#f5c518;">↩ UNDO</button>
                 </div>
                 <div class="slider-group" style="margin-top: 12px;">
                     <div class="slider-header">
@@ -308,6 +331,7 @@
                 </div>
             </div>
 
+            <!-- ── 通用导出（给 id 供 RSA 模式隐藏）────────────── -->
             <div class="card" id="sharedExportCard">
                 <div class="card-label">💾 EXPORT // GLITCH</div>
                 <button id="saveBtn"      class="neon-btn">⬇️ SAVE PIXEL ART</button>
@@ -319,8 +343,12 @@
                 </div>
             </div>
 
+            <!-- ════════════════════════════════════════════════════
+                 RSA 加密模块面板
+                 ════════════════════════════════════════════════════ -->
             <div id="rsaPanel" class="mode-panel">
 
+                <!-- 操作模式切换：ENCRYPT / DECRYPT -->
                 <div class="card">
                     <div class="card-label">🔑 OPERATION MODE</div>
                     <div class="rsa-opmode-row">
@@ -329,6 +357,7 @@
                     </div>
                 </div>
 
+                <!-- 图片上传区（context-aware：原图 or 加密图） -->
                 <div class="card">
                     <div class="card-label" id="rsaUploadLabel">🎴 UPLOAD IMAGE</div>
                     <div id="rsaDropZone" class="drop-zone">
@@ -342,8 +371,10 @@
                     </div>
                 </div>
 
+                <!-- ── ENCRYPT 子面板 ───────────────────────────── -->
                 <div id="rsaEncSubPanel">
 
+                    <!-- RSA 模式：SINGLE / MULTI -->
                     <div class="card">
                         <div class="card-label">🧮 RSA MODE</div>
                         <div class="mix-options">
@@ -351,6 +382,7 @@
                             <div id="rsaMultiRSABtn"  class="mix-option">🔀 MULTI RSA</div>
                         </div>
 
+                        <!-- 层数控制（MULTI 时显示） -->
                         <div id="rsaLayerCountRow" style="display:none; margin-top:14px;">
                             <div class="slider-header">
                                 <span>◈ LAYERS COUNT [L]</span>
@@ -362,8 +394,10 @@
                         </div>
                     </div>
 
+                    <!-- 参数层容器（由 rsaController 动态生成） -->
                     <div id="rsaLayersContainer"></div>
 
+                    <!-- 一键全部自动生成 -->
                     <div class="card" style="padding-top:12px; padding-bottom:12px;">
                         <button id="rsaAutoAllBtn" class="neon-btn"
                                 style="border-color:var(--green);color:var(--green);margin-top:0;">
@@ -371,8 +405,9 @@
                         </button>
                     </div>
 
-                </div>
+                </div><!-- /rsaEncSubPanel -->
 
+                <!-- ── DECRYPT 子面板 ───────────────────────────── -->
                 <div id="rsaDecSubPanel" style="display:none;">
                     <div class="card">
                         <div class="card-label">🔑 UPLOAD KEY FILE</div>
@@ -385,10 +420,12 @@
                                    style="display:none;">
                             <div id="rsaKeyFileInfo" class="file-info">waiting for key file...</div>
                         </div>
+                        <!-- 解析后的密钥内容展示 -->
                         <div id="rsaKeyInfoBox" class="rsa-key-info-box" style="display:none;"></div>
                     </div>
-                </div>
+                </div><!-- /rsaDecSubPanel -->
 
+                <!-- 进度条 -->
                 <div id="rsaProgressWrap" class="rsa-progress-wrap" style="display:none;">
                     <div class="card-label" style="margin-bottom:0;">⚡ PROCESSING</div>
                     <div class="rsa-progress-track">
@@ -400,6 +437,7 @@
                     </div>
                 </div>
 
+                <!-- 执行按钮 -->
                 <div class="card" style="padding-top:12px; padding-bottom:12px;">
                     <button id="rsaEncryptAction" class="neon-btn btn-pixelate" style="margin-top:0;">
                         🔐 ENCRYPT IMAGE
@@ -412,6 +450,7 @@
                     </button>
                 </div>
 
+                <!-- 导出 -->
                 <div class="card">
                     <div class="card-label">💾 EXPORT</div>
                     <button id="rsaSaveEncBtn" class="neon-btn" style="display:none;">
@@ -427,12 +466,16 @@
                     </button>
                 </div>
 
-            </div>
+            </div><!-- /rsaPanel -->
 
-        </div>
+        </div><!-- /panel-left -->
 
+        <!-- ════════════════════════════════════════════════════════
+             右侧预览区
+             ════════════════════════════════════════════════════════ -->
         <div class="panel-right">
 
+            <!-- 原有预览卡片（给 id 供 RSA 模式隐藏） -->
             <div class="img-card" id="mainPreviewCard">
                 <div class="img-title">
                     <span>🎴 ORIGINAL PREVIEW</span>
@@ -452,6 +495,7 @@
                 </div>
             </div>
 
+            <!-- 原有结果卡片（给 id 供 RSA 模式隐藏） -->
             <div class="img-card" id="mainResultCard">
                 <div class="img-title">
                     <span>🖥️ PIXEL // CYBER ART</span>
@@ -462,6 +506,7 @@
                 </div>
             </div>
 
+            <!-- RSA 模式专属：源图预览（初始隐藏） -->
             <div class="img-card" id="rsaPreviewCard" style="display:none;">
                 <div class="img-title">
                     <span id="rsaPreviewTitle">🎴 SOURCE IMAGE</span>
@@ -474,6 +519,7 @@
                 </div>
             </div>
 
+            <!-- RSA 模式专属：加密/解密结果（初始隐藏） -->
             <div class="img-card" id="rsaResultCard" style="display:none;">
                 <div class="img-title">
                     <span id="rsaResultTitle">🔐 ENCRYPTED RESULT</span>
@@ -485,10 +531,11 @@
                 </div>
             </div>
 
-        </div>
+        </div><!-- /panel-right -->
 
-    </div>
+    </div><!-- /root -->
 
+    <!-- 模块加载顺序：纯工具 → 背景 → RSA 核心 → 主控制器 → RSA 控制器 -->
     <script src="pixelEngine.js"></script>
     <script src="colorUtils.js"></script>
     <script src="background.js"></script>
