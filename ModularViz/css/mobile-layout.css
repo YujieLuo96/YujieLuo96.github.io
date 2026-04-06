@@ -327,12 +327,16 @@
     transform: scale(0.92);
   }
 
-  /* New Node — primary accent */
-  #fab-node {
+  /* Enter / Confirm — primary accent */
+  #fab-enter {
     background: var(--accent);
     color: #fff;
   }
-  #fab-node:active { background: #4f46e5; }
+  #fab-enter:active:not(.disabled) { background: #4f46e5; }
+  #fab-enter.disabled {
+    opacity: 0.35;
+    pointer-events: none;
+  }
 
   /* Connect mode — green */
   #fab-conn {

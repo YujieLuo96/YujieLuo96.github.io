@@ -1494,32 +1494,41 @@ const ML = (() => {
     conn.id = 'fab-conn'; conn.className = 'fab-btn'; conn.title = 'Connect mode';
     conn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="8" r="2"/><path d="M5 8 Q8 3.5 11 8"/></svg>`;
 
-    const node = document.createElement('button');
-    node.id = 'fab-node'; node.className = 'fab-btn'; node.title = 'New node';
-    node.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3" width="13" height="10" rx="2"/><line x1="8" y1="6" x2="8" y2="10"/><line x1="6" y1="8" x2="10" y2="8"/></svg>`;
+    // Confirm / Enter — active only while InlinePrompt is visible
+    const enter = document.createElement('button');
+    enter.id = 'fab-enter'; enter.className = 'fab-btn disabled'; enter.title = 'Confirm (Enter)';
+    enter.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 8.5 6 12 13.5 4"/></svg>`;
 
     fab.appendChild(conn);
-    fab.appendChild(node);
+    fab.appendChild(enter);
     document.body.appendChild(fab);
 
-    node.addEventListener('click', () => {
-      App.setMode('place');
-      Status.show('Tap canvas to place node', 4000);
-    });
     conn.addEventListener('click', () => {
       App.setMode(App.mode === 'conn' ? 'default' : 'conn');
     });
+    enter.addEventListener('click', () => {
+      // Dispatch Enter keydown to the ip-input so IP.confirm() fires
+      document.getElementById('ip-input')?.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+      );
+    });
+  }
+
+  function _ipShowing() {
+    return document.getElementById('ip')?.classList.contains('show') ?? false;
   }
 
   function _syncFAB() {
-    document.getElementById('fab-conn')?.classList.toggle('active', App.mode === 'conn');
+    document.getElementById('fab-conn')?.classList.toggle('active',   App.mode === 'conn');
+    document.getElementById('fab-enter')?.classList.toggle('disabled', !_ipShowing());
   }
 
   function _startFABSync() {
-    let pm = App.mode, psn = App.selNode, pse = App.selEdge;
+    let pm = App.mode, psn = App.selNode, pse = App.selEdge, pip = false;
     (function tick() {
-      if (App.mode !== pm || App.selNode !== psn || App.selEdge !== pse) {
-        pm = App.mode; psn = App.selNode; pse = App.selEdge;
+      const ipNow = _ipShowing();
+      if (App.mode !== pm || App.selNode !== psn || App.selEdge !== pse || ipNow !== pip) {
+        pm = App.mode; psn = App.selNode; pse = App.selEdge; pip = ipNow;
         _syncFAB();
       }
       requestAnimationFrame(tick);
