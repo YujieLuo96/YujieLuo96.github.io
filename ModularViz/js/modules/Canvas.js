@@ -77,6 +77,11 @@ export const Canvas = {
 
   get: () => ({ tx, ty, sc }),
 
+  setTransform(newTx, newTy, newSc) {
+    tx = newTx; ty = newTy; sc = newSc;
+    applyTransform();
+  },
+
   /**
    * Smoothly pan + zoom so that canvas point (cx, cy) is centred in the viewport.
    * @param {number} cx        - canvas-space X to focus on

@@ -32,6 +32,8 @@ import { IP }     from './modules/InlinePrompt.js';
 import { TB }     from './modules/Toolbar.js';
 import { SM }     from './modules/SearchModule.js';
 import { Status } from './state/StatusBar.js';
+import { ML }     from './modules/MobileLayout.js';
+import { MT }     from './modules/MobileTouch.js';
 
 function boot() {
   Canvas.init();
@@ -41,6 +43,9 @@ function boot() {
   IP.init();
   TB.init();
   SM.init();
+
+  ML.init();
+  MT.init();
 
   Status.show('Double-click to create node · N=Place · C=Connect · Del=Delete · Ctrl+S=Save', 6000);
 }

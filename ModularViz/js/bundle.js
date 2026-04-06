@@ -203,7 +203,12 @@ const Canvas = (() => {
     requestAnimationFrame(step);
   }
 
-  return { init, s2c, c2s, focusOn, get: () => ({ tx, ty, sc }) };
+  function setTransform(newTx, newTy, newSc) {
+    tx = newTx; ty = newTy; sc = newSc;
+    applyTransform();
+  }
+
+  return { init, s2c, c2s, focusOn, setTransform, get: () => ({ tx, ty, sc }) };
 })();
 
 /* ═══════════════════════════════════════════════════════════
@@ -212,10 +217,11 @@ const Canvas = (() => {
 const NM = (() => {
   const COLORS    = ['#6366f1','#22c55e','#f59e0b','#ef4444','#3b82f6','#ec4899','#14b8a6','#8b5cf6'];
   const DEF_COLOR = '#6366f1';
-  let _seq     = 0;
-  let drag     = null;
-  let connSrc  = null;
-  let qConnSrc = null;
+  let _seq       = 0;
+  let drag       = null;
+  let _dragMoved = false;   // persists after drag=null so _onClick can read it
+  let connSrc    = null;
+  let qConnSrc   = null;
 
   const _layer = () => document.getElementById('nodes-layer');
 
@@ -290,10 +296,12 @@ const NM = (() => {
     return data;
   }
 
-  function updateEl(data) {
+  function updateEl(data, skipPos) {
     const el = data._el; if (!el) return;
-    el.style.left = data.x + 'px';
-    el.style.top  = data.y + 'px';
+    if (!skipPos) {
+      el.style.left = data.x + 'px';
+      el.style.top  = data.y + 'px';
+    }
     el.querySelector('.node-bar').style.background = data.color;
     el.querySelector('.node-title').textContent    = data.title;
     let prev = el.querySelector('.node-preview');
@@ -316,12 +324,16 @@ const NM = (() => {
     Store.removeNode(id);
   }
 
+  function _clearSelDOM() {
+    document.querySelectorAll('.node.sel').forEach(el => el.classList.remove('sel'));
+  }
+
   function clearConnHL() {
     document.querySelectorAll('.node.conn-src').forEach(el => el.classList.remove('conn-src'));
   }
 
   function clearAllSel() {
-    document.querySelectorAll('.node.sel').forEach(el => el.classList.remove('sel'));
+    _clearSelDOM();
     EB.emit('sel:clearEdges');
   }
 
@@ -332,13 +344,14 @@ const NM = (() => {
     e.stopPropagation();
     const d = Store.nodes.get(id); if (!d) return;
     drag = { id, smx: e.clientX, smy: e.clientY, sx: d.x, sy: d.y, moved: false, sc: Canvas.get().sc };
+    _dragMoved = false;
     e.preventDefault();
   }
 
   function _onClick(e, id) {
     if (e.button !== 0) return;
     e.stopPropagation();
-    if (drag?.moved) return;
+    if (_dragMoved) { _dragMoved = false; return; }
     if (App.mode === 'conn')  { _handleConn(id);  return; }
     if (App.mode === 'place') return;
     clearAllSel();
@@ -352,50 +365,40 @@ const NM = (() => {
     _handleQConn(id);
   }
 
-  function _handleConn(id) {
-    if (!connSrc) {
-      connSrc = id; clearConnHL();
+  function _connFlow(getRef, setRef, id, hint, doneMsg) {
+    const src = getRef();
+    if (!src) {
+      setRef(id); clearConnHL();
       Store.nodes.get(id)?._el.classList.add('conn-src');
-      Status.show('Source selected — click target node');
+      Status.show(hint);
     } else {
-      const src = connSrc, tgt = id;
-      connSrc = null; clearConnHL();
-      if (src !== tgt) {
-        EB.emit('edge:create', { srcId: src, tgtId: tgt });
-        Status.show('Connection created', 2000);
+      setRef(null); clearConnHL();
+      if (src !== id) {
+        EB.emit('edge:create', { srcId: src, tgtId: id });
+        Status.show(doneMsg, 2000);
       } else {
         Status.show('Cannot connect a node to itself', 2000);
       }
     }
+  }
+
+  function _handleConn(id) {
+    _connFlow(() => connSrc,  v => { connSrc  = v; }, id,
+      'Source selected — click target node', 'Connection created');
   }
 
   function _handleQConn(id) {
-    if (!qConnSrc) {
-      qConnSrc = id; clearConnHL();
-      Store.nodes.get(id)?._el.classList.add('conn-src');
-      Status.show('Right-click target node to quick-connect');
-    } else {
-      const src = qConnSrc, tgt = id;
-      qConnSrc = null; clearConnHL();
-      if (src !== tgt) {
-        EB.emit('edge:create', { srcId: src, tgtId: tgt });
-        Status.show('Quick connection created', 2000);
-      } else {
-        Status.show('Cannot connect a node to itself', 2000);
-      }
-    }
+    _connFlow(() => qConnSrc, v => { qConnSrc = v; }, id,
+      'Right-click target node to quick-connect', 'Quick connection created');
   }
 
   function init() {
-    EB.on('sel:clearNodes', () => {
-      document.querySelectorAll('.node.sel').forEach(el => el.classList.remove('sel'));
-      App.selNode = null;
-    });
+    EB.on('sel:clearNodes', () => { _clearSelDOM(); App.selNode = null; });
     window.addEventListener('mousemove', e => {
       if (!drag) return;
       const dx = (e.clientX - drag.smx) / drag.sc;
       const dy = (e.clientY - drag.smy) / drag.sc;
-      if (!drag.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) drag.moved = true;
+      if (!drag.moved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) { drag.moved = true; _dragMoved = true; }
       if (!drag.moved) return;
       const d = Store.nodes.get(drag.id); if (!d) return;
       d.x = drag.sx + dx; d.y = drag.sy + dy;
@@ -656,7 +659,7 @@ const Panel = (() => {
       sw.className = 'cswatch' + (c===data.color ? ' active' : '');
       sw.style.background = c; sw.dataset.c = c;
       sw.addEventListener('click', () => {
-        data.color = c; NM.updateEl(data); EM.updateForNode(data.id);
+        data.color = c; NM.updateEl(data, true); EM.updateForNode(data.id);
         row.querySelectorAll('.cswatch').forEach(s => s.classList.toggle('active', s.dataset.c===c));
         cp.value = c;
       });
@@ -666,7 +669,7 @@ const Panel = (() => {
     cp.type='color'; cp.value=data.color; cp.title='Custom color';
     cp.style.cssText='width:22px;height:22px;border:none;padding:0;cursor:pointer;border-radius:50%;overflow:hidden;flex-shrink:0';
     cp.addEventListener('input', () => {
-      data.color=cp.value; NM.updateEl(data); EM.updateForNode(data.id);
+      data.color=cp.value; NM.updateEl(data, true); EM.updateForNode(data.id);
       row.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('active'));
     });
     row.appendChild(cp);
@@ -686,9 +689,9 @@ const Panel = (() => {
     _body().appendChild(_field('Preview','<div class="preview-box" id="pf-prev"></div>'));
     const prev = _el('pf-prev');
     LX.render(data.content, prev);
-    _el('pf-title').addEventListener('input', e=>{data.title=e.target.value; NM.updateEl(data);});
+    _el('pf-title').addEventListener('input', e=>{data.title=e.target.value; NM.updateEl(data, true);});
     _el('pf-ct').addEventListener('input', e=>{
-      data.content=e.target.value; NM.updateEl(data);
+      data.content=e.target.value; NM.updateEl(data, true);
       _debounce(()=>LX.render(data.content,prev));
     });
     _btnDel().onclick = ()=>{ NM.remove(id); close(); };
@@ -785,6 +788,27 @@ const IP = (() => {
 })();
 
 /* ═══════════════════════════════════════════════════════════
+   _applyGraph — shared graph-load helper used by IO and CryptoIO
+═══════════════════════════════════════════════════════════ */
+function _applyGraph(rawNodes, rawEdges, msg) {
+  [...Store.nodes.values()].forEach(n => n._el?.remove());
+  [...Store.edges.values()].forEach(e => e._g?.remove());
+  Store.clear();
+  Panel.close();
+  rawNodes.forEach(n => NM.load({
+    id: n.id, title: n.title || 'Node', content: n.content || '',
+    color: n.color || '#6366f1', x: +n.x || 0, y: +n.y || 0, _el: null
+  }));
+  requestAnimationFrame(() => {
+    rawEdges.forEach(ed => EM.load({
+      id: ed.id, sourceId: ed.sourceId, targetId: ed.targetId,
+      tag: ed.tag || '', curvatureIndex: ed.curvatureIndex || 0, _g: null
+    }));
+    Status.show(msg, 3000);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
    IO
 ═══════════════════════════════════════════════════════════ */
 const IO = {
@@ -816,21 +840,9 @@ const IO = {
         const data = JSON.parse(e.target.result);
         if (!Array.isArray(data.nodes) || !Array.isArray(data.edges))
           throw new Error('Invalid format: missing nodes or edges');
-        [...Store.nodes.values()].forEach(n => n._el?.remove());
-        [...Store.edges.values()].forEach(e => e._g?.remove());
-        Store.clear(); Panel.close();
-        data.nodes.forEach(n => NM.load({
-          id: n.id, title: n.title||'Node', content: n.content||'',
-          color: n.color||'#6366f1', x: +n.x||0, y: +n.y||0, _el: null
-        }));
-        requestAnimationFrame(() => {
-          data.edges.forEach(ed => EM.load({
-            id: ed.id, sourceId: ed.sourceId, targetId: ed.targetId,
-            tag: ed.tag||'', curvatureIndex: ed.curvatureIndex||0, _g: null
-          }));
-          const nn = data.nodes.length, ne = data.edges.length;
-          Status.show(`Loaded ${nn} node${nn!==1?'s':''} · ${ne} connection${ne!==1?'s':''}`, 3000);
-        });
+        const nn = data.nodes.length, ne = data.edges.length;
+        _applyGraph(data.nodes, data.edges,
+          `Loaded ${nn} node${nn !== 1 ? 's' : ''} · ${ne} connection${ne !== 1 ? 's' : ''}`);
       } catch(err) { Status.show('Load failed: ' + err.message, 3500); }
     };
     reader.readAsText(file);
@@ -924,22 +936,9 @@ const CryptoIO = (() => {
   function _applyPayload(data) {
     if (!Array.isArray(data.nodes) || !Array.isArray(data.edges))
       throw new Error('Invalid graph format');
-    [...Store.nodes.values()].forEach(n => n._el?.remove());
-    [...Store.edges.values()].forEach(e => e._g?.remove());
-    Store.clear();
-    Panel.close();
-    data.nodes.forEach(n => NM.load({
-      id: n.id, title: n.title || 'Node', content: n.content || '',
-      color: n.color || '#6366f1', x: +n.x || 0, y: +n.y || 0, _el: null
-    }));
-    requestAnimationFrame(() => {
-      data.edges.forEach(ed => EM.load({
-        id: ed.id, sourceId: ed.sourceId, targetId: ed.targetId,
-        tag: ed.tag || '', curvatureIndex: ed.curvatureIndex || 0, _g: null
-      }));
-      const nn = data.nodes.length, ne = data.edges.length;
-      Status.show(`Decrypted & loaded ${nn} node${nn !== 1 ? 's' : ''} · ${ne} connection${ne !== 1 ? 's' : ''}`, 3500);
-    });
+    const nn = data.nodes.length, ne = data.edges.length;
+    _applyGraph(data.nodes, data.edges,
+      `Decrypted & loaded ${nn} node${nn !== 1 ? 's' : ''} · ${ne} connection${ne !== 1 ? 's' : ''}`);
   }
 
   // ── Core: encrypt N layers ───────────────────────────────
@@ -1122,6 +1121,10 @@ const CryptoIO = (() => {
     zone.addEventListener('drop', async e => {
       e.preventDefault(); zone.classList.remove('drag-over');
       const f = e.dataTransfer.files[0]; if (!f) return;
+      if (!f.name.toLowerCase().endsWith('.json')) {
+        name.textContent = 'Must be a .json file';
+        return;
+      }
       name.textContent = f.name;
       zone.classList.add('loaded');
       onText(await _readText(f));
@@ -1207,7 +1210,7 @@ const TB = {
 
     vp.addEventListener('click', async e => {
       if (App.mode !== 'place') return;
-      if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+      if (e.target.closest('.node') || e.target.closest('.e-hit')) { App.setMode('default'); return; }
       const canvasPos = Canvas.s2c(e.clientX, e.clientY);
       const vpRect    = vp.getBoundingClientRect();
       const title = await IP.show(e.clientX - vpRect.left, e.clientY - vpRect.top);
@@ -1230,7 +1233,7 @@ const TB = {
     vp.addEventListener('mousedown', e => {
       if (e.button !== 0) return;
       if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
-      if (App.mode === 'default') { NM.clearAllSel(); Panel.close(); }
+      if (App.mode === 'default') { Panel.close(); }  // Panel.close() calls clearAllSel internally
       if (App.mode === 'conn')    { NM.cancelConn(); }
     });
 
@@ -1413,41 +1416,6 @@ const SM = (() => {
     _input().focus();
   }
 
-  /* ── DOM build ── */
-  function _buildWidget() {
-    const w = document.createElement('div');
-    w.id = 'sm-widget';
-    w.innerHTML = `
-      <div id="sm-bar">
-        <svg class="sm-icon" viewBox="0 0 16 16" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <circle cx="6.5" cy="6.5" r="4.5"/>
-          <line x1="10" y1="10" x2="14" y2="14"/>
-        </svg>
-        <input id="sm-input" type="text"
-               placeholder="Search nodes…"
-               autocomplete="off" spellcheck="false">
-        <button id="sm-clear" class="sm-icon-btn" title="Clear">
-          <svg viewBox="0 0 16 16" fill="none"
-               stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
-            <line x1="4" y1="4" x2="12" y2="12"/>
-            <line x1="12" y1="4" x2="4" y2="12"/>
-          </svg>
-        </button>
-        <div class="sm-divider"></div>
-        <button id="sm-btn" class="sm-icon-btn sm-go" title="Search (Enter)">
-          <svg viewBox="0 0 16 16" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <circle cx="6.5" cy="6.5" r="4.5"/>
-            <line x1="10" y1="10" x2="14" y2="14"/>
-          </svg>
-        </button>
-      </div>
-      <div id="sm-dropdown"></div>
-    `;
-    return w;
-  }
-
   /* ── public init ── */
   function init() {
     // Widget HTML is already in the toolbar (index.html); just wire up events.
@@ -1464,7 +1432,7 @@ const SM = (() => {
       if (q) _renderDD(_getMatches(q), q);
     });
     inp.addEventListener('blur', () => {
-      setTimeout(() => _dd().classList.remove('open'), 160);
+      setTimeout(() => _dd().classList.remove('open'), 200);
     });
 
     _$('sm-btn').addEventListener('click', _onSearch);
@@ -1508,6 +1476,307 @@ const DarkMode = (() => {
 })();
 
 /* ═══════════════════════════════════════════════════════════
+   MobileLayout — viewport fix + FAB injection
+═══════════════════════════════════════════════════════════ */
+const ML = (() => {
+  const IS_TOUCH = navigator.maxTouchPoints > 0;
+
+  function _updateVh() {
+    const vh = (window.visualViewport?.height ?? window.innerHeight) * 0.01;
+    document.documentElement.style.setProperty('--real-vh', vh + 'px');
+  }
+
+  function _buildFAB() {
+    const fab = document.createElement('div');
+    fab.id = 'mob-fab';
+
+    const del = document.createElement('button');
+    del.id = 'fab-del'; del.className = 'fab-btn disabled'; del.title = 'Delete selected';
+    del.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 14,4"/><path d="M5 4V2.5h6V4"/><path d="M3.5 4l.9 9.5h7.2l.9-9.5"/><line x1="6.5" y1="7" x2="6.5" y2="11"/><line x1="9.5" y1="7" x2="9.5" y2="11"/></svg>`;
+
+    const conn = document.createElement('button');
+    conn.id = 'fab-conn'; conn.className = 'fab-btn'; conn.title = 'Connect mode';
+    conn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="8" r="2"/><path d="M5 8 Q8 3.5 11 8"/></svg>`;
+
+    const node = document.createElement('button');
+    node.id = 'fab-node'; node.className = 'fab-btn'; node.title = 'New node';
+    node.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3" width="13" height="10" rx="2"/><line x1="8" y1="6" x2="8" y2="10"/><line x1="6" y1="8" x2="10" y2="8"/></svg>`;
+
+    fab.appendChild(del);
+    fab.appendChild(conn);
+    fab.appendChild(node);
+    document.body.appendChild(fab);
+
+    node.addEventListener('click', () => {
+      App.setMode('place');
+      Status.show('Tap canvas to place node', 4000);
+    });
+    conn.addEventListener('click', () => {
+      App.setMode(App.mode === 'conn' ? 'default' : 'conn');
+    });
+    del.addEventListener('click', () => {
+      if (App.selNode) { NM.remove(App.selNode); Panel.close(); App.selNode = null; }
+      else if (App.selEdge) { EM.remove(App.selEdge); Panel.close(); App.selEdge = null; }
+      _syncFAB();
+    });
+  }
+
+  function _syncFAB() {
+    document.getElementById('fab-conn')?.classList.toggle('active', App.mode === 'conn');
+    document.getElementById('fab-del')?.classList.toggle('disabled', !App.selNode && !App.selEdge);
+  }
+
+  function _startFABSync() {
+    let pm = App.mode, psn = App.selNode, pse = App.selEdge;
+    (function tick() {
+      if (App.mode !== pm || App.selNode !== psn || App.selEdge !== pse) {
+        pm = App.mode; psn = App.selNode; pse = App.selEdge;
+        _syncFAB();
+      }
+      requestAnimationFrame(tick);
+    })();
+  }
+
+  function init() {
+    if (!IS_TOUCH) return;
+    _updateVh();
+    window.addEventListener('resize', _updateVh);
+    window.addEventListener('orientationchange', () => setTimeout(_updateVh, 300));
+    window.visualViewport?.addEventListener('resize', _updateVh);
+    _buildFAB();
+    _syncFAB();
+    _startFABSync();
+    Status.show('Tap [+Node] or double-tap canvas · Long-press node to connect', 7000);
+  }
+
+  return { init };
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   MobileTouch — touch interaction layer
+═══════════════════════════════════════════════════════════ */
+const MT = (() => {
+  const IS_TOUCH       = navigator.maxTouchPoints > 0;
+  const DRAG_THRESHOLD = 8;
+  const LONG_PRESS_MS  = 600;
+  const DBL_TAP_MS     = 280;
+  const DBL_TAP_DIST   = 24;
+
+  /* ── Canvas pan / pinch ──────────────────────────────── */
+  let _pan   = null;
+  let _pinch = null;
+
+  function _dist(t1, t2) {
+    const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  function _mid(t1, t2) {
+    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+  }
+
+  function _onCanvasTouchStart(e) {
+    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (e.touches.length === 2) {
+      _pan = null;
+      const { tx, ty, sc } = Canvas.get();
+      const mid = _mid(e.touches[0], e.touches[1]);
+      const vp  = document.getElementById('canvas-vp').getBoundingClientRect();
+      _pinch = { initDist: _dist(e.touches[0], e.touches[1]),
+                 initMidX: mid.x - vp.left, initMidY: mid.y - vp.top,
+                 initTx: tx, initTy: ty, initSc: sc };
+      e.preventDefault();
+      return;
+    }
+    if (e.touches.length === 1 && App.mode === 'default') {
+      _pinch = null;
+      const { tx, ty } = Canvas.get();
+      _pan = { startX: e.touches[0].clientX, startY: e.touches[0].clientY,
+               startTx: tx, startTy: ty };
+    }
+  }
+
+  function _onCanvasTouchMove(e) {
+    if (e.touches.length === 2 && _pinch) {
+      e.preventDefault();
+      const nd   = _dist(e.touches[0], e.touches[1]);
+      const ratio = nd / _pinch.initDist;
+      const { initSc, initTx, initTy, initMidX, initMidY } = _pinch;
+      const ns = Math.min(5, Math.max(0.08, initSc * ratio));
+      Canvas.setTransform(
+        initMidX - (initMidX - initTx) * (ns / initSc),
+        initMidY - (initMidY - initTy) * (ns / initSc),
+        ns
+      );
+      return;
+    }
+    if (e.touches.length === 1 && _pan) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - _pan.startX;
+      const dy = e.touches[0].clientY - _pan.startY;
+      Canvas.setTransform(_pan.startTx + dx, _pan.startTy + dy, Canvas.get().sc);
+    }
+  }
+
+  function _onCanvasTouchEnd() { _pan = null; _pinch = null; }
+
+  /* ── Node drag / tap / long-press ────────────────────── */
+  let _drag  = null;
+  let _lpTmr = null;
+  let _lpId  = null;
+
+  function _clearLP() {
+    if (_lpTmr !== null) { clearTimeout(_lpTmr); _lpTmr = null; }
+    if (_lpId) {
+      Store.nodes.get(_lpId)?._el?.classList.remove('lp-pending');
+      _lpId = null;
+    }
+  }
+
+  function _onNodeTouchStart(e) {
+    const nodeEl = e.target.closest('.node');
+    if (!nodeEl) return;
+    e.stopPropagation();
+    e.preventDefault();
+
+    const id = nodeEl.id, data = Store.nodes.get(id);
+    if (!data) return;
+    const t = e.touches[0], { sc } = Canvas.get();
+    _drag = { id, el: nodeEl, moved: false,
+              startTX: t.clientX, startTY: t.clientY,
+              startNX: data.x,    startNY: data.y, sc };
+
+    _lpId = id;
+    nodeEl.classList.add('lp-pending');
+    _lpTmr = setTimeout(() => {
+      _lpTmr = null; _lpId = null;
+      nodeEl.classList.remove('lp-pending');
+      _triggerLP(id);
+    }, LONG_PRESS_MS);
+  }
+
+  function _onNodeTouchMove(e) {
+    if (!_drag) return;
+    e.preventDefault();
+    const t  = e.touches[0];
+    const dx = (t.clientX - _drag.startTX) / _drag.sc;
+    const dy = (t.clientY - _drag.startTY) / _drag.sc;
+    if (!_drag.moved && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+      _drag.moved = true;
+      _clearLP();
+    }
+    if (!_drag.moved) return;
+    const data = Store.nodes.get(_drag.id); if (!data) return;
+    data.x = _drag.startNX + dx;
+    data.y = _drag.startNY + dy;
+    data._el.style.left = data.x + 'px';
+    data._el.style.top  = data.y + 'px';
+    EB.emit('node:moved', _drag.id);
+  }
+
+  function _onNodeTouchEnd() {
+    if (!_drag) return;
+    _clearLP();
+    const { id, moved, el } = _drag;
+    _drag = null;
+    if (moved) return;
+    el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+  }
+
+  function _triggerLP(id) {
+    navigator.vibrate?.(12);
+    App.setMode('conn');
+    Store.nodes.get(id)?._el?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 })
+    );
+  }
+
+  /* ── Double-tap on canvas → create node ──────────────── */
+  let _lastTap = null;
+
+  function _onCanvasTap(e) {
+    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (App.mode !== 'default') return;
+    const t = e.changedTouches[0], now = Date.now();
+    if (_lastTap &&
+        now - _lastTap.time < DBL_TAP_MS &&
+        Math.abs(t.clientX - _lastTap.x) < DBL_TAP_DIST &&
+        Math.abs(t.clientY - _lastTap.y) < DBL_TAP_DIST) {
+      _lastTap = null;
+      e.preventDefault();
+      _doubleTapCreate(t.clientX, t.clientY);
+      return;
+    }
+    _lastTap = { x: t.clientX, y: t.clientY, time: now };
+  }
+
+  async function _doubleTapCreate(cx, cy) {
+    const pos    = Canvas.s2c(cx, cy);
+    const vp     = document.getElementById('canvas-vp');
+    const vpRect = vp.getBoundingClientRect();
+    const title  = await IP.show(cx - vpRect.left, cy - vpRect.top);
+    if (title) { NM.create(title, pos.x, pos.y); Status.show('Node created', 2000); }
+  }
+
+  /* ── Search dropdown fix ──────────────────────────────── */
+  function _patchSearch() {
+    const dd = document.getElementById('sm-dropdown');
+    if (!dd) return;
+    dd.addEventListener('touchstart', e => {
+      if (e.target.closest('.sd-item')) e.preventDefault();
+    }, { passive: false });
+    dd.addEventListener('touchend', e => {
+      const item = e.target.closest('.sd-item');
+      if (!item) return;
+      e.preventDefault();
+      item.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    }, { passive: false });
+    document.addEventListener('touchstart', e => {
+      const w = document.getElementById('sm-widget');
+      if (w && !w.contains(e.target) && dd.classList.contains('open'))
+        dd.classList.remove('open');
+    }, { passive: true });
+  }
+
+  /* ── InlinePrompt outside-touch → cancel ─────────────── */
+  function _patchIP() {
+    document.addEventListener('touchstart', e => {
+      const ip = document.getElementById('ip');
+      if (ip?.classList.contains('show') && !ip.contains(e.target)) IP.cancel();
+    }, { passive: true });
+  }
+
+  /* ── Canvas empty-tap → clear selection ──────────────── */
+  function _onCanvasEmptyTouchStart(e) {
+    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (App.mode === 'default') NM.clearAllSel();
+    if (App.mode === 'conn')    NM.cancelConn();
+  }
+
+  function init() {
+    if (!IS_TOUCH) return;
+    const vp = document.getElementById('canvas-vp');
+    const nl = document.getElementById('nodes-layer');
+
+    vp.addEventListener('touchstart',  _onCanvasTouchStart,      { passive: false });
+    vp.addEventListener('touchmove',   _onCanvasTouchMove,        { passive: false });
+    vp.addEventListener('touchend',    _onCanvasTouchEnd,         { passive: true  });
+    vp.addEventListener('touchcancel', _onCanvasTouchEnd,         { passive: true  });
+    vp.addEventListener('touchend',    _onCanvasTap,              { passive: false });
+    vp.addEventListener('touchstart',  _onCanvasEmptyTouchStart,  { passive: true  });
+
+    nl.addEventListener('touchstart', _onNodeTouchStart, { passive: false });
+    window.addEventListener('touchmove',  _onNodeTouchMove,  { passive: false });
+    window.addEventListener('touchend',   _onNodeTouchEnd,   { passive: true  });
+    window.addEventListener('touchcancel', () => { _clearLP(); _drag = null; }, { passive: true });
+
+    _patchSearch();
+    _patchIP();
+  }
+
+  return { init };
+})();
+
+/* ═══════════════════════════════════════════════════════════
    Boot
 ═══════════════════════════════════════════════════════════ */
 function boot() {
@@ -1520,7 +1789,11 @@ function boot() {
   SM.init();
   CryptoIO.init();
   DarkMode.init();
-  Status.show('Double-click to create node · N=Place · C=Connect · Del=Delete · Ctrl+S=Save', 6000);
+  ML.init();  // shows mobile hint on touch devices; no-op on desktop
+  MT.init();
+  if (navigator.maxTouchPoints === 0) {
+    Status.show('Double-click to create node · N=Place · C=Connect · Del=Delete · Ctrl+S=Save', 6000);
+  }
 }
 
 if (document.readyState === 'loading') {
