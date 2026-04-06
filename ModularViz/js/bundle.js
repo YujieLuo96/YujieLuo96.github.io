@@ -1490,10 +1490,6 @@ const ML = (() => {
     const fab = document.createElement('div');
     fab.id = 'mob-fab';
 
-    const del = document.createElement('button');
-    del.id = 'fab-del'; del.className = 'fab-btn disabled'; del.title = 'Delete selected';
-    del.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,4 14,4"/><path d="M5 4V2.5h6V4"/><path d="M3.5 4l.9 9.5h7.2l.9-9.5"/><line x1="6.5" y1="7" x2="6.5" y2="11"/><line x1="9.5" y1="7" x2="9.5" y2="11"/></svg>`;
-
     const conn = document.createElement('button');
     conn.id = 'fab-conn'; conn.className = 'fab-btn'; conn.title = 'Connect mode';
     conn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="8" r="2"/><path d="M5 8 Q8 3.5 11 8"/></svg>`;
@@ -1502,7 +1498,6 @@ const ML = (() => {
     node.id = 'fab-node'; node.className = 'fab-btn'; node.title = 'New node';
     node.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3" width="13" height="10" rx="2"/><line x1="8" y1="6" x2="8" y2="10"/><line x1="6" y1="8" x2="10" y2="8"/></svg>`;
 
-    fab.appendChild(del);
     fab.appendChild(conn);
     fab.appendChild(node);
     document.body.appendChild(fab);
@@ -1514,16 +1509,10 @@ const ML = (() => {
     conn.addEventListener('click', () => {
       App.setMode(App.mode === 'conn' ? 'default' : 'conn');
     });
-    del.addEventListener('click', () => {
-      if (App.selNode) { NM.remove(App.selNode); Panel.close(); App.selNode = null; }
-      else if (App.selEdge) { EM.remove(App.selEdge); Panel.close(); App.selEdge = null; }
-      _syncFAB();
-    });
   }
 
   function _syncFAB() {
     document.getElementById('fab-conn')?.classList.toggle('active', App.mode === 'conn');
-    document.getElementById('fab-del')?.classList.toggle('disabled', !App.selNode && !App.selEdge);
   }
 
   function _startFABSync() {
@@ -1676,7 +1665,7 @@ const MT = (() => {
   function _onNodeTouchEnd() {
     if (!_drag) return;
     _clearLP();
-    const { id, moved, el } = _drag;
+    const { moved, el } = _drag;
     _drag = null;
     if (moved) return;
     el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));

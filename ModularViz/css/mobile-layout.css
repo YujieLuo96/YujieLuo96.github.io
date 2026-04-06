@@ -345,16 +345,6 @@
   }
   #fab-conn:active { background: #15803d; }
 
-  /* Delete — red, disabled when nothing selected */
-  #fab-del {
-    background: #dc2626;
-    color: #fff;
-  }
-  #fab-del:active  { background: #b91c1c; }
-  #fab-del.disabled {
-    opacity: 0.35;
-    pointer-events: none;
-  }
 }
 
 /* ═══════════════════════════════════════════════════════════
