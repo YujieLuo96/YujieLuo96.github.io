@@ -1486,65 +1486,13 @@ const ML = (() => {
     document.documentElement.style.setProperty('--real-vh', vh + 'px');
   }
 
-  function _buildFAB() {
-    const fab = document.createElement('div');
-    fab.id = 'mob-fab';
-
-    const conn = document.createElement('button');
-    conn.id = 'fab-conn'; conn.className = 'fab-btn'; conn.title = 'Connect mode';
-    conn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="3" cy="8" r="2"/><circle cx="13" cy="8" r="2"/><path d="M5 8 Q8 3.5 11 8"/></svg>`;
-
-    // Confirm / Enter — active only while InlinePrompt is visible
-    const enter = document.createElement('button');
-    enter.id = 'fab-enter'; enter.className = 'fab-btn disabled'; enter.title = 'Confirm (Enter)';
-    enter.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="2.5 8.5 6 12 13.5 4"/></svg>`;
-
-    fab.appendChild(conn);
-    fab.appendChild(enter);
-    document.body.appendChild(fab);
-
-    conn.addEventListener('click', () => {
-      App.setMode(App.mode === 'conn' ? 'default' : 'conn');
-    });
-    enter.addEventListener('click', () => {
-      // Dispatch Enter keydown to the ip-input so IP.confirm() fires
-      document.getElementById('ip-input')?.dispatchEvent(
-        new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
-      );
-    });
-  }
-
-  function _ipShowing() {
-    return document.getElementById('ip')?.classList.contains('show') ?? false;
-  }
-
-  function _syncFAB() {
-    document.getElementById('fab-conn')?.classList.toggle('active',   App.mode === 'conn');
-    document.getElementById('fab-enter')?.classList.toggle('disabled', !_ipShowing());
-  }
-
-  function _startFABSync() {
-    let pm = App.mode, psn = App.selNode, pse = App.selEdge, pip = false;
-    (function tick() {
-      const ipNow = _ipShowing();
-      if (App.mode !== pm || App.selNode !== psn || App.selEdge !== pse || ipNow !== pip) {
-        pm = App.mode; psn = App.selNode; pse = App.selEdge; pip = ipNow;
-        _syncFAB();
-      }
-      requestAnimationFrame(tick);
-    })();
-  }
-
   function init() {
     if (!IS_TOUCH) return;
     _updateVh();
     window.addEventListener('resize', _updateVh);
     window.addEventListener('orientationchange', () => setTimeout(_updateVh, 300));
     window.visualViewport?.addEventListener('resize', _updateVh);
-    _buildFAB();
-    _syncFAB();
-    _startFABSync();
-    Status.show('Tap [+Node] or double-tap canvas · Long-press node to connect', 7000);
+    Status.show('Double-tap canvas to add node · Long-press node to connect', 7000);
   }
 
   return { init };
