@@ -27,10 +27,28 @@ const _DELIMITERS = [
   { left: '\\(',                 right: '\\)',                 display: false }
 ];
 
+// Replace \\ in plain-text nodes with <br>; skip KaTeX-rendered subtrees.
+function _applyTextBreaks(el) {
+  for (const node of [...el.childNodes]) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (!node.textContent.includes('\\\\')) continue;
+      const frag = document.createDocumentFragment();
+      node.textContent.split('\\\\').forEach((part, i) => {
+        if (i > 0) frag.appendChild(document.createElement('br'));
+        if (part)  frag.appendChild(document.createTextNode(part));
+      });
+      node.replaceWith(frag);
+    } else if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('katex')) {
+      _applyTextBreaks(node);
+    }
+  }
+}
+
 export const LX = {
   /**
    * Render src into el using KaTeX auto-render.
-   * Falls back to plain text display if auto-render is not yet loaded.
+   * \\ in plain-text regions is converted to <br>.
+   * Falls back to plain text if auto-render is not yet loaded.
    * @param {string} src
    * @param {HTMLElement} el
    */
@@ -43,5 +61,6 @@ export const LX = {
     if (window.renderMathInElement) {
       window.renderMathInElement(el, { delimiters: _DELIMITERS, throwOnError: false });
     }
+    _applyTextBreaks(el);
   }
 };

@@ -47,6 +47,23 @@ const LX = (() => {
     { left: '\\(',                 right: '\\)',                 display: false }
   ];
 
+  // Replace \\ in plain-text nodes with <br>; skip KaTeX-rendered subtrees.
+  function _applyTextBreaks(el) {
+    for (const node of [...el.childNodes]) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.textContent.includes('\\\\')) continue;
+        const frag = document.createDocumentFragment();
+        node.textContent.split('\\\\').forEach((part, i) => {
+          if (i > 0) frag.appendChild(document.createElement('br'));
+          if (part)  frag.appendChild(document.createTextNode(part));
+        });
+        node.replaceWith(frag);
+      } else if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains('katex')) {
+        _applyTextBreaks(node);
+      }
+    }
+  }
+
   function render(src, el) {
     if (!src || !src.trim()) {
       el.innerHTML = '<span style="color:#94a3b8;font-style:italic">(empty)</span>';
@@ -56,6 +73,7 @@ const LX = (() => {
     if (window.renderMathInElement) {
       window.renderMathInElement(el, { delimiters: _DELIMITERS, throwOnError: false });
     }
+    _applyTextBreaks(el);
   }
 
   return { render };
