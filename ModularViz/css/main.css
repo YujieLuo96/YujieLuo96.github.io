@@ -359,6 +359,7 @@ textarea.pi {
 /* ── Edge label (moved from inline JS for dark-mode override) */
 .e-lbl {
   position: absolute;
+  top: 0; left: 0;
   transform: translate(-50%, -50%);
   white-space: nowrap;
   background: #fff;

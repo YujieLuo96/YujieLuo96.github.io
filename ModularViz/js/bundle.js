@@ -473,12 +473,17 @@ const EM = (() => {
 
     const fo  = document.createElementNS(NS, 'foreignObject');
     fo.setAttribute('width', '1'); fo.setAttribute('height', '1');
-    fo.style.overflow = 'visible'; fo.style.pointerEvents = 'none';
+    fo.style.pointerEvents = 'none';
     fo.classList.add('e-fo');
+    // Use an HTML wrapper so overflow:visible is handled by CSS (not SVG),
+    // which is reliable on mobile browsers (iOS Safari ignores SVG overflow:visible).
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:1px;height:1px;overflow:visible';
     const lbl = document.createElement('div');
     lbl.className = 'e-lbl';
     lbl.style.display = data.tag ? 'inline-block' : 'none';
-    fo.appendChild(lbl); g.appendChild(fo);
+    wrap.appendChild(lbl);
+    fo.appendChild(wrap); g.appendChild(fo);
 
     hit.addEventListener('click', e => { e.stopPropagation(); _onEdgeClick(data.id); });
     hit.addEventListener('mouseenter', () => {

@@ -74,26 +74,19 @@ function _makeGroup(data) {
   const fo = document.createElementNS(NS, 'foreignObject');
   fo.setAttribute('width',  '1');
   fo.setAttribute('height', '1');
-  fo.style.overflow      = 'visible';
   fo.style.pointerEvents = 'none';
   fo.classList.add('e-fo');
 
+  // HTML wrapper: overflow:visible in CSS is reliable on mobile
+  // (SVG overflow:visible on foreignObject is ignored by iOS Safari)
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'position:relative;width:1px;height:1px;overflow:visible';
+
   const lbl = document.createElement('div');
-  lbl.style.cssText = [
-    'position:absolute',
-    'transform:translate(-50%,-50%)',
-    'white-space:nowrap',
-    'background:#fff',
-    'border:1px solid #e2e8f0',
-    'border-radius:4px',
-    'padding:2px 8px',
-    'font-size:11px',
-    'color:#475569',
-    'box-shadow:0 1px 4px rgba(0,0,0,0.08)',
-    'display:' + (data.tag ? 'inline-block' : 'none')
-  ].join(';');
   lbl.classList.add('e-lbl');
-  fo.appendChild(lbl);
+  lbl.style.display = data.tag ? 'inline-block' : 'none';
+  wrap.appendChild(lbl);
+  fo.appendChild(wrap);
   g.appendChild(fo);
 
   hit.addEventListener('click', e => { e.stopPropagation(); _onEdgeClick(data.id); });
