@@ -26,7 +26,8 @@ import { Store } from '../core/Store.js';
 import { LX }    from '../core/LatexUtil.js';
 import { App }   from '../state/AppState.js';
 
-const NS = 'http://www.w3.org/2000/svg';
+const NS   = 'http://www.w3.org/2000/svg';
+const FO_W = 300, FO_H = 80;
 let _uidSeq = 0;
 let _selId  = null;
 
@@ -72,15 +73,14 @@ function _makeGroup(data) {
   g.appendChild(vis);
 
   const fo = document.createElementNS(NS, 'foreignObject');
-  fo.setAttribute('width',  '1');
-  fo.setAttribute('height', '1');
+  fo.setAttribute('width',  String(FO_W));
+  fo.setAttribute('height', String(FO_H));
   fo.style.pointerEvents = 'none';
   fo.classList.add('e-fo');
 
-  // HTML wrapper: overflow:visible in CSS is reliable on mobile
-  // (SVG overflow:visible on foreignObject is ignored by iOS Safari)
+  // Explicit dimensions — no overflow tricks needed, works on all mobile browsers.
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:relative;width:1px;height:1px;overflow:visible';
+  wrap.style.cssText = 'position:relative;width:100%;height:100%';
 
   const lbl = document.createElement('div');
   lbl.classList.add('e-lbl');
@@ -200,8 +200,8 @@ function update(id) {
   if (data.tag) {
     lbl.style.display = 'inline-block';
     LX.render(data.tag, lbl);
-    fo.setAttribute('x', mid.x.toString());
-    fo.setAttribute('y', mid.y.toString());
+    fo.setAttribute('x', (mid.x - FO_W / 2).toString());
+    fo.setAttribute('y', (mid.y - FO_H / 2).toString());
   } else {
     lbl.style.display = 'none';
   }
