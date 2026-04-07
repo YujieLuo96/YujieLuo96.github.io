@@ -250,6 +250,7 @@ const NM = (() => {
     const bar = document.createElement('div');
     bar.className = 'node-bar';
     bar.style.background = data.color;
+    el.style.setProperty('--nc', data.color);
 
     const body = document.createElement('div');
     body.className = 'node-body';
@@ -318,6 +319,7 @@ const NM = (() => {
       el.style.top  = data.y + 'px';
     }
     el.querySelector('.node-bar').style.background = data.color;
+    el.style.setProperty('--nc', data.color);
     LX.render(data.title, el.querySelector('.node-title'));
     let prev = el.querySelector('.node-preview');
     if (data.content) {
@@ -430,10 +432,10 @@ const NM = (() => {
    EdgeModule
 ═══════════════════════════════════════════════════════════ */
 const EM = (() => {
-  const NS   = 'http://www.w3.org/2000/svg';
-  const FO_W = 300, FO_H = 80;   // foreignObject label container dimensions
-  let _seq   = 0;
-  let _selId = null;
+  const NS = 'http://www.w3.org/2000/svg';
+  let _seq      = 0;
+  let _selId    = null;
+  let _lblLayer = null;
   const _svg = () => document.getElementById('edges-group');
 
   function _makeGroup(data) {
@@ -472,21 +474,6 @@ const EM = (() => {
     vis.classList.add('e-vis');
     g.appendChild(vis);
 
-    const fo  = document.createElementNS(NS, 'foreignObject');
-    fo.setAttribute('width',  String(FO_W));
-    fo.setAttribute('height', String(FO_H));
-    fo.style.pointerEvents = 'none';
-    fo.classList.add('e-fo');
-    // Explicit dimensions — no overflow tricks needed, works on all mobile browsers.
-    // A position:relative wrapper gives .e-lbl a reliable containing block.
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:100%;height:100%';
-    const lbl = document.createElement('div');
-    lbl.className = 'e-lbl';
-    lbl.style.display = data.tag ? 'inline-block' : 'none';
-    wrap.appendChild(lbl);
-    fo.appendChild(wrap); g.appendChild(fo);
-
     hit.addEventListener('click', e => { e.stopPropagation(); _onEdgeClick(data.id); });
     hit.addEventListener('mouseenter', () => {
       vis.setAttribute('stroke', '#6366f1'); poly.setAttribute('fill', '#6366f1');
@@ -498,6 +485,16 @@ const EM = (() => {
       }
     });
     return g;
+  }
+
+  // Label lives in #canvas-world (HTML layer), same coordinate space as nodes.
+  // This avoids foreignObject-inside-transformed-SVG, which is broken on iOS Safari.
+  function _makeLabel() {
+    const lbl = document.createElement('div');
+    lbl.className = 'e-lbl';
+    lbl.style.display = 'none';
+    _lblLayer.appendChild(lbl);
+    return lbl;
   }
 
   function _calcPath(src, tgt, ci) {
@@ -553,11 +550,11 @@ const EM = (() => {
       sourceId:       srcId, targetId: tgtId,
       tag:            opts.tag            ?? '',
       curvatureIndex: opts.curvatureIndex ?? parallelCount,
-      _g: null
+      _g: null, _lbl: null
     };
-    const g = _makeGroup(data);
-    data._g = g;
-    _svg().appendChild(g);
+    data._g   = _makeGroup(data);
+    data._lbl = _makeLabel();
+    _svg().appendChild(data._g);
     Store.addEdge(data);
     update(data.id);
     return data;
@@ -569,10 +566,9 @@ const EM = (() => {
     const tgt  = Store.nodes.get(data.targetId);
     if (!src||!tgt||!src._el||!tgt._el) return;
     const { sp, tp, cp1, cp2, mid } = _calcPath(src, tgt, data.curvatureIndex);
-    const d = `M ${sp.x} ${sp.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${tp.x} ${tp.y}`;
-    const g  = data._g;
-    const fo = g.querySelector('.e-fo');
-    const lbl= fo.querySelector('.e-lbl');
+    const d   = `M ${sp.x} ${sp.y} C ${cp1.x} ${cp1.y}, ${cp2.x} ${cp2.y}, ${tp.x} ${tp.y}`;
+    const g   = data._g;
+    const lbl = data._lbl;
     g.querySelector('.e-hit').setAttribute('d', d);
     const vis = g.querySelector('.e-vis');
     vis.setAttribute('d', d);
@@ -581,12 +577,16 @@ const EM = (() => {
       vis.setAttribute('stroke', col);
       g.querySelector('.arr-poly').setAttribute('fill', col);
     }
-    if (data.tag) {
-      lbl.style.display = 'inline-block';
-      LX.render(data.tag, lbl);
-      fo.setAttribute('x', (mid.x - FO_W / 2).toString());
-      fo.setAttribute('y', (mid.y - FO_H / 2).toString());
-    } else { lbl.style.display = 'none'; }
+    if (lbl) {
+      if (data.tag) {
+        lbl.style.display = 'inline-block';
+        lbl.style.left    = mid.x + 'px';
+        lbl.style.top     = mid.y + 'px';
+        LX.render(data.tag, lbl);
+      } else {
+        lbl.style.display = 'none';
+      }
+    }
   }
 
   function updateForNode(nodeId) {
@@ -597,6 +597,7 @@ const EM = (() => {
   function remove(id) {
     const data = Store.edges.get(id); if (!data) return;
     data._g?.remove();
+    data._lbl?.remove();
     Store.removeEdge(id);
     if (_selId === id) { _selId = null; EB.emit('panel:close'); }
   }
@@ -613,8 +614,11 @@ const EM = (() => {
   }
 
   function load(data) {
-    const g = _makeGroup(data); data._g = g;
-    _svg().appendChild(g); Store.addEdge(data); update(data.id);
+    data._g   = _makeGroup(data);
+    data._lbl = _makeLabel();
+    _svg().appendChild(data._g);
+    Store.addEdge(data);
+    update(data.id);
     return data;
   }
 
@@ -631,6 +635,10 @@ const EM = (() => {
   }
 
   function init() {
+    _lblLayer = document.createElement('div');
+    _lblLayer.id = 'edge-labels';
+    document.getElementById('canvas-world').appendChild(_lblLayer);
+
     EB.on('node:moved',      nodeId => updateForNode(nodeId));
     EB.on('edge:create',     ({ srcId, tgtId, opts }) => create(srcId, tgtId, opts));
     EB.on('edge:removeById', id => remove(id));
@@ -843,7 +851,7 @@ const IP = (() => {
 ═══════════════════════════════════════════════════════════ */
 function _applyGraph(rawNodes, rawEdges, msg) {
   [...Store.nodes.values()].forEach(n => n._el?.remove());
-  [...Store.edges.values()].forEach(e => e._g?.remove());
+  [...Store.edges.values()].forEach(e => { e._g?.remove(); e._lbl?.remove(); });
   Store.clear();
   Panel.close();
   rawNodes.forEach(n => NM.load({
@@ -853,7 +861,7 @@ function _applyGraph(rawNodes, rawEdges, msg) {
   requestAnimationFrame(() => {
     rawEdges.forEach(ed => EM.load({
       id: ed.id, sourceId: ed.sourceId, targetId: ed.targetId,
-      tag: ed.tag || '', curvatureIndex: ed.curvatureIndex || 0, _g: null
+      tag: ed.tag || '', curvatureIndex: ed.curvatureIndex || 0, _g: null, _lbl: null
     }));
     Status.show(msg, 3000);
   });

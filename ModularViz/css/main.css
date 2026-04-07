@@ -96,7 +96,7 @@ html, body {
   transition: box-shadow .15s, border-color .15s;
 }
 .node:hover         { box-shadow: 0 4px 22px rgba(0,0,0,0.17); border-color: #cbd5e1; }
-.node.sel           { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.18), var(--node-shadow); }
+.node.sel           { border-color: var(--nc, var(--accent)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nc, var(--accent)) 22%, transparent), var(--node-shadow); }
 .node.conn-src      { border-color: #22c55e;        box-shadow: 0 0 0 3px rgba(34,197,94,0.22),  var(--node-shadow); }
 .node:active        { cursor: grabbing; }
 
@@ -356,10 +356,12 @@ textarea.pi {
   padding: 0 1px;
 }
 
-/* ── Edge label (moved from inline JS for dark-mode override) */
+/* ── Edge labels layer (HTML div inside #canvas-world) ───── */
+#edge-labels { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+/* ── Edge label ──────────────────────────────────────────── */
 .e-lbl {
   position: absolute;
-  top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   white-space: nowrap;
   background: #fff;
@@ -369,6 +371,7 @@ textarea.pi {
   font-size: 11px;
   color: #475569;
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  pointer-events: none;
 }
 
 /* ── Scrollbar ───────────────────────────────────────────── */
@@ -609,8 +612,8 @@ body.dark .node:hover {
   box-shadow: 0 4px 24px rgba(0,0,0,0.55);
 }
 body.dark .node.sel {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.25), 0 2px 16px rgba(0,0,0,0.45);
+  border-color: var(--nc, var(--accent));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--nc, var(--accent)) 28%, transparent), 0 2px 16px rgba(0,0,0,0.45);
 }
 body.dark .node.conn-src {
   border-color: #22c55e;
