@@ -29,36 +29,33 @@ const Store = {
    LatexUtil
 ═══════════════════════════════════════════════════════════ */
 const LX = (() => {
+  const _DELIMITERS = [
+    { left: '$$',                  right: '$$',                  display: true  },
+    { left: '\\[',                 right: '\\]',                 display: true  },
+    { left: '\\begin{equation}',   right: '\\end{equation}',    display: true  },
+    { left: '\\begin{equation*}',  right: '\\end{equation*}',   display: true  },
+    { left: '\\begin{align}',      right: '\\end{align}',       display: true  },
+    { left: '\\begin{align*}',     right: '\\end{align*}',      display: true  },
+    { left: '\\begin{alignat}',    right: '\\end{alignat}',     display: true  },
+    { left: '\\begin{alignat*}',   right: '\\end{alignat*}',    display: true  },
+    { left: '\\begin{gather}',     right: '\\end{gather}',      display: true  },
+    { left: '\\begin{gather*}',    right: '\\end{gather*}',     display: true  },
+    { left: '\\begin{multline}',   right: '\\end{multline}',    display: true  },
+    { left: '\\begin{multline*}',  right: '\\end{multline*}',   display: true  },
+    { left: '\\begin{CD}',         right: '\\end{CD}',          display: true  },
+    { left: '$',                   right: '$',                   display: false },
+    { left: '\\(',                 right: '\\)',                 display: false }
+  ];
+
   function render(src, el) {
     if (!src || !src.trim()) {
       el.innerHTML = '<span style="color:#94a3b8;font-style:italic">(empty)</span>';
       return;
     }
-    el.innerHTML = window.katex ? _mixed(src) : _esc(src);
-  }
-
-  function _mixed(src) {
-    const segments = [];
-    const re = /(\$\$[\s\S]*?\$\$|\$(?:[^$\\]|\\[\s\S])*?\$)/g;
-    let last = 0, m;
-    while ((m = re.exec(src)) !== null) {
-      if (m.index > last) segments.push({ type: 'text', value: src.slice(last, m.index) });
-      const full = m[0], disp = full.startsWith('$$');
-      segments.push({ type: 'math', math: disp ? full.slice(2, -2) : full.slice(1, -1), disp });
-      last = m.index + full.length;
+    el.textContent = src;
+    if (window.renderMathInElement) {
+      window.renderMathInElement(el, { delimiters: _DELIMITERS, throwOnError: false });
     }
-    if (last < src.length) segments.push({ type: 'text', value: src.slice(last) });
-    return segments.map(seg => {
-      if (seg.type === 'text') return _esc(seg.value).replace(/\\\\/g, '<br>');
-      try {
-        const html = window.katex.renderToString(seg.math, { displayMode: seg.disp, throwOnError: false });
-        return seg.disp ? `<div style="text-align:center;margin:4px 0">${html}</div>` : html;
-      } catch { return _esc(seg.disp ? `$$${seg.math}$$` : `$${seg.math}$`); }
-    }).join('');
-  }
-
-  function _esc(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   return { render };

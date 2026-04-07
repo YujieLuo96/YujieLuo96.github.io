@@ -1,12 +1,36 @@
 /**
- * LatexUtil — KaTeX rendering helper
- * Supports mixed content: plain text + inline $...$ + display $$...$$
- * KaTeX is loaded via CDN with `defer`; window.katex is available after DOMContentLoaded.
+ * LatexUtil — KaTeX rendering via official auto-render extension
+ *
+ * Delegates entirely to window.renderMathInElement (KaTeX contrib/auto-render).
+ * Supports all KaTeX-recognised delimiters and environments; no custom parsing.
+ *
+ * Requires (both loaded with defer, in order):
+ *   katex@0.16.9/dist/katex.min.js
+ *   katex@0.16.9/dist/contrib/auto-render.min.js
  */
+
+const _DELIMITERS = [
+  { left: '$$',                  right: '$$',                  display: true  },
+  { left: '\\[',                 right: '\\]',                 display: true  },
+  { left: '\\begin{equation}',   right: '\\end{equation}',    display: true  },
+  { left: '\\begin{equation*}',  right: '\\end{equation*}',   display: true  },
+  { left: '\\begin{align}',      right: '\\end{align}',       display: true  },
+  { left: '\\begin{align*}',     right: '\\end{align*}',      display: true  },
+  { left: '\\begin{alignat}',    right: '\\end{alignat}',     display: true  },
+  { left: '\\begin{alignat*}',   right: '\\end{alignat*}',    display: true  },
+  { left: '\\begin{gather}',     right: '\\end{gather}',      display: true  },
+  { left: '\\begin{gather*}',    right: '\\end{gather*}',     display: true  },
+  { left: '\\begin{multline}',   right: '\\end{multline}',    display: true  },
+  { left: '\\begin{multline*}',  right: '\\end{multline*}',   display: true  },
+  { left: '\\begin{CD}',         right: '\\end{CD}',          display: true  },
+  { left: '$',                   right: '$',                   display: false },
+  { left: '\\(',                 right: '\\)',                 display: false }
+];
 
 export const LX = {
   /**
-   * Render src string into el (auto-detects LaTeX syntax).
+   * Render src into el using KaTeX auto-render.
+   * Falls back to plain text display if auto-render is not yet loaded.
    * @param {string} src
    * @param {HTMLElement} el
    */
@@ -15,49 +39,9 @@ export const LX = {
       el.innerHTML = '<span style="color:#94a3b8;font-style:italic">(empty)</span>';
       return;
     }
-    el.innerHTML = window.katex ? this._mixed(src) : this._esc(src);
-  },
-
-  /**
-   * Parse src into plain-text / LaTeX segments and render each.
-   * @param {string} src
-   * @returns {string} HTML string
-   */
-  _mixed(src) {
-    const segments = [];
-    const re = /(\$\$[\s\S]*?\$\$|\$(?:[^$\\]|\\[\s\S])*?\$)/g;
-    let last = 0, m;
-
-    while ((m = re.exec(src)) !== null) {
-      if (m.index > last)
-        segments.push({ type: 'text', value: src.slice(last, m.index) });
-
-      const full = m[0];
-      const displayMode = full.startsWith('$$');
-      const math = displayMode ? full.slice(2, -2) : full.slice(1, -1);
-      segments.push({ type: 'math', math, displayMode });
-      last = m.index + full.length;
+    el.textContent = src;
+    if (window.renderMathInElement) {
+      window.renderMathInElement(el, { delimiters: _DELIMITERS, throwOnError: false });
     }
-    if (last < src.length)
-      segments.push({ type: 'text', value: src.slice(last) });
-
-    return segments.map(seg => {
-      if (seg.type === 'text') return this._esc(seg.value).replace(/\\\\/g, '<br>');
-      try {
-        const html = window.katex.renderToString(seg.math, {
-          displayMode: seg.displayMode,
-          throwOnError: false
-        });
-        return seg.displayMode
-          ? `<div style="text-align:center;margin:4px 0">${html}</div>`
-          : html;
-      } catch {
-        return this._esc(seg.displayMode ? `$$${seg.math}$$` : `$${seg.math}$`);
-      }
-    }).join('');
-  },
-
-  _esc(s) {
-    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 };
