@@ -241,7 +241,7 @@ const NM = (() => {
 
     const titleEl = document.createElement('div');
     titleEl.className = 'node-title';
-    titleEl.textContent = data.title;
+    LX.render(data.title, titleEl);
     body.appendChild(titleEl);
 
     if (data.content) {
@@ -303,7 +303,7 @@ const NM = (() => {
       el.style.top  = data.y + 'px';
     }
     el.querySelector('.node-bar').style.background = data.color;
-    el.querySelector('.node-title').textContent    = data.title;
+    LX.render(data.title, el.querySelector('.node-title'));
     let prev = el.querySelector('.node-preview');
     if (data.content) {
       if (!prev) {
@@ -725,6 +725,35 @@ const Panel = (() => {
     EB.on('panel:showNode', id => showNode(id));
     EB.on('panel:showEdge', id => showEdge(id));
     EB.on('panel:close',    ()  => close());
+
+    // ── Panel resize handle ─────────────────────────────────
+    const handle = document.createElement('div');
+    handle.id = 'panel-resize-handle';
+    _panel().prepend(handle);
+
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const panelEl = _panel();
+      const startX  = e.clientX;
+      const startW  = panelEl.offsetWidth;
+      handle.classList.add('dragging');
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor     = 'ew-resize';
+
+      function onMove(ev) {
+        const newW = Math.max(240, startW + (startX - ev.clientX));
+        document.documentElement.style.setProperty('--panel-w', newW + 'px');
+      }
+      function onUp() {
+        handle.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        document.body.style.cursor     = '';
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup',   onUp);
+      }
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup',   onUp);
+    });
   }
 
   return { init, showNode, showEdge, close };

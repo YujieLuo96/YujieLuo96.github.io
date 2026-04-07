@@ -103,7 +103,8 @@ html, body {
 .node-bar  { width: 4px; flex-shrink: 0; }
 .node-body { flex: 1; padding: 10px 12px; min-width: 0; }
 
-.node-title   { font-size: 13px; font-weight: 600; color: #1e293b; word-break: break-word; line-height: 1.45; }
+.node-title   { font-size: 13px; font-weight: 600; color: #1e293b; word-break: break-word; line-height: 1.45; overflow: hidden; }
+.node-title .katex { font-size: 1em; }
 .node-preview { font-size: 11px; color: #94a3b8; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
 
 /* ── Panel ───────────────────────────────────────────────── */
@@ -118,6 +119,34 @@ html, body {
   box-shadow: -4px 0 20px rgba(0,0,0,0.07);
 }
 #panel.open { transform: translateX(0); }
+
+/* ── Panel resize handle ─────────────────────────────────── */
+#panel-resize-handle {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background .15s;
+}
+#panel-resize-handle::before {
+  content: '';
+  position: absolute;
+  left: 3px; top: 50%; transform: translateY(-50%);
+  width: 2px; height: 36px;
+  border-radius: 1px;
+  background: transparent;
+  transition: background .15s;
+}
+#panel-resize-handle:hover::before,
+#panel-resize-handle.dragging::before {
+  background: var(--accent);
+  opacity: 0.55;
+}
+#panel-resize-handle:hover,
+#panel-resize-handle.dragging {
+  background: rgba(99,102,241,0.07);
+}
 
 .panel-hd {
   padding: 15px 16px 12px; border-bottom: 1px solid var(--border);
@@ -596,6 +625,8 @@ body.dark .cswatch.active { border-color: #e2e8f0; }
 
 /* ── Side Panel ──────────────────────────────────────────── */
 body.dark #panel          { background: #12152a; box-shadow: -4px 0 24px rgba(0,0,0,0.4); }
+body.dark #panel-resize-handle:hover,
+body.dark #panel-resize-handle.dragging { background: rgba(99,102,241,0.18); }
 body.dark .panel-hd-title { color: #dde1f0; }
 body.dark .panel-close    { color: #4a5070; }
 body.dark .panel-close:hover { background: #1e2138; color: #dde1f0; }
