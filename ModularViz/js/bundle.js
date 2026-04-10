@@ -849,11 +849,16 @@ const IP = (() => {
 /* ═══════════════════════════════════════════════════════════
    _applyGraph — shared graph-load helper used by IO and CryptoIO
 ═══════════════════════════════════════════════════════════ */
+let _loadedFileName   = null; // name of the last plain-JSON file loaded
+let _loadedFileHandle = null; // FileSystemFileHandle from showOpenFilePicker (Chrome/Edge only)
+
 function _applyGraph(rawNodes, rawEdges, msg) {
   [...Store.nodes.values()].forEach(n => n._el?.remove());
   [...Store.edges.values()].forEach(e => { e._g?.remove(); e._lbl?.remove(); });
   Store.clear();
   Panel.close();
+  _loadedFileName   = null; // reset on every canvas clear; IO.load sets both again right after
+  _loadedFileHandle = null;
   rawNodes.forEach(n => NM.load({
     id: n.id, title: n.title || 'Node', content: n.content || '',
     color: n.color || '#6366f1', x: +n.x || 0, y: +n.y || 0, _el: null
@@ -870,29 +875,64 @@ function _applyGraph(rawNodes, rawEdges, msg) {
 /* ═══════════════════════════════════════════════════════════
    IO
 ═══════════════════════════════════════════════════════════ */
+function _buildPayload() {
+  return {
+    version: '1.1',
+    nodes: [...Store.nodes.values()].map(n => ({
+      id: n.id, title: n.title, content: n.content, color: n.color, x: n.x, y: n.y
+    })),
+    edges: [...Store.edges.values()].map(e => ({
+      id: e.id, sourceId: e.sourceId, targetId: e.targetId,
+      tag: e.tag, curvatureIndex: e.curvatureIndex
+    }))
+  };
+}
+
+function _downloadJson(json, filename) {
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
 const IO = {
-  save() {
-    const payload = {
-      version: '1.1',
-      nodes: [...Store.nodes.values()].map(n => ({
-        id: n.id, title: n.title, content: n.content, color: n.color, x: n.x, y: n.y
-      })),
-      edges: [...Store.edges.values()].map(e => ({
-        id: e.id, sourceId: e.sourceId, targetId: e.targetId,
-        tag: e.tag, curvatureIndex: e.curvatureIndex
-      }))
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url;
-    a.download = 'graph_' + new Date().toISOString().slice(0, 10) + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  getLoadedFileName() { return _loadedFileName; },
+
+  saveAs() {
+    _downloadJson(
+      JSON.stringify(_buildPayload(), null, 2),
+      'graph_' + new Date().toISOString().slice(0, 10) + '.json'
+    );
     Status.show('File saved', 2500);
   },
 
-  load(file) {
+  async saveOverwrite(filename) {
+    const json = JSON.stringify(_buildPayload(), null, 2);
+    if ('showSaveFilePicker' in window) {
+      try {
+        const opts = {
+          suggestedName: filename,
+          types: [{ description: 'JSON Graph', accept: { 'application/json': ['.json'] } }]
+        };
+        if (_loadedFileHandle) opts.startIn = _loadedFileHandle; // jump straight to source directory
+        const handle = await window.showSaveFilePicker(opts);
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        Status.show('File saved', 2500);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // user cancelled — do nothing
+        // unexpected error: fall through to download fallback
+      }
+    }
+    _downloadJson(json, filename);
+    Status.show('File saved', 2500);
+  },
+
+  // fileHandle is a FileSystemFileHandle from showOpenFilePicker (optional; null when using <input>)
+  load(file, fileHandle) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
@@ -902,6 +942,8 @@ const IO = {
         const nn = data.nodes.length, ne = data.edges.length;
         _applyGraph(data.nodes, data.edges,
           `Loaded ${nn} node${nn !== 1 ? 's' : ''} · ${ne} connection${ne !== 1 ? 's' : ''}`);
+        _loadedFileName   = file.name;      // set AFTER _applyGraph (which resets both to null)
+        _loadedFileHandle = fileHandle || null;
       } catch(err) { Status.show('Load failed: ' + err.message, 3500); }
     };
     reader.readAsText(file);
@@ -978,19 +1020,6 @@ const CryptoIO = (() => {
   }
 
   // ── Graph payload helpers ────────────────────────────────
-
-  function _buildPayload() {
-    return {
-      version: '1.1',
-      nodes: [...Store.nodes.values()].map(n => ({
-        id: n.id, title: n.title, content: n.content, color: n.color, x: n.x, y: n.y
-      })),
-      edges: [...Store.edges.values()].map(e => ({
-        id: e.id, sourceId: e.sourceId, targetId: e.targetId,
-        tag: e.tag, curvatureIndex: e.curvatureIndex
-      }))
-    };
-  }
 
   function _applyPayload(data) {
     if (!Array.isArray(data.nodes) || !Array.isArray(data.edges))
@@ -1257,12 +1286,61 @@ const TB = {
   init() {
     const vp = document.getElementById('canvas-vp');
 
+    // ── Save Choice Modal ──────────────────────────────────
+    const scBackdrop = document.getElementById('sc-backdrop');
+    const scModal    = document.getElementById('sc-modal');
+    const scFilename = document.getElementById('sc-filename');
+
+    function openSaveChoice() {
+      scFilename.textContent = IO.getLoadedFileName();
+      scModal.classList.add('open');
+      scBackdrop.classList.add('open');
+    }
+    function closeSaveChoice() {
+      scModal.classList.remove('open');
+      scBackdrop.classList.remove('open');
+    }
+    function trySave() {
+      if (IO.getLoadedFileName()) openSaveChoice();
+      else IO.saveAs();
+    }
+
+    scBackdrop.addEventListener('click', closeSaveChoice);
+    document.getElementById('sc-cancel').addEventListener('click', closeSaveChoice);
+    document.getElementById('sc-saveas').addEventListener('click', () => {
+      closeSaveChoice(); IO.saveAs();
+    });
+    document.getElementById('sc-overwrite').addEventListener('click', () => {
+      const name = IO.getLoadedFileName(); closeSaveChoice(); IO.saveOverwrite(name);
+    });
+
+    // ── Toolbar buttons ────────────────────────────────────
     document.getElementById('btn-node').addEventListener('click', () => App.setMode('place'));
     document.getElementById('btn-conn').addEventListener('click', () =>
       App.setMode(App.mode === 'conn' ? 'default' : 'conn'));
-    document.getElementById('btn-save').addEventListener('click', () => IO.save());
-    document.getElementById('btn-load').addEventListener('click', () =>
-      document.getElementById('file-inp').click());
+    document.getElementById('btn-save').addEventListener('click', trySave);
+
+    // Load — use showOpenFilePicker (Chrome/Edge) to capture the FileSystemFileHandle,
+    // enabling saveOverwrite to open the save dialog in the same directory.
+    // Falls back to <input type="file"> on unsupported browsers (Firefox).
+    async function tryLoad() {
+      if ('showOpenFilePicker' in window) {
+        try {
+          const [handle] = await window.showOpenFilePicker({
+            types: [{ description: 'JSON Graph', accept: { 'application/json': ['.json'] } }],
+            multiple: false
+          });
+          IO.load(await handle.getFile(), handle);
+          return;
+        } catch (err) {
+          if (err.name === 'AbortError') return; // user cancelled
+          // unexpected error: fall through to <input> fallback
+        }
+      }
+      document.getElementById('file-inp').click();
+    }
+
+    document.getElementById('btn-load').addEventListener('click', tryLoad);
     document.getElementById('file-inp').addEventListener('change', e => {
       const f = e.target.files[0]; if (f) IO.load(f); e.target.value = '';
     });
@@ -1317,7 +1395,7 @@ const TB = {
           else if (App.selEdge) { EM.remove(App.selEdge); Panel.close(); App.selEdge=null; }
           break;
         case 's': case 'S':
-          if (e.ctrlKey||e.metaKey) { e.preventDefault(); IO.save(); } break;
+          if (e.ctrlKey||e.metaKey) { e.preventDefault(); trySave(); } break;
       }
     });
   }
@@ -1401,7 +1479,7 @@ const SM = (() => {
 
   /* ── dropdown rendering ── */
   function _esc(s) {
-    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   function _hlText(text, q) {
