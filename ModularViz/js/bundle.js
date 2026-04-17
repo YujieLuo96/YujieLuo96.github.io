@@ -12,6 +12,7 @@ function boot() {
   TB.init();
   SM.init();
   CryptoIO.init();
+  LatexImport.init();
   DarkMode.init();
   ML.init();  // shows mobile hint on touch devices; no-op on desktop
   MT.init();
