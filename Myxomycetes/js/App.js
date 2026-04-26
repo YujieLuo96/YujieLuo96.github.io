@@ -6,7 +6,7 @@ import { Panel }           from './ui/Panel.js';
 import { Stats }           from './ui/Stats.js';
 
 const MAX_SIM_SIZE  = 900;
-const MIN_SIM_SIZE  = 400;
+const MIN_SIM_SIZE  = 300;
 const RESIZE_THRESH = 80;
 
 export class App {
@@ -166,15 +166,23 @@ export class App {
     // ── Events ────────────────────────────────────────────────────────────────
 
     _bindEvents() {
-        this._canvas.addEventListener('click', e => {
+        const placeAt = (clientX, clientY) => {
             const rect   = this._canvas.getBoundingClientRect();
             const scaleX = this._canvas.width  / rect.width;
             const scaleY = this._canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top)  * scaleY;
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top)  * scaleY;
             if (this._mode === 'nutrient') this._sim.addNutrient(x, y);
             else                           this._sim.addAntibiotic(x, y);
-        });
+        };
+
+        this._canvas.addEventListener('click', e => placeAt(e.clientX, e.clientY));
+
+        this._canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            const t = e.changedTouches[0];
+            placeAt(t.clientX, t.clientY);
+        }, { passive: false });
 
         document.addEventListener('keydown', e => {
             if (e.key === ' ') { e.preventDefault(); this._toggleRun(); }
