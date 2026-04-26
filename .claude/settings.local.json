@@ -2,6 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(gh api:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\schem\\Documents\\GitHub\\Scheme96.github.io\\Myxomycetes"
     ]
   }
 }
