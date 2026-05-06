@@ -117,7 +117,7 @@ var MobileControls = (() => {
         _joyBase = document.createElement('canvas');
         _joyBase.width  = D;
         _joyBase.height = D;
-        _joyBase.style.cssText = 'position:absolute;display:none;pointer-events:none;transform:translate(-50%,-50%);';
+        _joyBase.style.cssText = 'position:absolute;display:none;pointer-events:none;transform:translate(-50%,-50%);opacity:0.38;';
 
         const zone = document.createElement('div');
         zone.style.cssText = 'position:absolute;left:0;top:0;width:62%;height:100%;pointer-events:auto;';
@@ -134,7 +134,7 @@ var MobileControls = (() => {
             'bottom:calc(80px + env(safe-area-inset-bottom, 0px))',
             'right:20px',
             'width:64px;height:64px;border-radius:50%',
-            'background:rgba(255,70,0,0.35);border:2px solid rgba(255,140,0,0.80)',
+            'background:rgba(255,70,0,0.12);border:2px solid rgba(255,140,0,0.35)',
             'color:#ff8;font-family:\'Courier New\',monospace;font-size:10px;font-weight:bold',
             'display:flex;align-items:center;justify-content:center',
             'pointer-events:auto;user-select:none;-webkit-user-select:none',
@@ -143,10 +143,10 @@ var MobileControls = (() => {
         bombBtn.addEventListener('touchstart', e => {
             e.preventDefault(); e.stopPropagation();
             EventBus.emit('input:keydown', ' ');
-            bombBtn.style.background = 'rgba(255,130,0,0.65)';
+            bombBtn.style.background = 'rgba(255,130,0,0.42)';
         }, { passive: false });
         bombBtn.addEventListener('touchend', () => {
-            bombBtn.style.background = 'rgba(255,70,0,0.35)';
+            bombBtn.style.background = 'rgba(255,70,0,0.12)';
         });
 
         const pauseBtn = document.createElement('div');
@@ -156,7 +156,7 @@ var MobileControls = (() => {
             'top:calc(14px + env(safe-area-inset-top, 0px))',
             'right:14px',
             'width:44px;height:44px;border-radius:8px',
-            'background:rgba(0,30,60,0.72);border:1px solid rgba(80,160,255,0.55)',
+            'background:rgba(0,30,60,0.25);border:1px solid rgba(80,160,255,0.28)',
             'color:#4af;font-size:14px',
             'display:flex;align-items:center;justify-content:center',
             'pointer-events:auto;user-select:none;-webkit-user-select:none',
