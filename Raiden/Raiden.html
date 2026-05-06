@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RAIDEN II — Modular Edition</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            background: #000010;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Courier New','Microsoft YaHei',monospace;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #game-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            border: 2px solid #1a3a5c;
+            border-radius: 8px;
+            background: #000015;
+            cursor: none;
+            max-width: 100vw;
+            max-height: 100vh;
+            animation: glow 3s ease-in-out infinite;
+            box-shadow:
+                0 0 30px rgba(0,150,255,0.3),
+                0 0 60px rgba(0,100,200,0.15),
+                inset 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        @keyframes glow {
+            0%,100% { box-shadow: 0 0 30px rgba(0,150,255,0.3), 0 0 60px rgba(0,100,200,0.15); }
+            50%      { box-shadow: 0 0 40px rgba(0,180,255,0.5), 0 0 80px rgba(0,130,240,0.3); }
+        }
+
+        @media (max-width:600px) {
+            #game-container { max-width:100vw; max-height:100vh; }
+            canvas { border-radius:0; border:none; box-shadow:none; animation:none; }
+        }
+
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #000010;
+            color: #4af;
+            font-family: 'Courier New',monospace;
+            font-size: 18px;
+            z-index: 99;
+            transition: opacity 0.5s;
+        }
+        #loading .title { font-size:38px; color:#fff; margin-bottom:16px; letter-spacing:8px; }
+        #loading .bar   { width:240px; height:4px; background:#111; border-radius:2px; margin-top:18px; }
+        #loading .fill  { height:100%; width:0; background:linear-gradient(90deg,#28f,#4af); border-radius:2px; transition:width 0.15s; }
+
+        /* Width control panel */
+        #width-ctrl {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #1a3a5c;
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-family: 'Courier New',monospace;
+            font-size: 11px;
+            color: #4af;
+            z-index: 50;
+            user-select: none;
+        }
+        #width-ctrl span { color: #888; }
+        #width-ctrl .wval { color: #ff8; min-width: 36px; text-align: center; }
+        #width-ctrl button {
+            background: rgba(0,60,120,0.6);
+            border: 1px solid #1a3a5c;
+            border-radius: 3px;
+            color: #7cf;
+            font-family: 'Courier New',monospace;
+            font-size: 10px;
+            padding: 2px 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        #width-ctrl button:hover { background: rgba(0,100,200,0.7); color:#fff; }
+        #width-ctrl button.active { background: rgba(0,100,200,0.9); color:#fff; border-color:#4af; }
+        #width-ctrl input[type=range] {
+            width: 100px;
+            accent-color: #4af;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading">
+    <div class="title">RAIDEN</div>
+    <div>LOADING…</div>
+    <div class="bar"><div class="fill" id="loadFill"></div></div>
+</div>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<!-- Width control panel -->
+<div id="width-ctrl">
+    <span>Game Width</span>
+    <button onclick="setGameWidth(480)">480</button>
+    <button onclick="setGameWidth(640)">640</button>
+    <button class="active" onclick="setGameWidth(768)">768</button>
+    <button onclick="setGameWidth(960)">960</button>
+    <button onclick="setGameWidth(1120)">1120</button>
+    <input type="range" id="wSlider" min="360" max="1200" step="16" value="768"
+           oninput="setGameWidth(parseInt(this.value))">
+    <span class="wval" id="wVal">768px</span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     Script loading order (bottom-up dependency graph)
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- 1. Core infrastructure -->
+<script src="modules/core/EventBus.js"></script>
+<script src="modules/core/Renderer.js"></script>
+<script src="modules/core/Collision.js"></script>
+<script src="modules/core/InputManager.js"></script>
+
+<!-- 1b. Asset registries — must load before any asset file that calls register() -->
+<script src="modules/data/EnemyRegistry.js"></script>
+<script src="modules/data/ItemRegistry.js"></script>
+<script src="modules/data/SceneRegistry.js"></script>
+<script src="modules/data/WeaponRegistry.js"></script>
+
+<!-- 2. Player config (needed by Player, PlayerBulletBase) -->
+<script src="modules/player/PlayerConfig.js"></script>
+
+<!-- 3. FX (ParticleSystem used by ExplosionFX, scenes, enemies) -->
+<script src="modules/fx/ParticleSystem.js"></script>
+<script src="modules/fx/ExplosionFX.js"></script>
+
+<!-- 4. Audio -->
+<script src="modules/audio/AudioManager.js"></script>
+
+<!-- 5. Weapon base classes -->
+<script src="modules/weapons/EnemyBullet.js"></script>
+<script src="modules/weapons/BulletPatterns.js"></script>
+<script src="modules/weapons/PlayerBulletBase.js"></script>
+
+<!-- 6. Weapon types -->
+<script src="modules/weapons/types/NormalGun.js"></script>
+<script src="modules/weapons/types/SpreadGun.js"></script>
+<script src="modules/weapons/types/LaserBeam.js"></script>
+<script src="modules/weapons/types/HomingMissile.js"></script>
+<script src="modules/weapons/types/PlasmaCannon.js"></script>
+<script src="modules/weapons/types/LightningGun.js"></script>
+<script src="modules/weapons/types/IceCrystal.js"></script>
+<script src="modules/weapons/types/TwinSatellite.js"></script>
+<script src="modules/weapons/types/GravitonOrb.js"></script>
+
+<!-- 7. WeaponManager (aggregates weapon types) -->
+<script src="modules/weapons/WeaponManager.js"></script>
+
+<!-- 8. Enemy base -->
+<script src="modules/enemies/EnemyBase.js"></script>
+
+<!-- 9. Soldier enemies (SOLDIERS group, then ELITES group — order matches registry display) -->
+<script src="modules/enemies/soldiers/Scout.js"></script>
+<script src="modules/enemies/soldiers/Fighter.js"></script>
+<script src="modules/enemies/soldiers/Bomber.js"></script>
+<script src="modules/enemies/soldiers/Drone.js"></script>
+<script src="modules/enemies/soldiers/Interceptor.js"></script>
+<script src="modules/enemies/soldiers/Gunship.js"></script>
+<script src="modules/enemies/soldiers/Predator.js"></script>
+<script src="modules/enemies/soldiers/Carrier.js"></script>
+<script src="modules/enemies/soldiers/Marauder.js"></script>
+<script src="modules/enemies/soldiers/Spinner.js"></script>
+<script src="modules/enemies/soldiers/Vanguard.js"></script>
+<script src="modules/enemies/soldiers/Elite.js"></script>
+<script src="modules/enemies/soldiers/Spectre.js"></script>
+<script src="modules/enemies/soldiers/Devastator.js"></script>
+
+<!-- 10. Boss enemies -->
+<script src="modules/enemies/bosses/MidBoss.js"></script>
+<script src="modules/enemies/bosses/MidBoss2.js"></script>
+<script src="modules/enemies/bosses/Boss1_Fortress.js"></script>
+<script src="modules/enemies/bosses/Boss2_Colossus.js"></script>
+<script src="modules/enemies/bosses/Boss3_Chaos.js"></script>
+<script src="modules/enemies/bosses/Boss4_Void.js"></script>
+<script src="modules/enemies/bosses/Boss5_Leviathan.js"></script>
+<script src="modules/enemies/bosses/Boss6_NeutronCluster.js"></script>
+<script src="modules/enemies/bosses/Boss7_Sovereign.js"></script>
+
+<!-- 11. EnemyManager (aggregates all enemy types) -->
+<script src="modules/enemies/EnemyManager.js"></script>
+
+<!-- 12. Reward item base + items -->
+<script src="modules/rewards/ItemBase.js"></script>
+<script src="modules/rewards/items/PowerItem.js"></script>
+<script src="modules/rewards/items/BombItem.js"></script>
+<script src="modules/rewards/items/HealthItem.js"></script>
+<script src="modules/rewards/items/ShieldItem.js"></script>
+<script src="modules/rewards/items/WeaponItem.js"></script>
+<script src="modules/rewards/items/TimeSlowItem.js"></script>
+<script src="modules/rewards/items/MultiplierItem.js"></script>
+<script src="modules/rewards/items/MegaBombItem.js"></script>
+
+<!-- 13. RewardManager -->
+<script src="modules/rewards/RewardManager.js"></script>
+
+<!-- 14. Background scenes -->
+<script src="modules/scene/scenes/SpaceScene.js"></script>
+<script src="modules/scene/scenes/AsteroidScene.js"></script>
+<script src="modules/scene/scenes/SolarScene.js"></script>
+<script src="modules/scene/scenes/BlackholeScene.js"></script>
+
+<!-- 15. BackgroundManager -->
+<script src="modules/scene/BackgroundManager.js"></script>
+
+<!-- 16. Stage data & manager -->
+<script src="modules/stages/StageData.js"></script>
+<script src="modules/stages/StageManager.js"></script>
+
+<!-- 17. Player -->
+<script src="modules/player/Player.js"></script>
+
+<!-- 18. UI Renderer -->
+<script src="modules/fx/UIRenderer.js"></script>
+
+<!-- 19. Codex encyclopedia overlay -->
+<script src="modules/fx/Codex.js"></script>
+
+<!-- 20. Mobile controls (optional; self-disables on desktop) -->
+<script src="modules/core/MobileControls.js"></script>
+
+<!-- 21. GameCore — requires everything above -->
+<script src="modules/core/GameCore.js"></script>
+
+<!-- 20. Bootstrap -->
+<script>
+(function () {
+    const fill    = document.getElementById('loadFill');
+    const loading = document.getElementById('loading');
+    const canvas  = document.getElementById('gameCanvas');
+
+    let pct = 0;
+    const iv = setInterval(() => {
+        pct = Math.min(100, pct + 12);
+        fill.style.width = pct + '%';
+        if (pct >= 100) {
+            clearInterval(iv);
+            setTimeout(() => {
+                loading.style.opacity = '0';
+                setTimeout(() => loading.remove(), 500);
+                GameCore.init({ canvas });
+                MobileControls.init();
+                GameCore.start();
+            }, 200);
+        }
+    }, 40);
+})();
+
+// ── Width control ─────────────────────────────────────────────────────────
+function setGameWidth(w) {
+    w = Math.max(360, Math.min(1200, Math.round(w / 16) * 16));
+    Renderer.setWidth(w);
+
+    // Update UI
+    document.getElementById('wVal').textContent = w + 'px';
+    document.getElementById('wSlider').value = w;
+    document.querySelectorAll('#width-ctrl button').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.textContent) === w);
+    });
+}
+
+// Also update slider label when dragged without clicking a preset
+document.getElementById('wSlider').addEventListener('input', function() {
+    setGameWidth(parseInt(this.value));
+});
+</script>
+
+</body>
+</html>
