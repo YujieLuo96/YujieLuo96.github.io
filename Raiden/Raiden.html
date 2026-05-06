@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>RAIDEN II — Modular Edition</title>
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -13,6 +13,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            height: 100dvh;
             width: 100vw;
             overflow: hidden;
             font-family: 'Courier New','Microsoft YaHei',monospace;
@@ -30,6 +31,7 @@
             align-items: center;
             width: 100vw;
             height: 100vh;
+            height: 100dvh;
         }
 
         canvas {
@@ -40,6 +42,7 @@
             cursor: none;
             max-width: 100vw;
             max-height: 100vh;
+            max-height: 100dvh;
             animation: glow 3s ease-in-out infinite;
             box-shadow:
                 0 0 30px rgba(0,150,255,0.3),
@@ -53,7 +56,7 @@
         }
 
         @media (max-width:600px) {
-            #game-container { max-width:100vw; max-height:100vh; }
+            #game-container { max-width:100vw; max-height:100vh; max-height:100dvh; }
             canvas { border-radius:0; border:none; box-shadow:none; animation:none; }
         }
 

@@ -4,7 +4,9 @@ var Renderer = (() => {
     const _callbacks = [];
 
     function _fit() {
-        const s = Math.min(window.innerWidth / _W, window.innerHeight / _H);
+        const vw = window.visualViewport ? window.visualViewport.width  : window.innerWidth;
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const s  = Math.min(vw / _W, vh / _H);
         _canvas.style.width  = (_W * s) + 'px';
         _canvas.style.height = (_H * s) + 'px';
         _canvas.width  = _W;
@@ -20,7 +22,11 @@ var Renderer = (() => {
             _ctx    = el.getContext('2d');
             _fit();
             window.addEventListener('resize', _fit);
-            window.addEventListener('orientationchange', () => setTimeout(_fit, 200));
+            window.addEventListener('orientationchange', () => setTimeout(_fit, 300));
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', _fit);
+                window.visualViewport.addEventListener('scroll', _fit);
+            }
             if (!_ctx.roundRect) {
                 CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
                     this.beginPath();

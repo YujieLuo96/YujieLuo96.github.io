@@ -177,7 +177,8 @@ var MobileControls = (() => {
 
     function _fit() {
         if (typeof Renderer === 'undefined') return;
-        Renderer.setWidth(Math.min(window.innerWidth, 768));
+        const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+        Renderer.setWidth(Math.min(vw, 768));
         const ctrl = document.getElementById('width-ctrl');
         if (ctrl) ctrl.style.display = 'none';
     }
