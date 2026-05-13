@@ -67,16 +67,41 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: #000010;
-            color: #4af;
+            background: #00020e;
+            color: #1d7090;
             font-family: 'Courier New',monospace;
-            font-size: 18px;
+            font-size: 13px;
+            letter-spacing: 2px;
             z-index: 99;
             transition: opacity 0.5s;
         }
-        #loading .title { font-size:38px; color:#fff; margin-bottom:16px; letter-spacing:8px; }
-        #loading .bar   { width:240px; height:4px; background:#111; border-radius:2px; margin-top:18px; }
-        #loading .fill  { height:100%; width:0; background:linear-gradient(90deg,#28f,#4af); border-radius:2px; transition:width 0.15s; }
+        #loading::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,80,120,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,80,120,0.08) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+        }
+        #loading .title {
+            font-size: 44px; color: #00ccff; margin-bottom: 8px;
+            letter-spacing: 12px; text-shadow: 0 0 28px rgba(0,190,255,0.8);
+        }
+        #loading .sub   { color: #1d5878; font-size: 10px; letter-spacing: 4px; margin-bottom: 22px; }
+        #loading .bar   {
+            width: 240px; height: 6px;
+            background: #050d18;
+            border: 1px solid #0d3a50;
+            display: flex; gap: 2px; padding: 1px;
+            margin-top: 14px;
+        }
+        #loading .fill  {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, #006688, #00ccff);
+            transition: width 0.12s;
+        }
 
         /* Width control panel */
         #width-ctrl {
@@ -123,7 +148,8 @@
 
 <div id="loading">
     <div class="title">RAIDEN</div>
-    <div>LOADING…</div>
+    <div class="sub">THUNDER FORCE</div>
+    <div>INITIALIZING SYSTEMS…</div>
     <div class="bar"><div class="fill" id="loadFill"></div></div>
 </div>
 

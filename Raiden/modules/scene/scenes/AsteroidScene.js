@@ -1,5 +1,6 @@
 var AsteroidScene = (() => {
     let _stars = [], _asteroids = [], _dust = [], _clouds = [], _fc = 0;
+    let _bgPlanet = null, _farAsteroids = [], _collisionFlash = null;
     const ASTEROID_COUNT = 22, DUST_COUNT = 60, CLOUD_COUNT = 8;
 
     // Fixed light source direction (upper-right)
@@ -52,7 +53,20 @@ var AsteroidScene = (() => {
             vx: -(0.30 + Math.random() * 0.72),
             vy: (Math.random() - 0.5) * 0.30,
             rot: Math.random() * Math.PI * 2,
-            rotSpd: (Math.random() - 0.5) * 0.013
+            rotSpd: (Math.random() - 0.5) * 0.013,
+            trailLen: Math.random() < 0.28 ? 8 + Math.random() * 20 : 0
+        };
+    }
+
+    function _makeBgPlanet(W, H) {
+        const warm = Math.random() < 0.55;
+        return {
+            x:    W + 85,
+            y:    H * (0.07 + Math.random() * 0.30),
+            r:    36 + Math.random() * 24,
+            vx:   -(0.010 + Math.random() * 0.016),
+            col:  warm ? [195, 130, 70] : [72, 112, 195],
+            ring: warm ? 'rgba(215,182,118,' : 'rgba(128,155,205,'
         };
     }
 
@@ -112,6 +126,21 @@ var AsteroidScene = (() => {
                     vx:   -(0.038 + Math.random() * 0.075)
                 });
             }
+            // Background gas giant
+            _bgPlanet = _makeBgPlanet(W, H);
+            // Far-field small asteroid layer
+            _farAsteroids = Array.from({ length: 18 }, () => {
+                const g = 28 + Math.floor(Math.random() * 38);
+                return {
+                    x:     Math.random() * W,
+                    y:     Math.random() * H,
+                    r:     2.5 + Math.random() * 4.5,
+                    vx:    -(0.08 + Math.random() * 0.12),
+                    alpha: 0.18 + Math.random() * 0.24,
+                    g
+                };
+            });
+            _collisionFlash = null;
         },
 
         update(dt) {
@@ -131,6 +160,27 @@ var AsteroidScene = (() => {
             for (const c of _clouds) {
                 c.x += c.vx * dt;
                 if (c.x + c.rx < 0) c.x = W + c.rx;
+            }
+            // Background planet
+            _bgPlanet.x += _bgPlanet.vx * dt;
+            if (_bgPlanet.x + _bgPlanet.r * 2.5 < 0) _bgPlanet = _makeBgPlanet(W, H);
+            // Far asteroids
+            for (const fa of _farAsteroids) {
+                fa.x += fa.vx * dt;
+                if (fa.x + fa.r < 0) { fa.x = W + fa.r * 2; fa.y = Math.random() * H; }
+            }
+            // Collision flash (rare event)
+            if (!_collisionFlash && Math.random() < 0.0012 * dt) {
+                _collisionFlash = {
+                    x: W * (0.08 + Math.random() * 0.84),
+                    y: H * (0.08 + Math.random() * 0.84),
+                    r: 9 + Math.random() * 14,
+                    life: 0, maxLife: 9
+                };
+            }
+            if (_collisionFlash) {
+                _collisionFlash.life += dt;
+                if (_collisionFlash.life >= _collisionFlash.maxLife) _collisionFlash = null;
             }
         },
 
@@ -156,6 +206,49 @@ var AsteroidScene = (() => {
             mw.addColorStop(1,    'rgba(0,0,0,0)');
             ctx.fillStyle = mw;
             ctx.fillRect(0, 0, W, H);
+
+            // ── Background gas giant (deepest layer) ─────────────────────────
+            {
+                const p = _bgPlanet;
+                const c = p.col;
+                const RING_R = p.r * 1.72;
+                const TILT   = 0.26;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                // Back ring half (upper semicircle, behind planet body)
+                ctx.save();
+                ctx.scale(1, TILT);
+                ctx.strokeStyle = p.ring + '0.42)';
+                ctx.lineWidth   = p.r * 0.22;
+                ctx.globalAlpha = 0.72;
+                ctx.beginPath(); ctx.arc(0, 0, RING_R, Math.PI, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+                // Planet body
+                const pg = ctx.createRadialGradient(-p.r*0.28, -p.r*0.28, 0, 0, 0, p.r);
+                pg.addColorStop(0,   `rgb(${Math.min(255,c[0]+48)},${Math.min(255,c[1]+35)},${Math.min(255,c[2]+22)})`);
+                pg.addColorStop(0.55,`rgb(${c[0]},${c[1]},${c[2]})`);
+                pg.addColorStop(1,   `rgb(${Math.max(0,c[0]-42)},${Math.max(0,c[1]-35)},${Math.max(0,c[2]-30)})`);
+                ctx.fillStyle = pg;
+                ctx.globalAlpha = 0.88;
+                ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+                // Atmosphere limb glow
+                const ag = ctx.createRadialGradient(0, 0, p.r * 0.86, 0, 0, p.r * 1.24);
+                ag.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+                ag.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0.38)`);
+                ctx.fillStyle = ag;
+                ctx.globalAlpha = 0.58;
+                ctx.beginPath(); ctx.arc(0, 0, p.r * 1.24, 0, Math.PI * 2); ctx.fill();
+                // Front ring half (lower semicircle, in front of planet body)
+                ctx.save();
+                ctx.scale(1, TILT);
+                ctx.strokeStyle = p.ring + '0.60)';
+                ctx.lineWidth   = p.r * 0.22;
+                ctx.globalAlpha = 0.90;
+                ctx.beginPath(); ctx.arc(0, 0, RING_R, 0, Math.PI); ctx.stroke();
+                ctx.restore();
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
 
             // ── Nebula wisps ─────────────────────────────────────────────────
             const nebulae = [
@@ -207,6 +300,14 @@ var AsteroidScene = (() => {
             }
             ctx.globalAlpha = 1;
 
+            // ── Far-field small asteroids (depth layer) ──────────────────────
+            for (const fa of _farAsteroids) {
+                ctx.globalAlpha = fa.alpha;
+                ctx.fillStyle   = `rgb(${fa.g},${fa.g},${fa.g})`;
+                ctx.beginPath(); ctx.arc(fa.x, fa.y, fa.r, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
             // ── Dust streaks (angled, varying color) ─────────────────────────
             ctx.lineCap = 'round';
             for (const d of _dust) {
@@ -222,7 +323,23 @@ var AsteroidScene = (() => {
             ctx.lineCap = 'butt';
 
             // ── Asteroids ────────────────────────────────────────────────────
+            ctx.lineCap = 'round';
             for (const a of _asteroids) {
+                // Dust trail (world-space, drawn before body so it renders behind)
+                if (a.trailLen) {
+                    const tg = ctx.createLinearGradient(a.x + a.sz, a.y, a.x + a.sz + a.trailLen, a.y);
+                    tg.addColorStop(0, 'rgba(155,145,170,0.14)');
+                    tg.addColorStop(1, 'rgba(155,145,170,0)');
+                    ctx.strokeStyle = tg;
+                    ctx.lineWidth   = Math.max(2.5, a.sz * 0.38);
+                    ctx.globalAlpha = 0.55;
+                    ctx.beginPath();
+                    ctx.moveTo(a.x + a.sz * 0.88, a.y);
+                    ctx.lineTo(a.x + a.sz + a.trailLen, a.y);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+
                 ctx.save();
                 ctx.translate(a.x, a.y);
                 ctx.rotate(a.rot);
@@ -257,10 +374,8 @@ var AsteroidScene = (() => {
 
                 // Craters
                 for (const c of a.craters) {
-                    // Dark crater floor
                     ctx.fillStyle = 'rgba(0,0,0,0.50)';
                     ctx.beginPath(); ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2); ctx.fill();
-                    // Lit rim (on light-source side)
                     ctx.strokeStyle = `rgba(${a.hi[0]},${a.hi[1]},${a.hi[2]},0.24)`;
                     ctx.lineWidth   = 0.7;
                     ctx.beginPath();
@@ -270,6 +385,22 @@ var AsteroidScene = (() => {
                 }
 
                 ctx.restore();
+            }
+            ctx.lineCap = 'butt';
+
+            // ── Collision flash (rare debris impact event) ───────────────────
+            if (_collisionFlash) {
+                const t  = _collisionFlash.life / _collisionFlash.maxLife;
+                const fa = t < 0.30 ? t / 0.30 : (1 - t) / 0.70;
+                const fg = ctx.createRadialGradient(
+                    _collisionFlash.x, _collisionFlash.y, 0,
+                    _collisionFlash.x, _collisionFlash.y, _collisionFlash.r);
+                fg.addColorStop(0,    `rgba(255,255,220,${fa})`);
+                fg.addColorStop(0.40, `rgba(255,200,80,${fa * 0.55})`);
+                fg.addColorStop(1,    'rgba(255,100,0,0)');
+                ctx.fillStyle = fg;
+                ctx.beginPath(); ctx.arc(_collisionFlash.x, _collisionFlash.y, _collisionFlash.r, 0, Math.PI * 2);
+                ctx.fill();
             }
         }
     };

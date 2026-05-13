@@ -1,6 +1,7 @@
 var SolarScene = (() => {
     let _fc = 0, _flares = [], _sunspots = [], _streams = [], _stars = [];
     let _prominences = [], _planets = [];
+    let _lensFlares = [], _cme = null, _cmeTimer = 0, _bgPlanet = null;
     const STREAM_COUNT = 14, SPOT_COUNT = 6;
     const SURF_Y_OFFSET = 88;   // solar surface top distance from canvas bottom
 
@@ -42,6 +43,7 @@ var SolarScene = (() => {
         init() {
             const W = Renderer.W, H = Renderer.H;
             _fc = 0; _flares = []; _prominences = []; _planets = [];
+            _cme = null; _cmeTimer = 0;
 
             // Dim stars visible in upper corona region
             _stars = [];
@@ -85,6 +87,23 @@ var SolarScene = (() => {
             for (let i = 0; i < 2; i++) _flares.push(_makeFlare(W, H));
             for (let i = 0; i < 2; i++) _prominences.push(_makeProminence(W, H));
             if (Math.random() < 0.55) _planets.push(_makePlanet(W, H));
+
+            // Lens flare spots along vertical axis (sun-in-frame effect)
+            _lensFlares = [
+                { yFrac: 0.16, xOff:  0.06, r: 24, col: [255, 245, 210], a: 0.065 },
+                { yFrac: 0.34, xOff:  0.12, r: 14, col: [255, 218, 170], a: 0.048 },
+                { yFrac: 0.50, xOff: -0.08, r: 10, col: [180, 215, 255], a: 0.038 },
+                { yFrac: 0.68, xOff:  0.04, r: 18, col: [255, 235, 200], a: 0.052 },
+            ];
+
+            // Distant background planet in upper sky
+            _bgPlanet = {
+                x:   W * (0.08 + Math.random() * 0.84),
+                y:   H * (0.05 + Math.random() * 0.20),
+                r:   15 + Math.random() * 18,
+                vx:  -(0.015 + Math.random() * 0.020),
+                col: Math.random() < 0.5 ? [155, 115, 75] : [90, 130, 185]
+            };
         },
 
         update(dt) {
@@ -116,6 +135,30 @@ var SolarScene = (() => {
                 if (_planets[i].x < -_planets[i].r * 2) _planets.splice(i, 1);
             }
             if (_planets.length === 0 && Math.random() < 0.0004 * dt) _planets.push(_makePlanet(W, H));
+
+            // Background planet
+            _bgPlanet.x += _bgPlanet.vx * dt;
+            if (_bgPlanet.x + _bgPlanet.r * 2 < 0) {
+                _bgPlanet.x   = W + _bgPlanet.r;
+                _bgPlanet.y   = H * (0.05 + Math.random() * 0.20);
+                _bgPlanet.col = Math.random() < 0.5 ? [155, 115, 75] : [90, 130, 185];
+            }
+
+            // CME event (triggers every ~12-25 seconds at 60fps)
+            _cmeTimer += dt;
+            if (!_cme && _cmeTimer > 420 + Math.random() * 360) {
+                _cme = {
+                    x:       W * (0.08 + Math.random() * 0.84),
+                    life:    0,
+                    maxLife: 88,
+                    maxR:    H * (0.28 + Math.random() * 0.22)
+                };
+                _cmeTimer = 0;
+            }
+            if (_cme) {
+                _cme.life += dt;
+                if (_cme.life >= _cme.maxLife) _cme = null;
+            }
         },
 
         draw(ctx) {
@@ -135,7 +178,6 @@ var SolarScene = (() => {
             ctx.fillRect(0, 0, W, H);
 
             // ── Multi-layer corona glow ───────────────────────────────────
-            // Wide outer corona
             const coOuter = ctx.createRadialGradient(W/2, H, 0, W/2, H, H * 0.82);
             coOuter.addColorStop(0,   'rgba(255,185,42,0.07)');
             coOuter.addColorStop(0.4, 'rgba(255,100,12,0.04)');
@@ -143,7 +185,6 @@ var SolarScene = (() => {
             ctx.fillStyle = coOuter;
             ctx.fillRect(0, 0, W, H);
 
-            // Inner bright corona halo
             const coInner = ctx.createRadialGradient(W/2, H, 0, W/2, H, H * 0.45);
             coInner.addColorStop(0,   'rgba(255,218,82,0.22)');
             coInner.addColorStop(0.30,'rgba(255,148,22,0.13)');
@@ -152,7 +193,6 @@ var SolarScene = (() => {
             ctx.fillStyle = coInner;
             ctx.fillRect(0, H * 0.35, W, H * 0.65);
 
-            // Asymmetric corona bulge (slightly offset — more realistic)
             const coBulge = ctx.createRadialGradient(W*0.38, H, 0, W*0.38, H, H * 0.35);
             coBulge.addColorStop(0,   'rgba(255,200,60,0.08)');
             coBulge.addColorStop(1,   'rgba(255,80,0,0)');
@@ -166,6 +206,28 @@ var SolarScene = (() => {
                 ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
             }
             ctx.globalAlpha = 1;
+
+            // ── Background planet (distant body in upper sky) ─────────────
+            {
+                const bp = _bgPlanet;
+                const bc = bp.col;
+                ctx.save();
+                ctx.translate(bp.x, bp.y);
+                const pg = ctx.createRadialGradient(-bp.r*0.30, -bp.r*0.30, 0, 0, 0, bp.r);
+                pg.addColorStop(0,   `rgba(${Math.min(255,bc[0]+45)},${Math.min(255,bc[1]+32)},${Math.min(255,bc[2]+20)},0.62)`);
+                pg.addColorStop(1,   `rgba(${bc[0]},${bc[1]},${bc[2]},0.50)`);
+                ctx.fillStyle = pg;
+                ctx.globalAlpha = 0.65;
+                ctx.beginPath(); ctx.arc(0, 0, bp.r, 0, Math.PI * 2); ctx.fill();
+                const ag = ctx.createRadialGradient(0, 0, bp.r * 0.84, 0, 0, bp.r * 1.30);
+                ag.addColorStop(0, `rgba(${bc[0]},${bc[1]},${bc[2]},0)`);
+                ag.addColorStop(1, `rgba(${bc[0]},${bc[1]},${bc[2]},0.32)`);
+                ctx.fillStyle = ag;
+                ctx.globalAlpha = 0.52;
+                ctx.beginPath(); ctx.arc(0, 0, bp.r * 1.30, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.restore();
+            }
 
             // ── Coronal magnetic field arcs ───────────────────────────────
             for (let i = 0; i < 10; i++) {
@@ -192,7 +254,6 @@ var SolarScene = (() => {
                 const cpx = f.x + Math.cos(f.angle) * len * 0.50 + f.bendX;
                 const cpy = f.baseY + Math.sin(f.angle) * len * 0.50;
 
-                // Outer glow pass
                 const fgO = ctx.createLinearGradient(f.x, f.baseY, ex, ey);
                 fgO.addColorStop(0,   'rgba(255,200,80,0.9)');
                 fgO.addColorStop(0.45,'rgba(255,105,18,0.55)');
@@ -202,7 +263,6 @@ var SolarScene = (() => {
                 ctx.lineWidth   = f.width * (1 - t * 0.35) * 2.4;
                 ctx.beginPath(); ctx.moveTo(f.x, f.baseY); ctx.quadraticCurveTo(cpx, cpy, ex, ey); ctx.stroke();
 
-                // Core bright pass
                 const fgC = ctx.createLinearGradient(f.x, f.baseY, ex, ey);
                 fgC.addColorStop(0,   'rgba(255,245,105,1)');
                 fgC.addColorStop(0.35,'rgba(255,132,12,0.88)');
@@ -212,7 +272,6 @@ var SolarScene = (() => {
                 ctx.lineWidth   = f.width * (1 - t * 0.44);
                 ctx.beginPath(); ctx.moveTo(f.x, f.baseY); ctx.quadraticCurveTo(cpx, cpy, ex, ey); ctx.stroke();
 
-                // Base flash (bright spot at footpoint)
                 ctx.globalAlpha = fa * 0.38 * (1 - t * 0.62);
                 const bf = ctx.createRadialGradient(f.x, f.baseY, 0, f.x, f.baseY, f.width * 3.2);
                 bf.addColorStop(0, 'rgba(255,255,190,1)');
@@ -233,13 +292,11 @@ var SolarScene = (() => {
                 const cpy = SURF_Y - ht;
                 const x0  = p.x - p.span, x1 = p.x + p.span;
 
-                // Outer diffuse glow
                 ctx.globalAlpha = fa * 0.20;
                 ctx.strokeStyle = `rgba(${p.col[0]},${p.col[1]},${p.col[2]},0.7)`;
                 ctx.lineWidth   = 9;
                 ctx.beginPath(); ctx.moveTo(x0, SURF_Y); ctx.quadraticCurveTo(cpx, cpy, x1, SURF_Y); ctx.stroke();
 
-                // Bright core
                 const pg = ctx.createLinearGradient(x0, SURF_Y, x1, SURF_Y);
                 pg.addColorStop(0,   'rgba(0,0,0,0)');
                 pg.addColorStop(0.18,`rgba(${p.col[0]},${p.col[1]},${p.col[2]},0.72)`);
@@ -253,6 +310,28 @@ var SolarScene = (() => {
             }
             ctx.globalAlpha = 1;
             ctx.lineCap = 'butt';
+
+            // ── CME (Coronal Mass Ejection — rare dramatic eruption) ───────
+            if (_cme) {
+                const ct  = _cme.life / _cme.maxLife;
+                const cfa = ct < 0.14 ? ct / 0.14 : 1 - (ct - 0.14) / 0.86;
+                const cr  = _cme.maxR * ct;
+                // Main plasma ejection
+                const cg = ctx.createRadialGradient(_cme.x, SURF_Y, 0, _cme.x, SURF_Y, cr);
+                cg.addColorStop(0,    `rgba(255,245,120,${cfa * 0.68})`);
+                cg.addColorStop(0.28, `rgba(255,140,20,${cfa * 0.38})`);
+                cg.addColorStop(0.65, `rgba(255,55,0,${cfa * 0.14})`);
+                cg.addColorStop(1,    'rgba(255,0,0,0)');
+                ctx.fillStyle = cg;
+                ctx.beginPath(); ctx.arc(_cme.x, SURF_Y, cr, Math.PI, Math.PI * 2); ctx.fill();
+                // Shockwave leading edge ring
+                const swg = ctx.createRadialGradient(_cme.x, SURF_Y, cr * 0.88, _cme.x, SURF_Y, cr);
+                swg.addColorStop(0,    'rgba(255,210,80,0)');
+                swg.addColorStop(0.55, `rgba(255,200,70,${cfa * 0.28})`);
+                swg.addColorStop(1,    'rgba(255,140,20,0)');
+                ctx.fillStyle = swg;
+                ctx.beginPath(); ctx.arc(_cme.x, SURF_Y, cr, Math.PI, Math.PI * 2); ctx.fill();
+            }
 
             // ── Solar wind streams ────────────────────────────────────────
             ctx.lineCap = 'round';
@@ -316,7 +395,6 @@ var SolarScene = (() => {
             for (const sp of _sunspots) {
                 const p = 1 + Math.sin(sp.pulse) * 0.10;
 
-                // Penumbra (outer)
                 const pg = ctx.createRadialGradient(sp.x, sp.y, sp.rx * p * 0.5, sp.x, sp.y, sp.rx * p * 1.75);
                 pg.addColorStop(0,   'rgba(75, 18, 0, 0.58)');
                 pg.addColorStop(0.5, 'rgba(145,52, 0, 0.32)');
@@ -324,7 +402,6 @@ var SolarScene = (() => {
                 ctx.fillStyle = pg;
                 ctx.beginPath(); ctx.ellipse(sp.x, sp.y, sp.rx*p*1.75, sp.ry*p*1.75, 0, 0, Math.PI*2); ctx.fill();
 
-                // Umbra (dark core)
                 ctx.fillStyle = 'rgba(38, 7, 0, 0.92)';
                 ctx.beginPath(); ctx.ellipse(sp.x, sp.y, sp.rx*p, sp.ry*p, 0, 0, Math.PI*2); ctx.fill();
             }
@@ -333,12 +410,24 @@ var SolarScene = (() => {
             for (const p of _planets) {
                 ctx.fillStyle = '#000';
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
-                // Atmospheric limb glow
                 const pg = ctx.createRadialGradient(p.x, p.y, p.r * 0.72, p.x, p.y, p.r * 1.58);
                 pg.addColorStop(0, 'rgba(0,0,0,0)');
                 pg.addColorStop(1, 'rgba(100,48,0,0.38)');
                 ctx.fillStyle = pg;
                 ctx.beginPath(); ctx.arc(p.x, p.y, p.r * 1.58, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // ── Lens flares (sun-in-frame optical effect, drawn last) ─────
+            const lfPulse = 0.80 + 0.20 * Math.sin(fc * 0.038);
+            for (const lf of _lensFlares) {
+                const lx = W * (0.5 + lf.xOff);
+                const ly = H * lf.yFrac;
+                const lg = ctx.createRadialGradient(lx, ly, 0, lx, ly, lf.r);
+                lg.addColorStop(0,    `rgba(${lf.col[0]},${lf.col[1]},${lf.col[2]},${(lf.a * lfPulse).toFixed(3)})`);
+                lg.addColorStop(0.50, `rgba(${lf.col[0]},${lf.col[1]},${lf.col[2]},${(lf.a * lfPulse * 0.28).toFixed(3)})`);
+                lg.addColorStop(1,    'rgba(255,255,255,0)');
+                ctx.fillStyle = lg;
+                ctx.beginPath(); ctx.arc(lx, ly, lf.r, 0, Math.PI * 2); ctx.fill();
             }
         }
     };

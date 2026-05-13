@@ -207,13 +207,26 @@ var BlackholeScene = (() => {
             ctx.beginPath(); ctx.arc(0, 0, 118, 0, Math.PI * 2); ctx.fill();
 
             // -- Hotspot (plasma blob orbiting near photon sphere) --
+            const hsr = 58;
+            // Trailing afterglow copies (orbital persistence effect)
+            for (let i = 2; i >= 1; i--) {
+                ctx.save();
+                ctx.rotate(diskAngle * 2.48 + t * 0.004 - i * 0.20);
+                const tG = ctx.createRadialGradient(hsr, 0, 0, hsr, 0, 20 - i * 2);
+                tG.addColorStop(0,   `rgba(255,210,90,${0.30 - i * 0.09 + hotPulse * 0.05})`);
+                tG.addColorStop(1,   'rgba(255,80,0,0)');
+                ctx.globalAlpha = 0.45 - i * 0.14;
+                ctx.fillStyle = tG;
+                ctx.beginPath(); ctx.arc(hsr, 0, 20 - i * 2, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
             ctx.save();
             ctx.rotate(diskAngle * 2.48 + t * 0.004);
-            const hsr = 58;
             const hsG = ctx.createRadialGradient(hsr, 0, 0, hsr, 0, 20);
             hsG.addColorStop(0,    `rgba(255,248,210,${0.72 + hotPulse * 0.25})`);
             hsG.addColorStop(0.35, `rgba(255,196,60, ${0.38 + hotPulse * 0.15})`);
             hsG.addColorStop(1,    'rgba(255,120,0,0)');
+            ctx.globalAlpha = 1;
             ctx.fillStyle = hsG;
             ctx.beginPath(); ctx.arc(hsr, 0, 20, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
