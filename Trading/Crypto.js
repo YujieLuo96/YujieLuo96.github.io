@@ -207,9 +207,7 @@
     function _resetChartState() {
       ctx.ohlc = []; ctx.priceHistory = []; ctx.volumeHistory = [];
       ctx.currentPrice = 0; ctx.prevTickPrice = 0; ctx.totalTicks = 0;
-      ctx._aggCache = null;
-      ctx.emaCache.clear(); ctx.aggEmaCache.clear();
-      ctx.aggEmaScratch.clear(); ctx.emaCacheTick.clear();
+      EMACache.reset();
       ctx.trades = [];
       ctx.srEmaValues.clear(); ctx.srPrevSide.clear(); ctx.srBreakDrift = 0;
     }
@@ -289,15 +287,7 @@
         // stays equal to ohlc.length.  The next kline-close will call
         // EMACache.update() which overwrites this extension with the
         // properly computed value.
-        const newC = bar.c;
-        ctx.emaCache.forEach((arr, period) => {
-          if (arr.length === 0) return;
-          const ext = new Float64Array(arr.length + 1);
-          ext.set(arr);
-          const k = 2 / (period + 1);
-          ext[arr.length] = arr[arr.length - 1] + k * (newC - arr[arr.length - 1]);
-          ctx.emaCache.set(period, ext);
-        });
+        EMACache.extendForLiveBar(bar.c);
       } else {
         // Subsequent messages: update the last bar in-place
         const last = ohlcArr[ohlcArr.length - 1];

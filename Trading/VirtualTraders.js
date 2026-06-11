@@ -107,12 +107,16 @@ if (trend === 1 && this._t !== 1) {
 `// Stochastic Scalper (14, 3)
 var s = stoch(14, 3);
 var k = s.k, d = s.d;
+// crossover/crossunder track per-call-site state — call unconditionally,
+// never inside a short-circuit chain (skipped calls shift the state slots)
+var xUp = crossover(k, d);
+var xDn = crossunder(k, d);
 if (!this._sig) this._sig = 0;
-if (k < 20 && d < 20 && crossover(k, d) && this._sig !== 1) {
+if (k < 20 && d < 20 && xUp && this._sig !== 1) {
   strategy.closeAll();
   strategy.entry('long',  { ratio: 0.55, sl: low,  tp: close + (close - low)  * 2.2 });
   this._sig = 1;
-} else if (k > 80 && d > 80 && crossunder(k, d) && this._sig !== -1) {
+} else if (k > 80 && d > 80 && xDn && this._sig !== -1) {
   strategy.closeAll();
   strategy.entry('short', { ratio: 0.55, sl: high, tp: close - (high - close) * 2.2 });
   this._sig = -1;
@@ -144,7 +148,8 @@ if (close > hh && this._p !== 1) {
   ═══════════════════════════════════════════════════════════════════ */
   let _ctx      = null;
   let _traders  = [];
-  let _nextId   = 1;
+  let _nextId   = 1;   // trader id（与默认命名 BOT-N 挂钩）
+  let _nextOrdId= 1;   // 订单 id（独立计数，避免污染 trader 命名）
   let _dirty    = false;
   let _detailId = null;
   let _editId   = null;
@@ -173,7 +178,7 @@ if (close > hh && this._p !== 1) {
       initialCash: cash, cash,
       orders: [], history: [],
       isRunning: false,
-      _stratCtx: {}, _crossState: new Map(), _crossLastTick: new Map(), _crossTick: 0, _crossIdx: 0,
+      _stratCtx: {}, _cs: window.PineIndicators.makeCrossState(),
       _stratFn: null, _compiled: false,
       _lastError: null, _errCount: 0,
       stats: {
@@ -208,115 +213,29 @@ if (close > hh && this._p !== 1) {
      PINE ENVIRONMENT  (mirrors TradingSimulator pineEnv exactly)
   ═══════════════════════════════════════════════════════════════════ */
   function _pine(t) {
+    const PI = window.PineIndicators;
     const { ohlc, priceHistory, volumeHistory, currentPrice } = _ctx;
 
-    function sma(_s, len) {
-      const key = 'sma_' + len;
+    function _cached(key, fn) {
       if (_piCache.has(key)) return _piCache.get(key);
-      const a = priceHistory.slice(-len);
-      const v = a.length >= len ? a.reduce((x, y) => x + y, 0) / len : currentPrice;
-      _piCache.set(key, v); return v;
+      const v = fn(); _piCache.set(key, v); return v;
     }
-    function ema(_s, len) {
-      const key = 'ema_' + len;
-      if (_piCache.has(key)) return _piCache.get(key);
-      const a = priceHistory.slice(-Math.max(len * 3, len + 10));
-      if (a.length < len) { _piCache.set(key, currentPrice); return currentPrice; }
-      const k = 2 / (len + 1); let e = a[0];
-      for (let i = 1; i < a.length; i++) e = (a[i] - e) * k + e;
-      _piCache.set(key, e); return e;
-    }
-    function rsi(len) {
-      len = len || 14;
-      const key = 'rsi_' + len;
-      if (_piCache.has(key)) return _piCache.get(key);
-      const a = priceHistory.slice(-Math.max(len * 3, len + 10));
-      if (a.length < 2) { _piCache.set(key, 50); return 50; }
-      const k = 1 / len, init = Math.min(len, a.length - 1);
-      let uA = 0, dA = 0;
-      for (let i = 1; i <= init; i++) {
-        const d = a[i] - a[i-1]; uA += Math.max(d,0); dA += Math.max(-d,0);
-      }
-      uA /= init; dA /= init;
-      for (let i = init+1; i < a.length; i++) {
-        const d = a[i] - a[i-1];
-        uA = uA*(1-k) + Math.max(d,0)*k;
-        dA = dA*(1-k) + Math.max(-d,0)*k;
-      }
-      const v = dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100/(1 + uA/dA);
-      _piCache.set(key, v); return v;
-    }
-    function atr(len) {
-      len = len || 14;
-      const key = 'atr_' + len;
-      if (_piCache.has(key)) return _piCache.get(key);
-      if (ohlc.length < 2) { _piCache.set(key, 0); return 0; }
-      const sl = ohlc.slice(-Math.max(len*3, len+10));
-      if (sl.length < 2) { const v = sl[0] ? sl[0].h - sl[0].l : 0; _piCache.set(key, v); return v; }
-      const k = 1/len; let v = sl[1].h - sl[1].l;
-      for (let i=1; i<sl.length; i++) {
-        const tr = Math.max(sl[i].h-sl[i].l,
-          Math.abs(sl[i].h-sl[i-1].c), Math.abs(sl[i].l-sl[i-1].c));
-        v = v*(1-k) + tr*k;
-      }
-      _piCache.set(key, v); return v;
-    }
-    function highest(len) {
-      len = len||20;
-      const key = 'highest_' + len;
-      if (_piCache.has(key)) return _piCache.get(key);
-      const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
-      let v = currentPrice;
-      if (sl.length) { v = sl[0].h; for (let i=1;i<sl.length;i++) if(sl[i].h>v) v=sl[i].h; }
-      _piCache.set(key, v); return v;
-    }
-    function lowest(len) {
-      len = len||20;
-      const key = 'lowest_' + len;
-      if (_piCache.has(key)) return _piCache.get(key);
-      const e=ohlc.length-1, sl=ohlc.slice(Math.max(0,e-len),e);
-      let v = currentPrice;
-      if (sl.length) { v = sl[0].l; for (let i=1;i<sl.length;i++) if(sl[i].l<v) v=sl[i].l; }
-      _piCache.set(key, v); return v;
-    }
-    function bb(len, mult) {
-      len=len||20; mult=mult||2;
-      const key = 'bb_' + len + '_' + mult;
-      if (_piCache.has(key)) return _piCache.get(key);
-      const a=priceHistory.slice(-len);
-      if (a.length<len) { const r={upper:currentPrice,mid:currentPrice,lower:currentPrice}; _piCache.set(key,r); return r; }
-      const mid=a.reduce((s,v)=>s+v,0)/len;
-      const std=Math.sqrt(a.reduce((s,v)=>s+(v-mid)**2,0)/len);
-      const r={upper:mid+mult*std,mid,lower:mid-mult*std};
-      _piCache.set(key, r); return r;
-    }
-    function stoch(kL, dL) {
-      kL=kL||14; dL=dL||3;
-      const key = 'stoch_' + kL + '_' + dL;
-      if (_piCache.has(key)) return _piCache.get(key);
-      if (ohlc.length<kL) { _piCache.set(key,{k:50,d:50}); return {k:50,d:50}; }
-      const cK=b=>{
-        let hh=b[0].h, ll=b[0].l;
-        for(let i=1;i<b.length;i++){if(b[i].h>hh)hh=b[i].h; if(b[i].l<ll)ll=b[i].l;}
-        return hh===ll?50:(b[b.length-1].c-ll)/(hh-ll)*100;
-      };
-      const k=cK(ohlc.slice(-kL)); let dS=0,dC=0;
-      for(let i=0;i<dL;i++){const e2=ohlc.length-i;if(e2-kL<0)break;dS+=cK(ohlc.slice(e2-kL,e2));dC++;}
-      const r={k,d:dC?dS/dC:k};
-      _piCache.set(key, r); return r;
-    }
-    function crossover(a, b) {
-      const i=t._crossIdx++, s=t._crossState.get(i);
-      const r=s!=null&&t._crossLastTick.get(i)===t._crossTick-1&&s.a<=s.b&&a>b;
-      t._crossState.set(i,{a,b}); t._crossLastTick.set(i,t._crossTick); return r;
-    }
-    function crossunder(a, b) {
-      const i=t._crossIdx++, s=t._crossState.get(i);
-      const r=s!=null&&t._crossLastTick.get(i)===t._crossTick-1&&s.a>=s.b&&a<b;
-      t._crossState.set(i,{a,b}); t._crossLastTick.set(i,t._crossTick); return r;
-    }
+
+    function sma(_s, len)  { return _cached('sma_' + len,          () => PI.sma(priceHistory, len, currentPrice)); }
+    function ema(_s, len)  { return _cached('ema_' + len,          () => PI.ema(priceHistory, len, currentPrice)); }
+    function rsi(len)      { return _cached('rsi_' + (len||14),    () => PI.rsi(priceHistory, len)); }
+    function atr(len)      { return _cached('atr_' + (len||14),    () => PI.atr(ohlc, len)); }
+    function highest(len)  { return _cached('highest_' + (len||20),() => PI.highest(ohlc, len, currentPrice)); }
+    function lowest(len)   { return _cached('lowest_' + (len||20), () => PI.lowest(ohlc, len, currentPrice)); }
+    function bb(len, mult) { return _cached('bb_'+(len||20)+'_'+(mult||2), () => PI.bb(priceHistory, len, mult, currentPrice)); }
+    function stoch(kL, dL) { return _cached('stoch_'+(kL||14)+'_'+(dL||3),() => PI.stoch(ohlc, kL, dL)); }
+    function crossover(a, b)  { return PI.crossover(a, b, t._cs); }
+    function crossunder(a, b) { return PI.crossunder(a, b, t._cs); }
+
     const cb = ohlc.length ? ohlc[ohlc.length-1]
                            : {o:currentPrice,h:currentPrice,l:currentPrice,c:currentPrice};
+    // bar_changed：VT 每市场 tick 评估一次且每 tick 推一根新 bar → 恒为 true
+    //（与主引擎 StrategyEngine 的 pineEnv 对齐，防止文档化变量触发 ReferenceError）
     return {
       get open()      { return cb.o; },
       get high()      { return cb.h; },
@@ -324,6 +243,7 @@ if (close > hh && this._p !== 1) {
       get close()     { return currentPrice; },
       get volume()    { return volumeHistory.length ? volumeHistory[volumeHistory.length-1] : 0; },
       get bar_index() { return Math.max(0, ohlc.length-1); },
+      get bar_changed() { return true; },
       sma, ema, rsi, atr, highest, lowest, bb, stoch, crossover, crossunder,
     };
   }
@@ -365,7 +285,7 @@ if (close > hh && this._p !== 1) {
     t.cash -= margin + fee;
     t.stats.totalFees += fee;
     t.orders.push({
-      id: _nextId++ * 1e6 + Math.random(),
+      id: _nextOrdId++,
       dir: d, openPrice: price, shares, lev, margin,
       sl: opts.sl != null ? opts.sl : null,
       tp: opts.tp != null ? opts.tp : null,
@@ -411,8 +331,8 @@ if (close > hh && this._p !== 1) {
   ═══════════════════════════════════════════════════════════════════ */
   function _eval(t) {
     if (!t.isRunning || !t._compiled || !t._stratFn) return;
-    t._crossTick++;
-    t._crossIdx = 0;
+    t._cs.tick++;
+    t._cs.idx = 0;
     const api = {
       entry(dir, opts) {
         opts = opts || {};
@@ -1445,7 +1365,7 @@ if (close > hh && this._p !== 1) {
       const t=_traders.find(x=>x.id===_editId); if(!t) return;
       const code=_el('vt-edit-code').value.trim(); t.stratCode=code;
       let sn='Custom'; for(const[n,s] of Object.entries(PRESETS)) if(s.code.trim()===code){sn=n;break;}
-      t.stratName=sn; t._stratCtx={}; t._crossState=new Map(); t._crossLastTick=new Map(); t._crossTick=0; t._errCount=0; t._lastError=null;
+      t.stratName=sn; t._stratCtx={}; t._cs=window.PineIndicators.makeCrossState(); t._errCount=0; t._lastError=null;
       _compile(t); _closeEdit(); _renderGrid();
       if(_detailId===t.id) _renderDetail(t);
     });

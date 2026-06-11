@@ -56,18 +56,18 @@ window.BackTest = (function () {
 
     /* ── Heston OU 参数（镜像 OrdinaryMarketEngine）── */
     const VOL_KAPPA    = 2.5;
-    const VOL_OF_VOL   = 0.55;
+    const VOL_OF_VOL   = 0.70;
     const DRIFT_KAPPA  = 0.8;
     const DRIFT_VOL    = 0.15;
     const LEV_RHO      = -0.65;
     const LEV_SQ1RHO2  = Math.sqrt(1 - 0.65 * 0.65); // ≈ 0.7599
 
     /* ── 跳跃扩散参数（镜像 OrdinaryMarketEngine）── */
-    const JUMP_PROB          = 0.030;
-    const JUMP_MEAN          = -0.005;
+    const JUMP_PROB          = 0.018;
+    const JUMP_MEAN          = 0.000;
     const JUMP_STD           = 0.06;
-    const JUMP_CLUSTER_BOOST = 0.06;
-    const JUMP_CLUSTER_CAP   = 0.15;
+    const JUMP_CLUSTER_BOOST = 0.07;
+    const JUMP_CLUSTER_CAP   = 0.18;
     const J_CLUSTER_DECAY_PT = Math.pow(0.78, 1 / SIM_N); // 每 tick 聚类衰减系数
     const JUMP_FAT_TAIL_PROB  = 0.12;
     const JUMP_FAT_TAIL_SCALE = 0.08;
@@ -84,11 +84,11 @@ window.BackTest = (function () {
 
     /* ── 五情景定义（镜像 RegimeEngine REGIMES）── */
     const REGIMES = [
-      { muMult:0.50, muAdd:+0.10, sigMult:0.90, jumpMult:0.6, sigCap:1.6, mrMult:0.55 }, // BULL
-      { muMult:0.50, muAdd:-0.13, sigMult:1.25, jumpMult:2.2, sigCap:2.2, mrMult:0.22 }, // BEAR
-      { muMult:0.08, muAdd: 0.00, sigMult:0.30, jumpMult:0.4, sigCap:0.9, mrMult:0.90 }, // CHOP
-      { muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, mrMult:0.40 }, // V.BULL
-      { muMult:0.30, muAdd:-0.08, sigMult:0.50, jumpMult:1.5, sigCap:1.7, mrMult:0.28 }, // Q.BEAR
+      { muMult:0.50, muAdd:+0.10, sigMult:1.05, jumpMult:0.6, sigCap:1.7, mrMult:0.60 }, // BULL
+      { muMult:0.50, muAdd:-0.08, sigMult:1.40, jumpMult:1.8, sigCap:2.0, mrMult:0.50 }, // BEAR
+      { muMult:0.08, muAdd: 0.00, sigMult:0.50, jumpMult:0.5, sigCap:1.2, mrMult:0.90 }, // CHOP
+      { muMult:0.60, muAdd:+0.08, sigMult:1.60, jumpMult:1.0, sigCap:2.5, mrMult:0.60 }, // V.BULL
+      { muMult:0.30, muAdd:-0.05, sigMult:0.70, jumpMult:1.3, sigCap:1.8, mrMult:0.50 }, // Q.BEAR
     ];
     /* ── 情景转移矩阵（镜像 RegimeEngine TRANSITION，保持严格一致）── */
     const TRANSITION = [
@@ -100,6 +100,21 @@ window.BackTest = (function () {
     ];
     const REGIME_TRANS_TICKS = 30 * SIM_N; // 情景过渡期 ticks（镜像 REGIME_TRANSITION×simN）
 
+    /* ── 初始情景分布（镜像 RegimeEngine REGIMES.weight）──
+       每个 Monte Carlo run 随机抽取起始情景，使多次运行真正覆盖牛/熊/震荡。
+       旧实现固定从 CHOP 起步并跑 1500 tick 预热——但首个情景时长最少 2000 tick，
+       预热既离不开 CHOP 又白烧 5/6 的计算量，导致所有 run 实际只测了 CHOP。 */
+    const REGIME_WEIGHTS = [0.26, 0.20, 0.28, 0.14, 0.12]; // BULL BEAR CHOP V.BULL Q.BEAR
+
+    function _sampleInitRegime() {
+      let r = Math.random(), cum = 0;
+      for (let i = 0; i < REGIME_WEIGHTS.length; i++) {
+        cum += REGIME_WEIGHTS[i];
+        if (r < cum) return i;
+      }
+      return 2;
+    }
+
     /* ── 私有状态 ── */
     let _mu_t    = mu_user;
     let _sigma_t = sigma_user;
@@ -108,7 +123,7 @@ window.BackTest = (function () {
     let _momentumScore = 0;
 
     /* ── 情景状态（轻量 RegimeEngine 等价实现）── */
-    let _rIdx        = 2;  // 初始情景：CHOP（镜像引擎 reset 后行为）
+    let _rIdx        = 2;
     let _rPrev       = 2;
     let _rBlend      = 1.0;
     let _rTransTick  = REGIME_TRANS_TICKS; // 已完成过渡
@@ -117,8 +132,8 @@ window.BackTest = (function () {
     let _sigMultNoise = 1;
 
     function _randRegimeDur() {
-      // 镜像 RegimeEngine：每情景持续 120~300 T，单位转换为 ticks
-      return (120 + Math.floor(Math.random() * 180)) * SIM_N;
+      // 镜像 RegimeEngine 切换时分布：每情景持续 100~420 T，单位转换为 ticks
+      return (100 + Math.floor(Math.random() * 320)) * SIM_N;
     }
 
     function _blend(prop) {
@@ -218,17 +233,23 @@ window.BackTest = (function () {
       return { newPrice, relVol, sigma_t: _sigma_t };
     }
 
-    /** 完整重置所有内部状态（每个 Monte Carlo run 开始前调用） */
+    /** 完整重置所有内部状态（每个 Monte Carlo run 开始前调用）
+        随机化初始情景与剩余时长，并按该情景的基准值初始化 vol/drift，
+        使过程一开始就处于稳态附近 —— 无需任何预热循环。 */
     function reset() {
-      _mu_t          = mu_user;
-      _sigma_t       = sigma_user;
+      _rIdx  = _sampleInitRegime();
+      _rPrev = _rIdx;
+      _rBlend = 1.0;
+      _rTransTick = REGIME_TRANS_TICKS;                            // 无残留过渡
+      _rTicksLeft = Math.floor(_randRegimeDur() * Math.random());  // 剩余时长随机化（避免各 run 同步切换）
+      _muAddNoise   = 0.020 * (Math.random() * 2 - 1);
+      _sigMultNoise = Math.max(0.80, 1 + 0.20 * (Math.random() * 2 - 1));
+      const R  = REGIMES[_rIdx];
+      _mu_t    = Math.max(-0.5, Math.min(0.5, mu_user * R.muMult + R.muAdd + _muAddNoise));
+      _sigma_t = Math.max(0.005, sigma_user * R.sigMult * _sigMultNoise);
       _refPrice      = 0;
       _jumpCluster   = 0;
       _momentumScore = 0;
-      _rIdx  = 2; _rPrev = 2; _rBlend = 1.0;
-      _rTransTick = REGIME_TRANS_TICKS; // 立即完成过渡，从 CHOP 起始
-      _rTicksLeft = _randRegimeDur();
-      _muAddNoise = 0; _sigMultNoise = 1;
     }
 
     return { step, reset };
@@ -239,17 +260,9 @@ window.BackTest = (function () {
   ═══════════════════════════════════════════════════════════════ */
   function _simMarketFromEngine({ mu, sigma, ticks }) {
     const sim = _IsolatedSim(mu, sigma);
-    sim.reset();
+    sim.reset();   // reset() 已随机化初始情景并按情景初始化 vol/drift —— 无需预热循环
 
-    /* 预热：让情景系统从初始 CHOP 状态过渡到正常分布（≥66T 才能脱离 CHOP）
-       取 75T（= 1500 tick，SIM_N=20）留足余量，此处使用隔离模拟器，不影响游戏引擎任何状态。 */
-    const PRE_WARM = 75 * SIM_N; // 75T，与 SIM_N 无关
     let price = 100;
-    for (let i = 0; i < PRE_WARM; i++) {
-      ({ newPrice: price } = sim.step(price));
-    }
-    price = 100; // 重置起始价格，让回测从 100 开始
-
     const prices  = [];
     const ohlc    = [];
     const volumes = [];
@@ -278,129 +291,15 @@ window.BackTest = (function () {
   ═══════════════════════════════════════════════════════════════ */
   function _buildPineEnv({
     prices, ohlc, volumes, barIdx,
-    crossState, crossLastTick, getCrossIdx,
+    cs,
     orders, getFreeCash, leverage, fractional,
     placeOrder, closeOrderById,
   }) {
+    const PI    = window.PineIndicators;
     const price = prices[barIdx];
     const bar   = ohlc[barIdx] || { o: price, h: price, l: price, c: price };
+    const end   = barIdx + 1;  // exclusive upper bound for price/ohlc slices
 
-    // 有界切片工具（避免大分配）
-    function _ps(len) {
-      return prices.slice(Math.max(0, barIdx + 1 - len), barIdx + 1);
-    }
-    function _os(len, excludeLast) {
-      const end = barIdx + (excludeLast ? 0 : 1);
-      return ohlc.slice(Math.max(0, end - len), end);
-    }
-
-    function sma(_, len) {
-      const a = _ps(len);
-      return a.length >= len ? a.reduce((s, v) => s + v, 0) / len : price;
-    }
-
-    function ema(_, len) {
-      const a = _ps(Math.max(len * 3, len + 10));
-      if (a.length < len) return price;
-      const k = 2 / (len + 1);
-      let e = a[0];
-      for (let i = 1; i < a.length; i++) e = (a[i] - e) * k + e;
-      return e;
-    }
-
-    function rsi(len = 14) {
-      const a = _ps(Math.max(len * 3, len + 10));
-      if (a.length < 2) return 50;
-      const k    = 1 / len;
-      const init = Math.min(len, a.length - 1);
-      let uA = 0, dA = 0;
-      for (let i = 1; i <= init; i++) {
-        const d = a[i] - a[i - 1];
-        uA += Math.max(d, 0); dA += Math.max(-d, 0);
-      }
-      uA /= init; dA /= init;
-      for (let i = init + 1; i < a.length; i++) {
-        const d = a[i] - a[i - 1];
-        uA = uA * (1 - k) + Math.max(d, 0) * k;
-        dA = dA * (1 - k) + Math.max(-d, 0) * k;
-      }
-      return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100 / (1 + uA / dA);
-    }
-
-    function atr(len = 14) {
-      const sl = _os(Math.max(len * 3, len + 10));
-      if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
-      const k = 1 / len;
-      // 初始 TR 包含前一根 close，避免仅用 HL range 低估波动
-      let v = Math.max(sl[1].h - sl[1].l,
-                       Math.abs(sl[1].h - sl[0].c),
-                       Math.abs(sl[1].l - sl[0].c));
-      for (let i = 2; i < sl.length; i++) {
-        const tr = Math.max(
-          sl[i].h - sl[i].l,
-          Math.abs(sl[i].h - sl[i - 1].c),
-          Math.abs(sl[i].l - sl[i - 1].c)
-        );
-        v = v * (1 - k) + tr * k;
-      }
-      return v;
-    }
-
-    function highest(len = 20) {
-      const sl = _os(len, true);
-      return sl.length ? Math.max(...sl.map(b => b.h)) : price;
-    }
-
-    function lowest(len = 20) {
-      const sl = _os(len, true);
-      return sl.length ? Math.min(...sl.map(b => b.l)) : price;
-    }
-
-    function bb(len = 20, mult = 2.0) {
-      const a = _ps(len);
-      if (a.length < len) return { upper: price, mid: price, lower: price };
-      const mid = a.reduce((s, v) => s + v, 0) / len;
-      const std = Math.sqrt(a.reduce((s, v) => s + (v - mid) ** 2, 0) / len);
-      return { upper: mid + mult * std, mid, lower: mid - mult * std };
-    }
-
-    function stoch(kLen = 14, dLen = 3) {
-      if (barIdx + 1 < kLen) return { k: 50, d: 50 };
-      const calcK = bars => {
-        const hh = Math.max(...bars.map(b => b.h));
-        const ll = Math.min(...bars.map(b => b.l));
-        return hh === ll ? 50 : (bars[bars.length - 1].c - ll) / (hh - ll) * 100;
-      };
-      const k = calcK(_os(kLen));
-      let dSum = 0, dCnt = 0;
-      for (let i = 0; i < dLen; i++) {
-        const end2 = barIdx + 1 - i;
-        if (end2 - kLen < 0) break;
-        dSum += calcK(ohlc.slice(end2 - kLen, end2));
-        dCnt++;
-      }
-      return { k, d: dCnt ? dSum / dCnt : k };
-    }
-
-    function crossover(a, b) {
-      const idx = getCrossIdx();
-      const s   = crossState.get(idx);
-      const res = s != null && crossLastTick.get(idx) === barIdx - 1 && s.a <= s.b && a > b;
-      crossState.set(idx, { a, b });
-      crossLastTick.set(idx, barIdx);
-      return res;
-    }
-
-    function crossunder(a, b) {
-      const idx = getCrossIdx();
-      const s   = crossState.get(idx);
-      const res = s != null && crossLastTick.get(idx) === barIdx - 1 && s.a >= s.b && a < b;
-      crossState.set(idx, { a, b });
-      crossLastTick.set(idx, barIdx);
-      return res;
-    }
-
-    // ── Strategy API（镜像 StrategyEngine）──────────────────────
     const strategy = {
       entry(direction, opts = {}) {
         const dir   = direction.toLowerCase() === 'long' ? 1 : -1;
@@ -446,7 +345,6 @@ window.BackTest = (function () {
       const ratio  = opts.ratio != null ? Math.min(1, Math.max(0, opts.ratio)) : 1.0;
       const budget = ratio * getFreeCash() - FEE_FIXED;
       const raw    = budget / (price * (1 / leverage + FEE_RATE));
-      // crypto 模式：保留 4 位小数（0.2497 BTC）；sim 模式：整数份额
       return Math.max(0, fractional ? Math.floor(raw * 1e4) / 1e4 : Math.floor(raw));
     }
 
@@ -457,9 +355,18 @@ window.BackTest = (function () {
       get close()       { return price; },
       get volume()      { return volumes[barIdx] || 0; },
       get bar_index()   { return barIdx; },
-      get bar_changed() { return true; },  // 回测中每 bar 均为新 bar
-      sma, ema, rsi, atr, highest, lowest, bb, stoch,
-      crossover, crossunder, strategy, Math,
+      get bar_changed() { return true; },
+      sma(_s, len)    { return PI.sma(prices, len, price, end); },
+      ema(_s, len)    { return PI.ema(prices, len, price, end); },
+      rsi(len)        { return PI.rsi(prices, len, end); },
+      atr(len)        { return PI.atr(ohlc, len, end); },
+      highest(len)    { return PI.highest(ohlc, len, price, end); },
+      lowest(len)     { return PI.lowest(ohlc, len, price, end); },
+      bb(len, mult)   { return PI.bb(prices, len, mult, price, end); },
+      stoch(kL, dL)   { return PI.stoch(ohlc, kL, dL, end); },
+      crossover(a, b) { return PI.crossover(a, b, cs); },
+      crossunder(a, b){ return PI.crossunder(a, b, cs); },
+      strategy, Math,
     };
   }
 
@@ -467,9 +374,9 @@ window.BackTest = (function () {
      4. Strategy Runner（单次回测循环）
   ═══════════════════════════════════════════════════════════════ */
   function _runStrategy(stratCode, market, { initialCash, leverage, fractional = false }) {
-    // 编译
+    // 编译（包装必须带换行：策略末行以 // 注释结尾时，无换行会让收尾 } 被注释吞掉）
     let fn;
-    try { fn = new Function('pineEnv', `with(pineEnv){${stratCode}}`); }
+    try { fn = new Function('pineEnv', `with(pineEnv){\n${stratCode}\n}`); }
     catch (e) { return { error: 'Compile error: ' + e.message }; }
 
     const { prices, ohlc, volumes } = market;
@@ -481,10 +388,9 @@ window.BackTest = (function () {
     const trades  = [];   // { dir, open, close, net, reason }
     const equity  = [initialCash];
 
-    const stratCtx  = {};
-    const crossState    = new Map();
-    const crossLastTick = new Map();
-    let   _crossIdx     = 0;
+    const stratCtx = {};
+    const cs = window.PineIndicators.makeCrossState();
+    let runtimeError = null;   // 首个策略运行时错误（bar 级），上报给结果面板
 
     // ── 当前价格（闭包共享，每 bar 更新）
     let _cp = prices[0];
@@ -552,17 +458,22 @@ window.BackTest = (function () {
       }
 
       // 运行策略
-      _crossIdx = 0;
+      cs.tick = i;
+      cs.idx  = 0;
       const env = _buildPineEnv({
         prices, ohlc, volumes, barIdx: i,
-        crossState, crossLastTick,
-        getCrossIdx: () => _crossIdx++,
+        cs,
         orders, getFreeCash, leverage, fractional,
         placeOrder, closeOrderById,
       });
 
       try { fn.call(stratCtx, env); }
-      catch (e) { break; }
+      catch (e) {
+        /* 旧实现静默 break：用户只看到 "no trades"，无从得知策略崩溃。
+           现在记录错误并中止循环，结果面板顶部显示警告条。 */
+        runtimeError = `bar ${i}: ${e.message}`;
+        break;
+      }
 
       // 记录权益
       equity.push(_equity());
@@ -573,7 +484,7 @@ window.BackTest = (function () {
     for (const o of [...orders]) closeOrderAt(o.id, _cp, 'EOT');
     equity.push(cash);
 
-    return { trades, equity, finalEquity: cash, initialCash };
+    return { trades, equity, finalEquity: cash, initialCash, runtimeError };
   }
 
   /* ═══════════════════════════════════════════════════════════════
@@ -1330,8 +1241,11 @@ window.BackTest = (function () {
             <input class="bt-inp" id="btp-sigma" type="number" step="0.01" min="0.01" value="${sg}">
           </div>
           <div class="bt-field full" style="padding:4px 0">
-            <span class="bt-lbl">Engine</span>
-            <span id="btp-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">${_getEngineName()}</span>
+            <span class="bt-lbl">Sim Model</span>
+            <span id="btp-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">ORDINARY (5-REGIME)</span>
+            ${_getEngineName() !== 'ORDINARY'
+              ? `<span style="font-size:0.62rem;color:rgba(255,170,0,0.65);margin-left:10px;align-self:center">active engine "${_getEngineName()}" is not simulated</span>`
+              : ''}
           </div>
         </div>
 
@@ -1544,6 +1458,18 @@ window.BackTest = (function () {
       </div>
     `;
 
+    /* 策略运行时错误警示条（统计仅覆盖出错前的 bar） */
+    const errRuns = results.filter(r => r.runtimeError);
+    if (errRuns.length) {
+      html += `
+        <div style="color:#ffaa00;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.3);
+                    border-radius:3px;padding:8px 12px;margin-bottom:12px;font-size:0.74rem;line-height:1.5">
+          ⚠ Strategy threw a runtime error in ${errRuns.length} of ${results.length} run(s) —
+          first: <b>${_esc(errRuns[0].runtimeError)}</b>.
+          Stats only cover bars executed before the error.
+        </div>`;
+    }
+
     if (isSingle) {
       html += _htmlSingleStats(statsList[0]);
       html += _htmlChartWrap('EQUITY CURVE');
@@ -1583,7 +1509,7 @@ window.BackTest = (function () {
   function _htmlSingleStats(s) {
     const f  = (v, pct) => (v >= 0 ? '+' : '') + v.toFixed(2) + (pct ? '%' : '');
     const c  = v => v >= 0 ? 'bt-pos' : 'bt-neg';
-    const pf = isFinite(s.profitFactor) ? s.profitFactor.toFixed(2) : '∞';
+    const pf = (!isFinite(s.profitFactor) || s.profitFactor >= 9999) ? '∞' : s.profitFactor.toFixed(2);
     // 手续费越高越红；换手率用中性色
     const feeCls = s.feeDrag > 5 ? 'bt-neg' : s.feeDrag > 2 ? 'bt-warn' : 'bt-neu';
     return `
@@ -2360,8 +2286,8 @@ window.BackTest = (function () {
           <input class="bt-inp" id="btp-mm-lev" type="number" min="1" max="100" value="${lv}">
         </div>
         <div class="bt-field full" style="padding:4px 0">
-          <span class="bt-lbl">Engine</span>
-          <span id="btp-mm-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">${_getEngineName()}</span>
+          <span class="bt-lbl">Sim Model</span>
+          <span id="btp-mm-engine-name" style="color:rgba(0,245,255,0.85);font-weight:700;letter-spacing:0.1em">ORDINARY (5-REGIME)</span>
         </div>
       </div>
       <div style="font-size:0.67rem;color:rgba(192,208,224,0.28);padding:4px 0 0 2px">

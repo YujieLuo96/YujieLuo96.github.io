@@ -19,12 +19,9 @@
  *   getAggregated(animP)            — 聚合 OHLC/vol/closes（供 drawChart 使用）
  *   reset()                         — 全量清空（4×Map + _aggCache），不执行 update
  *   invalidateAgg()                 — 仅清空 aggEmaCache + _aggCache（TF 切换时用）
- *   getEMACache()                   — 返回 emaCache Map 引用（VirtualTraders 使用）
- *   getAggEMACache()                — 返回 aggEmaCache Map 引用（_cryptoCtx 使用）
- *   getAggEmaScratch()              — 返回 aggEmaScratch Map 引用（_cryptoCtx 使用）
- *   getEMACacheTick()               — 返回 emaCacheTick Map 引用（_cryptoCtx 使用）
+ *   extendForLiveBar(price)         — Crypto 直播专用：emaCache 各 period 延长一步
  *   getRawAggCache()                — 返回 _aggCache 原始值（_cryptoCtx getter 使用）
- *   setRawAggCache(v)               — 直接写 _aggCache（_cryptoCtx setter 使用，Crypto.js 置 null）
+ *   setRawAggCache(v)               — 直接写 _aggCache（_cryptoCtx setter 使用）
  *
  * deps 对象字段：
  *   getPriceHistory()  → number[]
@@ -40,13 +37,28 @@ window.EMACache = (function () {
   'use strict';
 
   /* ── 私有数据结构 ───────────────────────────────────────── */
-  const emaCache      = new Map(); // period → Float64Array
+  // emaCache 记录结构：{ buf: Float64Array(容量), len: 有效长度, view: buf.subarray(0,len) }
+  // 容量按需翻倍增长 → priceHistory 增长期的每 tick 更新为 O(1) 均摊（旧实现为
+  // O(n) 全量重算 + 全新分配，在数组到达 MAX_HISTORY 前的整个会话期间持续发生）。
+  const emaCache      = new Map(); // period → {buf, len, view}
   const aggEmaCache   = new Map(); // period → { stableLen, stableLastClose, ema }
   const aggEmaScratch = new Map(); // period → Float64Array（复用 buffer）
   const emaCacheTick  = new Map(); // period → totalTicks（增量更新验证）
   let   _aggCache     = null;      // 聚合 K 线缓存对象
 
   let _deps = null; // 注入的依赖
+
+  const _EMPTY = new Float64Array(0);
+
+  /* 保证 rec.buf 容量 ≥ n（翻倍扩容，保留已有数据），返回 rec */
+  function _ensureCap(rec, n) {
+    if (rec.buf.length < n) {
+      const grown = new Float64Array(Math.max(n, rec.buf.length * 2, 1024));
+      grown.set(rec.buf.subarray(0, rec.len));
+      rec.buf = grown;
+    }
+    return rec;
+  }
 
   /* ── 私有：纯计算，对任意 close 数组求 EMA ──────────────── */
   // 可选 len 参数：只处理 arr 的前 len 个元素，避免调用方做 arr.slice(0, len)
@@ -169,20 +181,38 @@ window.EMACache = (function () {
 
     needed.forEach(period => {
       const k        = 2 / (period + 1);
-      const prev     = emaCache.get(period);
+      const rec      = emaCache.get(period);
       const lastTick = emaCacheTick.get(period) ?? -1;
+      const adjacent = (tt - lastTick === 1);
 
-      // 增量路径：steady 态 + 上一次恰好是紧邻 tick（差值=1）
-      // 若 period 曾被关闭多个 tick 再重新启用，prev 已过期，必须全量重建
-      // 原地左移复用 prev 数组，避免每 tick 分配新 Float64Array（copyWithin 保证重叠安全）
-      if (steady && prev && prev.length === n && (tt - lastTick === 1)) {
-        prev.copyWithin(0, 1);
-        prev[n-1] = (ph[n-1] - prev[n-2]) * k + prev[n-2];
+      if (steady && rec && rec.len === n && adjacent) {
+        // ── 滚动路径（数组已达容量上限，每 tick shift+push）──
+        // 原地左移 + 写入末位，无分配（copyWithin 为原生 memmove）
+        const b = rec.buf;
+        b.copyWithin(0, 1, n);
+        b[n-1] = (ph[n-1] - b[n-2]) * k + b[n-2];
+      } else if (rec && rec.len === n - 1 && adjacent) {
+        // ── 追加路径（数组增长期，每 tick 仅 push）──
+        // EMA 递推只依赖前值，追加一步与全量重算逐位等价；O(1) 均摊
+        _ensureCap(rec, n);
+        const b = rec.buf;
+        b[n-1]   = (ph[n-1] - b[n-2]) * k + b[n-2];
+        rec.len  = n;
+        rec.view = b.subarray(0, n);
+      } else if (rec && rec.len === n && adjacent && n >= 2) {
+        // ── 末位修正路径（crypto：live bar 经 extendForLiveBar 预延长，
+        //    收盘时长度不变仅末值定稿）── 用正式收盘价重写最后一位
+        const b = rec.buf;
+        b[n-1] = (ph[n-1] - b[n-2]) * k + b[n-2];
       } else {
-        const e = new Float64Array(n);
-        e[0] = ph[0];
-        for (let i = 1; i < n; i++) e[i] = (ph[i] - e[i-1]) * k + e[i-1];
-        emaCache.set(period, e);
+        // ── 全量重建（首次启用 / period 关闭多 tick 后重开 / 数组被裁剪）──
+        const r = rec ? _ensureCap(rec, n) : { buf: new Float64Array(Math.max(n, 1024)), len: 0, view: _EMPTY };
+        const b = r.buf;
+        b[0] = ph[0];
+        for (let i = 1; i < n; i++) b[i] = (ph[i] - b[i-1]) * k + b[i-1];
+        r.len  = n;
+        r.view = b.subarray(0, n);
+        emaCache.set(period, r);
       }
       emaCacheTick.set(period, tt);
     });
@@ -190,10 +220,12 @@ window.EMACache = (function () {
 
   /**
    * 读取 emaCache（供 drawEMALine 在 candleSize<=1 时使用）
-   * 返回 Float64Array 或空数组（period 尚未计算时）
+   * 返回 Float64Array 视图或空数组（period 尚未计算时）；
+   * view 在 update/extend 时预先建好，60fps 读取零分配。
    */
   function computeEMA(period) {
-    return emaCache.get(period) || [];
+    const rec = emaCache.get(period);
+    return rec ? rec.view : _EMPTY;
   }
 
   /**
@@ -304,20 +336,23 @@ window.EMACache = (function () {
     _aggCache = null;
   }
 
-  /* ── Map 引用 getter（供 _cryptoCtx 和 VirtualTraders 保持向后兼容）── */
-  // 返回 Map 对象本身，外部代码持有引用后仍能正确读写（Map 是引用语义）
-
-  /** 返回 emaCache Map 引用（VirtualTraders.init、_cryptoCtx 使用） */
-  function getEMACache() { return emaCache; }
-
-  /** 返回 aggEmaCache Map 引用（_cryptoCtx 使用） */
-  function getAggEMACache() { return aggEmaCache; }
-
-  /** 返回 aggEmaScratch Map 引用（_cryptoCtx 使用） */
-  function getAggEmaScratch() { return aggEmaScratch; }
-
-  /** 返回 emaCacheTick Map 引用（_cryptoCtx 使用） */
-  function getEMACacheTick() { return emaCacheTick; }
+  /**
+   * Crypto 直播模式专用：新 K 线刚推入 priceHistory 时（bar 尚未关闭），
+   * 将 emaCache 中每个 period 延长一步，保持 ema 长度 === priceHistory 长度。
+   * 下一个 bar 关闭时 update() 会以正式数据覆盖本步的近似值。
+   * （{buf,len} 结构下为 O(1) 追加，无需整段复制）
+   */
+  function extendForLiveBar(price) {
+    emaCache.forEach((rec, period) => {
+      if (rec.len === 0) return;
+      _ensureCap(rec, rec.len + 1);
+      const k    = 2 / (period + 1);
+      const prev = rec.buf[rec.len - 1];
+      rec.buf[rec.len] = prev + k * (price - prev);
+      rec.len++;
+      rec.view = rec.buf.subarray(0, rec.len);
+    });
+  }
 
   /**
    * 返回 _aggCache 原始值（_cryptoCtx getter 使用）
@@ -339,10 +374,7 @@ window.EMACache = (function () {
     getAggregated,
     reset,
     invalidateAgg,
-    getEMACache,
-    getAggEMACache,
-    getAggEmaScratch,
-    getEMACacheTick,
+    extendForLiveBar,
     getRawAggCache,
     setRawAggCache,
   };

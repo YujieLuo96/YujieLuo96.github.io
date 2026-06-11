@@ -37,7 +37,7 @@
   const SWAN_DUR_MAX_T     = 16;     // 最长↑12→16T，极端事件持续时间延长
   const SWAN_COOLDOWN_T    = 8;      // 冷却 8T
   const SWAN_BIAS_STRENGTH = 0.28;   // 情景偏置强度（muAdd 满偏时最多 ±28%）
-  const SWAN_MU_NORM       = 0.13;   // muAddBlend 归一化参考值（新 BEAR muAdd = -0.13）
+  const SWAN_MU_NORM       = 0.10;   // muAddBlend 归一化参考值（= 当前情景表最大 |muAdd|，BULL +0.10）
   const SWAN_FREQ_BOOST    = 0.50;   // 极端情景频率加成（|bias|=1 时触发概率 ×1.5）
 
   /* ── 控制函数门控常量（私有，外部不可见）
@@ -46,8 +46,12 @@
   const _CTRL_PI2           = Math.PI * Math.PI;           // π² ≈ 9.8696
   const _CTRL_E2            = Math.E  * Math.E;            // e² ≈ 7.3891
   const _CTRL_DENOM         = _CTRL_E2 + _CTRL_PI2;        // e²+π² ≈ 17.259（归一化分母）
-  const SWAN_CTRL_THRESH_L2 = 0.80;  // 小天鹅（±2）门控阈值
-  const SWAN_CTRL_THRESH_L3 = 0.93;  // 大天鹅（±3）门控阈值
+  /* 门控阈值按 f(t) 在整数 tick 采样下的实测分布校准（2M 样本 Monte Carlo）：
+       P(f > 0.50) ≈ 18.8%   P(f > 0.75) ≈ 8.7%
+     与设计意图（小天鹅 ~18% / 大天鹅 ~8% 通过率）一致。
+     旧值 0.80/0.93 的实际通过率仅 6.8%/2.3%，使天鹅事件比设计稀有约 3 倍。 */
+  const SWAN_CTRL_THRESH_L2 = 0.50;  // 小天鹅（±2）门控阈值（通过率 ≈18%）
+  const SWAN_CTRL_THRESH_L3 = 0.75;  // 大天鹅（±3）门控阈值（通过率 ≈8%）
 
   /* ── 天鹅事件参数表 ──
      swanGapBase : 事件触发瞬间的一次性跳空 log-return 基准值

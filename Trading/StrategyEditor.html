@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Strategy Editor · Cyber Trader</title>
+    <script src="PineIndicators.js"></script>
     <script src="BackTest.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700&display=swap');
@@ -85,6 +86,8 @@
         .examples-label {
             font-size: 0.72rem; color: rgba(0,245,255,0.3);
             letter-spacing: 0.15em; white-space: nowrap;
+            border-left: 1px solid rgba(0,245,255,0.14);
+            padding-left: 12px; margin-left: 2px;
         }
         .check-result {
             margin-left: auto;
@@ -93,6 +96,45 @@
             letter-spacing: 0.05em;
             white-space: nowrap;
         }
+
+        /* ── 策略库栏（header 第二行）：示例从 header 移出，带名称+一句话描述 ── */
+        .lib-bar {
+            background: #0b1220;
+            border-bottom: 1px solid rgba(0,245,255,0.10);
+            padding: 6px 14px;
+            display: flex; align-items: center; gap: 8px;
+            flex-wrap: wrap; flex-shrink: 0;
+        }
+        .lib-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.62rem; color: rgba(0,245,255,0.40);
+            letter-spacing: 0.22em; white-space: nowrap;
+        }
+        .lib-chip {
+            display: inline-flex; flex-direction: column; align-items: flex-start;
+            gap: 1px; padding: 4px 12px 5px;
+            background: rgba(0,245,255,0.03);
+            border: 1px solid rgba(0,245,255,0.16);
+            border-bottom: 2px solid rgba(0,245,255,0.26);
+            border-radius: 3px; cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            transition: all 0.12s; touch-action: manipulation;
+        }
+        .lib-chip b {
+            font-size: 0.70rem; letter-spacing: 0.10em; font-weight: 400;
+            color: rgba(0,245,255,0.75);
+        }
+        .lib-chip span {
+            font-size: 0.58rem; color: rgba(192,208,224,0.38); letter-spacing: 0.04em;
+        }
+        .lib-chip:hover { background: rgba(0,245,255,0.08); border-color: rgba(0,245,255,0.40); }
+        .lib-chip:hover b { color: #00f5ff; }
+        .lib-chip.active {
+            background: rgba(0,245,255,0.12);
+            border-color: rgba(0,245,255,0.60); border-bottom-color: #00f5ff;
+            box-shadow: 0 0 10px rgba(0,245,255,0.15);
+        }
+        .lib-chip.active b { color: #00f5ff; text-shadow: 0 0 8px rgba(0,245,255,0.5); }
 
         /* main area */
         .main {
@@ -123,13 +165,28 @@
             color: rgba(0,245,255,0.5);
             letter-spacing: 0.12em;
         }
-        /* ── Error highlight overlay ───────────────────── */
+        /* ── 编辑区：行号槽 + (overlay+textarea) 叠层 ───── */
         #code-wrap {
             flex: 1;
             position: relative;
             overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            display: flex;          /* 横向：gutter | code-area */
+        }
+        #code-gutter {
+            flex-shrink: 0; width: 46px;
+            padding: 14px 8px 14px 0;
+            background: rgba(0,245,255,0.015);
+            border-right: 1px solid rgba(0,245,255,0.07);
+            overflow: hidden; user-select: none;
+            font-family: 'Share Tech Mono', 'Fira Code', monospace;
+            font-size: 0.88rem; line-height: 1.6;
+            text-align: right; color: rgba(0,245,255,0.20);
+        }
+        #code-gutter .ln        { display: block; min-height: 1.6em; }
+        #code-gutter .ln-active { color: rgba(0,245,255,0.85); text-shadow: 0 0 6px rgba(0,245,255,0.4); }
+        #code-area {
+            flex: 1; position: relative;
+            display: flex; min-width: 0;
         }
         #code-overlay {
             position: absolute;
@@ -369,12 +426,12 @@
             background: #0c1520;
             border: 1px solid rgba(0,245,255,0.28);
             border-radius: 3px;
-            max-height: 180px;
+            max-height: 200px;
             overflow-y: auto;
             display: none;
             z-index: 1000;
             box-shadow: 0 4px 24px rgba(0,0,0,0.75), 0 0 18px rgba(0,245,255,0.1);
-            max-width: 280px;
+            max-width: 360px;
             scrollbar-width: thin;
             scrollbar-color: rgba(0,245,255,0.38) rgba(0,245,255,0.03);
         }
@@ -402,6 +459,12 @@
             font-size: 0.78rem;
             transition: background 0.08s, color 0.08s;
             border-left: 2px solid transparent;
+            display: flex; justify-content: space-between;
+            gap: 16px; align-items: baseline;
+        }
+        .completion-item .ci-hint {
+            font-size: 0.64rem; color: rgba(192,208,224,0.35);
+            white-space: nowrap; flex-shrink: 0;
         }
         .completion-item:hover, .completion-item:active {
             background: rgba(0,245,255,0.09);
@@ -480,6 +543,16 @@
 
             /* Prevent iOS auto-zoom on focus (requires ≥16px) */
             #code { font-size: 1rem; min-height: 40vh; }
+            /* 行号槽与放大后的编辑字号同步对齐 */
+            #code-gutter { width: 36px; padding-right: 6px; font-size: 1rem; }
+
+            /* 策略库栏：单行横向滚动，chips 不收缩 */
+            .lib-bar {
+                flex-wrap: nowrap; overflow-x: auto; padding: 6px 10px;
+                scrollbar-width: none;
+            }
+            .lib-bar::-webkit-scrollbar { display: none; }
+            .lib-chip { flex-shrink: 0; }
 
             /* Instruction panel: full-width, collapses by height */
             .instruction-panel,
@@ -522,12 +595,29 @@
     <button class="btn" id="btn-backtest" title="Open BackTest panel" style="background:rgba(57,255,20,0.07);border-color:rgba(57,255,20,0.4);border-bottom-color:rgba(57,255,20,0.6);color:#39ff14">📊 BACKTEST</button>
     <button class="btn" id="btn-copy" title="Copy code to clipboard">⎘ COPY</button>
     <div class="check-result" id="syntax-result">— ready —</div>
-    <span class="examples-label">EXAMPLES:</span>
-    <button class="btn-outline example-btn" data-example="ma">MA Cross</button>
-    <button class="btn-outline example-btn" data-example="rsi">RSI</button>
-    <button class="btn-outline example-btn" data-example="breakout">Breakout</button>
-    <button class="btn-outline example-btn" data-example="persist">Persist</button>
-    <button class="btn-outline example-btn" data-example="roll">EMA Roll</button>
+</div>
+
+<!-- 策略库：6 个进阶策略模板（名称 + 一句话点明核心机制） -->
+<div class="lib-bar">
+    <span class="lib-label">▸ STRATEGY LIBRARY</span>
+    <button class="lib-chip" data-example="pullback" title="EMA(50) regime filter + RSI(7) dip entry + 3·ATR chandelier trail">
+        <b>PULLBACK</b><span>trend filter · dip entry · ATR trail</span>
+    </button>
+    <button class="lib-chip" data-example="turtle" title="Donchian 20/10 breakout, pyramid a unit every 0.5·ATR (max 4), 2·ATR stop">
+        <b>TURTLE</b><span>donchian · ATR pyramid · unit risk</span>
+    </button>
+    <button class="lib-chip" data-example="squeeze" title="Bollinger bandwidth squeeze detection, trade the direction of the break">
+        <b>SQUEEZE</b><span>vol compression · breakout</span>
+    </button>
+    <button class="lib-chip" data-example="macd" title="Hand-rolled MACD: incremental EMA of a derived series via this.*">
+        <b>MACD</b><span>custom indicator · this.* state</span>
+    </button>
+    <button class="lib-chip" data-example="zrevert" title="Z-score mean reversion: scale in at -2/-2.7/-3.4σ, exit at the mean">
+        <b>Z-REVERT</b><span>z-score · scaled entries</span>
+    </button>
+    <button class="lib-chip" data-example="voltarget" title="Volatility targeting: position size shrinks as ATR% rises">
+        <b>VOL-TARGET</b><span>risk budget · sized by ATR%</span>
+    </button>
 </div>
 
 <div class="main">
@@ -535,14 +625,18 @@
     <div class="editor-panel">
         <div class="editor-header">
             <span>📝 STRATEGY CODE</span>
-            <span style="opacity:0.5">Tab=autocomplete · Ctrl+S=check · Ctrl+Enter=apply</span>
+            <span style="opacity:0.5">Tab=autocomplete · Enter=auto-indent · Ctrl+S=check · Ctrl+Enter=apply</span>
         </div>
         <div id="code-wrap">
-            <div id="code-overlay" aria-hidden="true"></div>
-            <textarea id="code" spellcheck="false" placeholder="// write strategy code here..."></textarea>
+            <div id="code-gutter" aria-hidden="true"></div>
+            <div id="code-area">
+                <div id="code-overlay" aria-hidden="true"></div>
+                <textarea id="code" spellcheck="false" placeholder="// write strategy code here..."></textarea>
+            </div>
         </div>
         <div class="status-bar">
             <span id="hint-msg">Ready</span>
+            <span id="line-count" style="margin-left:auto"></span>
             <span id="cursor-pos">Ln 1, Col 1</span>
         </div>
         <div id="completion" class="completion-box"></div>
@@ -731,111 +825,113 @@ this.prevRsi = r;</pre>
             </div>
 
             <div class="doc-section">
-                <h4>📚 EX 1 – MA CROSS + PYRAMID</h4>
-                <pre>// MA Cross + Pyramid — enter on crossover, add 10% each tick while trend holds
-fast = ema(close, 9);
-slow = ema(close, 21);
-pos  = strategy.position;
-if (crossover(fast, slow)) {
-    strategy.entry('long',  { ratio: 0.1, sl: slow * 0.97, tp: close * 1.10 });
-} else if (fast > slow && pos.side === 'long') {
-    strategy.add('long',    { ratio: 0.1, sl: slow * 0.97 });
+                <h4>📚 EX 1 – TREND PULLBACK</h4>
+                <pre>// regime filter + dip entry + chandelier trail (core)
+trend = ema(close, 50);          // regime line
+up = close &gt; trend &amp;&amp; ema(close,9) &gt; trend;
+if (up &amp;&amp; rsi(7) &lt; 35 &amp;&amp; pos.side !== 'long') {
+    strategy.entry('long', { ratio: 0.6, sl: close - 2.5*atr(14) });
+    this.hh = close;             // trail anchor
 }
-if (crossunder(fast, slow)) {
-    strategy.entry('short', { ratio: 0.1, sl: slow * 1.03, tp: close * 0.90 });
-} else if (fast < slow && pos.side === 'short') {
-    strategy.add('short',   { ratio: 0.1, sl: slow * 1.03 });
+// manual chandelier: sl is FIXED at entry — trail by closing
+if (pos.side === 'long') {
+    this.hh = Math.max(this.hh || close, close);
+    if (close &lt; this.hh - 3*atr(14)) strategy.close('long');
 }</pre>
-                <button class="example-btn" data-example="ma">Load</button>
-                <p>入场用 <code>entry</code>（10%），之后每 tick 只要趋势保持就用 <code>add</code> 继续加仓 10%。资金耗尽时自动停止加仓。</p>
+                <button class="example-btn" data-example="pullback">Load full</button>
+                <p>三层结构：<b>EMA(50) 趋势过滤</b>（只顺势开仓）→ <b>RSI(7) 回调择时</b>（趋势内逢低进场）→ <b>吊灯式移动止盈</b>（从最高点回吐 3·ATR 离场）。SL 在下单后固定不动，所以移动止损必须自己用 <code>this.*</code> + <code>close()</code> 实现——这是本例的核心技巧。</p>
             </div>
 
             <div class="doc-section">
-                <h4>📚 EX 2 – RSI + PYRAMID</h4>
-                <pre>// RSI Mean Reversion + Pyramid — add 10% while signal holds
-r   = rsi(14);
-a   = atr(14);
-pos = strategy.position;
-if (r > 70) {
-    strategy.close('long');
-} else if (r < 30) {
-    strategy.entry('long', { ratio: 0.1, sl: close - 2 * a, tp: close * 1.08 });
-} else if (r < 40 && pos.side === 'long') {
-    strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });
-}</pre>
-                <button class="example-btn" data-example="rsi">Load</button>
-                <p>RSI &lt; 30 触发入场，RSI 在 30–40 之间继续加仓（每次 10%），RSI &gt; 70 全部平多。<span class="badge">ATR stop</span> 动态止损。</p>
-            </div>
-
-            <div class="doc-section">
-                <h4>📚 EX 3 – BREAKOUT + PYRAMID</h4>
-                <pre>// Two-sided Breakout + Pyramid — add 10% while price extends the breakout
-h20 = highest(20);
-l20 = lowest(20);
-pos = strategy.position;
-if (close > h20) {
-    strategy.close('short');
-    strategy.entry('long',  { ratio: 0.1, sl: l20, tp: close * 1.10 });
-} else if (pos.side === 'long' && close > pos.avgPrice) {
-    strategy.add('long',    { ratio: 0.1, sl: l20 });
+                <h4>📚 EX 2 – TURTLE (DONCHIAN)</h4>
+                <pre>// 20/10 channel + ATR unit pyramiding (core)
+if (pos.side === 'none' &amp;&amp; high &gt; highest(20)) {   // touch trigger
+    strategy.entry('long', { ratio: 0.25, sl: close - 2*a });
+    this.units = 1; this.lastAdd = close;
 }
-if (close < l20) {
-    strategy.close('long');
-    strategy.entry('short', { ratio: 0.1, sl: h20, tp: close * 0.90 });
-} else if (pos.side === 'short' && close < pos.avgPrice) {
-    strategy.add('short',   { ratio: 0.1, sl: h20 });
-}</pre>
-                <button class="example-btn" data-example="breakout">Load</button>
-                <p>突破入场后，只要价格继续向有利方向（多仓高于均价 / 空仓低于均价）就每 tick 加仓 10%。SL 锁定在区间极值。</p>
+// add a unit per 0.5·ATR move, ratchet the shared stop
+if (bar_changed &amp;&amp; this.units &gt; 0 &amp;&amp; this.units &lt; 4 &amp;&amp;
+    close &gt;= this.lastAdd + 0.5*a) {
+    this.stop = close - 2*a;
+    strategy.add('long', { ratio: 0.25, sl: this.stop });
+    this.units++; this.lastAdd = close;
+}
+if (pos.side === 'long' &amp;&amp; low &lt; lowest(10)) strategy.closeAll();</pre>
+                <button class="example-btn" data-example="turtle">Load full</button>
+                <p>经典海龟系统：<b>盘中触及 20 棒通道极值即入场</b>（用 <code>high/low</code> 与通道做同类比较——<code>close</code> 对 high 通道几乎永远够不着），每向有利方向走 0.5·ATR <b>加一个 unit</b>（每个 25% 仓，封顶 4 个），每次加仓把共享止损<b>棘轮上移</b>到新价 −2·ATR，<b>触及 10 棒反向通道</b>离场。<code>this.units / lastAdd / stop</code> 三个状态变量构成完整的单元化仓位管理。</p>
             </div>
 
             <div class="doc-section">
-                <h4>📚 EX 4 – MANUAL CROSS + PYRAMID</h4>
-                <pre>// Manual MA Cross + Pyramid — first-tick safe, add 10% while trend holds
-fast = ema(close, 9);
-slow = ema(close, 21);
-pos  = strategy.position;
-if (this.prevFast === undefined) {
-    this.prevFast = fast; this.prevSlow = slow;
-} else {
-    if (this.prevFast <= this.prevSlow && fast > slow) {
-        strategy.close('short');
-        strategy.entry('long',  { ratio: 0.1, sl: slow * 0.98, tp: close * 1.08 });
-    } else if (fast > slow && pos.side === 'long') {
-        strategy.add('long',    { ratio: 0.1, sl: slow * 0.98 });
-    }
-    if (this.prevFast >= this.prevSlow && fast < slow) {
-        strategy.close('long');
-        strategy.entry('short', { ratio: 0.1, sl: slow * 1.02, tp: close * 0.92 });
-    } else if (fast < slow && pos.side === 'short') {
-        strategy.add('short',   { ratio: 0.1, sl: slow * 1.02 });
-    }
-    this.prevFast = fast; this.prevSlow = slow;
+                <h4>📚 EX 3 – SQUEEZE BREAKOUT</h4>
+                <pre>// bandwidth squeeze → directional break (core)
+b  = bb(20, 2);
+bw = (b.upper - b.lower) / b.mid;     // normalized bandwidth
+this.bws.push(bw);                    // rolling 120-bar window
+if (this.bws.length &gt; 120) this.bws.shift();
+lo = Math.min.apply(null, this.bws);
+hi = Math.max.apply(null, this.bws);
+if (bw &lt;= lo + 0.2*(hi - lo)) this.armed = true;   // squeeze!
+if (this.armed &amp;&amp; close &gt; b.upper) {
+    strategy.entry('long', { ratio: 0.7, sl: b.mid,
+        tp: close + 2.5*(close - b.mid) });
+    this.armed = false;
 }</pre>
-                <button class="example-btn" data-example="persist">Load</button>
-                <p>首 tick 安全初始化，金叉/死叉触发入场（10%），之后每 tick 均线方向不变就继续加仓。<code>this.prevFast/Slow</code> 跨 tick 持久化。</p>
+                <button class="example-btn" data-example="squeeze">Load full</button>
+                <p>波动率压缩检测：布林带宽落到自身 120 棒区间的<b>最低 20% 分位</b>视为挤压，挂起触发器，随后向哪边破带就做哪边；带宽放大却没破则解除武装。核心技巧：用 <code>this.bws</code> 数组维护<b>滚动统计窗口</b>（内置指标做不到的自定义统计）。</p>
             </div>
 
             <div class="doc-section">
-                <h4>📚 EX 5 – EMA ROLL + PYRAMID</h4>
-                <pre>// EMA Roll + Pyramid — add 10%/tick, compound on every +3% gain
-fast = ema(close, 9);
-slow = ema(close, 21);
-pos  = strategy.position;
-if (fast > slow) {
-    if (pos.side !== 'long') {
-        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });
-    } else if (close > pos.avgPrice * 1.03) {
-        strategy.close('long');
-        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });
-    } else {
-        strategy.add('long',   { ratio: 0.1, sl: slow * 0.975 });
-    }
-} else if (fast < slow) {
-    strategy.closeAll();
-}</pre>
-                <button class="example-btn" data-example="roll">Load</button>
-                <p>趋势持续时每 tick 加仓 10%。当均价盈利 +3% 时滚仓（平仓 + 重开），以复利方式扩大本金。均线反转时全平。</p>
+                <h4>📚 EX 4 – CUSTOM MACD</h4>
+                <pre>// hand-rolled MACD: EMA of a DERIVED series (core)
+macd = ema(close, 12) - ema(close, 26);
+k = 2 / (9 + 1);                      // signal = EMA(9) of macd
+this.signal = this.signal === undefined
+    ? macd : this.signal + k*(macd - this.signal);
+hist = macd - this.signal;
+// manual zero-cross (avoids conditional crossover() calls)
+prevH = this.prevHist === undefined ? hist : this.prevHist;
+this.prevHist = hist;
+if (prevH &lt;= 0 &amp;&amp; hist &gt; 0 &amp;&amp; macd &gt; 0)
+    strategy.entry('long', { ratio: 0.8,
+        sl: close - 2*atr(14), tp: close + 4*atr(14) });</pre>
+                <button class="example-btn" data-example="macd">Load full</button>
+                <p>没有内置 <code>macd()</code>——自己造：信号线是「macd 这条<b>派生序列</b>的 EMA」，内置函数只能算收盘价的 EMA，所以用 <code>this.signal</code> <b>跨 tick 增量递推</b>。这个模式可以推广到任何自定义指标。出场用「柱体连续两棒衰减」的动能枯竭判断。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 5 – Z-SCORE REVERT</h4>
+                <pre>// statistical mean reversion, scaled entries (core)
+b  = bb(20, 1);                  // mult=1 → upper-mid = 1σ
+z  = (close - b.mid) / (b.upper - b.mid);
+want = z &lt;= -3.4 ? 3 : z &lt;= -2.7 ? 2 : z &lt;= -2 ? 1 : 0;
+if (bar_changed &amp;&amp; want &gt; this.legs &amp;&amp; this.legs &lt; 3) {
+    if (this.legs === 0) strategy.entry('long', { ratio: 0.25 });
+    else                 strategy.add('long',   { ratio: 0.25 });
+    this.legs++;
+}
+if (pos.side === 'long' &amp;&amp; z &gt;= 0)  strategy.close('long');  // mean touch
+if (pos.side === 'long' &amp;&amp; z &lt; -4.5) strategy.close('long'); // regime break</pre>
+                <button class="example-btn" data-example="zrevert">Load full</button>
+                <p>把价格偏离标准化成 <b>z 分数</b>（巧用 <code>bb(20,1)</code>：mult=1 时上轨−中轨恰为 1σ），在 −2σ/−2.7σ/−3.4σ <b>三档分批接刀</b>，回到均值止盈，−4.5σ 认输（统计失效）。刻意只做多：在有正漂移的市场里做空均值回归是负期望。</p>
+            </div>
+
+            <div class="doc-section">
+                <h4>📚 EX 6 – VOL-TARGETED TREND</h4>
+                <pre>// volatility targeting: size by risk budget (core)
+atrPct = atr(14) / close;            // realized vol proxy
+TARGET = 0.012;                      // per-trade risk budget
+size = Math.max(0.15, Math.min(0.9, TARGET / atrPct));
+upX   = crossover(ema(close,20), ema(close,60));  // unconditional!
+downX = crossunder(ema(close,20), ema(close,60));
+if (upX) {
+    strategy.entry('long', { ratio: size, sl: close - 2.2*atr(14) });
+    this.peak = close;
+}
+// ratchet trail: 2·ATR giveback from the running peak
+if (pos.side === 'long' &amp;&amp; close &lt; (this.peak = Math.max(this.peak||close, close)) - 2*atr(14))
+    strategy.close('long');</pre>
+                <button class="example-btn" data-example="voltarget">Load full</button>
+                <p>机构常用的<b>波动率目标化</b>仓位：仓位比例 = 风险预算 ÷ 当前 ATR%（截断在 15%–90%）——市场越疯狂仓越轻，平静趋势满仓干。入场是普通的 EMA 金叉，但<b>仓位本身成为策略的一部分</b>。注意两个 cross 函数在顶部无条件调用（见下方 gotcha）。</p>
             </div>
 
             <div class="doc-section">
@@ -844,6 +940,7 @@ if (fast > slow) {
                 <p>• <strong>Ctrl+S</strong> — check syntax &nbsp;·&nbsp; <strong>Ctrl+Enter</strong> — apply to trader</p>
                 <p>• <strong>Tab</strong> — autocomplete / indent &nbsp;·&nbsp; <strong>▶ APPLY</strong> — send without closing editor</p>
                 <p style="font-size:0.72rem;color:rgba(0,245,255,0.5);margin:8px 0 4px">Common gotchas</p>
+                <p>• <code>crossover()/crossunder()</code> track state <strong>per call-site in call order</strong>. Always call them unconditionally at the top (<code>upX = crossover(a,b);</code>) and use the variable — a call skipped by <code>&amp;&amp;</code> short-circuit or an <code>if</code> branch shifts the state slots and corrupts every later cross.</p>
                 <p>• <code>strategy.entry</code> is idempotent — won't stack. Use <code>strategy.add</code> for pyramiding.</p>
                 <p>• <code>strategy.add</code> fires every tick unless guarded. <strong>In CRYPTO mode</strong> use <code>if (bar_changed) { strategy.add(...) }</code> so it fires once per candle (1m/5m…), not every 200ms.</p>
                 <p>• SL/TP are <strong>fixed</strong> at the moment the order is placed — they don't trail automatically.</p>
@@ -874,6 +971,9 @@ if (fast > slow) {
     (function() {
         const editor           = document.getElementById('code');
         const overlay          = document.getElementById('code-overlay');
+        const gutter           = document.getElementById('code-gutter');
+        const lineCountEl      = document.getElementById('line-count');
+        const editorPanel      = document.querySelector('.editor-panel');
         const completionBox    = document.getElementById('completion');
         const syntaxResult     = document.getElementById('syntax-result');
         const cursorPos        = document.getElementById('cursor-pos');
@@ -948,26 +1048,48 @@ if (fast > slow) {
 
         function _clearOverlay() { overlay.innerHTML = ''; }
 
-        // ----- Autocomplete keywords -----
+        // ----- Autocomplete keywords: [插入文本, 右侧灰字提示] -----
         const keywords = [
-            'open', 'high', 'low', 'close', 'volume',
-            'sma(', 'ema(', 'rsi(', 'atr(', 'highest(', 'lowest(', 'bb(', 'stoch(',
-            'crossover(', 'crossunder(', 'bar_index', 'bar_changed',
-            "strategy.entry('long'", "strategy.entry('short'",
-            "strategy.entry('long', { ratio: ", "strategy.entry('short', { ratio: ",
-            "strategy.entry('long', { qty: ", "strategy.entry('short', { qty: ",
-            "strategy.add('long'", "strategy.add('short'",
-            "strategy.add('long', { ratio: ", "strategy.add('short', { ratio: ",
-            "strategy.close('long')", "strategy.close('short')", 'strategy.closeAll()',
-            'strategy.position',
-            'Math.max(', 'Math.min(', 'Math.abs(', 'Math.floor(', 'Math.round(',
-            'this.'
+            ['close',  'last price'],
+            ['open',   'bar open'],
+            ['high',   'bar high'],
+            ['low',    'bar low'],
+            ['volume', 'relative volume'],
+            ['bar_index',   'completed bars'],
+            ['bar_changed', 'new bar this tick'],
+            ['sma(',     'sma(close, len)'],
+            ['ema(',     'ema(close, len)'],
+            ['rsi(',     'rsi(len=14) → 0-100'],
+            ['atr(',     'atr(len=14)'],
+            ['highest(', 'highest(len=20)'],
+            ['lowest(',  'lowest(len=20)'],
+            ['bb(',      'bb(len,mult) → {upper,mid,lower}'],
+            ['stoch(',   'stoch(k,d) → {k,d}'],
+            ['crossover(',  'call unconditionally!'],
+            ['crossunder(', 'call unconditionally!'],
+            ["strategy.entry('long'",  'flip/open long'],
+            ["strategy.entry('short'", 'flip/open short'],
+            ["strategy.entry('long', { ratio: ",  'sized entry'],
+            ["strategy.entry('short', { ratio: ", 'sized entry'],
+            ["strategy.entry('long', { qty: ",    'fixed-qty entry'],
+            ["strategy.entry('short', { qty: ",   'fixed-qty entry'],
+            ["strategy.add('long'",  'pyramid long'],
+            ["strategy.add('short'", 'pyramid short'],
+            ["strategy.add('long', { ratio: ",  'sized add'],
+            ["strategy.add('short', { ratio: ", 'sized add'],
+            ["strategy.close('long')",  'close longs'],
+            ["strategy.close('short')", 'close shorts'],
+            ['strategy.closeAll()',  'close everything'],
+            ['strategy.position',    '{side,qty,avgPrice,unrealized}'],
+            ['Math.max(', ''], ['Math.min(', ''], ['Math.abs(', ''],
+            ['Math.floor(', ''], ['Math.round(', ''], ['Math.sqrt(', ''],
+            ['this.', 'persistent state'],
         ];
 
         function getCursorPos(ta) { return ta.selectionStart; }
         function setCursorPos(ta, p) { ta.setSelectionRange(p, p); }
 
-        // Simple caret coordinate estimate (no DOM mirror needed)
+        // Caret 视口坐标估算（纯 rect 基准，不依赖 offsetParent 结构）
         function getCaretXY(ta) {
             const rect = ta.getBoundingClientRect();
             const pos  = getCursorPos(ta);
@@ -978,8 +1100,8 @@ if (fast > slow) {
             const col  = lines[lines.length-1].length;
             const row  = lines.length - 1;
             return {
-                left: rect.left + ta.offsetLeft + 14 + col * charW - ta.scrollLeft,
-                top:  rect.top  + ta.offsetTop  + 6  + (row+1) * lineH - ta.scrollTop
+                left: rect.left + 14 + col * charW - ta.scrollLeft,
+                top:  rect.top  + 6  + (row+1) * lineH - ta.scrollTop
             };
         }
 
@@ -987,7 +1109,7 @@ if (fast > slow) {
 
         function showCompletions(prefix) {
             if (!prefix) { completionBox.style.display = 'none'; return; }
-            const matches = keywords.filter(k => k.toLowerCase().startsWith(prefix.toLowerCase()));
+            const matches = keywords.filter(k => k[0].toLowerCase().startsWith(prefix.toLowerCase()));
             if (!matches.length) { completionBox.style.display = 'none'; return; }
 
             completionBox.innerHTML = '';
@@ -995,16 +1117,25 @@ if (fast > slow) {
             matches.forEach((m, i) => {
                 const div = document.createElement('div');
                 div.className = 'completion-item' + (i === 0 ? ' selected' : '');
-                div.textContent = m;
-                div.onpointerdown = e => { e.preventDefault(); insertCompletion(prefix, m); };
+                const txt = document.createElement('span');
+                txt.textContent = m[0];
+                div.appendChild(txt);
+                if (m[1]) {
+                    const hint = document.createElement('span');
+                    hint.className = 'ci-hint';
+                    hint.textContent = m[1];
+                    div.appendChild(hint);
+                }
+                div.onpointerdown = e => { e.preventDefault(); insertCompletion(prefix, m[0]); };
                 completionBox.appendChild(div);
             });
 
-            const xy     = getCaretXY(editor);
-            const edRect = editor.getBoundingClientRect();  // 缓存一次，避免重复触发布局回流
+            // 补全框定位以 editor-panel 为参照（textarea 左侧有行号槽，不能再以 textarea 自身为参照）
+            const xy        = getCaretXY(editor);
+            const panelRect = editorPanel.getBoundingClientRect();
             completionBox.style.display = 'block';
-            completionBox.style.left = (xy.left - edRect.left - 4) + 'px';
-            completionBox.style.top  = (xy.top  - edRect.top  + 2) + 'px';
+            completionBox.style.left = (xy.left - panelRect.left - 4) + 'px';
+            completionBox.style.top  = (xy.top  - panelRect.top  + 2) + 'px';
         }
 
         function hideCompletions() {
@@ -1052,8 +1183,8 @@ if (fast > slow) {
                 const pos = getCursorPos(editor);
                 const prefix = (editor.value.substring(0, pos).match(/[\w.]+$/) || [''])[0];
                 if (prefix) {
-                    const matches = keywords.filter(k => k.toLowerCase().startsWith(prefix.toLowerCase()));
-                    if (matches.length === 1) { insertCompletion(prefix, matches[0]); return; }
+                    const matches = keywords.filter(k => k[0].toLowerCase().startsWith(prefix.toLowerCase()));
+                    if (matches.length === 1) { insertCompletion(prefix, matches[0][0]); return; }
                     if (matches.length > 1)   { showCompletions(prefix); return; }
                 }
                 // Indent: insert spaces
@@ -1063,32 +1194,68 @@ if (fast > slow) {
                 return;
             }
 
-            // Ctrl+S → check syntax
-            if ((e.ctrlKey||e.metaKey) && e.key === 's') {
+            // Ctrl+S → check syntax（容忍 CapsLock / Shift 状态）
+            if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase() === 's') {
                 e.preventDefault(); checkSyntax(); return;
             }
             // Ctrl+Enter → apply to trader
             if ((e.ctrlKey||e.metaKey) && e.key === 'Enter') {
                 e.preventDefault(); applyToTrader(); return;
             }
+
+            // Enter → 自动缩进（继承上一行缩进；行尾是 { 时再加一级）
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const pos       = getCursorPos(editor);
+                const text      = editor.value;
+                const lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+                const line      = text.substring(lineStart, pos);
+                const indent    = (line.match(/^[ \t]*/) || [''])[0];
+                const extra     = /\{\s*$/.test(line) ? '    ' : '';
+                const ins       = '\n' + indent + extra;
+                editor.value = text.substring(0, pos) + ins + text.substring(editor.selectionEnd);
+                setCursorPos(editor, pos + ins.length);
+                updateCursorDisplay();
+                _clearOverlay();
+                return;
+            }
         });
 
         editor.addEventListener('click',  () => { hideCompletions(); updateCursorDisplay(); });
         editor.addEventListener('input',  () => { hideCompletions(); updateCursorDisplay(); _clearOverlay(); });
+        // 方向键 / Home / End 等纯移动也要刷新 Ln/Col 和活动行（旧版只在 click/input 时更新）
+        editor.addEventListener('keyup',  () => updateCursorDisplay());
         editor.addEventListener('scroll', () => {
             hideCompletions();
             overlay.scrollTop  = editor.scrollTop;
             overlay.scrollLeft = editor.scrollLeft;
+            gutter.scrollTop   = editor.scrollTop;
         });
         document.addEventListener('click', e => {
             if (!editor.contains(e.target) && !completionBox.contains(e.target)) hideCompletions();
         });
 
+        /* ── 行号槽：行号 + 活动行高亮（与 overlay 同字号行高，滚动同步） ── */
+        let _gutterLines = -1, _gutterActive = -1;
+        function updateGutter(totalLines, activeLine) {
+            if (totalLines === _gutterLines && activeLine === _gutterActive) return;
+            _gutterLines = totalLines; _gutterActive = activeLine;
+            let html = '';
+            for (let i = 1; i <= totalLines; i++) {
+                html += `<span class="ln${i === activeLine ? ' ln-active' : ''}">${i}</span>`;
+            }
+            gutter.innerHTML = html;
+            gutter.scrollTop = editor.scrollTop;
+        }
+
         function updateCursorDisplay() {
-            const pos  = getCursorPos(editor);
-            const text = editor.value.substring(0, pos);
-            const lns  = text.split('\n');
+            const pos   = getCursorPos(editor);
+            const text  = editor.value.substring(0, pos);
+            const lns   = text.split('\n');
+            const total = editor.value.split('\n').length;
             cursorPos.textContent = `Ln ${lns.length}, Col ${lns[lns.length-1].length + 1}`;
+            if (lineCountEl) lineCountEl.textContent = total + ' lines';
+            updateGutter(total, lns.length);
         }
 
         // ----- Syntax checker — simulates the actual pineEnv via with() -----
@@ -1226,111 +1393,225 @@ if (fast > slow) {
             });
         });
 
-        // ----- Examples -----
+        // ----- 策略库：6 个进阶模板 -----
+        // 共同纪律：crossover/crossunder 一律在顶部无条件调用；
+        //          this.* 先判 undefined 再用；加仓统一用 bar_changed 限频。
         const EXAMPLES = {
-            ma: [
-                "// MA Cross + Pyramid — enter on crossover, add 10% each tick while trend holds",
-                "fast = ema(close, 9);",
-                "slow = ema(close, 21);",
-                "pos  = strategy.position;",
-                "if (crossover(fast, slow)) {",
-                "    strategy.entry('long',  { ratio: 0.1, sl: slow * 0.97, tp: close * 1.10 });",
-                "} else if (fast > slow && pos.side === 'long') {",
-                "    strategy.add('long',    { ratio: 0.1, sl: slow * 0.97 });",
-                "}",
-                "if (crossunder(fast, slow)) {",
-                "    strategy.entry('short', { ratio: 0.1, sl: slow * 1.03, tp: close * 0.90 });",
-                "} else if (fast < slow && pos.side === 'short') {",
-                "    strategy.add('short',   { ratio: 0.1, sl: slow * 1.03 });",
-                "}"
-            ].join('\n'),
+            pullback: `// ═ Trend Pullback ═ regime filter + dip entry + chandelier trail
+// Idea: only trade WITH the EMA(50) regime; enter on an RSI(7)
+// pullback inside that trend; exit on a 3·ATR giveback (manual trail —
+// the sl: option is fixed at entry and never trails by itself).
+trend = ema(close, 50);
+fast  = ema(close, 9);
+r     = rsi(7);
+a     = atr(14);
+pos   = strategy.position;
 
-            rsi: [
-                "// RSI Mean Reversion + Pyramid — add 10% while signal holds",
-                "r   = rsi(14);",
-                "a   = atr(14);",
-                "pos = strategy.position;",
-                "if (r > 70) {",
-                "    strategy.close('long');",
-                "} else if (r < 30) {",
-                "    strategy.entry('long', { ratio: 0.1, sl: close - 2 * a, tp: close * 1.08 });",
-                "} else if (r < 40 && pos.side === 'long') {",
-                "    strategy.add('long',   { ratio: 0.1, sl: close - 2 * a });",
-                "}"
-            ].join('\n'),
+up   = close > trend && fast > trend;
+down = close < trend && fast < trend;
 
-            breakout: [
-                "// Two-sided Breakout + Pyramid — add 10% while price extends the breakout",
-                "h20 = highest(20);",
-                "l20 = lowest(20);",
-                "pos = strategy.position;",
-                "if (close > h20) {",
-                "    strategy.close('short');",
-                "    strategy.entry('long',  { ratio: 0.1, sl: l20, tp: close * 1.10 });",
-                "} else if (pos.side === 'long' && close > pos.avgPrice) {",
-                "    strategy.add('long',    { ratio: 0.1, sl: l20 });",
-                "}",
-                "if (close < l20) {",
-                "    strategy.close('long');",
-                "    strategy.entry('short', { ratio: 0.1, sl: h20, tp: close * 0.90 });",
-                "} else if (pos.side === 'short' && close < pos.avgPrice) {",
-                "    strategy.add('short',   { ratio: 0.1, sl: h20 });",
-                "}"
-            ].join('\n'),
+if (up && r < 35 && pos.side !== 'long') {
+    strategy.entry('long',  { ratio: 0.6, sl: close - 2.5 * a });
+    this.hh = close;                       // trail anchor
+}
+if (down && r > 65 && pos.side !== 'short') {
+    strategy.entry('short', { ratio: 0.6, sl: close + 2.5 * a });
+    this.ll = close;
+}
 
-            persist: [
-                "// Manual MA Cross + Pyramid — first-tick safe, add 10% while trend holds",
-                "fast = ema(close, 9);",
-                "slow = ema(close, 21);",
-                "pos  = strategy.position;",
-                "if (this.prevFast === undefined) {",
-                "    this.prevFast = fast; this.prevSlow = slow;",
-                "} else {",
-                "    if (this.prevFast <= this.prevSlow && fast > slow) {",
-                "        strategy.close('short');",
-                "        strategy.entry('long',  { ratio: 0.1, sl: slow * 0.98, tp: close * 1.08 });",
-                "    } else if (fast > slow && pos.side === 'long') {",
-                "        strategy.add('long',    { ratio: 0.1, sl: slow * 0.98 });",
-                "    }",
-                "    if (this.prevFast >= this.prevSlow && fast < slow) {",
-                "        strategy.close('long');",
-                "        strategy.entry('short', { ratio: 0.1, sl: slow * 1.02, tp: close * 0.92 });",
-                "    } else if (fast < slow && pos.side === 'short') {",
-                "        strategy.add('short',   { ratio: 0.1, sl: slow * 1.02 });",
-                "    }",
-                "    this.prevFast = fast; this.prevSlow = slow;",
-                "}"
-            ].join('\n'),
+// chandelier exit: give back 3·ATR from the best price → out
+if (pos.side === 'long') {
+    this.hh = Math.max(this.hh || close, close);
+    if (close < this.hh - 3 * a) strategy.close('long');
+}
+if (pos.side === 'short') {
+    this.ll = Math.min(this.ll || close, close);
+    if (close > this.ll + 3 * a) strategy.close('short');
+}`,
 
-            roll: [
-                "// EMA Roll + Pyramid — add 10%/tick, compound on every +3% gain",
-                "fast = ema(close, 9);",
-                "slow = ema(close, 21);",
-                "pos  = strategy.position;",
-                "if (fast > slow) {",
-                "    if (pos.side !== 'long') {",
-                "        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });",
-                "    } else if (close > pos.avgPrice * 1.03) {",
-                "        strategy.close('long');",
-                "        strategy.entry('long', { ratio: 0.1, sl: slow * 0.975 });",
-                "    } else {",
-                "        strategy.add('long',   { ratio: 0.1, sl: slow * 0.975 });",
-                "    }",
-                "} else if (fast < slow) {",
-                "    strategy.closeAll();",
-                "}"
-            ].join('\n')
+            turtle: `// ═ Turtle (Donchian) ═ 20/10 channel + ATR unit pyramiding
+// Classic trend system: enter when price TOUCHES the 20-bar extreme
+// (intraday high/low vs the channel — the original Turtle trigger),
+// add one unit every 0.5·ATR of favorable movement (max 4 units),
+// ratchet a shared 2·ATR stop on each add; exit on the 10-bar channel.
+h20 = highest(20);  l20 = lowest(20);
+h10 = highest(10);  l10 = lowest(10);
+a   = atr(20);
+pos = strategy.position;
+
+if (this.units === undefined) { this.units = 0; this.lastAdd = 0; this.stop = 0; }
+
+// initial breakout unit (25% of free cash per unit)
+// high/low vs channel: like-for-like comparison (close vs high-channel
+// almost never triggers — bar highs sit systematically above closes)
+if (pos.side === 'none' && this.units === 0) {
+    if (high > h20) {
+        strategy.entry('long',  { ratio: 0.25, sl: close - 2 * a });
+        this.units = 1; this.lastAdd = close; this.stop = close - 2 * a;
+    } else if (low < l20) {
+        strategy.entry('short', { ratio: 0.25, sl: close + 2 * a });
+        this.units = 1; this.lastAdd = close; this.stop = close + 2 * a;
+    }
+}
+
+// pyramid: one more unit per 0.5·ATR move, ratchet the shared stop
+if (bar_changed && this.units > 0 && this.units < 4) {
+    if (pos.side === 'long' && close >= this.lastAdd + 0.5 * a) {
+        this.stop = close - 2 * a;
+        strategy.add('long',  { ratio: 0.25, sl: this.stop });
+        this.units++; this.lastAdd = close;
+    } else if (pos.side === 'short' && close <= this.lastAdd - 0.5 * a) {
+        this.stop = close + 2 * a;
+        strategy.add('short', { ratio: 0.25, sl: this.stop });
+        this.units++; this.lastAdd = close;
+    }
+}
+
+// exits: opposite 10-bar channel touch, or ratcheted stop breach
+if (pos.side === 'long'  && (low < l10  || close < this.stop)) { strategy.closeAll(); this.units = 0; }
+if (pos.side === 'short' && (high > h10 || close > this.stop)) { strategy.closeAll(); this.units = 0; }
+if (pos.side === 'none' && this.units > 0) this.units = 0;   // SL/TP cleaned us out`,
+
+            squeeze: `// ═ Squeeze Breakout ═ volatility compression → directional break
+// Bollinger bandwidth in the lowest 20% of its 120-bar range = squeeze.
+// Arm the trigger, then trade whichever band breaks first.
+// Demonstrates: rolling stats window kept in this.* (ring buffer).
+b   = bb(20, 2);
+a   = atr(14);
+bw  = b.mid > 0 ? (b.upper - b.lower) / b.mid : 0;   // normalized bandwidth
+pos = strategy.position;
+
+if (this.bws === undefined) this.bws = [];
+this.bws.push(bw);
+if (this.bws.length > 120) this.bws.shift();
+
+lo = Math.min.apply(null, this.bws);
+hi = Math.max.apply(null, this.bws);
+squeezed = this.bws.length >= 60 && bw <= lo + 0.2 * (hi - lo);
+
+if (squeezed) this.armed = true;
+
+if (this.armed && pos.side === 'none') {
+    if (close > b.upper) {
+        strategy.entry('long',  { ratio: 0.7, sl: b.mid, tp: close + 2.5 * (close - b.mid) });
+        this.armed = false;
+    } else if (close < b.lower) {
+        strategy.entry('short', { ratio: 0.7, sl: b.mid, tp: close - 2.5 * (b.mid - close) });
+        this.armed = false;
+    }
+}
+
+// stand down if volatility expands without a clean break
+if (this.armed && this.bws.length >= 60 && bw >= lo + 0.6 * (hi - lo)) this.armed = false;`,
+
+            macd: `// ═ Custom MACD ═ hand-rolled indicator via this.* incremental EMA
+// There is no built-in macd() — so build one. The signal line is an
+// EMA of a DERIVED series (the MACD value), which the built-ins can't
+// compute: maintain it incrementally across ticks with this.*.
+fastE = ema(close, 12);
+slowE = ema(close, 26);
+macd  = fastE - slowE;
+
+k = 2 / (9 + 1);                            // EMA(9) of the macd series
+this.signal = this.signal === undefined ? macd : this.signal + k * (macd - this.signal);
+hist = macd - this.signal;
+
+// manual zero-cross detection (avoids conditional crossover() calls)
+prevH = this.prevHist === undefined ? hist : this.prevHist;
+this.prevHist = hist;
+
+longSig  = prevH <= 0 && hist > 0 && macd > 0;   // turn up, above zero line
+shortSig = prevH >= 0 && hist < 0 && macd < 0;
+
+a   = atr(14);
+pos = strategy.position;
+if (longSig)  strategy.entry('long',  { ratio: 0.8, sl: close - 2 * a, tp: close + 4 * a });
+if (shortSig) strategy.entry('short', { ratio: 0.8, sl: close + 2 * a, tp: close - 4 * a });
+
+// momentum-fade exit: |histogram| shrinking two bars in a row
+if (this.h1 !== undefined && this.h2 !== undefined) {
+    fading = Math.abs(hist) < Math.abs(this.h1) && Math.abs(this.h1) < Math.abs(this.h2);
+    if (fading && pos.side === 'long'  && hist > 0) strategy.close('long');
+    if (fading && pos.side === 'short' && hist < 0) strategy.close('short');
+}
+this.h2 = this.h1; this.h1 = hist;`,
+
+            zrevert: `// ═ Z-Score Mean Reversion ═ statistical dip buying, scaled in
+// z = (close − mean20) / stdev20, via bb(20, 1): upper − mid = 1σ.
+// Scale in at z ≤ −2 / −2.7 / −3.4 (max 3 legs), take profit when
+// price reverts to the mean, bail out if dislocation passes −4.5σ.
+// Long-only by design: fading rallies in a drifting market bleeds.
+b   = bb(20, 1);
+sd  = b.upper - b.mid;
+z   = sd > 0 ? (close - b.mid) / sd : 0;
+pos = strategy.position;
+
+if (this.legs === undefined) this.legs = 0;
+
+want = z <= -3.4 ? 3 : z <= -2.7 ? 2 : z <= -2 ? 1 : 0;
+if (bar_changed && want > this.legs && this.legs < 3) {
+    if (this.legs === 0) strategy.entry('long', { ratio: 0.25 });
+    else                 strategy.add('long',   { ratio: 0.25 });
+    this.legs++;
+}
+
+if (pos.side === 'long') {
+    if (z >= 0)   { strategy.close('long'); this.legs = 0; }  // reverted → take profit
+    if (z < -4.5) { strategy.close('long'); this.legs = 0; }  // regime break → cut it
+}
+if (pos.side === 'none' && this.legs > 0) this.legs = 0;`,
+
+            voltarget: `// ═ Volatility-Targeted Trend ═ risk budget sizing + ratchet trail
+// Position size is INVERSELY proportional to realized volatility:
+// ratio = target risk / ATR%, capped to [0.15, 0.90]. Wild market →
+// small size; calm trend → full size. Entries: EMA(20/60) cross.
+e20 = ema(close, 20);
+e60 = ema(close, 60);
+a   = atr(14);
+pos = strategy.position;
+
+atrPct = close > 0 ? a / close : 0;            // realized vol proxy
+TARGET = 0.012;                                // per-trade risk budget
+size   = Math.max(0.15, Math.min(0.9, TARGET / Math.max(atrPct, 1e-9)));
+
+upX   = crossover(e20, e60);                   // call unconditionally — see docs
+downX = crossunder(e20, e60);
+
+if (upX) {
+    strategy.entry('long',  { ratio: size, sl: close - 2.2 * a });
+    this.peak = close;
+}
+if (downX) {
+    strategy.entry('short', { ratio: size, sl: close + 2.2 * a });
+    this.trough = close;
+}
+
+// ratchet trail: exit on a 2·ATR giveback from the extreme
+if (pos.side === 'long') {
+    this.peak = Math.max(this.peak || close, close);
+    if (close < this.peak - 2 * a) strategy.close('long');
+}
+if (pos.side === 'short') {
+    this.trough = Math.min(this.trough || close, close);
+    if (close > this.trough + 2 * a) strategy.close('short');
+}`
         };
 
+        function loadExample(key) {
+            const code = EXAMPLES[key];
+            if (!code) return;
+            editor.value = code;
+            editor.scrollTop = 0;
+            updateCursorDisplay();
+            checkSyntax();
+            hintMsg.textContent = 'Loaded: ' + key.toUpperCase();
+            // 库栏 chip 选中态（文档区的 Load 按钮也会同步高亮对应 chip）
+            document.querySelectorAll('.lib-chip').forEach(c =>
+                c.classList.toggle('active', c.getAttribute('data-example') === key));
+        }
+
         document.querySelectorAll('[data-example]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const code = EXAMPLES[btn.getAttribute('data-example')];
-                if (code) {
-                    editor.value = code;
-                    updateCursorDisplay();
-                    checkSyntax();
-                }
-            });
+            btn.addEventListener('click', () => loadExample(btn.getAttribute('data-example')));
         });
 
         // ----- Collapse instruction panel -----
@@ -1367,9 +1648,7 @@ if (fast > slow) {
         });
 
         // ----- Init -----
-        editor.value = EXAMPLES.ma;
-        updateCursorDisplay();
-        checkSyntax();
+        loadExample('pullback');
     })();
 </script>
 </body>

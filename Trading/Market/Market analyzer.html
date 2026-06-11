@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MARKET ANALYZER</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@700;900&display=swap');
+
+    :root {
+      --cyan:   #00f5ff;
+      --pink:   #ff2d78;
+      --yellow: #f5e642;
+      --green:  #39ff14;
+      --dark:   #03000e;
+      --panel:  rgba(0,245,255,0.035);
+      --border: rgba(0,245,255,0.16);
+      --border2:rgba(0,245,255,0.08);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      background: var(--dark);
+      min-height: 100vh;
+      font-family: 'Share Tech Mono', monospace;
+      overflow-x: hidden;
+      padding: 16px 20px 40px;
+      color: var(--cyan);
+    }
+
+    /* scanline + vignette */
+    body::after {
+      content:''; position:fixed; inset:0; z-index:99; pointer-events:none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.10) 2px, rgba(0,0,0,0.10) 4px);
+    }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:98; pointer-events:none;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.60) 100%);
+    }
+
+    .page-wrapper {
+      position: relative; z-index: 1;
+      max-width: 1400px; margin: 0 auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    /* ── TITLE ── */
+    .title-row {
+      display: flex; align-items: center; gap: 18px; padding: 4px 0;
+    }
+    .title {
+      font-family: 'Orbitron', monospace; font-size: 1.6rem; font-weight: 900;
+      letter-spacing: 0.3em; color: var(--cyan); text-transform: uppercase;
+      text-shadow: 0 0 6px var(--cyan), 0 0 22px var(--cyan), 0 0 55px rgba(0,245,255,0.3);
+      position: relative; white-space: nowrap;
+    }
+    .title::before, .title::after {
+      content: attr(data-text); position: absolute; top:0; left:0; width:100%;
+      pointer-events: none; clip-path: inset(0 0 100% 0);
+    }
+    .title::before { color: var(--pink);   animation: glitch-t 6s infinite linear; }
+    .title::after  { color: var(--yellow); animation: glitch-b 6s infinite linear; }
+    @keyframes glitch-t {
+      0%,90%,100% { clip-path:inset(0 0 100% 0); transform:translate(0); }
+      92% { clip-path:inset(0 0 55% 0); transform:translate(-3px,0); }
+      94% { clip-path:inset(25% 0 45% 0); transform:translate(3px,0); }
+    }
+    @keyframes glitch-b {
+      0%,90%,100% { clip-path:inset(100% 0 0 0); transform:translate(0); }
+      91% { clip-path:inset(55% 0 0 0); transform:translate(3px,0); }
+      93% { clip-path:inset(45% 0 25% 0); transform:translate(-2px,0); }
+    }
+    .title-sep { flex:1; height:1px; background: linear-gradient(to right, rgba(0,245,255,0.3), transparent); }
+    .title-tag { font-size: 0.58rem; color: rgba(0,245,255,0.35); letter-spacing: 0.2em; white-space: nowrap; }
+
+    /* ── CONTROL PANEL ── */
+    .control-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 14px 20px;
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(0,245,255,0.05);
+      position: relative; overflow: hidden;
+    }
+    .control-panel::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background: linear-gradient(135deg, rgba(0,245,255,0.05) 0%, transparent 60%);
+    }
+    .param-group {
+      display: flex; flex-direction: column; gap: 5px; min-width: 110px;
+    }
+    .param-label {
+      font-size: 0.62rem; letter-spacing: 0.18em;
+      color: rgba(0,245,255,0.5); text-transform: uppercase;
+    }
+    .param-label span { color: var(--pink); margin-left: 4px; }
+    .num-input {
+      background: rgba(0,245,255,0.04);
+      border: 1px solid rgba(0,245,255,0.2);
+      border-bottom: 2px solid rgba(0,245,255,0.3);
+      color: var(--cyan); font-family: 'Share Tech Mono', monospace;
+      padding: 6px 8px; width: 110px; text-align: center; font-size: 0.88rem;
+      border-radius: 2px; transition: border-color 0.15s;
+    }
+    .num-input:focus { border-color: var(--cyan); outline: none; background: rgba(0,245,255,0.08); }
+
+    .panel-divider {
+      width: 1px; height: 52px; align-self: flex-end;
+      background: var(--border2); margin: 0 4px;
+    }
+
+    /* ── ENGINE SELECTOR ── */
+    .engine-group {
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .engine-btns {
+      display: flex; gap: 5px; flex-wrap: wrap; align-self: flex-end;
+    }
+    .engine-btn {
+      background: rgba(0,245,255,0.03);
+      border: 1px solid rgba(0,245,255,0.18);
+      border-bottom: 2px solid rgba(0,245,255,0.22);
+      border-radius: 2px;
+      color: rgba(0,245,255,0.45); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; letter-spacing: 0.14em;
+      padding: 5px 12px; cursor: pointer; white-space: nowrap;
+      transition: all 0.1s;
+    }
+    .engine-btn:hover {
+      background: rgba(0,245,255,0.08);
+      color: rgba(0,245,255,0.8);
+    }
+    .engine-btn.active {
+      background: rgba(0,245,255,0.10);
+      border-color: rgba(0,245,255,0.5);
+      border-bottom-color: var(--cyan);
+      color: var(--cyan);
+      text-shadow: 0 0 8px rgba(0,245,255,0.6);
+      box-shadow: 0 2px 12px rgba(0,245,255,0.15);
+    }
+
+    /* ── RUN BUTTON ── */
+    .run-btn {
+      background: rgba(0,245,255,0.06);
+      border: 1px solid rgba(0,245,255,0.35);
+      border-bottom: 3px solid rgba(0,245,255,0.5);
+      border-radius: 3px;
+      color: var(--cyan); font-family: 'Share Tech Mono', monospace;
+      font-size: 0.9rem; letter-spacing: 0.2em;
+      padding: 8px 28px; cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,245,255,0.12), inset 0 1px 0 rgba(0,245,255,0.08);
+      text-shadow: 0 0 10px rgba(0,245,255,0.7);
+      transition: all 0.1s; align-self: flex-end;
+    }
+    .run-btn:hover {
+      background: rgba(0,245,255,0.12);
+      box-shadow: 0 4px 28px rgba(0,245,255,0.3), inset 0 1px 0 rgba(0,245,255,0.15);
+    }
+    .run-btn:active { transform: translateY(2px); border-bottom-width: 1px; box-shadow: none; }
+    .run-btn:disabled {
+      color: rgba(0,245,255,0.25); border-color: rgba(0,245,255,0.1);
+      border-bottom-color: rgba(0,245,255,0.15);
+      background: transparent; cursor: not-allowed;
+      box-shadow: none; text-shadow: none;
+    }
+
+    /* ── PROGRESS ── */
+    .progress-row {
+      display: flex; align-items: center; gap: 12px;
+    }
+    #progressWrap {
+      flex: 1; height: 10px;
+      background: rgba(0,245,255,0.08);
+      border-radius: 4px; overflow: hidden;
+    }
+    #progressBar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      border-radius: 4px;
+      transition: width 0.15s linear;
+      box-shadow: 0 0 10px var(--cyan), 0 0 20px rgba(0,245,255,0.3);
+    }
+    #loading {
+      font-size: 0.7rem; letter-spacing: 0.12em;
+      color: rgba(0,245,255,0.5); white-space: nowrap; min-width: 80px;
+    }
+
+    /* ── CANVAS FRAMES ── */
+    .canvas-frame {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      background: #02000a;
+      box-shadow: 0 0 30px rgba(0,245,255,0.06), inset 0 0 40px rgba(0,0,0,0.4);
+    }
+    .canvas-frame::before { content:''; position:absolute; top:-2px; left:-2px; width:20px; height:20px; border-top:2px solid var(--cyan); border-left:2px solid var(--cyan); box-shadow:-2px -2px 8px rgba(0,245,255,0.5); pointer-events:none; }
+    .canvas-frame::after  { content:''; position:absolute; bottom:-2px; right:-2px; width:20px; height:20px; border-bottom:2px solid var(--pink); border-right:2px solid var(--pink); box-shadow:2px 2px 8px rgba(255,45,120,0.5); pointer-events:none; }
+
+    .canvas-frame canvas { display:block; width:100%; height:auto; }
+
+    .section-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+    }
+    .section-title {
+      font-family: 'Orbitron', monospace; font-size: 0.65rem; font-weight: 700;
+      letter-spacing: 0.25em; color: rgba(0,245,255,0.6); text-transform: uppercase;
+    }
+    .section-line {
+      flex:1; height:1px; background: linear-gradient(to right, rgba(0,245,255,0.2), transparent);
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      padding: 6px 14px;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border2);
+      border-top: none;
+      border-radius: 0 0 2px 2px;
+      font-size: 0.65rem; letter-spacing: 0.1em;
+      color: rgba(0,245,255,0.45);
+      display: flex; flex-wrap: wrap; gap: 16px;
+    }
+    .stats-bar span { color: rgba(0,245,255,0.65); }
+    .stats-bar .val { color: var(--yellow); }
+  </style>
+
+  <!-- Market engines (dependency order) -->
+  <script src="OrdinaryMarket/RegimeEngine.js"></script>
+  <script src="OrdinaryMarket/SwanEngine.js"></script>
+  <script src="OrdinaryMarket/SREngine.js"></script>
+  <script src="OrdinaryMarket/OrdinaryMarketEngine.js"></script>
+  <script src="OppMarket/OppMarketEngine.js"></script>
+  <script src="FollowMarket/FollowMarketEngine.js"></script>
+  <script src="StormMarket/StormMarketEngine.js"></script>
+  <script src="MarketHub.js"></script>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Title -->
+    <div class="title-row">
+      <div class="title" data-text="MARKET ANALYZER">MARKET ANALYZER</div>
+      <div class="title-sep"></div>
+      <div class="title-tag">MONTE CARLO · VIRIDIS HEATMAP · FULL ENGINE</div>
+    </div>
+
+    <!-- Control panel -->
+    <div class="control-panel">
+      <div class="param-group">
+        <div class="param-label">Grid Size <span id="gridSizeVal">1000</span></div>
+        <input class="num-input" type="number" id="gridSize" min="10" max="2000" value="1000" step="10">
+      </div>
+      <div class="param-group">
+        <div class="param-label">Sim Ticks T</div>
+        <input class="num-input" type="number" id="simTicks" min="500" max="10000" value="4000" step="100">
+      </div>
+      <div class="param-group">
+        <div class="param-label">Paths M</div>
+        <input class="num-input" type="number" id="totalPaths" min="100" max="9999" value="500" step="100">
+      </div>
+      <div class="panel-divider"></div>
+      <div class="param-group">
+        <div class="param-label">Volatility σ</div>
+        <input class="num-input" type="number" id="sigma" min="0.01" max="0.5" value="0.25" step="0.01">
+      </div>
+      <div class="param-group">
+        <div class="param-label">Drift μ</div>
+        <input class="num-input" type="number" id="mu" min="-0.1" max="0.1" value="0.08" step="0.005">
+      </div>
+      <div class="panel-divider"></div>
+      <div class="engine-group">
+        <div class="param-label">Market Engine</div>
+        <div class="engine-btns" id="engineBtns"></div>
+      </div>
+      <div class="panel-divider"></div>
+      <button class="run-btn" id="runBtn">[ RUN ]</button>
+      <span id="loading"></span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-row">
+      <div id="progressWrap"><div id="progressBar"></div></div>
+    </div>
+
+    <!-- Path overlay -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Price Path Overlay</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="bigCanvas" width="1360" height="560"></canvas>
+      </div>
+    </div>
+
+    <!-- Log price histogram -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Terminal Log-Price Distribution</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="logHistCanvas" width="1360" height="260"></canvas>
+      </div>
+      <div class="stats-bar" id="logStats"></div>
+    </div>
+
+    <!-- Heatmap -->
+    <div>
+      <div class="section-header">
+        <div class="section-title">Time × Log-Price Density Heatmap</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="canvas-frame">
+        <canvas id="heatmapCanvas" width="1360" height="560"></canvas>
+      </div>
+      <div class="stats-bar" id="heatmapStats"></div>
+    </div>
+
+  </div><!-- end page-wrapper -->
+
+  <script>
+    // ---------- Box-Muller normal RNG ----------
+    function createNormalRandom() {
+      let spare = null;
+      return function() {
+        if (spare !== null) { let t = spare; spare = null; return t; }
+        let u, v, s;
+        do { u = Math.random()*2-1; v = Math.random()*2-1; s = u*u+v*v; } while (s>=1||s===0);
+        const mul = Math.sqrt(-2*Math.log(s)/s);
+        spare = v*mul; return u*mul;
+      };
+    }
+
+    // ---------- Constants ----------
+    const simN         = 4;
+    const dt           = 1 / 252;
+    const WARMUP_LEN   = 200 * simN;  // short analyzer warmup (avoids browser freeze)
+
+    let allSeries = [];
+
+    // UI refs
+    const gridSizeInput  = document.getElementById('gridSize');
+    const simTicksInput  = document.getElementById('simTicks');
+    const totalPathsInput= document.getElementById('totalPaths');
+    const sigmaInput     = document.getElementById('sigma');
+    const muInput        = document.getElementById('mu');
+    const runBtn         = document.getElementById('runBtn');
+    const loadingSpan    = document.getElementById('loading');
+    const progressBar    = document.getElementById('progressBar');
+
+    // Canvases
+    const bigCanvas     = document.getElementById('bigCanvas');
+    const logHistCanvas = document.getElementById('logHistCanvas');
+    const heatCanvas    = document.getElementById('heatmapCanvas');
+
+    // ---------- Viridis palette (5 stops, gamma-compressed) ----------
+    const VIRIDIS = [[68,1,84],[59,82,139],[33,145,140],[94,201,98],[253,231,37]];
+    function viridis(t) {
+      const v = Math.pow(t, 0.4);
+      const pos = v * (VIRIDIS.length - 1);
+      const lo = Math.floor(pos), hi = Math.min(lo+1, VIRIDIS.length-1);
+      const f = pos - lo;
+      return [
+        Math.round(VIRIDIS[lo][0] + f*(VIRIDIS[hi][0]-VIRIDIS[lo][0])),
+        Math.round(VIRIDIS[lo][1] + f*(VIRIDIS[hi][1]-VIRIDIS[lo][1])),
+        Math.round(VIRIDIS[lo][2] + f*(VIRIDIS[hi][2]-VIRIDIS[lo][2])),
+      ];
+    }
+
+    // ---------- Draw heatmap ----------
+    function drawHeatmap(N) {
+      const ctx = heatCanvas.getContext('2d');
+      const W = heatCanvas.width, H = heatCanvas.height;
+      const seriesLen = allSeries[0].length;
+      const tMax = seriesLen - 1;
+
+      let logMin = Infinity, logMax = -Infinity;
+      for (const s of allSeries) for (const p of s) {
+        const lp = Math.log(p);
+        if (lp < logMin) logMin = lp;
+        if (lp > logMax) logMax = lp;
+      }
+      if (logMin === Infinity) return;
+      const pad = (logMax - logMin) * 0.02;
+      logMin -= pad; logMax += pad;
+
+      const counts = Array.from({length:N}, () => new Array(N).fill(0));
+      for (const s of allSeries) {
+        for (let t = 0; t < s.length; t++) {
+          const xi = Math.min(N-1, Math.floor(t / (tMax+1) * N));
+          const yi = Math.min(N-1, Math.floor((Math.log(s[t])-logMin)/(logMax-logMin)*N));
+          if (yi >= 0) counts[xi][yi]++;
+        }
+      }
+
+      const colMax = counts.map(col => Math.max(...col));
+
+      // Draw via ImageData for performance at N=1000
+      const imgData = ctx.createImageData(W, H);
+      const d = imgData.data;
+
+      for (let i = 0; i < N; i++) {
+        if (colMax[i] === 0) continue;
+        const x0 = Math.floor(i * W / N);
+        const x1 = Math.floor((i+1) * W / N);
+        for (let j = 0; j < N; j++) {
+          if (counts[i][j] === 0) continue;
+          const [r,g,b] = viridis(counts[i][j] / colMax[i]);
+          const y1 = Math.floor((N-1-j) * H / N);
+          const y2 = Math.floor((N-j) * H / N);
+          for (let px = x0; px < x1; px++) {
+            for (let py = y1; py < y2; py++) {
+              const idx = (py*W + px)*4;
+              d[idx]=r; d[idx+1]=g; d[idx+2]=b; d[idx+3]=255;
+            }
+          }
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // Axis labels
+      ctx.fillStyle = 'rgba(0,245,255,0.5)';
+      ctx.font = '11px "Share Tech Mono", monospace';
+      ctx.fillText('0', 4, H-4);
+      ctx.fillText(seriesLen, W-50, H-4);
+      ctx.fillText('TIME →', W/2-28, H-4);
+      ctx.save();
+      ctx.translate(12, H/2); ctx.rotate(-Math.PI/2);
+      ctx.fillText('LOG PRICE', -36, 0);
+      ctx.restore();
+      ctx.fillText(logMin.toFixed(2), 14, H-16);
+      ctx.fillText(logMax.toFixed(2), 14, 14);
+
+      document.getElementById('heatmapStats').innerHTML =
+        `<span>Total points:</span> <span class="val">${(allSeries.length*seriesLen).toLocaleString()}</span>` +
+        `&nbsp;&nbsp;<span>Col peak:</span> <span class="val">${Math.max(...colMax).toLocaleString()}</span>` +
+        `&nbsp;&nbsp;<span>Log-price range:</span> <span class="val">[${logMin.toFixed(3)}, ${logMax.toFixed(3)}]</span>`;
+    }
+
+    // ---------- Draw all charts ----------
+    function drawAll() {
+      const N = parseInt(gridSizeInput.value);
+
+      // Path overlay
+      const ctx = bigCanvas.getContext('2d');
+      const W = bigCanvas.width, H = bigCanvas.height;
+      let gMin = Infinity, gMax = -Infinity;
+      for (const s of allSeries) for (const v of s) { if (v<gMin) gMin=v; if (v>gMax) gMax=v; }
+      if (gMin === Infinity) return;
+      const pad = (gMax-gMin)*0.05;
+      const yMin = gMin-pad, yMax = gMax+pad;
+
+      ctx.clearRect(0,0,W,H);
+      ctx.fillStyle = '#02000a'; ctx.fillRect(0,0,W,H);
+      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = 'rgba(0,245,255,0.04)';
+      for (const s of allSeries) {
+        ctx.beginPath();
+        for (let i=0; i<s.length; i++) {
+          const x = i/(s.length-1)*W;
+          const y = H - (s[i]-yMin)/(yMax-yMin)*H;
+          i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+      }
+      // Reference line at start price (~100)
+      ctx.strokeStyle = 'rgba(0,245,255,0.12)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4,6]);
+      ctx.beginPath();
+      const yRef = H - (100-yMin)/(yMax-yMin)*H;
+      ctx.moveTo(0,yRef); ctx.lineTo(W,yRef);
+      ctx.stroke(); ctx.setLineDash([]);
+
+      ctx.fillStyle = 'rgba(0,245,255,0.35)';
+      ctx.font = '11px "Share Tech Mono", monospace';
+      ctx.fillText('TIME →', W-68, H-6);
+      ctx.fillText('PRICE', 6, 16);
+      ctx.fillText(`min: ${gMin.toFixed(1)}`, 6, H-6);
+      ctx.fillText(`max: ${gMax.toFixed(1)}`, 6, 28);
+
+      // Log-price histogram
+      const finals = allSeries.map(s => s[s.length-1]);
+      const logP   = finals.map(p => Math.log(p));
+      const lMean  = logP.reduce((a,b)=>a+b,0)/logP.length;
+      const lStd   = Math.sqrt(logP.reduce((a,b)=>a+(b-lMean)**2,0)/logP.length);
+      const lMin   = Math.min(...logP), lMax = Math.max(...logP);
+
+      const BINS = 80;
+      const bw = (lMax-lMin)/BINS;
+      const bc = new Array(BINS).fill(0);
+      for (const lp of logP) { let i=Math.floor((lp-lMin)/bw); if(i===BINS)i--; bc[i]++; }
+      const bMax = Math.max(...bc);
+
+      const lCtx = logHistCanvas.getContext('2d');
+      const LW = logHistCanvas.width, LH = logHistCanvas.height;
+      lCtx.fillStyle='#02000a'; lCtx.fillRect(0,0,LW,LH);
+
+      const barW = (LW-40)/BINS - 1;
+      for (let i=0; i<BINS; i++) {
+        const t = bc[i]/bMax;
+        const [r,g,b] = viridis(t);
+        lCtx.fillStyle = `rgb(${r},${g},${b})`;
+        const bh = t*(LH-50);
+        lCtx.fillRect(20+i*(barW+1), LH-25-bh, barW, bh);
+      }
+      // Normal fit overlay
+      lCtx.strokeStyle='rgba(255,45,120,0.7)'; lCtx.lineWidth=1.5;
+      lCtx.beginPath();
+      for (let i=0;i<BINS;i++){
+        const lp=lMin+(i+0.5)*bw;
+        const norm=Math.exp(-((lp-lMean)**2)/(2*lStd*lStd))/(lStd*Math.sqrt(2*Math.PI));
+        const normH=norm*bw*logP.length/bMax*(LH-50);
+        const x=20+i*(barW+1)+barW/2;
+        const y=LH-25-normH;
+        i===0?lCtx.moveTo(x,y):lCtx.lineTo(x,y);
+      }
+      lCtx.stroke();
+
+      lCtx.strokeStyle='rgba(0,245,255,0.2)'; lCtx.lineWidth=1;
+      lCtx.beginPath(); lCtx.moveTo(20,LH-25); lCtx.lineTo(LW-20,LH-25); lCtx.stroke();
+
+      lCtx.fillStyle='rgba(0,245,255,0.4)';
+      lCtx.font='10px "Share Tech Mono",monospace';
+      lCtx.fillText(lMin.toFixed(2),20,LH-8);
+      lCtx.fillText(lMax.toFixed(2),LW-50,LH-8);
+      lCtx.fillStyle='rgba(255,45,120,0.7)'; lCtx.fillText('▬ normal fit',LW-110,16);
+
+      document.getElementById('logStats').innerHTML =
+        `<span>Mean log-P:</span> <span class="val">${lMean.toFixed(4)}</span>` +
+        `&nbsp;&nbsp;<span>Std:</span> <span class="val">${lStd.toFixed(4)}</span>` +
+        `&nbsp;&nbsp;<span>Range:</span> <span class="val">[${lMin.toFixed(3)}, ${lMax.toFixed(3)}]</span>` +
+        `&nbsp;&nbsp;<span>E[P]:</span> <span class="val">${finals.reduce((a,b)=>a+b,0)/finals.length|0}</span>` +
+        `&nbsp;&nbsp;<span>P_min:</span> <span class="val">${Math.min(...finals).toFixed(2)}</span>` +
+        `&nbsp;&nbsp;<span>P_max:</span> <span class="val">${Math.max(...finals).toFixed(2)}</span>`;
+
+      drawHeatmap(N);
+    }
+
+    // ---------- Simulation ----------
+    const BATCH_SIZE = 20;
+
+    function runSimulation() {
+      if (!window.MarketEngine) {
+        loadingSpan.innerText = 'ERROR: engine not loaded — open via a local server, not file://';
+        return;
+      }
+
+      const T     = parseInt(simTicksInput.value);
+      const M     = parseInt(totalPathsInput.value);
+      const sigma = parseFloat(sigmaInput.value);
+      const mu    = parseFloat(muInput.value);
+
+      window.MarketEngine.mu_user    = mu;
+      window.MarketEngine.sigma_user = sigma;
+
+      allSeries = [];
+      runBtn.disabled = true;
+      runBtn.textContent = '[ RUNNING... ]';
+      progressBar.style.width = '2%';
+      loadingSpan.innerText = `0 / ${M}`;
+
+      function runBatch(idx) {
+        try {
+          const end = Math.min(idx + BATCH_SIZE, M);
+          for (let i = idx; i < end; i++) {
+            const nr = createNormalRandom();
+            window.MarketEngine.reset(simN);
+            let price = 100;
+            for (let w = 0; w < WARMUP_LEN; w++) {
+              price = window.MarketEngine.stepPriceCore(price, w, simN, dt, nr).newPrice;
+            }
+            const series = [];
+            for (let t = 0; t < T; t++) {
+              price = window.MarketEngine.stepPriceCore(price, WARMUP_LEN + t, simN, dt, nr).newPrice;
+              series.push(price);
+            }
+            allSeries.push(series);
+          }
+          const pct = Math.max(2, Math.round(end / M * 100));
+          progressBar.style.width = pct + '%';
+          loadingSpan.innerText = `${end} / ${M}`;
+
+          if (end < M) {
+            setTimeout(() => runBatch(end), 0);
+          } else {
+            drawAll();
+            progressBar.style.width = '0%';
+            loadingSpan.innerText = '';
+            runBtn.disabled = false;
+            runBtn.textContent = '[ RUN ]';
+          }
+        } catch (e) {
+          loadingSpan.innerText = 'ERROR: ' + e.message;
+          progressBar.style.width = '0%';
+          runBtn.disabled = false;
+          runBtn.textContent = '[ RUN ]';
+          console.error(e);
+        }
+      }
+
+      setTimeout(() => runBatch(0), 0);
+    }
+
+    // ---------- Engine selector ----------
+    (function initEngineSelector() {
+      if (!window.MarketHub) return;
+      const container = document.getElementById('engineBtns');
+      window.MarketHub.getEngineList().forEach(({ id, name }) => {
+        const btn = document.createElement('button');
+        btn.className = 'engine-btn' + (id === window.MarketHub.getActiveEngineId() ? ' active' : '');
+        btn.textContent = name;
+        btn.dataset.id = id;
+        btn.addEventListener('click', () => {
+          window.MarketHub.setActiveEngine(id);
+          container.querySelectorAll('.engine-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+        });
+        container.appendChild(btn);
+      });
+    })();
+
+    runBtn.addEventListener('click', runSimulation);
+
+    gridSizeInput.addEventListener('input', () => {
+      document.getElementById('gridSizeVal').textContent = gridSizeInput.value;
+      if (allSeries.length > 0) drawHeatmap(parseInt(gridSizeInput.value));
+    });
+  </script>
+</body>
+</html>

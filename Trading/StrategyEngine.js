@@ -30,17 +30,18 @@
 window.StrategyEngine = (function () {
   'use strict';
 
+  const PI = window.PineIndicators;
+
   /* ── 私有状态 ──────────────────────────────────────────── */
   let _deps     = null;
   let _active   = false;
   let _fn       = null;
   let _ctx      = {};     // 策略持久状态（策略代码中 this.xxx）
+  let _lastBarLen  = -1;  // 上一 tick 时的 ohlc 长度（bar_changed 检测）
+  let _barChanged  = true;
 
-  // crossover/crossunder 每 tick 重置调用序号，跨 tick 保存前值
-  let _crossIdx      = 0;
-  let _crossTick     = 0;          // 每 tick 递增，用于检测上一 tick 是否有调用
-  const _crossState    = new Map(); // callIdx → { a, b }
-  const _crossLastTick = new Map(); // callIdx → 写入时的 _crossTick
+  // crossover/crossunder 跨 tick 保存前值（调用序号每 tick 重置）
+  const _cs = PI.makeCrossState();
 
   /* ── 构建 pineEnv ──────────────────────────────────────── */
   // 每次 tick 调用时构建，所有数据通过 _deps getter 实时读取
@@ -55,124 +56,25 @@ window.StrategyEngine = (function () {
       get close()  { return d.getPrice(); },
       get volume() { const v = d.getVolumeHistory(); return v.length ? v[v.length-1] : 0; },
 
-      // ── 移动均线 ──────────────────────────────────────────
-      // src 参数保留兼容性（策略可写 sma(close, 20)），但数据源始终为收盘价序列
-      sma(src, len) {
-        const arr = d.getPriceHistory().slice(-len);
-        return arr.length >= len ? arr.reduce((a, b) => a + b, 0) / len : d.getPrice();
-      },
-      ema(src, len) {
-        const arr = d.getPriceHistory().slice(-Math.max(len * 3, len + 10));
-        if (arr.length < len) return d.getPrice();
-        const k = 2 / (len + 1);
-        let e = arr[0];
-        for (let i = 1; i < arr.length; i++) e = (arr[i] - e) * k + e;
-        return e;
-      },
-
-      // ── 交叉信号（通过调用序号记忆前值，第一次调用返回 false）──
-      crossover(a, b) {
-        const idx = _crossIdx++;
-        const s = _crossState.get(idx);
-        const result = s != null && _crossLastTick.get(idx) === _crossTick - 1 && s.a <= s.b && a > b;
-        _crossState.set(idx, { a, b });
-        _crossLastTick.set(idx, _crossTick);
-        return result;
-      },
-      crossunder(a, b) {
-        const idx = _crossIdx++;
-        const s = _crossState.get(idx);
-        const result = s != null && _crossLastTick.get(idx) === _crossTick - 1 && s.a >= s.b && a < b;
-        _crossState.set(idx, { a, b });
-        _crossLastTick.set(idx, _crossTick);
-        return result;
-      },
-
-      // ── RSI（Wilder，无状态从价格历史计算）──
-      rsi(len = 14) {
-        const arr = d.getPriceHistory().slice(-Math.max(len * 3, len + 10));
-        if (arr.length < 2) return 50;
-        const k = 1 / len;
-        const init = Math.min(len, arr.length - 1);
-        let uA = 0, dA = 0;
-        for (let i = 1; i <= init; i++) {
-          const dv = arr[i] - arr[i - 1];
-          uA += Math.max(dv, 0); dA += Math.max(-dv, 0);
-        }
-        uA /= init; dA /= init;
-        for (let i = init + 1; i < arr.length; i++) {
-          const dv = arr[i] - arr[i - 1];
-          uA = uA * (1 - k) + Math.max(dv, 0) * k;
-          dA = dA * (1 - k) + Math.max(-dv, 0) * k;
-        }
-        return dA === 0 ? (uA === 0 ? 50 : 100) : 100 - 100 / (1 + uA / dA);
-      },
-
-      // ── ATR（Wilder 平均真实波幅）──
-      atr(len = 14) {
-        const ohlc = d.getOhlc();
-        if (ohlc.length < 2) return 0;
-        const sl = ohlc.slice(-Math.max(len * 3, len + 10));
-        if (sl.length < 2) return sl[0] ? sl[0].h - sl[0].l : 0;
-        const k = 1 / len;
-        let v = sl[1].h - sl[1].l;
-        for (let i = 1; i < sl.length; i++) {
-          const tr = Math.max(
-            sl[i].h - sl[i].l,
-            Math.abs(sl[i].h - sl[i - 1].c),
-            Math.abs(sl[i].l - sl[i - 1].c)
-          );
-          v = v * (1 - k) + tr * k;
-        }
-        return v;
-      },
-
-      // ── Highest / Lowest（最近 len 根已完结 K 线，不含当前开放K线）──
-      highest(len = 20) {
-        const ohlc = d.getOhlc();
-        const end = ohlc.length - 1;
-        const sl = ohlc.slice(Math.max(0, end - len), end);
-        return sl.length ? Math.max(...sl.map(b => b.h)) : d.getPrice();
-      },
-      lowest(len = 20) {
-        const ohlc = d.getOhlc();
-        const end = ohlc.length - 1;
-        const sl = ohlc.slice(Math.max(0, end - len), end);
-        return sl.length ? Math.min(...sl.map(b => b.l)) : d.getPrice();
-      },
-
-      // ── 布林带，返回 { upper, mid, lower }──
-      bb(len = 20, mult = 2.0) {
-        const price = d.getPrice();
-        const arr = d.getPriceHistory().slice(-len);
-        if (arr.length < len) return { upper: price, mid: price, lower: price };
-        const mid = arr.reduce((a, b) => a + b, 0) / len;
-        const std = Math.sqrt(arr.reduce((s, v) => s + (v - mid) ** 2, 0) / len);
-        return { upper: mid + mult * std, mid, lower: mid - mult * std };
-      },
-
-      // ── 随机指标，返回 { k, d }（均为 0-100）──
-      stoch(kLen = 14, dLen = 3) {
-        const ohlc = d.getOhlc();
-        if (ohlc.length < kLen) return { k: 50, d: 50 };
-        const calcK = bars => {
-          const hh = Math.max(...bars.map(b => b.h));
-          const ll = Math.min(...bars.map(b => b.l));
-          return hh === ll ? 50 : (bars[bars.length - 1].c - ll) / (hh - ll) * 100;
-        };
-        const k = calcK(ohlc.slice(-kLen));
-        let dSum = 0, dCnt = 0;
-        for (let i = 0; i < dLen; i++) {
-          const end2 = ohlc.length - i;
-          if (end2 - kLen < 0) break;
-          dSum += calcK(ohlc.slice(end2 - kLen, end2));
-          dCnt++;
-        }
-        return { k, d: dCnt ? dSum / dCnt : k };
-      },
+      // src 参数保留兼容性（策略可写 sma(close, 20)），数据源始终为收盘价序列
+      sma(_s, len)    { return PI.sma(d.getPriceHistory(), len, d.getPrice()); },
+      ema(_s, len)    { return PI.ema(d.getPriceHistory(), len, d.getPrice()); },
+      rsi(len)        { return PI.rsi(d.getPriceHistory(), len); },
+      atr(len)        { return PI.atr(d.getOhlc(), len); },
+      highest(len)    { return PI.highest(d.getOhlc(), len, d.getPrice()); },
+      lowest(len)     { return PI.lowest(d.getOhlc(), len, d.getPrice()); },
+      bb(len, mult)   { return PI.bb(d.getPriceHistory(), len, mult, d.getPrice()); },
+      stoch(kL, dL)   { return PI.stoch(d.getOhlc(), kL, dL); },
+      crossover(a, b) { return PI.crossover(a, b, _cs); },
+      crossunder(a, b){ return PI.crossunder(a, b, _cs); },
 
       // ── bar_index：已完结 K 线根数（0 起始）──
       get bar_index() { return Math.max(0, d.getOhlc().length - 1); },
+
+      // ── bar_changed：本 tick 是否进入了新 bar ──
+      // SIM 模式每 tick 推一根新 bar → 恒为 true；CRYPTO 模式 tick() 仅在
+      // K 线收盘时被调用 → 同样每次为 true。按 ohlc 长度检测以保证语义稳健。
+      get bar_changed() { return _barChanged; },
 
       // ── strategy 对象：开平仓 API ──────────────────────────
       strategy: {
@@ -267,10 +169,11 @@ window.StrategyEngine = (function () {
     _deps = deps;
   }
 
-  /** 编译 Pine 代码，返回 Function 或 null（失败时显示 toast） */
+  /** 编译 Pine 代码，返回 Function 或 null（失败时显示 toast）
+      包装必须带换行：否则策略末行以 // 注释结尾时，收尾 } 会被注释吞掉 */
   function compile(code) {
     try {
-      return new Function('pineEnv', `with(pineEnv){${code}}`);
+      return new Function('pineEnv', `with(pineEnv){\n${code}\n}`);
     } catch (e) {
       _deps.showToast('Strategy compile error: ' + e.message, 'error');
       return null;
@@ -282,9 +185,11 @@ window.StrategyEngine = (function () {
     const fn = compile(code);
     if (!fn) return false;
     _ctx = {};
-    _crossState.clear();
-    _crossLastTick.clear();
-    _crossTick = 0;
+    _cs.state.clear();
+    _cs.lastTick.clear();
+    _cs.tick = 0;
+    _lastBarLen = -1;
+    _barChanged = true;
     _fn = fn;
     _active = true;
     return true;
@@ -300,17 +205,22 @@ window.StrategyEngine = (function () {
     _active = false;
     _fn     = null;
     _ctx    = {};
-    _crossState.clear();
-    _crossLastTick.clear();
-    _crossTick = 0;
-    _crossIdx = 0;
+    _cs.state.clear();
+    _cs.lastTick.clear();
+    _cs.tick = 0;
+    _cs.idx  = 0;
+    _lastBarLen = -1;
+    _barChanged = true;
   }
 
   /** 每 tick 执行一次（替代 evaluateStrategy）*/
   function tick() {
     if (!_active || !_fn) return;
-    _crossTick++;  // 递增 tick 计数，用于 crossover/crossunder 陈旧值检测
-    _crossIdx = 0; // 重置 crossover/crossunder 调用计数
+    _cs.tick++;
+    _cs.idx = 0;
+    const _len  = _deps.getOhlc().length;
+    _barChanged = (_len !== _lastBarLen);
+    _lastBarLen = _len;
     try {
       _fn.call(_ctx, _buildEnv());
     } catch (e) {

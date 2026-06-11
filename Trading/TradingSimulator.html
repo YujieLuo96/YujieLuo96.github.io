@@ -41,10 +41,30 @@
       background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.65) 100%);
     }
 
+    /* ── 全局主题化：选区 + 页面滚动条（默认灰白滚动条与全黑主题割裂） ── */
+    ::selection { background: rgba(0,245,255,0.22); color: #eaffff; }
+    html { scrollbar-width: thin; scrollbar-color: rgba(0,245,255,0.30) #02000a; }
+    body::-webkit-scrollbar { width: 8px; }
+    body::-webkit-scrollbar-track { background: #02000a; }
+    body::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0,245,255,0.35), rgba(255,45,120,0.28));
+      border-radius: 4px;
+    }
+    body::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(0,245,255,0.55), rgba(255,45,120,0.45));
+    }
+
+    /* ── 键盘可达性：焦点环（仅键盘触发，不影响鼠标操作观感） ── */
+    .cyber-button:focus-visible, .mode-btn:focus-visible, .close-order:focus-visible,
+    .history-btn:focus-visible, .summary-btn:focus-visible, .settings-btn:focus-visible,
+    .markets-btn:focus-visible, .market-engine-btn:focus-visible {
+      outline: 1px solid rgba(0,245,255,0.65); outline-offset: 2px;
+    }
+
     .game-wrapper {
       position: relative; z-index: 1;
       width: min(1440px, 98vw);
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
     }
 
     /* ── TITLE ────────────────────────────── */
@@ -87,7 +107,13 @@
       display: flex; flex-direction: column; align-items: center;
       position: relative; overflow: hidden;
       box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(0,245,255,0.06);
+      transition: border-color 0.18s;
     }
+    .hud-cell:hover { border-color: rgba(0,245,255,0.32); }
+    /* 底边强调色与该格数值颜色呼应（黄=杠杆 绿=现价 紫=现金） */
+    .hud-cell:nth-child(3) { border-bottom-color: rgba(245,230,66,0.30); }
+    .hud-cell:nth-child(4) { border-bottom-color: rgba(57,255,20,0.30); }
+    .hud-cell:nth-child(5) { border-bottom-color: rgba(223,95,255,0.30); }
     .hud-cell::before {
       content:''; position:absolute; inset:0; pointer-events:none;
       background: linear-gradient(155deg, rgba(0,245,255,0.07) 0%, transparent 55%);
@@ -136,6 +162,11 @@
       border-radius: 3px; padding: 7px 14px;
     }
     .tool-group { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+    /* 组间细分隔线：TF │ MODE │ EMA │ SELECT/RAINBOW，扫一眼即可定位 */
+    .chart-toolbar .tool-group + .tool-group {
+      padding-left: 12px;
+      border-left: 1px solid var(--border2);
+    }
     .tool-label { font-size: 0.68rem; color: rgba(0,245,255,0.45); letter-spacing: 0.15em; }
     .mode-btn {
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
@@ -178,6 +209,8 @@
       text-transform: uppercase; margin-bottom: 2px; width: 100%;
     }
     .slider-group { display: flex; flex-direction: column; align-items: flex-start; min-width: 120px; }
+    /* 订单参数行：四列随宽度均匀伸展（封顶 260px），消除宽屏右侧大片空白 */
+    .panel-row .slider-group { flex: 1 1 150px; max-width: 260px; }
     .slider-label { font-size: 0.68rem; letter-spacing: 0.14em; color: rgba(0,245,255,0.55); text-transform: uppercase; margin-bottom: 4px; }
     .slider-label span { color: var(--pink); margin-left: 5px; font-size: 0.7rem; }
     input[type=range] {
@@ -266,7 +299,8 @@
     }
     .cyber-button.util:hover { color: var(--cyan); background: rgba(0,245,255,0.08); box-shadow: 0 3px 14px rgba(0,245,255,0.2); }
     .cyber-button.reset-btn {
-      font-size: 0.65rem; padding: 5px 10px; width: auto;
+      font-size: 0.68rem; padding: 3px 12px; width: auto;
+      border-bottom-width: 2px;   /* 与右侧 MARKETS / SETTINGS 等高 */
       color: rgba(0,245,255,0.4);
       border-color: rgba(0,245,255,0.15);
       border-bottom-color: rgba(0,245,255,0.25);
@@ -306,13 +340,16 @@
     }
     .orders-header {
       display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 6px 10px;
       color: rgba(0,245,255,0.5); font-size: 0.72rem; letter-spacing: 0.2em; margin-bottom: 8px;
     }
     .orders-title {
       cursor: pointer; user-select: none;
       display: flex; align-items: center; gap: 5px;
+      font-family: 'Orbitron', monospace; font-size: 0.64rem;
+      letter-spacing: 0.22em; color: rgba(0,245,255,0.65);
     }
-    .orders-title:hover { color: rgba(0,245,255,0.75); }
+    .orders-title:hover { color: rgba(0,245,255,0.9); }
     .orders-chevron {
       font-size: 0.6em; display: inline-block; opacity: 0.6;
       transition: transform 0.18s ease;
@@ -324,9 +361,15 @@
     .order-card {
       background: linear-gradient(160deg, rgba(2,0,18,0.95) 0%, rgba(0,0,8,0.98) 100%);
       border: 1px solid rgba(0,245,255,0.18);
+      border-radius: 3px;
       padding: 9px 12px 8px; font-size: 0.7rem;
       display: flex; flex-direction: column; gap: 3px;
       min-width: 188px; position: relative; overflow: hidden;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .order-card:hover {
+      border-color: rgba(0,245,255,0.38);
+      box-shadow: 0 0 14px rgba(0,245,255,0.08);
     }
     .order-card::before {
       content:''; position:absolute; top:0; left:0; right:0; height:2px;
@@ -360,7 +403,7 @@
       background: rgba(245,230,66,0.04); border: 1px solid rgba(245,230,66,0.22);
       border-bottom: 2px solid rgba(245,230,66,0.32);
       color: rgba(245,230,66,0.55); font-family: 'Share Tech Mono', monospace;
-      font-size: 0.68rem; letter-spacing: 0.12em; padding: 2px 10px;
+      font-size: 0.68rem; letter-spacing: 0.12em; padding: 3px 12px;
       cursor: pointer; border-radius: 2px; transition: all 0.12s;
       touch-action: manipulation;
     }
@@ -422,7 +465,7 @@
       background: rgba(0,245,255,0.04); border: 1px solid rgba(0,245,255,0.22);
       border-bottom: 2px solid rgba(0,245,255,0.3);
       color: rgba(0,245,255,0.55); font-family: 'Share Tech Mono', monospace;
-      font-size: 0.68rem; letter-spacing: 0.12em; padding: 2px 10px;
+      font-size: 0.68rem; letter-spacing: 0.12em; padding: 3px 12px;
       cursor: pointer; border-radius: 2px; transition: all 0.12s;
       touch-action: manipulation;
     }
@@ -439,7 +482,9 @@
     .sm-charts-row {
       display: flex; gap: 10px; align-items: stretch;
     }
-    #net-asset-canvas { flex: 1; min-width: 0; display: block; border-radius: 2px; }
+    /* 高度锁定为雷达侧总高（200 canvas + 6 padding）。若不显式给高，
+       flex 拉宽后浏览器按 canvas 默认宽高比推导迁移高度（~410px）撑爆整行。 */
+    #net-asset-canvas { flex: 1; min-width: 0; display: block; border-radius: 2px; height: 206px; }
     .sm-radar-wrap {
       flex-shrink: 0; width: 200px;
       background: rgba(0,0,0,0.22); border: 1px solid rgba(0,245,255,0.08);
@@ -450,6 +495,8 @@
       .sm-charts-row { flex-direction: column; }
       .sm-radar-wrap { width: min(240px, 80vw); margin: 0 auto; }
       #radar-canvas  { width: 100%; aspect-ratio: 1; }
+      /* 纵向堆叠时净值图给定紧凑高度（桌面端由 flex stretch 与雷达图等高） */
+      #net-asset-canvas { height: 130px; }
     }
     .summary-grid {
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
@@ -576,6 +623,14 @@
       box-shadow: 0 0 10px rgba(160,0,255,0.28);
     }
 
+    /* ── 折叠面板展开过渡（settings / markets / crypto / history / summary 共用） ── */
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .settings-panel.open, .markets-panel.open, .crypto-panel.open { animation: panelIn 0.18s ease; }
+    .history-panel.open,  .summary-panel.open                     { animation: panelIn 0.22s ease; }
+
     /* ── Touch: eliminate 300ms delay ─────────── */
     .cyber-button, .mode-btn, .close-order,
     .ema-check, .rainbow-check, .detailed-check,
@@ -636,6 +691,10 @@
       .params-col { width: 100%; }
       .panel-row { gap: 8px 10px; }
       .slider-group { min-width: calc(50% - 8px); flex: 1 1 calc(50% - 8px); }
+      /* 覆盖桌面端均匀分布规则（特异度更高），手机端保持两列 */
+      .panel-row .slider-group { flex: 1 1 calc(50% - 8px); max-width: none; }
+      /* 工具栏组间分隔在窄屏收紧 */
+      .chart-toolbar .tool-group + .tool-group { padding-left: 7px; }
       .slider-label { font-size: 0.55rem; }
       input[type=range] { height: 4px; }
       input[type=range]::-webkit-slider-thumb { width: 22px; height: 22px; }
@@ -725,7 +784,10 @@
       scrollbar-width: thin;
       scrollbar-color: rgba(0,245,255,0.35) rgba(0,245,255,0.04);
     }
-    .strategy-code:focus { border-color: rgba(0,245,255,0.35); outline: none; }
+    .strategy-code:focus {
+      border-color: rgba(0,245,255,0.35); outline: none;
+      box-shadow: 0 0 0 1px rgba(0,245,255,0.08), inset 0 0 24px rgba(0,245,255,0.03);
+    }
     /* Webkit 滚动条 — 赛博风 */
     .strategy-code::-webkit-scrollbar { width: 6px; }
     .strategy-code::-webkit-scrollbar-track {
@@ -804,6 +866,7 @@
   <div class="title-row">
     <div class="title" data-text="CYBER TRADER">CYBER TRADER</div>
     <div class="title-sep"></div>
+    <div class="title-tag">SYNTHETIC MARKETS · LIVE CRYPTO · PINE STRATEGY</div>
   </div>
 
   <!-- HUD 6 cells -->
@@ -894,12 +957,12 @@
     <div class="params-col">
       <!-- Single row: sliders on top, inputs below, each column aligned -->
       <div class="panel-row" style="align-items:flex-start">
-        <div class="panel-section-label">◈ Parameters</div>
+        <div class="panel-section-label">◈ Order Parameters</div>
         <!-- POSITION SIZE → QTY input below -->
         <div class="slider-group pos-inactive" id="pos-ratio-group" style="min-width:140px">
           <div class="slider-label">POSITION SIZE <span id="pos-ratio-val">---</span></div>
           <input type="range" id="pos-ratio-slider" min="0.05" max="1" step="0.05" value="1">
-          <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:70%;margin-top:10px" inputmode="numeric" autocomplete="off">
+          <input type="number" id="order-shares" class="num-input" value="" placeholder="shares" step="1" min="1" style="width:100%;margin-top:10px" inputmode="numeric" autocomplete="off">
           <div class="field-err"></div>
         </div>
         <!-- LEVERAGE (no input below) -->
@@ -911,14 +974,14 @@
         <div class="slider-group pos-inactive" id="sl-ratio-group" style="min-width:140px">
           <div class="slider-label" style="color:rgba(255,96,96,0.55)">STOP LOSS <span id="sl-ratio-val" style="color:#ff6060">---</span></div>
           <input type="range" id="sl-ratio-slider" min="5" max="100" step="5" value="10">
-          <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
+          <input type="number" id="sl-input" class="num-input sl-input" placeholder="optional" step="0.1" style="width:100%;margin-top:10px" inputmode="decimal" autocomplete="off">
           <div id="sl-err" class="field-err"></div>
         </div>
         <!-- TAKE PROFIT slider → TP price input below -->
         <div class="slider-group pos-inactive" id="tp-ratio-group" style="min-width:140px">
           <div class="slider-label" style="color:rgba(85,255,153,0.55)">TAKE PROFIT <span id="tp-ratio-val" style="color:#55ff99">---</span></div>
           <input type="range" id="tp-ratio-slider" min="5" max="200" step="5" value="20">
-          <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" style="width:70%;margin-top:10px" inputmode="decimal" autocomplete="off">
+          <input type="number" id="tp-input" class="num-input tp-input" placeholder="optional" step="0.1" style="width:100%;margin-top:10px" inputmode="decimal" autocomplete="off">
           <div id="tp-err" class="field-err"></div>
         </div>
       </div>
@@ -1080,6 +1143,7 @@ if (crossunder(fast, slow)) {
 <script src="Market/StormMarket/StormMarketEngine.js"></script>
 <!-- MarketHub 总线（须在所有引擎之后加载） -->
 <script src="Market/MarketHub.js"></script>
+<script src="PineIndicators.js"></script>
 <script src="VirtualTraders.js"></script>
 <script src="EMACache.js"></script>
 <script src="StrategyEngine.js"></script>
@@ -1166,10 +1230,16 @@ if (crossunder(fast, slow)) {
   const MAX_TF_MULT = 60;          // 最大时间周期倍数（60T）
   let MAX_HISTORY = MIN_VISIBLE_CANDLES * MAX_TF_MULT * simN;     // 保留 12000 T（随 simN 动态）
   let trades        = [];
-  let tradeHistory    = [];  // 已平仓记录
+  let tradeHistory    = [];  // 已平仓记录（封顶 MAX_TRADE_HISTORY，最新在前）
   let netAssetHistory = [];  // 每 tick 净资产快照（最多 2000 点）
   const cardRefs    = new Map(); // id → { card, pEl, nowEl, barEl, eqEl }
-  let _histRenderedLen = 0;      // renderHistory 已渲染的行数（增量渲染用）
+  const MAX_TRADE_HISTORY = 300; // 历史记录/DOM 行数上限（防止 SL/TP 高频策略无限增长）
+  let _histRenderedLen = 0;      // 已渲染的累计平仓笔数（单调计数，对应 _sm_n）
+  let _lastSwanLevel   = 0;      // 上一 tick 的天鹅等级（用于"事件结束"提示）
+  let _initWarnShown   = false;  // INIT ASSET 中途调整警告只弹一次
+
+  /* 数量显示：股票为整数，crypto 为小数（裁到 4 位避免长浮点） */
+  function fmtQty(q){ return Number.isInteger(q) ? q : +q.toFixed(4); }
 
   /* ── P8：SUMMARY 增量统计状态 ──────────────────── */
   // 交易统计（每笔平仓时增量更新）
@@ -1190,9 +1260,10 @@ if (crossunder(fast, slow)) {
     _sm_sumR=0; _sm_sumR2=0; _sm_nR=0;
   }
 
-  /* 替代 tradeHistory.unshift，同步更新增量统计 */
+  /* 替代 tradeHistory.unshift，同步更新增量统计；数组封顶（统计不受影响，全程增量） */
   function _pushTrade(rec) {
     tradeHistory.unshift(rec);
+    if (tradeHistory.length > MAX_TRADE_HISTORY) tradeHistory.length = MAX_TRADE_HISTORY;
     const p = rec.netPnl;
     _sm_n++;
     _sm_totalFees += rec.openFee + rec.closeFee;
@@ -1400,7 +1471,11 @@ if (crossunder(fast, slow)) {
       };
       const m = SWAN_MSGS[ME.swanLevel];
       if (m) showToast(`<b>${m[0]}</b><br>${m[1]}`, m[2], m[3]);
+    } else if (_lastSwanLevel !== 0 && ME.swanLevel === 0) {
+      // 事件自然结束：给玩家一个明确的"风暴过去了"信号（否则只能从波动率变化猜测）
+      showToast('◇ Swan event subsided — volatility normalizing', 'info', 3000);
     }
+    _lastSwanLevel = ME.swanLevel;
 
     // ── 数据点记录（每 tick 都记录，candleSize = _activeTfMult * simN） ──
     volumeHistory.push(relVol);
@@ -1536,7 +1611,20 @@ if (crossunder(fast, slow)) {
     }
 
     if(netAsset<=0.001&&!liquidated){
-      // 路径C：orders=[] 直接清空，须先清理所有卡片和 refs
+      // 路径C：账户级强平。先按路径B同样的口径为每个残余仓位记账
+      //（计入历史与 realizedPnl，保证 HUD 总盈亏 / SUMMARY 统计在爆仓后仍然对账）
+      orders.forEach(o=>{
+        const liqFee=calcFee(o.shares,currentPrice);
+        const gross=orderUnrealized(o);
+        cash+=Math.max(0,o._equity)-liqFee;
+        realizedPnl+=Math.max(0,o._equity)-o.margin-liqFee;
+        _pushTrade({
+          id:o.id, dir:o.dir, shares:o.shares, lev:o.lev,
+          openPrice:o.openPrice, closePrice:currentPrice,
+          grossPnl:gross, openFee:o.openFee||0, closeFee:liqFee,
+          netPnl:gross-(o.openFee||0)-liqFee, closeType:'LIQ'
+        });
+      });
       ordersDiv.innerHTML=''; cardRefs.clear();
       orders=[]; liquidated=true; liqIndicator.style.display='block';
       liqFlash.classList.add('active'); setTimeout(()=>liqFlash.classList.remove('active'),600);
@@ -1719,7 +1807,7 @@ if (crossunder(fast, slow)) {
     trades.push({type:direction===1?'L':'S',price:currentPrice,index:ohlc.length-1});
     /* 玩家信号注入（OppMarket 等引擎可感知并反向施力） */
     ME.notifyTrade(direction, shares);
-    showToast(`${direction===1?'▲ LONG':'▼ SHORT'} ×${shares} @ $${currentPrice.toFixed(2)}<br>Fee: <b>-$${fee.toFixed(2)}</b>`,'info',2500);
+    showToast(`${direction===1?'▲ LONG':'▼ SHORT'} ×${fmtQty(shares)} @ $${currentPrice.toFixed(2)}<br>Fee: <b>-$${fee.toFixed(2)}</b>`,'info',2500);
     triggerFlash(); refreshUI();
   }
 
@@ -1740,6 +1828,7 @@ if (crossunder(fast, slow)) {
     tradeHistory=[]; netAssetHistory=[]; _smReset();
     historyList.innerHTML=''; historySummary.textContent='';
     _histRenderedLen=0;                        // 重置历史行计数器
+    _lastSwanLevel=0; _initWarnShown=false;    // 重置天鹅跟踪 / INIT ASSET 警告
     historyPanel.classList.remove('open'); btnHistory.classList.remove('active');
     summaryPanel.classList.remove('open'); btnSummary.classList.remove('active');
     liqIndicator.style.display='none';
@@ -2019,6 +2108,13 @@ if (crossunder(fast, slow)) {
       if (id === ME.getActiveEngineId()) btn.classList.add('active');
       btn.addEventListener('click', () => {
         if (id === ME.getActiveEngineId()) return;   // 已是当前引擎
+        /* CRYPTO 直播模式下 tick 已停、WS 在驱动图表——此时切换引擎并 resetGame
+           会把模拟预热数据和实时 K 线混在同一数组里（价格 100 与 60000 交错）。
+           必须先退出 CRYPTO。 */
+        if (Crypto && Crypto.mode) {
+          showToast('⚠ Exit CRYPTO mode before switching market engines', 'warn', 3000);
+          return;
+        }
         ME.setActiveEngine(id);
         /* 更新按钮高亮 */
         marketsPanel.querySelectorAll('.market-engine-btn').forEach(b =>
@@ -2055,13 +2151,13 @@ if (crossunder(fast, slow)) {
     if(!historyPanel.classList.contains('open')) return;
     const TYPE_LABEL = { MANUAL:'CLOSE', SL:'STOP LOSS', TP:'TAKE PROFIT', LIQ:'LIQUIDATED' };
     const TYPE_CLS   = { MANUAL:'manual', SL:'sl', TP:'tp', LIQ:'liq' };
-    // summary row：直接读增量统计变量，O(1)，无需两次全量 reduce
+    // summary row：直接读增量统计变量，O(1)；总笔数用 _sm_n（数组本身已封顶）
     const totalFees = _sm_totalFees;
     const totalNet  = _sm_sumWinPnl + _sm_sumLossPnl;
     historySummary.textContent =
-      `${tradeHistory.length} trades · Net P&L: ${totalNet>=0?'+':''}$${totalNet.toFixed(2)} · Total Fees: -$${totalFees.toFixed(2)}`;
-    // 增量渲染：只 prepend 自上次渲染以来新增的行（tradeHistory 用 unshift，最新在索引0）
-    const newCount = tradeHistory.length - _histRenderedLen;
+      `${_sm_n} trades · Net P&L: ${totalNet>=0?'+':''}$${totalNet.toFixed(2)} · Total Fees: -$${totalFees.toFixed(2)}`;
+    // 增量渲染：_histRenderedLen 为已渲染的累计平仓笔数（单调，不随数组封顶回退）
+    const newCount = Math.min(_sm_n - _histRenderedLen, tradeHistory.length);
     if(newCount <= 0) return;
     const frag = document.createDocumentFragment();
     for(let i = 0; i < newCount; i++){
@@ -2076,7 +2172,7 @@ if (crossunder(fast, slow)) {
       div.className = `hist-row ${dirCls}`;
       div.innerHTML = `<span class="h-id">#${t.id}</span>
         <span class="h-dir">${dirLbl}</span>
-        <span class="h-qty">${t.shares}sh</span>
+        <span class="h-qty">${fmtQty(t.shares)}sh</span>
         <span class="h-lev">${t.lev.toFixed(1)}x</span>
         <span class="h-route">$${t.openPrice.toFixed(2)} → $${t.closePrice.toFixed(2)}</span>
         <span class="h-pnl" style="${pnlCol}">${t.netPnl>=0?'+':''}$${t.netPnl.toFixed(2)}</span>
@@ -2085,7 +2181,9 @@ if (crossunder(fast, slow)) {
       frag.appendChild(div);
     }
     historyList.prepend(frag);
-    _histRenderedLen = tradeHistory.length;
+    _histRenderedLen = _sm_n;
+    // DOM 行数与数据同步封顶（从底部移除最旧的行）
+    while (historyList.children.length > MAX_TRADE_HISTORY) historyList.lastChild.remove();
   }
 
   btnHistory.addEventListener('click',()=>{
@@ -2103,10 +2201,15 @@ if (crossunder(fast, slow)) {
   function drawNetAssetChart() {
     // 使用闭包中已有的 naCanvas / naCtx，无需重复 getElementById/getContext
     const data = netAssetHistory;
-    const W = naCanvas.offsetWidth || 600;
-    const H = 110;
-    naCanvas.width  = W;
-    naCanvas.height = H;
+    // 位图尺寸跟随实际布局（flex stretch 使其与雷达图等高）；
+    // 旧实现固定 110px 位图被拉伸到 ~206px 显示，整张图是模糊的
+    const W = naCanvas.offsetWidth  || 600;
+    const H = naCanvas.offsetHeight || 110;
+    // 仅在尺寸变化时重设（重设 width 会重新分配位图并清空状态，每 tick 做一次代价高）
+    if (naCanvas.width !== W || naCanvas.height !== H) {
+      naCanvas.width  = W;
+      naCanvas.height = H;
+    }
     naCtx.clearRect(0, 0, W, H);
 
     if (data.length < 2) {
@@ -2180,10 +2283,12 @@ if (crossunder(fast, slow)) {
     if (!rc) return;
     const rCtx = rc.getContext('2d');
 
-    // 让 canvas 像素分辨率与实际布局尺寸匹配（响应式）
+    // 让 canvas 像素分辨率与实际布局尺寸匹配（响应式）；仅在尺寸变化时重设
     const S = rc.offsetWidth || 200;
-    rc.width  = S;
-    rc.height = S;
+    if (rc.width !== S || rc.height !== S) {
+      rc.width  = S;
+      rc.height = S;
+    }
 
     const N  = 6;
     const cx = S / 2, cy = S / 2;
@@ -2517,7 +2622,13 @@ if (crossunder(fast, slow)) {
   initAssetInput.addEventListener('input',()=>{
     const v=parseFloat(initAssetInput.value)||1000;
     initAssetVal.textContent='$'+v.toLocaleString();
-    if(orders.length===0){initialCash=v;cash=initialCash;refreshUI();}
+    // 只有"全新账户"（无持仓且无已平仓记录）才即时生效；
+    // 否则直接覆盖 cash 会吞掉已实现盈亏，统计与净值曲线随之失真 → 留待 RESET 时应用
+    if(orders.length===0 && _sm_n===0){initialCash=v;cash=initialCash;refreshUI();}
+    else if(!_initWarnShown){
+      showToast('⚠ INIT ASSET will apply on next ⟲ RESET<br>(current session already has trades)','warn',3000);
+      _initWarnShown=true;
+    }
   });
   document.getElementById('btn-line').addEventListener('click',()=>{
     chartMode='line';
@@ -2580,11 +2691,6 @@ if (crossunder(fast, slow)) {
     get summaryPanel()     { return summaryPanel; },
     get btnSummary()       { return btnSummary; },
     get liqIndicator()     { return liqIndicator; },
-    // Cache Maps (mutated in-place by module)
-    get emaCache()         { return EMACache.getEMACache(); },
-    get aggEmaCache()      { return EMACache.getAggEMACache(); },
-    get aggEmaScratch()    { return EMACache.getAggEmaScratch(); },
-    get emaCacheTick()     { return EMACache.getEMACacheTick(); },
     get srEmaValues()      { return ME.srEmaValues; },
     get srPrevSide()       { return ME.srPrevSide; },
     // Methods
@@ -2722,7 +2828,6 @@ if (crossunder(fast, slow)) {
       get ohlc()          { return ohlc; },
       get priceHistory()  { return priceHistory; },
       get volumeHistory() { return volumeHistory; },
-      get emaCache()      { return EMACache.getEMACache(); },
     });
   }
 
