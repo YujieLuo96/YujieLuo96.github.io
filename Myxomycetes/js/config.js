@@ -32,7 +32,8 @@ export const DEFAULT_GLOBAL_PARAMS = {
     },
     sensor: {
         angle:    Math.PI / 3,
-        distance: 11,
+        distance: 17,   // longer reach → agents lock onto veins from farther and
+                        // consolidate traffic into discrete tubes (network, not blob)
     },
     movement: {
         max_rotate:      Math.PI / 4,
@@ -48,10 +49,11 @@ export const DEFAULT_GLOBAL_PARAMS = {
         free_survival:      0.95,
         inactive_survival:  0.88,
     },
-    pheromone_decay:     0.91,
-    diffusion:           0.20,   // per-tick relaxation toward the 4-neighbour mean —
-                                 // models chemoattractant spreading and is what coalesces
-                                 // deposits into vein-like networks. Stable for [0, 1].
+    pheromone_decay:     0.86,   // faster clearing empties the inter-vein gaps, so the
+                                 // field self-organises into a network rather than a fill
+    diffusion:           0.10,   // per-tick relaxation toward the 4-neighbour mean —
+                                 // models chemoattractant spreading. Kept low for crisp
+                                 // veins; higher = softer, more web-like. Stable for [0, 1].
     merge_distance:      2.0,
     dominance_radius:    8.0,
     dominance_threshold: 0.45,  // min same-species neighbour fraction to survive contact.

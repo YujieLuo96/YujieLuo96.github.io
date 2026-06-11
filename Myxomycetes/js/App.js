@@ -5,12 +5,12 @@ import { OverlayRenderer } from './renderer/OverlayRenderer.js';
 import { Panel }           from './ui/Panel.js';
 import { Stats }           from './ui/Stats.js';
 
-// The simulation/trail grid is rendered on the CPU, whose cost grows quadratically
-// with size and falls off a cache cliff past ~560px (the trail field + render
-// buffers stop fitting in L3). Capping here keeps the frame rate smooth; the canvas
-// element is upscaled by the GPU to fill larger viewports (see .sim-canvas CSS).
-const MAX_SIM_SIZE  = 560;
-const MIN_SIM_SIZE  = 300;
+// The simulation grid is rendered 1:1 to the canvas at (near) the displayed size,
+// so fine vein detail stays crisp rather than being upscaled from a small buffer.
+// Visual fidelity is the priority here; the renderer is fast enough (constant-time
+// blur) to keep this interactive even at the cap.
+const MAX_SIM_SIZE  = 900;
+const MIN_SIM_SIZE  = 400;
 const RESIZE_THRESH = 80;
 
 export class App {
@@ -290,7 +290,7 @@ export class App {
         const k               = info.size / cfg.DEFAULT_SIZE;
         const scaledBlurSigma = Math.min(this._blurSigma * Math.sqrt(k), 2.0);
 
-        const imgData = this._trail.render(state.trailMap, info.speciesColors, scaledBlurSigma);
+        const imgData = this._trail.render(state.trailMap, info.speciesColors, scaledBlurSigma, now * 0.001);
         this._ctx.putImageData(imgData, 0, 0);
         this._overlay.render(this._ctx, state, info);
         this._stats.update(state);

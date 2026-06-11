@@ -22,13 +22,31 @@ export class AgentPool {
 
     reset(count, width, height, numSpecies) {
         this.count = count;
+
+        // Seed each species as a distinct colony (a spore germinating at one spot)
+        // rather than uniform noise. Colonies then grow outward, meet, and form the
+        // sharp competition boundaries of real multi-species plasmodia — and it
+        // avoids the instant winner-take-all that uniform mixing produces.
+        const TAU    = 2 * Math.PI;
+        const margin = 0.18;
+        const spread = Math.min(width, height) * 0.11;   // colony radius
+        const cx = new Float32Array(numSpecies);
+        const cy = new Float32Array(numSpecies);
+        for (let s = 0; s < numSpecies; s++) {
+            cx[s] = (margin + Math.random() * (1 - 2 * margin)) * width;
+            cy[s] = (margin + Math.random() * (1 - 2 * margin)) * height;
+        }
+
         for (let i = 0; i < count; i++) {
-            this.x[i]        = Math.random() * width;
-            this.y[i]        = Math.random() * height;
-            this.angle[i]    = Math.random() * 2 * Math.PI;
+            const s = i % numSpecies;                    // even split across colonies
+            const r = spread * Math.sqrt(Math.random()); // uniform-area disc
+            const a = Math.random() * TAU;
+            this.x[i]        = Math.min(Math.max(cx[s] + Math.cos(a) * r, 0), width  - 1);
+            this.y[i]        = Math.min(Math.max(cy[s] + Math.sin(a) * r, 0), height - 1);
+            this.angle[i]    = Math.random() * TAU;
             this.angVel[i]   = 0;
             this.attached[i] = -1;
-            this.species[i]  = Math.floor(Math.random() * numSpecies);
+            this.species[i]  = s;
         }
     }
 

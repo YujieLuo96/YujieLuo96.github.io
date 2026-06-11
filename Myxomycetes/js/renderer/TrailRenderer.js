@@ -3,10 +3,19 @@ import { fastBlur } from '../utils/FastBlur.js';
 const MIN_PEAK = 1e-9;
 
 const BLOOM_RATIO    = 3.5;
-const BLOOM_STRENGTH = 0.55;
-const OVEREXPOSURE   = 1.25;
-const EXPOSURE       = 1.15;
-const GAMMA          = 0.72;
+const BLOOM_STRENGTH = 0.66;   // wider, brighter halo around the veins
+const OVEREXPOSURE   = 1.30;
+const EXPOSURE       = 1.16;
+const GAMMA          = 0.70;
+const HOTCORE        = 0.92;   // how strongly bright vein cores bleed to white-hot
+
+// Shuttle streaming: real plasmodium pulses with rhythmic protoplasmic flow.
+// A gentle brightness modulation whose phase depends on local intensity makes
+// waves appear to propagate outward along veins from the bright cores, giving
+// the network a living, breathing pulse rather than a static glow.
+const PULSE_AMP   = 0.10;   // ±10% brightness
+const PULSE_FREQ  = 7.0;    // spatial frequency over the normalised intensity
+const PULSE_SPEED = 2.2;    // radians/second — sets the streaming rhythm
 
 // ── Tone-map LUT ──────────────────────────────────────────────────────────────
 // The trail field is tone-mapped by log1p(raw^0.55) to compress its huge dynamic
@@ -45,32 +54,25 @@ export class TrailRenderer {
         const sz2 = size * size;
 
         this._workA  = new Float32Array(sz2);   // per-species tone-mapped + blurred signal
-        this._workB  = new Float32Array(sz2);   // blur scratch (full res)
+        this._workB  = new Float32Array(sz2);   // blur scratch
+        this._workC  = new Float32Array(sz2);   // bloom buffer (full-res, wide blur)
         this._compR  = new Float32Array(sz2);
         this._compG  = new Float32Array(sz2);
         this._compB  = new Float32Array(sz2);
         this._imageData = new ImageData(size, size);
-
-        // Half-resolution buffers for the bloom pass. Bloom is a wide, low-frequency
-        // blur, so computing it at half resolution (¼ the pixels, half the kernel
-        // radius) is visually identical but ~4× cheaper than a full-res wide blur.
-        this._hw      = (size + 1) >> 1;
-        this._hh      = (size + 1) >> 1;
-        this._half    = new Float32Array(this._hw * this._hh);
-        this._halfTmp = new Float32Array(this._hw * this._hh);
     }
 
-    render(trailMap, speciesColors, blurSigma) {
+    render(trailMap, speciesColors, blurSigma, time = 0) {
         const { size, numSpecies } = this;
         const sz2 = size * size;
         const wa  = this._workA;
         const wb  = this._workB;
+        const wc  = this._workC;
         const cR  = this._compR, cG = this._compG, cB = this._compB;
-        const hw  = this._hw, hh = this._hh, maxIdx = size - 1;
 
         cR.fill(0); cG.fill(0); cB.fill(0);
 
-        const bloomSigma = blurSigma * BLOOM_RATIO * 0.5;   // halved: applied at half res
+        const bloomSigma = blurSigma * BLOOM_RATIO;
 
         for (let s = 0; s < numSpecies; s++) {
             const offset = s * sz2;
@@ -86,59 +88,55 @@ export class TrailRenderer {
             }
             if (rawMax < 1e-6) continue;
 
-            // Main soft blur (full res, in place). The simulation field is already
-            // spatially diffused, so a single box pass — plus the wide bloom below —
-            // gives a smooth glow without a second full-res pass.
+            // Crisp main blur (single box pass keeps the fine veins sharp).
             fastBlur(wa, wb, wa, size, size, blurSigma, 1);
 
-            // ── Bloom at half resolution ──────────────────────────────────────
-            // Downsample wa (2×2 box) → blur wide → bilinear upsample-add into wa.
-            const half = this._half, halfTmp = this._halfTmp;
-            for (let hy = 0; hy < hh; hy++) {
-                const y0 = hy * 2, y1 = y0 + 1 < size ? y0 + 1 : maxIdx;
-                const r0 = y0 * size, r1 = y1 * size, hr = hy * hw;
-                for (let hx = 0; hx < hw; hx++) {
-                    const x0 = hx * 2, x1 = x0 + 1 < size ? x0 + 1 : maxIdx;
-                    half[hr + hx] = (wa[r0 + x0] + wa[r0 + x1] + wa[r1 + x0] + wa[r1 + x1]) * 0.25;
-                }
-            }
-            fastBlur(half, halfTmp, half, hw, hh, bloomSigma);
+            // Rich full-resolution bloom: a wide, smooth glow around bright veins.
+            // fastBlur is constant-time in radius, so a full-res wide blur is cheap.
+            wc.set(wa);
+            fastBlur(wc, wb, wc, size, size, bloomSigma, 3);
 
-            // Upsample-add the bloom by nearest-neighbour block replication. The
-            // half buffer is already heavily blurred (low-frequency), so block
-            // replication is visually indistinguishable from bilinear here and
-            // avoids the per-pixel interpolation cost. Also tracks the peak used
-            // to normalise this species' contribution.
             let peak = 0;
-            for (let y = 0; y < size; y++) {
-                const hr = (y >> 1) * hw, row = y * size;
-                for (let x = 0; x < size; x++) {
-                    const i = row + x;
-                    const v = wa[i] + BLOOM_STRENGTH * half[hr + (x >> 1)];
-                    wa[i] = v;
-                    if (v > peak) peak = v;
-                }
+            for (let i = 0; i < sz2; i++) {
+                const v = wa[i] + BLOOM_STRENGTH * wc[i];
+                wa[i] = v;
+                if (v > peak) peak = v;
             }
             if (peak < MIN_PEAK) continue;
             const scale = OVEREXPOSURE / peak;
 
             const [r, g, b] = speciesColors[s];
             for (let i = 0; i < sz2; i++) {
-                const v = wa[i] * scale;
+                const v  = wa[i] * scale;
                 const vc = v < 1.0 ? v : 1.0;
-                cR[i] = 1 - (1 - cR[i]) * (1 - vc * r);
-                cG[i] = 1 - (1 - cG[i]) * (1 - vc * g);
-                cB[i] = 1 - (1 - cB[i]) * (1 - vc * b);
+                // White-hot core: bright vein centres (vc→1) bleed toward white,
+                // leaving the saturated species colour in the surrounding glow —
+                // the luminous, energetic look of a bioluminescent network.
+                const w  = vc * vc * vc * HOTCORE;
+                let sr = vc * r + w * (1 - r); if (sr > 1) sr = 1;
+                let sg = vc * g + w * (1 - g); if (sg > 1) sg = 1;
+                let sb = vc * b + w * (1 - b); if (sb > 1) sb = 1;
+                cR[i] = 1 - (1 - cR[i]) * (1 - sr);
+                cG[i] = 1 - (1 - cG[i]) * (1 - sg);
+                cB[i] = 1 - (1 - cB[i]) * (1 - sb);
             }
         }
 
-        // Final pass: exposure + gamma via LUT → RGBA
+        // Final pass: shuttle-streaming pulse + exposure + gamma via LUT → RGBA.
         const pixels = this._imageData.data;
+        const phase  = time * PULSE_SPEED;
         for (let i = 0; i < sz2; i++) {
-            const rv = cR[i] * EXPOSURE, gv = cG[i] * EXPOSURE, bv = cB[i] * EXPOSURE;
-            pixels[i * 4]     = _gammaLut[(rv < 1 ? rv : 1) * LUT_SIZE | 0];
-            pixels[i * 4 + 1] = _gammaLut[(gv < 1 ? gv : 1) * LUT_SIZE | 0];
-            pixels[i * 4 + 2] = _gammaLut[(bv < 1 ? bv : 1) * LUT_SIZE | 0];
+            const r0 = cR[i], g0 = cG[i], b0 = cB[i];
+            const lum = r0 * 0.30 + g0 * 0.59 + b0 * 0.11;
+            // Pulse phase rises with local luminance, so the wave sweeps outward
+            // along the intensity gradient as `phase` advances. The black background
+            // (lum≈0) has a ≈1 pulse factor regardless, so skip its sin entirely.
+            let puls = EXPOSURE;
+            if (lum > 0.004) puls = (1 + PULSE_AMP * lum * Math.sin(lum * PULSE_FREQ - phase)) * EXPOSURE;
+            const rv = r0 * puls, gv = g0 * puls, bv = b0 * puls;
+            pixels[i * 4]     = _gammaLut[(rv < 1 ? rv < 0 ? 0 : rv : 1) * LUT_SIZE | 0];
+            pixels[i * 4 + 1] = _gammaLut[(gv < 1 ? gv < 0 ? 0 : gv : 1) * LUT_SIZE | 0];
+            pixels[i * 4 + 2] = _gammaLut[(bv < 1 ? bv < 0 ? 0 : bv : 1) * LUT_SIZE | 0];
             pixels[i * 4 + 3] = 255;
         }
 

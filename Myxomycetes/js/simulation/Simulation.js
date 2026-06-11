@@ -34,7 +34,11 @@ function buildParams(numSpecies, size = cfg.DEFAULT_SIZE) {
     for (let i = 0; i < numSpecies; i++) {
         const sp      = JSON.parse(JSON.stringify(cfg.DEFAULT_SPECIES_TEMPLATE));
         sp.color      = cfg.SPECIES_COLORS[i % cfg.SPECIES_COLORS.length];
-        sp.inhibition = 0.5 + i * 0.05;
+        // Strong cross-species inhibition: agents are repelled by foreign
+        // chemoattractant, so colonies avoid each other and settle into stable
+        // territories with a clear dead-zone border instead of one consuming all.
+        // A small per-species spread keeps the competition slightly asymmetric.
+        sp.inhibition = 0.82 + i * 0.04;
         sp.movement.free_step     *= k;
         sp.movement.attached_step *= k;
         species.push(sp);
