@@ -5,7 +5,11 @@ import { OverlayRenderer } from './renderer/OverlayRenderer.js';
 import { Panel }           from './ui/Panel.js';
 import { Stats }           from './ui/Stats.js';
 
-const MAX_SIM_SIZE  = 900;
+// The simulation/trail grid is rendered on the CPU, whose cost grows quadratically
+// with size and falls off a cache cliff past ~560px (the trail field + render
+// buffers stop fitting in L3). Capping here keeps the frame rate smooth; the canvas
+// element is upscaled by the GPU to fill larger viewports (see .sim-canvas CSS).
+const MAX_SIM_SIZE  = 560;
 const MIN_SIM_SIZE  = 300;
 const RESIZE_THRESH = 80;
 
@@ -166,27 +170,52 @@ export class App {
     // ── Events ────────────────────────────────────────────────────────────────
 
     _bindEvents() {
-        const placeAt = (clientX, clientY) => {
-            const rect   = this._canvas.getBoundingClientRect();
-            const scaleX = this._canvas.width  / rect.width;
-            const scaleY = this._canvas.height / rect.height;
-            const x = (clientX - rect.left) * scaleX;
-            const y = (clientY - rect.top)  * scaleY;
+        // Convert a client point to simulation-grid coordinates. The canvas buffer
+        // is capped and CSS-upscaled, so divide by the displayed rect, not the buffer.
+        const toSim = (clientX, clientY) => {
+            const rect = this._canvas.getBoundingClientRect();
+            return {
+                x: (clientX - rect.left) * (this._canvas.width  / rect.width),
+                y: (clientY - rect.top)  * (this._canvas.height / rect.height),
+            };
+        };
+
+        const place = (x, y) => {
             if (this._mode === 'nutrient') this._sim.addNutrient(x, y);
             else                           this._sim.addAntibiotic(x, y);
         };
 
-        this._canvas.addEventListener('click', e => placeAt(e.clientX, e.clientY));
+        // Pointer drag painting: lay down a stream of food (or antibiotic) along the
+        // drag path, spaced by MIN_PAINT_GAP so a fast sweep doesn't flood the pool.
+        const MIN_PAINT_GAP = 7;
+        let painting = false, lastX = 0, lastY = 0;
 
-        this._canvas.addEventListener('touchend', e => {
+        this._canvas.addEventListener('pointerdown', e => {
             e.preventDefault();
-            const t = e.changedTouches[0];
-            placeAt(t.clientX, t.clientY);
-        }, { passive: false });
+            const { x, y } = toSim(e.clientX, e.clientY);
+            place(x, y);
+            painting = true; lastX = x; lastY = y;
+            this._canvas.setPointerCapture(e.pointerId);
+        });
+
+        this._canvas.addEventListener('pointermove', e => {
+            if (!painting) return;
+            const { x, y } = toSim(e.clientX, e.clientY);
+            const dx = x - lastX, dy = y - lastY;
+            if (dx * dx + dy * dy >= MIN_PAINT_GAP * MIN_PAINT_GAP) {
+                place(x, y); lastX = x; lastY = y;
+            }
+        });
+
+        const stop = e => { painting = false; this._canvas.releasePointerCapture?.(e.pointerId); };
+        this._canvas.addEventListener('pointerup', stop);
+        this._canvas.addEventListener('pointercancel', stop);
 
         document.addEventListener('keydown', e => {
             if (e.key === ' ') { e.preventDefault(); this._toggleRun(); }
             if (e.key === 'r' || e.key === 'R') this._doReset();
+            if (e.key === 'c' || e.key === 'C') this._sim.clear();
+            if (e.key === 'm' || e.key === 'M') this._toggleMode();
         });
     }
 

@@ -6,6 +6,14 @@ import { SpatialGrid }    from '../utils/SpatialGrid.js';
 
 const TAU = 2 * Math.PI;
 
+// Trail values below this are flushed to exactly 0. Two reasons: (1) repeated
+// decay/diffusion drives cells asymptotically toward zero, and once they enter
+// the subnormal float range (< 1.2e-38) every arithmetic op on them costs 10-100×
+// more — flushing keeps the whole field in the fast normal range; (2) such values
+// are far below one 8-bit brightness step after tone-mapping, so removing them is
+// visually lossless while keeping the field sparse.
+const MIN_TRAIL = 1e-4;
+
 // Correlated random walk: agents accumulate angular velocity (MOMENTUM)
 // and wander randomly when no chemical gradient is present (WANDER).
 // With free_step=4.4px and these constants, open-space paths curve with
@@ -58,12 +66,95 @@ export class Simulation {
     // ── Public API ────────────────────────────────────────────────────────────
 
     step() {
-        const decay = this._params.global.pheromone_decay;
-        for (let i = 0; i < this._trailMap.length; i++) this._trailMap[i] *= decay;
+        // Order follows the Jones agent model: agents sense the field left by the
+        // previous tick, move, and deposit; the field is then diffused and decayed
+        // so the next tick senses a physically-spread chemoattractant gradient.
         this._updateAgents();
+        this._diffuseDecayTrail();
         this._applyAntibiotics();
         this._updateNutrients();
         this._abs.step();
+    }
+
+    // ── Trail field: diffuse + decay ──────────────────────────────────────────
+    // Single-pass discrete diffusion (the chemoattractant heat equation) with a
+    // 4-neighbour stencil, fused with multiplicative decay. Each cell relaxes
+    // toward the mean of its neighbours by `diffusion`, then the field decays by
+    // `pheromone_decay`:
+    //     out = decay · ( (1-r)·c + (r/4)·(left+right+up+down) )
+    // The blend is convex for r ∈ [0,1], so the field stays bounded and stable.
+    // Diffusion is what turns isolated deposits into the connected, vein-like
+    // networks of real slime mould; decay lets abandoned paths fade. Boundaries
+    // are zero-flux (out-of-grid neighbours fall back to the centre value).
+    //
+    // Each species is diffused into a scratch buffer, then copied back, so
+    // `_trailMap` stays a single stable array the renderer reads warm every frame
+    // (a ping-pong buffer alternates physical arrays and renders measurably slower).
+
+    _diffuseDecayTrail() {
+        const a      = this._trailMap;
+        const size   = this._size;
+        const sz2    = this._size2;
+        const ns     = this._numSpecies;
+        const decay  = this._params.global.pheromone_decay;
+        const rate   = this._params.global.diffusion;
+        const maxIdx = size - 1;
+        const eps    = MIN_TRAIL;
+
+        // rate == 0 ⇒ pure decay in place; no neighbour mixing, no copy.
+        if (rate <= 0) {
+            for (let i = 0; i < a.length; i++) { const v = a[i] * decay; a[i] = v < eps ? 0 : v; }
+            return;
+        }
+
+        const sc = this._diffScratch;
+        const dk = decay * (1 - rate);   // weight on the centre cell
+        const dq = decay * rate * 0.25;  // weight on each of the 4 neighbours
+
+        for (let s = 0; s < ns; s++) {
+            const off = s * sz2;
+
+            for (let y = 1; y < maxIdx; y++) {
+                const rowA = off + y * size, rowS = y * size;
+                // Left edge (clamp): missing left neighbour ↦ centre
+                let c = a[rowA];
+                let o = dk * c + dq * (c + a[rowA + 1] + a[rowA - size] + a[rowA + size]);
+                sc[rowS] = o < eps ? 0 : o;
+                // Interior — no bounds checks
+                for (let x = 1; x < maxIdx; x++) {
+                    const ia = rowA + x;
+                    o = dk * a[ia] + dq * (a[ia - 1] + a[ia + 1] + a[ia - size] + a[ia + size]);
+                    sc[rowS + x] = o < eps ? 0 : o;
+                }
+                // Right edge (clamp)
+                const ea = rowA + maxIdx;
+                c = a[ea];
+                o = dk * c + dq * (a[ea - 1] + c + a[ea - size] + a[ea + size]);
+                sc[rowS + maxIdx] = o < eps ? 0 : o;
+            }
+
+            // Top row (y = 0): clamp missing up neighbour ↦ centre
+            for (let x = 0; x < size; x++) {
+                const ia = off + x;
+                const c = a[ia];
+                const l = x > 0      ? a[ia - 1] : c;
+                const r = x < maxIdx ? a[ia + 1] : c;
+                const o = dk * c + dq * (l + r + c + a[ia + size]);
+                sc[x] = o < eps ? 0 : o;
+            }
+            // Bottom row (y = maxIdx): clamp missing down neighbour ↦ centre
+            const browA = off + maxIdx * size, browS = maxIdx * size;
+            for (let x = 0; x < size; x++) {
+                const ia = browA + x;
+                const c = a[ia];
+                const l = x > 0      ? a[ia - 1] : c;
+                const r = x < maxIdx ? a[ia + 1] : c;
+                const o = dk * c + dq * (l + r + a[ia - size] + c);
+                sc[browS + x] = o < eps ? 0 : o;
+            }
+
+            a.set(sc, off);   // copy diffused species back into the stable field
+        }
     }
 
     getState() {
@@ -110,6 +201,7 @@ export class Simulation {
                 this._rebuildSpeciesCache();
                 break;
             case 'pheromone_decay': gp.pheromone_decay = value; break;
+            case 'diffusion':       gp.diffusion       = value; break;
         }
     }
 
@@ -140,6 +232,7 @@ export class Simulation {
         this._numSpecies = nSpecies;
         this._size2      = size * size;
         this._trailMap   = new Float32Array(nSpecies * size * size);
+        this._diffScratch = new Float32Array(size * size);  // one species' diffusion target
 
         this._agents.reset(nAgents, size, size, nSpecies);
         this._nuts.reset(nNuts, size, size, cfg.NUTRIENT_INIT_ENERGY);

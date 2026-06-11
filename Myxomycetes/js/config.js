@@ -49,9 +49,14 @@ export const DEFAULT_GLOBAL_PARAMS = {
         inactive_survival:  0.88,
     },
     pheromone_decay:     0.91,
+    diffusion:           0.20,   // per-tick relaxation toward the 4-neighbour mean —
+                                 // models chemoattractant spreading and is what coalesces
+                                 // deposits into vein-like networks. Stable for [0, 1].
     merge_distance:      2.0,
     dominance_radius:    8.0,
-    dominance_threshold: 0.6,
+    dominance_threshold: 0.45,  // min same-species neighbour fraction to survive contact.
+                                // ~0.45 yields stable competing territories (sharp inhibition
+                                // boundaries, but no runaway monoculture); higher → winner-takes-all.
 };
 
 // ── Per-species parameter template ────────────────────────────────────────────
@@ -95,11 +100,18 @@ export const SLIDER_GROUPS = [
         ],
     },
     {
-        name: 'RENDER',
+        name: 'FIELD',
         items: [
             { key: 'pheromone_decay', label: 'Trail Decay', hint: 'Fraction of pheromone retained each tick — higher = longer trails',
               min: 0.80, max: 0.99, default: DEFAULT_GLOBAL_PARAMS.pheromone_decay, fmt: v => v.toFixed(3), step: 0.001 },
-            { key: 'blur_sigma', label: 'Blur', hint: 'Gaussian blur radius for trail rendering — higher = softer glow',
+            { key: 'diffusion', label: 'Diffusion', hint: 'How fast the chemoattractant field spreads each tick — higher = softer, more web-like networks',
+              min: 0.0, max: 0.9, default: DEFAULT_GLOBAL_PARAMS.diffusion, fmt: v => v.toFixed(2), step: 0.01 },
+        ],
+    },
+    {
+        name: 'RENDER',
+        items: [
+            { key: 'blur_sigma', label: 'Glow', hint: 'Gaussian blur radius for trail rendering — higher = softer glow',
               min: 0.3, max: 3.0, default: 0.8, fmt: v => v.toFixed(1), step: 0.1 },
         ],
     },

@@ -57,6 +57,7 @@ html, body {
     background: #000;
     overflow: hidden;
     position: relative;
+    container-type: size;   /* enables cqw/cqh square-fit for the canvas frame */
 }
 
 /* Scanline CRT overlay */
@@ -76,7 +77,10 @@ html, body {
 /* Corner-bracket frame around the canvas */
 .canvas-frame {
     position: relative;
-    display: inline-flex;
+    display: flex;
+    /* Largest square that fits the (possibly non-square) canvas area. */
+    width:  min(100cqw, 100cqh);
+    height: min(100cqw, 100cqh);
     max-width: 100%;
     max-height: 100%;
 }
@@ -111,12 +115,16 @@ html, body {
 
 .sim-canvas {
     display: block;
+    width:  100%;
+    height: 100%;
     max-width:  100%;
     max-height: 100%;
     aspect-ratio: 1 / 1;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
+    /* The internal buffer is capped (see MAX_SIM_SIZE); let the GPU smoothly
+       upscale it to fill larger viewports rather than rendering blocky pixels. */
+    image-rendering: auto;
     cursor: crosshair;
+    touch-action: none;   /* let pointer drag-paint work on touch without scrolling */
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
