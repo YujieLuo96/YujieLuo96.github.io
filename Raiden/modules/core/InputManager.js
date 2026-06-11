@@ -1,6 +1,7 @@
 var InputManager = (() => {
     const _keys = {};
     let _cv, _mx = 240, _my = 660, _mdown = false, _tact = false, _useTouch = false;
+    let _pdx = 0, _pdy = 0;   // 指针帧间增量（相对拖拽用，由 Player 每帧消费）
 
     function _scale(e, isTouch) {
         const r  = _cv.getBoundingClientRect();
@@ -23,11 +24,14 @@ var InputManager = (() => {
             cv.addEventListener('mousedown', e => {
                 const p = _scale(e, false);
                 _mdown = true; _mx = p.x; _my = p.y;
+                _pdx = 0; _pdy = 0;
                 EventBus.emit('input:tap', p);
             });
             cv.addEventListener('mousemove', e => {
                 if (!_mdown) return;
-                const p = _scale(e, false); _mx = p.x; _my = p.y; _useTouch = true;
+                const p = _scale(e, false);
+                _pdx += p.x - _mx; _pdy += p.y - _my;
+                _mx = p.x; _my = p.y; _useTouch = true;
             });
             cv.addEventListener('mouseup',    () => _mdown = false);
             cv.addEventListener('mouseleave', () => _mdown = false);
@@ -36,12 +40,15 @@ var InputManager = (() => {
                 e.preventDefault();
                 _tact = true; _useTouch = true; _mdown = true;
                 const p = _scale(e, true); _mx = p.x; _my = p.y;
+                _pdx = 0; _pdy = 0;
                 EventBus.emit('input:tap', p);
             }, { passive: false });
             cv.addEventListener('touchmove', e => {
                 e.preventDefault();
                 if (!_tact) return;
-                const p = _scale(e, true); _mx = p.x; _my = p.y;
+                const p = _scale(e, true);
+                _pdx += p.x - _mx; _pdy += p.y - _my;
+                _mx = p.x; _my = p.y;
             }, { passive: false });
             cv.addEventListener('touchend', e => {
                 e.preventDefault(); _tact = false; _mdown = false;
@@ -59,6 +66,14 @@ var InputManager = (() => {
             return { vx, vy };
         },
         getPointer()  { return { x: _mx, y: _my, down: _mdown || _tact }; },
+        // 消费并清零指针增量（相对拖拽模式：机体随增量移动，不被手指遮挡）
+        consumePointerDelta() {
+            const d = { dx: _pdx, dy: _pdy };
+            _pdx = 0; _pdy = 0;
+            return d;
+        },
+        // Focus 精确模式（Shift 按住）：移动减速 + 显示判定点
+        isFocus()     { return !!_keys['Shift']; },
         useTouch()    { return _useTouch; },
         reset() {
             Object.keys(_keys).forEach(k => (_keys[k] = false));

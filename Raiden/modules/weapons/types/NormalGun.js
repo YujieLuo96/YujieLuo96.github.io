@@ -12,16 +12,125 @@ var NormalGun = (() => {
         };
     }
 
+    // 火力分级 → 弹形进化档（数值不变，仅视觉）：
+    // T1 光珠 → T2 加侧鳍 → T3 锐针尖 → T4 燕尾刃 → T5 光谱伴流线
+    function _tier(pw) {
+        return pw >= 21 ? 5 : pw >= 16 ? 4 : pw >= 11 ? 3 : pw >= 6 ? 2 : 1;
+    }
+
+    // ── 精灵缓存：自机弹随火力可达每帧 200+ 发，每弹每帧建渐变 + shadowBlur
+    //    是大头开销。按 (颜色|尺寸|长度档|形态档) 预渲染（辉光烘焙进精灵）。──
+    const _sprites = new Map();
+    const _SPRITE_CAP = 400;   // 颜色随等级渐变会产生新键，超限整体清空防泄漏
+
+    function _bulletSprite(col, sz, len, tier) {
+        const szQ  = Math.round(sz * 2) / 2;
+        const lenQ = Math.round(len / 6) * 6;
+        const key  = col.main + '|' + szQ + '|' + lenQ + '|' + tier;
+        let s = _sprites.get(key);
+        if (s) return s;
+        if (_sprites.size >= _SPRITE_CAP) _sprites.clear();
+
+        const w  = Math.ceil(szQ * 4) + 18;        // 留出辉光与侧鳍余量
+        const h  = Math.ceil(lenQ * 1.5) + 18;
+        const cv = document.createElement('canvas');
+        cv.width = w; cv.height = h;
+        const c  = cv.getContext('2d');
+        const cx = w / 2, cy = h / 2;
+
+        c.shadowColor = col.glow;
+        c.shadowBlur  = 8;
+        const g = c.createLinearGradient(0, cy - lenQ * 0.55, 0, cy + lenQ * 0.45);
+        g.addColorStop(0,   'rgba(0,0,0,0)');
+        g.addColorStop(0.2, col.main);
+        g.addColorStop(0.5, col.core);
+        g.addColorStop(0.8, col.main);
+        g.addColorStop(1,   'rgba(0,0,0,0)');
+        c.fillStyle = g;
+        c.beginPath();
+        c.ellipse(cx, cy - lenQ * 0.05, szQ * 0.42, lenQ * 0.52, 0, 0, Math.PI * 2);
+        c.fill();
+
+        // T3+：锐利针尖（覆盖在椭圆顶端，让弹头更"扎"）
+        if (tier >= 3) {
+            c.fillStyle = col.core;
+            c.beginPath();
+            c.moveTo(cx, cy - lenQ * 0.72);
+            c.lineTo(cx + szQ * 0.34, cy - lenQ * 0.28);
+            c.lineTo(cx - szQ * 0.34, cy - lenQ * 0.28);
+            c.closePath();
+            c.fill();
+        }
+        // T2+：尾部侧鳍（小三角，随档位变长）
+        if (tier >= 2) {
+            const finL = lenQ * (tier >= 4 ? 0.34 : 0.22);
+            c.fillStyle = col.main;
+            c.globalAlpha = 0.85;
+            c.beginPath();
+            c.moveTo(cx - szQ * 0.30, cy + lenQ * 0.05);
+            c.lineTo(cx - szQ * 1.05, cy + lenQ * 0.05 + finL);
+            c.lineTo(cx - szQ * 0.30, cy + lenQ * 0.30);
+            c.closePath();
+            c.moveTo(cx + szQ * 0.30, cy + lenQ * 0.05);
+            c.lineTo(cx + szQ * 1.05, cy + lenQ * 0.05 + finL);
+            c.lineTo(cx + szQ * 0.30, cy + lenQ * 0.30);
+            c.closePath();
+            c.fill();
+            c.globalAlpha = 1;
+        }
+        c.shadowBlur = 0;
+        // T5：两侧伴流光线（光谱段专属）
+        if (tier >= 5) {
+            c.strokeStyle = col.main;
+            c.globalAlpha = 0.55;
+            c.lineWidth   = 1;
+            c.beginPath();
+            c.moveTo(cx - szQ * 0.95, cy - lenQ * 0.30); c.lineTo(cx - szQ * 0.95, cy + lenQ * 0.42);
+            c.moveTo(cx + szQ * 0.95, cy - lenQ * 0.30); c.lineTo(cx + szQ * 0.95, cy + lenQ * 0.42);
+            c.stroke();
+            c.globalAlpha = 1;
+        }
+        c.fillStyle  = col.core;
+        c.fillRect(cx - szQ * 0.14, cy - lenQ * 0.42, szQ * 0.28, lenQ * 0.72);
+
+        s = { cv, ox: cx, oy: cy };
+        _sprites.set(key, s);
+        return s;
+    }
+
+    // 出膛闪光精灵（按颜色缓存一次）
+    function _flashSprite(col) {
+        const key = 'fl|' + col.main;
+        let s = _sprites.get(key);
+        if (s) return s;
+        const cv = document.createElement('canvas');
+        cv.width = 28; cv.height = 28;
+        const c = cv.getContext('2d');
+        const g = c.createRadialGradient(14, 14, 0, 14, 14, 13);
+        g.addColorStop(0,   '#fff');
+        g.addColorStop(0.3, col.core);
+        g.addColorStop(0.65, col.main);
+        g.addColorStop(1,   'rgba(0,0,0,0)');
+        c.fillStyle = g;
+        c.beginPath(); c.arc(14, 14, 13, 0, Math.PI * 2); c.fill();
+        s = { cv, ox: 14, oy: 14 };
+        _sprites.set(key, s);
+        return s;
+    }
+
     class NormalBullet extends PlayerBulletBase {
         constructor(x, y, vx, vy, opts = {}) {
             super(x, y, { damage: opts.damage || 1, piercing: false });
-            this.vx  = vx;
-            this.vy  = vy;
-            this.ax  = opts.ax  || 0;   // horizontal curve acceleration
-            this.col = opts.col || { main: '#7ef', core: '#fff', glow: '#4af' };
-            this.sz  = opts.sz  || 4;
+            this.vx   = vx;
+            this.vy   = vy;
+            this.ax   = opts.ax  || 0;   // horizontal curve acceleration
+            this.col  = opts.col || { main: '#7ef', core: '#fff', glow: '#4af' };
+            this.sz   = opts.sz  || 4;
+            this.tier = opts.tier || 1;
+            this.age  = 0;
         }
         update(dt) {
+            this.age += dt;
             this.vx += this.ax * dt;
             this.x  += this.vx * dt;
             this.y  += this.vy * dt;
@@ -30,27 +139,20 @@ var NormalGun = (() => {
         draw(ctx) {
             const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
             const len = this.sz * 2.5 + spd * 0.55;
-            const ang = Math.atan2(this.vy, this.vx);
+            const s   = _bulletSprite(this.col, this.sz, len, this.tier);
             ctx.save();
             ctx.translate(this.x, this.y);
-            ctx.rotate(ang + Math.PI / 2);
-            ctx.shadowColor = this.col.glow;
-            ctx.shadowBlur  = 8;
-            // Outer glow body
-            const g = ctx.createLinearGradient(0, -len * 0.55, 0, len * 0.45);
-            g.addColorStop(0,   'rgba(0,0,0,0)');
-            g.addColorStop(0.2, this.col.main);
-            g.addColorStop(0.5, this.col.core);
-            g.addColorStop(0.8, this.col.main);
-            g.addColorStop(1,   'rgba(0,0,0,0)');
-            ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.ellipse(0, -len * 0.05, this.sz * 0.42, len * 0.52, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Bright core line
-            ctx.shadowBlur = 0;
-            ctx.fillStyle  = this.col.core;
-            ctx.fillRect(-this.sz * 0.14, -len * 0.42, this.sz * 0.28, len * 0.72);
+            ctx.rotate(Math.atan2(this.vy, this.vx) + Math.PI / 2);
+            ctx.drawImage(s.cv, -s.ox, -s.oy);
+            // 出膛闪光：离开炮口的前 3 帧叠一个衰减光斑
+            if (this.age < 3) {
+                const f  = _flashSprite(this.col);
+                const k  = 1 - this.age / 3;
+                ctx.globalAlpha = 0.85 * k;
+                const sc = 0.7 + k * 0.6;
+                ctx.drawImage(f.cv, -f.ox * sc, -f.oy * sc + len * 0.3, 28 * sc, 28 * sc);
+                ctx.globalAlpha = 1;
+            }
             ctx.restore();
         }
         getBounds() {
@@ -65,13 +167,14 @@ var NormalGun = (() => {
             const pw  = player.powerLevel;
             const px  = player.x;
             const py  = player.y - 12;
-            const col = _color(pw);
-            const spd = Math.min(20, 12 + pw * 0.16);
-            const sz  = Math.min(6.5, 3 + pw * 0.07);
+            const col  = _color(pw);
+            const tier = _tier(pw);
+            const spd  = Math.min(20, 12 + pw * 0.16);
+            const sz   = Math.min(6.5, 3 + pw * 0.07);
 
             // B(offsetX, vx, vy, curveAx)
             function B(ox, vx, vy, ax) {
-                return new NormalBullet(px + ox, py, vx, vy, { col, sz, ax: ax || 0 });
+                return new NormalBullet(px + ox, py, vx, vy, { col, sz, tier, ax: ax || 0 });
             }
 
             const bullets = [];

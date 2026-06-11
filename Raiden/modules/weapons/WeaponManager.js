@@ -137,14 +137,6 @@ var WeaponManager = (() => {
         // Inject player bullets from external sources (e.g. pattern-based weapons)
         addBullets(arr) { if (arr && arr.length) _bullets.push(...arr); },
 
-        activateBomb(enemies, enemyBullets) {
-            for (const b of enemyBullets) b.alive = false;
-            const bossTypes = new Set(['boss1','boss2','boss3','boss4','boss5']);
-            for (const e of enemies) {
-                if (e.alive) e.takeDamage(bossTypes.has(e.type) ? 20 : e.maxHp);
-            }
-        },
-
         draw(ctx, player, frameCount) {
             if (_special === W.LASER && LaserBeam.isActive()) {
                 LaserBeam.draw(ctx, player.x, player.y, frameCount);

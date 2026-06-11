@@ -2,7 +2,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    LatexImport — parse .tex file → node graph
-   deps: Store, NM, EM, Panel, Status
+   deps: IO, Status
 ═══════════════════════════════════════════════════════════ */
 const LatexImport = (() => {
 
@@ -301,31 +301,9 @@ const LatexImport = (() => {
 
   const MARGIN = 40;  // matches the constant inside _layout / _parse fallback
 
-  // ── Load graph onto canvas (mirrors IO._applyGraph) ──────────
-  function _loadToCanvas({ nodes, edges }) {
-    [...Store.nodes.values()].forEach(n => n._el?.remove());
-    [...Store.edges.values()].forEach(e => { e._g?.remove(); e._lbl?.remove(); });
-    Store.clear();
-    Panel.close();
-
-    nodes.forEach(n => NM.load({ id: n.id, title: n.title, content: n.content,
-                                  color: n.color, x: n.x, y: n.y, _el: null }));
-    requestAnimationFrame(() => {
-      edges.forEach(ed => EM.load({ id: ed.id, sourceId: ed.sourceId, targetId: ed.targetId,
-                                     tag: ed.tag, curvatureIndex: ed.curvatureIndex,
-                                     _g: null, _lbl: null }));
-    });
-  }
-
   // ── Export as IO-compatible JSON ─────────────────────────────
-  function _exportJson({ nodes, edges }, baseName) {
-    const payload = {
-      version: '1.1',
-      nodes: nodes.map(n => ({ id: n.id, title: n.title, content: n.content,
-                                color: n.color, x: n.x, y: n.y })),
-      edges: edges.map(e => ({ id: e.id, sourceId: e.sourceId, targetId: e.targetId,
-                                tag: e.tag, curvatureIndex: e.curvatureIndex })),
-    };
+  function _exportJson(baseName) {
+    const payload = IO.buildPayload(false);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -352,9 +330,8 @@ const LatexImport = (() => {
       .then(src => {
         try {
           const result = _parse(src);
-          _loadToCanvas(result);
-          _exportJson(result, file.name);
-          const nn = result.nodes.length, ne = result.edges.length;
+          const { nodes: nn, edges: ne } = IO.applyGraph(result.nodes, result.edges, null);
+          _exportJson(file.name);
           Status.show(
             `LaTeX imported · ${nn} node${nn !== 1 ? 's' : ''} · ${ne} edge${ne !== 1 ? 's' : ''} · JSON saved`,
             4500

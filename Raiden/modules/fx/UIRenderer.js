@@ -117,6 +117,11 @@ var UIRenderer = (() => {
         return ['', '#8f8', '#af8', '#cf8', '#ff8', '#fa0'][pw] || '#8f8';
     }
 
+    // ── HUD 动效状态（滚动分数 / 连击弹跳） ──────────────────────────────
+    let _dispScore = 0;
+    let _lastCombo = 0;
+    let _comboPop  = 0;
+
     return {
         draw(ctx, gd) {
             const { score, highScore, lives, bombs, combo, comboMult, comboTimer, comboMax,
@@ -124,6 +129,14 @@ var UIRenderer = (() => {
                     ammoInfo, frameCount, shieldTimer, powerLevel,
                     stageName, weaponFlash, bhWarning } = gd;
             const W = Renderer.W, H = Renderer.H;
+
+            // ── 受击全屏红闪 ──────────────────────────────────────────────
+            if (gd.dmgFlash > 0) {
+                const fg = ctx.createRadialGradient(W/2, H/2, H*0.18, W/2, H/2, H*0.75);
+                fg.addColorStop(0, `rgba(255,30,30,${gd.dmgFlash * 0.10})`);
+                fg.addColorStop(1, `rgba(255,0,0,${gd.dmgFlash * 0.34})`);
+                ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
+            }
 
             // ── Danger vignette ───────────────────────────────────────────
             if (lives === 1) {
@@ -168,11 +181,17 @@ var UIRenderer = (() => {
             ctx.fillStyle = '#3a9ab8';
             ctx.fillText('◈ SCORE', 12, 10);
 
+            // 滚动分数：显示值朝真实分数指数逼近（重开时瞬时回落）
+            if (score < _dispScore) _dispScore = score;
+            else {
+                _dispScore += (score - _dispScore) * 0.18;
+                if (score - _dispScore < 1) _dispScore = score;
+            }
             ctx.font        = 'bold 15px "Courier New",monospace';
             ctx.fillStyle   = '#d8f2ff';
             ctx.shadowColor = 'rgba(0,180,255,0.55)';
             ctx.shadowBlur  = 7;
-            ctx.fillText(`${score}`, 12, 22);
+            ctx.fillText(`${Math.floor(_dispScore)}`, 12, 22);
             ctx.shadowBlur  = 0;
 
             ctx.font      = '9px "Courier New",monospace';
@@ -292,7 +311,7 @@ var UIRenderer = (() => {
                 }
             }
 
-            // ── Stage name ────────────────────────────────────────────────
+            // ── Stage name + 推进进度条 ───────────────────────────────────
             if (stageName) {
                 ctx.textAlign = 'center';
                 ctx.font      = '9px "Courier New",monospace';
@@ -300,15 +319,34 @@ var UIRenderer = (() => {
                 ctx.fillText(stageName, W / 2, 8);
                 ctx.textAlign = 'left';
             }
+            if (gd.stageProgress !== null && gd.stageProgress !== undefined) {
+                const pbW = 120, pbX = (W - pbW) / 2, pbY = 20;
+                ctx.fillStyle = 'rgba(10,24,38,0.8)';
+                ctx.fillRect(pbX, pbY, pbW, 2);
+                ctx.fillStyle = 'rgba(80,180,255,0.55)';
+                ctx.fillRect(pbX, pbY, pbW * gd.stageProgress, 2);
+            }
 
-            // ── Combo chain + decay bar ───────────────────────────────────
+            // ── 静音指示 ──────────────────────────────────────────────────
+            if (gd.muted) {
+                ctx.font      = '9px "Courier New",monospace';
+                ctx.fillStyle = 'rgba(0,30,44,0.85)';
+                ctx.fillRect(W - 64, 88, 58, 14);
+                ctx.fillStyle = '#5588aa';
+                ctx.fillText('♪ MUTED', W - 58, 91);
+            }
+
+            // ── Combo chain + decay bar（递增时弹跳放大） ─────────────────
+            if (combo > _lastCombo) _comboPop = 1;
+            _lastCombo = combo;
+            _comboPop *= 0.86;
             if (combo >= 5) {
                 const cx = W / 2, cw = 170, cby = 16;
                 const plse = 0.7 + Math.sin(frameCount * 0.2) * 0.25;
                 _panel(ctx, cx - cw/2, cby, cw, 26, '#3a3000');
                 ctx.globalAlpha = plse;
                 ctx.textAlign   = 'center';
-                ctx.font        = 'bold 11px "Courier New",monospace';
+                ctx.font        = `bold ${Math.round(11 + _comboPop * 4)}px "Courier New",monospace`;
                 ctx.fillStyle   = '#ffdd00';
                 ctx.shadowColor = 'rgba(255,210,0,0.8)'; ctx.shadowBlur = 8;
                 ctx.fillText(`[ ×${comboMult.toFixed(1)}  CHAIN  ${combo} ]`, cx, cby + 7);
@@ -401,7 +439,7 @@ var UIRenderer = (() => {
             _hudFrame(ctx, W, H);
         },
 
-        drawMenu(ctx, fc) {
+        drawMenu(ctx, fc, best) {
             const W = Renderer.W, H = Renderer.H;
             ctx.fillStyle = 'rgba(0,0,10,0.92)'; ctx.fillRect(0, 0, W, H);
 
@@ -453,8 +491,22 @@ var UIRenderer = (() => {
             ctx.fillText('CONTROLS', W / 2 - cpw / 2 + 7, cpy + 4);
             ctx.font      = '9px "Courier New",monospace';
             ctx.fillStyle = '#3a7088';
-            ctx.fillText('MOVE · ARROWS/WASD    BOMB · SPACE    PAUSE · P', W / 2, cpy + 18);
-            ctx.fillText('TOUCH: DRAG TO MOVE', W / 2, cpy + 32);
+            ctx.fillText('MOVE · ARROWS/WASD    FOCUS · SHIFT    BOMB · SPACE', W / 2, cpy + 18);
+            ctx.fillText('PAUSE · P    CODEX · M    MUTE · N    TOUCH: DRAG', W / 2, cpy + 32);
+
+            // 历史最佳战绩
+            if (best && best.score > 0) {
+                const by = cpy + 58;
+                ctx.font      = '8px "Courier New",monospace';
+                ctx.fillStyle = '#8a6a20';
+                ctx.fillText('─── BEST SORTIE ───', W / 2, by);
+                ctx.font      = '10px "Courier New",monospace';
+                ctx.fillStyle = '#d8b860';
+                const mm = Math.floor((best.timeSec || 0) / 60), ss = (best.timeSec || 0) % 60;
+                ctx.fillText(
+                    `${best.score}  ·  ${best.kills || 0} KILLS  ·  CHAIN ${best.combo || 0}  ·  ${mm}:${String(ss).padStart(2,'0')}`,
+                    W / 2, by + 13);
+            }
             ctx.textAlign = 'left';
         },
 
@@ -479,10 +531,14 @@ var UIRenderer = (() => {
             ctx.font      = '10px "Courier New",monospace';
             ctx.fillStyle = '#3a6020';
             ctx.fillText('PRESS  P  TO  RESUME', W / 2, py + 57);
+
+            ctx.font      = '9px "Courier New",monospace';
+            ctx.fillStyle = '#2a4020';
+            ctx.fillText('SHIFT FOCUS · N MUTE · M CODEX · SPACE BOMB', W / 2, py + ph + 10);
             ctx.textAlign = 'left';
         },
 
-        drawGameOver(ctx, score, highScore) {
+        drawGameOver(ctx, score, highScore, stats) {
             const W = Renderer.W, H = Renderer.H;
             ctx.fillStyle = 'rgba(0,0,0,0.88)'; ctx.fillRect(0, 0, W, H);
 
@@ -493,7 +549,7 @@ var UIRenderer = (() => {
             for (let y = 0; y < H; y += 3) { ctx.moveTo(0, y); ctx.lineTo(W, y); }
             ctx.stroke();
 
-            const pw = 300, ph = 130, px = W / 2 - 150, py = H / 2 - 76;
+            const pw = 320, ph = 196, px = W / 2 - pw / 2, py = H / 2 - ph / 2 - 10;
             _panel(ctx, px, py, pw, ph, '#3a0808');
 
             ctx.textAlign    = 'center';
@@ -515,23 +571,91 @@ var UIRenderer = (() => {
             ctx.fillStyle = '#ddf0ff';
             ctx.fillText(`${score}`, W / 2, py + 70);
 
+            // ── 战绩四项 ──────────────────────────────────────────────────
+            if (stats) {
+                const ly = py + 100;
+                const mm = Math.floor((stats.timeSec || 0) / 60);
+                const ss = (stats.timeSec || 0) % 60;
+                const rows = [
+                    ['KILLS',     `${stats.kills || 0}`,                    '#cc7755'],
+                    ['MAX CHAIN', `×${stats.combo || 0}`,                   '#ccaa44'],
+                    ['SURVIVED',  `${mm}:${String(ss).padStart(2, '0')}`,   '#5588aa'],
+                    ['REACHED',   stats.stage || '—',                       '#7766bb'],
+                ];
+                ctx.font = '10px "Courier New",monospace';
+                rows.forEach(([label, val, col], i) => {
+                    const ry = ly + i * 15;
+                    ctx.textAlign = 'right';
+                    ctx.fillStyle = '#4a3030';
+                    ctx.fillText(label, W / 2 - 12, ry);
+                    ctx.textAlign = 'left';
+                    ctx.fillStyle = col;
+                    ctx.fillText(val, W / 2 + 12, ry);
+                });
+                ctx.textAlign = 'center';
+            }
+
             if (score > 0 && score >= highScore && highScore > 0) {
                 const pulse = 0.6 + Math.sin(Date.now() * 0.005) * 0.35;
                 ctx.globalAlpha = pulse;
                 ctx.font        = 'bold 11px "Courier New",monospace';
                 ctx.fillStyle   = '#ffdd00';
                 ctx.shadowColor = 'rgba(255,220,0,0.8)'; ctx.shadowBlur = 8;
-                ctx.fillText('◈  NEW HIGH SCORE  ◈', W / 2, py + 96);
+                ctx.fillText('◈  NEW HIGH SCORE  ◈', W / 2, py + 162);
                 ctx.shadowBlur = 0; ctx.globalAlpha = 1;
             }
 
             ctx.font      = '9px "Courier New",monospace';
             ctx.fillStyle = '#2a4860';
-            ctx.fillText('>  PRESS SPACE OR CLICK TO REBOOT', W / 2, py + 114);
+            ctx.fillText('>  PRESS SPACE OR CLICK TO REBOOT', W / 2, py + ph - 16);
             ctx.textAlign = 'left';
         },
 
-        drawStageClear(ctx, stageIdx) {},
-        drawAllClear(ctx) {}
+        // ── 过关结算横幅（INTERMISSION 状态期间每帧绘制） ──────────────────
+        // info: { stageIdx, allClear, nextName, kills, timeSec }；remain: 1→0
+        drawStageClear(ctx, info, fc, remain) {
+            const W = Renderer.W, H = Renderer.H;
+            // 开头/结尾各 12% 时间做淡入淡出
+            const t     = 1 - Math.max(0, Math.min(1, remain));
+            const alpha = t < 0.12 ? t / 0.12 : t > 0.88 ? (1 - t) / 0.12 : 1;
+
+            ctx.save();
+            ctx.globalAlpha = alpha * 0.82;
+            const bandY = H * 0.34, bandH = 132;
+            const bg = ctx.createLinearGradient(0, bandY, 0, bandY + bandH);
+            bg.addColorStop(0, 'rgba(0,8,20,0)');
+            bg.addColorStop(0.25, 'rgba(0,10,26,0.88)');
+            bg.addColorStop(0.75, 'rgba(0,10,26,0.88)');
+            bg.addColorStop(1, 'rgba(0,8,20,0)');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, bandY, W, bandH);
+
+            ctx.globalAlpha  = alpha;
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'top';
+
+            const title = info.allClear ? 'ALL  STAGES  CLEAR' : `STAGE ${info.stageIdx + 1}  CLEAR`;
+            ctx.font        = 'bold 30px "Courier New",monospace';
+            ctx.fillStyle   = info.allClear ? '#ffd040' : '#ffee66';
+            ctx.shadowColor = 'rgba(255,220,60,0.85)';
+            ctx.shadowBlur  = 22;
+            ctx.fillText(title, W / 2, bandY + 18);
+            ctx.shadowBlur  = 0;
+
+            const mm = Math.floor((info.timeSec || 0) / 60), ss = (info.timeSec || 0) % 60;
+            ctx.font      = '10px "Courier New",monospace';
+            ctx.fillStyle = '#7a9ab8';
+            ctx.fillText(`KILLS ${info.kills || 0}    ·    TIME ${mm}:${String(ss).padStart(2, '0')}`,
+                W / 2, bandY + 62);
+
+            const blink = 0.55 + Math.sin(fc * 0.12) * 0.4;
+            ctx.globalAlpha = alpha * blink;
+            ctx.font        = 'bold 11px "Courier New",monospace';
+            ctx.fillStyle   = info.allClear ? '#ff8855' : '#66ddff';
+            ctx.fillText(`▶  NEXT:  ${info.nextName}  ◀`, W / 2, bandY + 88);
+
+            ctx.restore();
+            ctx.textAlign = 'left';
+        }
     };
 })();

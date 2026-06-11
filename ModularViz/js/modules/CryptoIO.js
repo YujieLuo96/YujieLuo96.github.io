@@ -2,7 +2,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    CryptoIO — N-layer RSA-OAEP + AES-GCM encrypted save/load
-   deps: Status, _applyGraph, _buildPayload  (from IO.js)
+   deps: Status, IO
 ═══════════════════════════════════════════════════════════ */
 const CryptoIO = (() => {
   const RSA_HASH = 'SHA-256';
@@ -73,11 +73,10 @@ const CryptoIO = (() => {
   // ── Graph payload helpers ────────────────────────────────
 
   function _applyPayload(data) {
-    if (!Array.isArray(data.nodes) || !Array.isArray(data.edges))
+    if (!data || !Array.isArray(data.nodes))
       throw new Error('Invalid graph format');
-    const nn = data.nodes.length, ne = data.edges.length;
-    _applyGraph(data.nodes, data.edges,
-      `Decrypted & loaded ${nn} node${nn !== 1 ? 's' : ''} · ${ne} connection${ne !== 1 ? 's' : ''}`);
+    const { nodes, edges } = IO.applyGraph(data.nodes, data.edges || [], null, { view: data.view });
+    Status.show(IO.countMsg('Decrypted & loaded', nodes, edges), 3000);
   }
 
   // ── Core: encrypt N layers ───────────────────────────────
@@ -95,7 +94,7 @@ const CryptoIO = (() => {
 
   async function encryptSave(n) {
     _setSaveStatus(`Generating ${n} RSA key pair${n > 1 ? 's' : ''}…`);
-    let data       = new TextEncoder().encode(JSON.stringify(_buildPayload()));
+    let data       = new TextEncoder().encode(JSON.stringify(IO.buildPayload()));
     const layersInfo    = [];   // goes into data file
     const privateKeyJwks = [];  // goes into key file
 

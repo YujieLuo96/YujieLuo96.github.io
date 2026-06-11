@@ -53,6 +53,7 @@ var Renderer = (() => {
 
         getCtx()    { return _ctx; },
         getCanvas() { return _canvas; },
-        clear()     { _ctx.clearRect(0, 0, _W, _H); }
+        // 先归零变换再清屏：任何子系统泄漏的 save/translate 都不会让边缘残留轨迹
+        clear()     { _ctx.setTransform(1, 0, 0, 1, 0, 0); _ctx.clearRect(0, 0, _W, _H); }
     };
 })();

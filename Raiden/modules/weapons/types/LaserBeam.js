@@ -1,8 +1,10 @@
 var LaserBeam = (() => {
-    const MAX_AMMO = 420;
+    const MAX_AMMO    = 420;
+    const UNLOCK_HEAT = 55;   // 过热锁定后需冷却到此值才能再次开火（滞回，防止 99.9 度无限续杯）
     let _ammo   = MAX_AMMO;
     let _heat   = 0;
     let _active = false;
+    let _locked = false;
     let _pw     = 1;
 
     return {
@@ -11,20 +13,22 @@ var LaserBeam = (() => {
             if (_active && _ammo > 0) {
                 _ammo -= dt;
                 _heat  = Math.min(100, _heat + dt * 0.9);
-                if (_heat >= 100) _active = false;
+                if (_heat >= 100) { _active = false; _locked = true; }
             } else {
                 _heat = Math.max(0, _heat - dt * 1.2);
+                if (_locked && _heat <= UNLOCK_HEAT) _locked = false;
             }
             if (_ammo <= 0) _active = false;
         },
-        activate()      { if (_ammo > 0 && _heat < 100) _active = true; },
+        activate()      { if (_ammo > 0 && !_locked) _active = true; },
         deactivate()    { _active = false; },
         isActive()      { return _active && _ammo > 0; },
+        isOverheated()  { return _locked; },
         getHeat()       { return _heat; },
         getAmmo()       { return _ammo; },
         getMaxAmmo()    { return MAX_AMMO; },
         isExhausted()   { return _ammo <= 0; },
-        reset()         { _ammo = MAX_AMMO; _heat = 0; _active = false; _pw = 1; },
+        reset()         { _ammo = MAX_AMMO; _heat = 0; _active = false; _locked = false; _pw = 1; },
         refill()        { _ammo = MAX_AMMO; _heat = Math.max(0, _heat - 40); },
         getDmgPerFrame(){ return 0.12 + _pw * 0.005; },
 
@@ -35,12 +39,14 @@ var LaserBeam = (() => {
             const y2  = 0;          // beam top (top of canvas)
             const hr  = _heat / 100;
             const pwF = 1 + _pw * 0.016;
-            const bw  = Math.min(20, (4 + hr * 5) * pwF);
             const hue = Math.max(55, 120 - _pw * 0.65);
             const fc  = frameCount;
 
             // Smooth animated shimmer — two sine waves, no hard frame steps
             const shimmer = 0.80 + Math.sin(fc * 0.44) * 0.12 + Math.sin(fc * 1.13) * 0.08;
+            // 呼吸脉动：光束宽度缓慢起伏（±7%），热度越高呼吸越急促
+            const breath = 1 + Math.sin(fc * (0.16 + hr * 0.10)) * 0.07;
+            const bw  = Math.min(20, (4 + hr * 5) * pwF) * breath;
 
             // Outer soft halo (always present, intensity varies smoothly)
             ctx.shadowColor = `hsl(${hue},100%,65%)`;
@@ -67,6 +73,31 @@ var LaserBeam = (() => {
             ctx.fillStyle  = `rgba(255,255,255,${0.90 + shimmer * 0.10})`;
             ctx.fillRect(x - 1.5, y2, 3, y1 - y2);
             ctx.shadowBlur = 0;
+
+            // 边缘热浪微光：两条沿光束蜿蜒上行的细波纹（无 shadowBlur，开销极低）
+            ctx.strokeStyle = `hsla(${hue},100%,80%,${0.22 + hr * 0.10})`;
+            ctx.lineWidth   = 1;
+            for (let side = -1; side <= 1; side += 2) {
+                ctx.beginPath();
+                let first = true;
+                for (let yy = y1; yy >= y2; yy -= 26) {
+                    const wob = Math.sin(yy * 0.055 - fc * 0.35 + side * 1.7) * (2.5 + hr * 2);
+                    const xx  = x + side * (bw * 0.85) + wob;
+                    if (first) { ctx.moveTo(xx, yy); first = false; }
+                    else ctx.lineTo(xx, yy);
+                }
+                ctx.stroke();
+            }
+
+            // 出膛火花：炮口处偶发的微小光点（节流，每 7 帧 2 粒）
+            if (fc % 7 === 0) {
+                ParticleSystem.spawn(x, y1 - 6, {
+                    count: 2, angle: -Math.PI / 2, spread: 1.1,
+                    speed: 2.5 + hr * 2, life: 13, size: 1.8,
+                    shape: 'spark',
+                    colors: [`hsl(${hue},100%,85%)`, '#fff']
+                });
+            }
 
             // Muzzle flash at beam origin (where beam meets the ship)
             const muzzleR = bw * 2.0 * shimmer;

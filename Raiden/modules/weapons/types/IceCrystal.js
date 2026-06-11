@@ -22,9 +22,11 @@ var IceCrystal = (() => {
             this.col  = opts.col || { main: '#a0f0ff', core: '#fff', glow: '#60d0ff' };
             this.rot  = Math.random() * Math.PI;
             this.spin = (Math.random() - 0.5) * 0.14;
+            this.age  = 0;
         }
 
         update(dt) {
+            this.age += dt;
             this.x   += this.vx * dt;
             this.y   += this.vy * dt;
             this.rot += this.spin * dt;
@@ -32,26 +34,55 @@ var IceCrystal = (() => {
         }
 
         draw(ctx) {
+            // 淡蓝拖影：沿速度反方向拉长的渐变椭圆（无历史点）
+            const spd = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+            const ta  = Math.atan2(this.vy, this.vx);
+            const tl  = 6 + spd * 1.6;
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(ta);
+            const tg = ctx.createLinearGradient(0, 0, -tl, 0);
+            tg.addColorStop(0, 'rgba(160,235,255,0.40)');
+            tg.addColorStop(1, 'rgba(160,235,255,0)');
+            ctx.fillStyle = tg;
+            ctx.beginPath();
+            ctx.ellipse(-tl * 0.5, 0, tl * 0.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(this.rot);
             ctx.shadowColor = this.col.glow;
-            ctx.shadowBlur  = 12;
-            // Outer hexagon
+            ctx.shadowBlur  = 9;
+            // 棱面六边形：长短轴交替的尖晶造型
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const a = (i * Math.PI) / 3;
-                i === 0 ? ctx.moveTo(Math.cos(a) * 7, Math.sin(a) * 7)
-                        : ctx.lineTo(Math.cos(a) * 7, Math.sin(a) * 7);
+                const r = i % 2 === 0 ? 8.5 : 5.5;   // 长短交替 → 棱晶
+                i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+                        : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
             }
             ctx.closePath();
             ctx.fillStyle   = this.col.main;
             ctx.globalAlpha = 0.72;
             ctx.fill();
+            ctx.shadowBlur = 0;
+            // 棱面分割线：三条过心对角线，体现切面
+            ctx.globalAlpha = 0.55;
+            ctx.strokeStyle = this.col.core;
+            ctx.lineWidth   = 0.8;
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const a = (i * Math.PI) / 3;
+                const r = i % 2 === 0 ? 8.5 : 5.5;
+                ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+                ctx.lineTo(-Math.cos(a) * r, -Math.sin(a) * r);
+            }
+            ctx.stroke();
             // Inner bright core
             ctx.globalAlpha = 1;
             ctx.fillStyle   = this.col.core;
-            ctx.shadowBlur  = 5;
             ctx.beginPath();
             for (let i = 0; i < 6; i++) {
                 const a = (i * Math.PI) / 3;
@@ -60,7 +91,14 @@ var IceCrystal = (() => {
             }
             ctx.closePath();
             ctx.fill();
-            ctx.shadowBlur = 0;
+            // 出膛闪光：前 3 帧
+            if (this.age < 3) {
+                const k = 1 - this.age / 3;
+                ctx.globalAlpha = 0.8 * k;
+                ctx.fillStyle = this.col.core;
+                ctx.beginPath(); ctx.arc(0, 0, 6 + k * 6, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+            }
             ctx.restore();
         }
 

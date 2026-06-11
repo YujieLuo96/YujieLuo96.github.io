@@ -6,6 +6,7 @@
 ═══════════════════════════════════════════════════════════ */
 const Panel = (() => {
   let _debTimer      = null;
+  let _histTimer     = null;   // debounced 'graph:changed' while typing
   let _editorCleanup = null;   // cleans up mirror div + ResizeObserver from last showNode
   const _el     = id => document.getElementById(id);
   const _panel  = () => _el('panel');
@@ -14,12 +15,15 @@ const Panel = (() => {
   const _btnDel = () => _el('btn-del');
 
   function _debounce(fn) { clearTimeout(_debTimer); _debTimer = setTimeout(fn, 280); }
+  // Commit text edits to history/autosave once typing pauses
+  function _commit() { clearTimeout(_histTimer); _histTimer = setTimeout(() => EB.emit('graph:changed'), 450); }
   function open()  { _panel().classList.add('open'); }
 
   function close() {
     _panel().classList.remove('open');
     NM.clearAllSel();
     App.selNode = null; App.selEdge = null;
+    if (_editorCleanup) { _editorCleanup(); _editorCleanup = null; }
   }
 
   function _esc(s) {
@@ -58,6 +62,7 @@ const Panel = (() => {
         data.color = c; NM.updateEl(data, true); EM.updateForNode(data.id);
         row.querySelectorAll('.cswatch').forEach(s => s.classList.toggle('active', s.dataset.c===c));
         cp.value = c;
+        EB.emit('graph:changed');
       });
       row.appendChild(sw);
     });
@@ -68,6 +73,7 @@ const Panel = (() => {
       data.color=cp.value; NM.updateEl(data, true); EM.updateForNode(data.id);
       row.querySelectorAll('.cswatch').forEach(s=>s.classList.remove('active'));
     });
+    cp.addEventListener('change', () => EB.emit('graph:changed'));
     row.appendChild(cp);
     return row;
   }
@@ -99,20 +105,30 @@ const Panel = (() => {
     editorWrap.appendChild(gutter);
     editorWrap.appendChild(ta);
     editorField.appendChild(editorLabel);
+    editorField.appendChild(LatexEditor.makeToolbar(() => ta));  // snippet buttons
     editorField.appendChild(editorWrap);
     _body().appendChild(editorField);
+    LatexEditor.enhance(ta);   // Tab → indent
 
-    // ── Content label row with "→ Preview" align button ──
+    // ── Content label row: "⛶ Expand" + "→ Preview" buttons ──
     editorLabel.innerHTML = '';
     const edLabelText = document.createElement('span');
     edLabelText.textContent = 'Content (LaTeX supported)';
+    const btnExpand = document.createElement('button');
+    btnExpand.className = 'align-btn';
+    btnExpand.textContent = '⛶ Expand';
+    btnExpand.title = 'Open fullscreen editor with live preview';
     const btnToPreview = document.createElement('button');
     btnToPreview.className = 'align-btn';
     btnToPreview.textContent = '→ Preview';
     const edLabelRow = document.createElement('div');
     edLabelRow.className = 'pf-label-row';
     edLabelRow.appendChild(edLabelText);
-    edLabelRow.appendChild(btnToPreview);
+    const edLabelBtns = document.createElement('span');
+    edLabelBtns.className = 'pf-label-btns';
+    edLabelBtns.appendChild(btnExpand);
+    edLabelBtns.appendChild(btnToPreview);
+    edLabelRow.appendChild(edLabelBtns);
     editorLabel.appendChild(edLabelRow);
 
     // ── Preview field with "← Source" align button ──
@@ -140,15 +156,24 @@ const Panel = (() => {
     function _clearHighlights() {
       prev.querySelectorAll('.para-hl').forEach(el => el.classList.remove('para-hl'));
     }
+    // Highlights the preview paragraph(s) covered by the textarea
+    // selection — or, with a collapsed cursor, the paragraph it sits in.
     function _syncToPreview() {
       const s = ta.selectionStart, e = ta.selectionEnd;
-      if (s === e) return;
       _clearHighlights();
-      _getParaRanges(ta.value)
-        .filter(r => r.end > s && r.start < e)
-        .forEach(r => prev.querySelector(`[data-para-idx="${r.i}"]`)?.classList.add('para-hl'));
+      const ranges = _getParaRanges(ta.value);
+      const marks = (s === e)
+        ? ranges.filter(r => s >= r.start && s <= r.end).slice(0, 1)
+        : ranges.filter(r => r.end > s && r.start < e);
+      marks.forEach(r => prev.querySelector(`[data-para-idx="${r.i}"]`)?.classList.add('para-hl'));
       prev.querySelector('.para-hl')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
+    // Follow the cursor automatically (debounced) — the preview always
+    // shows where you are in the source.
+    let _selTimer = null;
+    function _autoSync() { clearTimeout(_selTimer); _selTimer = setTimeout(_syncToPreview, 260); }
+    ta.addEventListener('keyup', _autoSync);
+    ta.addEventListener('click', _autoSync);
     function _syncToSource() {
       const sel = window.getSelection();
       if (!sel || sel.isCollapsed || !sel.rangeCount) return;
@@ -174,6 +199,22 @@ const Panel = (() => {
     }
     btnToPreview.addEventListener('click', _syncToPreview);
     btnToSource.addEventListener('click', _syncToSource);
+
+    // ── Fullscreen split editor ──
+    btnExpand.addEventListener('click', () => {
+      LatexEditor.open({
+        title: data.title ? 'Edit · ' + data.title : 'Edit Content',
+        value: data.content,
+        onChange: v => {
+          data.content = v;
+          ta.value = v;
+          _syncGutter();
+          _clearHighlights();
+          _debounce(() => { NM.updateEl(data, true); LX.render(data.content, prev, true); });
+          _commit();
+        }
+      });
+    });
 
     // ── Mirror div: measures visual line count per logical line ──
     // Called before open() so it exists; re-synced via rAF after layout.
@@ -214,12 +255,21 @@ const Panel = (() => {
     _editorCleanup = () => { mirror.remove(); _ro.disconnect(); };
     EB.on('panel:close', function _once() { _editorCleanup?.(); _editorCleanup = null; EB.off('panel:close', _once); });
 
-    _el('pf-title').addEventListener('input', e => { data.title = e.target.value; NM.updateEl(data, true); });
+    _el('pf-title').addEventListener('input', e => {
+      data.title = e.target.value; NM.updateEl(data, true); _commit();
+    });
     ta.addEventListener('input', e => {
-      data.content = e.target.value; NM.updateEl(data, true);
+      data.content = e.target.value;
       _syncGutter();
       _clearHighlights();
-      _debounce(() => LX.render(data.content, prev, true));
+      // Node card + preview re-render are debounced together (KaTeX cost);
+      // the cursor-paragraph highlight is re-applied after the re-render.
+      _debounce(() => {
+        NM.updateEl(data, true);
+        LX.render(data.content, prev, true);
+        _syncToPreview();
+      });
+      _commit();
     });
     _btnDel().onclick = () => { NM.remove(id); close(); };
     open();
@@ -243,6 +293,7 @@ const Panel = (() => {
     _el('pf-tag').addEventListener('input',e=>{
       data.tag=e.target.value; EM.update(id);
       _debounce(()=>LX.render(data.tag,prev));
+      _commit();
     });
     _btnDel().onclick=()=>{ EM.remove(id); close(); };
     open();
@@ -253,6 +304,11 @@ const Panel = (() => {
     EB.on('panel:showNode', id => showNode(id));
     EB.on('panel:showEdge', id => showEdge(id));
     EB.on('panel:close',    ()  => close());
+    // Double-click on a node → jump straight to renaming it
+    EB.on('panel:focusTitle', () => {
+      const t = _el('pf-title');
+      if (t) { t.focus(); t.select(); }
+    });
 
     // ── Panel resize handle ─────────────────────────────────
     const handle = document.createElement('div');

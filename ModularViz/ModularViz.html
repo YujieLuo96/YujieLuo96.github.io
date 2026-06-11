@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VisualGraph</title>
+  <title>ModularViz</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -15,7 +15,7 @@
 
   <!-- Toolbar -->
   <div id="toolbar">
-    <span class="tb-brand">VisualGraph</span>
+    <span class="tb-brand">ModularViz</span>
     <div class="tb-sep"></div>
 
     <button class="tb-btn" id="btn-node" title="New Node (N)">
@@ -34,6 +34,24 @@
         <path d="M5 8 Q8 3.5 11 8" stroke-linecap="round"/>
       </svg>
       Connect
+    </button>
+
+    <div class="tb-sep"></div>
+
+    <button class="tb-btn tb-btn-icon" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 3.5 2.5 7 6 10.5"/>
+        <path d="M2.5 7h7a4 4 0 0 1 0 8H7"/>
+      </svg>
+    </button>
+
+    <button class="tb-btn tb-btn-icon" id="btn-redo" title="Redo (Ctrl+Shift+Z / Ctrl+Y)" disabled>
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="10 3.5 13.5 7 10 10.5"/>
+        <path d="M13.5 7h-7a4 4 0 0 0 0 8H9"/>
+      </svg>
     </button>
 
     <span class="tb-hint" id="mode-hint"></span>
@@ -63,6 +81,15 @@
       </div>
       <div id="sm-dropdown"></div>
     </div>
+
+    <button class="tb-btn tb-btn-icon" id="btn-new" title="New canvas (clear)">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M9 2H4v12h8V5z" stroke-linecap="round" stroke-linejoin="round"/>
+        <polyline points="9 2 9 5 12 5" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="8" y1="8" x2="8" y2="12"/>
+        <line x1="6" y1="10" x2="10" y2="10"/>
+      </svg>
+    </button>
 
     <button class="tb-btn" id="btn-load" title="Load file">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -294,6 +321,7 @@
 <script src="js/modules/EventBus.js"></script>
 <script src="js/modules/Store.js"></script>
 <script src="js/modules/LatexUtil.js"></script>
+<script src="js/modules/LatexEditor.js"></script>
 <script src="js/modules/Status.js"></script>
 <script src="js/modules/AppState.js"></script>
 <script src="js/modules/Canvas.js"></script>
@@ -304,6 +332,10 @@
 <script src="js/modules/IO.js"></script>
 <script src="js/modules/LatexImport.js"></script>
 <script src="js/modules/CryptoIO.js"></script>
+<script src="js/modules/History.js"></script>
+<script src="js/modules/Persist.js"></script>
+<script src="js/modules/ViewUI.js"></script>
+<script src="js/modules/BoxSelect.js"></script>
 <script src="js/modules/Toolbar.js"></script>
 <script src="js/modules/SearchModule.js"></script>
 <script src="js/modules/DarkMode.js"></script>

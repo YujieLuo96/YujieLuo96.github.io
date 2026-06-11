@@ -24,8 +24,9 @@ var HomingMissile = (() => {
             this.vy     = -this.speed;
             this.turn   = 0.07;
             this.target = null;
-            this.trail  = [];
             this.age    = 0;
+            this.bank   = 0;                       // 转向倾斜量（平滑）
+            this.smoke  = Math.random() * 3.5;     // 排烟节流相位（错开各弹）
             this.col    = col || { body: '#c4e', glow: '#e6f', exhaust: '#ff8', trail: '#e6f' };
         }
 
@@ -43,32 +44,56 @@ var HomingMissile = (() => {
         update(dt, enemies) {
             this.age += dt;
             if (this.age % 15 < 1) this.target = this._pick(enemies);
+            let turned = 0;
             if (this.target && this.target.alive) {
                 const ta = Math.atan2(this.target.y - this.y, this.target.x - this.x);
                 const ca = Math.atan2(this.vy, this.vx);
                 let diff = ta - ca;
                 while (diff >  Math.PI) diff -= Math.PI * 2;
                 while (diff < -Math.PI) diff += Math.PI * 2;
-                const na = ca + Math.sign(diff) * Math.min(Math.abs(diff), this.turn * dt * 3);
+                turned   = Math.sign(diff) * Math.min(Math.abs(diff), this.turn * dt * 3);
+                const na = ca + turned;
                 this.vx  = Math.cos(na) * this.speed;
                 this.vy  = Math.sin(na) * this.speed;
             }
+            // 倾斜感：朝转向方向滚转，无转向时缓慢回正
+            this.bank += (turned * 7 - this.bank) * Math.min(1, 0.18 * dt);
             this.x += this.vx * dt; this.y += this.vy * dt;
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > 14) this.trail.shift();
+            // 排气尾烟：每 ~3.5 帧 1 粒（节流）
+            this.smoke += dt;
+            if (this.smoke >= 3.5) {
+                this.smoke -= 3.5;
+                const ang = Math.atan2(this.vy, this.vx);
+                ParticleSystem.spawn(this.x - Math.cos(ang) * 9, this.y - Math.sin(ang) * 9, {
+                    count: 1, angle: ang + Math.PI, spread: 0.5,
+                    speed: 1.2, life: 24, size: 2.6, drag: 0.93,
+                    colors: ['#9a9aa8', '#777788', '#ffb866']
+                });
+            }
             if (this.isOffscreen()) this.alive = false;
         }
 
         draw(ctx) {
-            for (let i = 0; i < this.trail.length - 1; i++) {
-                const t = this.trail[i];
-                ctx.globalAlpha = (i / this.trail.length) * 0.45;
-                ctx.fillStyle   = this.col.trail;
-                ctx.beginPath(); ctx.arc(t.x, t.y, 1.8 * (i / this.trail.length) + 0.4, 0, Math.PI * 2); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
             const ang = Math.atan2(this.vy, this.vx);
             ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(ang + Math.PI / 2);
+            // 尾焰拖影：沿速度反方向拉长的渐变（不存历史轨迹点）
+            const plumeL = 7 + this.speed * 2.0;
+            const pg = ctx.createLinearGradient(0, 5, 0, 5 + plumeL);
+            pg.addColorStop(0,    this.col.exhaust);
+            pg.addColorStop(0.35, this.col.trail);
+            pg.addColorStop(1,    'rgba(0,0,0,0)');
+            ctx.fillStyle = pg;
+            ctx.beginPath();
+            ctx.moveTo(-2.4, 5);
+            ctx.lineTo(2.4, 5);
+            ctx.lineTo(0.4, 5 + plumeL);
+            ctx.lineTo(-0.4, 5 + plumeL);
+            ctx.closePath();
+            ctx.fill();
+            // 转向倾斜：横向压缩模拟滚转 + 轻微附加旋转
+            const bk = Math.max(-0.6, Math.min(0.6, this.bank));
+            ctx.rotate(bk * 0.22);
+            ctx.scale(1 - Math.abs(bk) * 0.45, 1);
             ctx.shadowColor = this.col.glow; ctx.shadowBlur = 8;
             ctx.fillStyle   = this.col.body;
             ctx.beginPath();
@@ -77,8 +102,19 @@ var HomingMissile = (() => {
             ctx.fillStyle  = this.col.glow;
             ctx.beginPath(); ctx.arc(0, -4, 3.5, 0, Math.PI * 2); ctx.fill();
             ctx.shadowBlur = 0;
-            ctx.fillStyle  = this.col.exhaust;
-            ctx.beginPath(); ctx.arc(0, 5.5, 2, 0, Math.PI * 2); ctx.fill();
+            // 喷口亮点（火焰核心闪烁）
+            ctx.fillStyle = this.col.exhaust;
+            ctx.beginPath(); ctx.arc(0, 5.5, 2 + (this.age % 2), 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(0, 5.2, 1, 0, Math.PI * 2); ctx.fill();
+            // 出膛闪光：前 3 帧
+            if (this.age < 3) {
+                const k = 1 - this.age / 3;
+                ctx.globalAlpha = 0.8 * k;
+                ctx.fillStyle = '#ffe9b0';
+                ctx.beginPath(); ctx.arc(0, 6, 5 + k * 6, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+            }
             ctx.restore();
         }
 

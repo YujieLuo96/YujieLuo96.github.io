@@ -28,7 +28,17 @@ var Boss4_Void = (() => {
             this.aimedTimer  = 0;  this.aimedInt  = 18;
             this.enrageRingTimer = 0; this.enrageRingInt = 20;
 
-            this.baseX = x;
+            // 新增：弹幕编排 / 蓄力 telegraph / 受损烟雾 状态
+            this.ringAlt     = false;  // ring 阶段：缺口环 / 内卷弧线环 交替
+            this.curlDir     = 1;      // 弧线弹卷曲方向（每次翻转）
+            this.bloomTimer  = 0;      // spiral 阶段：引力坍缩弹（先快后慢）
+            this.dashWindup  = 0;      // dash 蓄力帧（>0 = 正在蓄力）
+            this.charge      = 0;      // enrage 大招蓄力进度（0=未蓄力）
+            this.chargeDur   = 38;
+            this.chargeCd    = 0;      // 大招冷却计时
+            this.restT       = 0;      // 爆发后的呼吸间隙
+            this.chargeP     = 0;      // 蓄力粒子节流
+            this.smokeT      = 0;      // 受损烟雾节流
         }
 
         _checkPhase() {
@@ -40,6 +50,13 @@ var Boss4_Void = (() => {
                         this.phaseIdx = i;
                         this.ringTimer = this.spiralTimer = this.dashTimer =
                         this.summonTimer = this.aimedTimer = this.enrageRingTimer = 0;
+                        this.dashWindup = 0; this.dashing = false;
+                        this.charge = 0; this.chargeCd = 0; this.restT = 30;
+                        // 阶段转换闪光：虚空紫能量爆 + 收缩冲击
+                        ExplosionFX.mediumEnemy(this.x, this.y, '#a050ff');
+                        ParticleSystem.spawn(this.x, this.y,
+                            { count: 14, colors: ['#c080ff', '#7030c0', '#fff'],
+                              speed: 5, life: 24, size: 3, shape: 'spark' });
                     }
                     return;
                 }
@@ -68,7 +85,22 @@ var Boss4_Void = (() => {
                     this.ringTimer += dt;
                     if (this.ringTimer >= this.ringInt) {
                         this.ringTimer = 0;
-                        BulletPatterns.ring(cx, cy, 10, 3.0).forEach(b => bullets.push(b));
+                        this.ringAlt = !this.ringAlt;
+                        if (this.ringAlt) {
+                            // 缺口环：朝玩家方向留安全缺口，逼走位而非硬堵
+                            const p  = Player.getPos();
+                            const ga = Math.atan2(p.y - cy, p.x - cx);
+                            BulletPatterns.ringGap(cx, cy, 14, 2.8, this.segAngle, ga, 0.5,
+                                { bulletOpts: { color: '#c06aff' } })
+                                .forEach(b => bullets.push(b));
+                        } else {
+                            // 引力内卷弧线环：恒定角速度向内卷曲，黑紫配色
+                            this.curlDir = -this.curlDir;
+                            BulletPatterns.ring(cx, cy, 10, 3.0, this.segAngle * 1.7,
+                                { bulletOpts: { turn: 0.013 * this.curlDir, life: 300,
+                                                color: '#9040e0' } })
+                                .forEach(b => bullets.push(b));
+                        }
                     }
                     break;
                 }
@@ -79,6 +111,16 @@ var Boss4_Void = (() => {
                     if (this.ringTimer >= 55) {
                         this.ringTimer = 0;
                         BulletPatterns.ring(cx, cy, 12, 3.2).forEach(b => bullets.push(b));
+                    }
+                    // 引力坍缩星弹：先快后慢（accel 为负），如被黑洞拽住般滞空
+                    this.bloomTimer += dt;
+                    if (this.bloomTimer >= 105) {
+                        this.bloomTimer = 0;
+                        BulletPatterns.bloom(cx, cy, 12, this.segAngle * 2.3,
+                            { speed: 4.4,
+                              bulletOpts: { accel: -0.05, minSpeed: 0.8, life: 330,
+                                            color: '#d18bff', spin: 0.15 } })
+                            .forEach(b => bullets.push(b));
                     }
                     this.spiralTimer += dt;
                     if (this.spiralTimer >= 8) {
@@ -103,13 +145,24 @@ var Boss4_Void = (() => {
                         if (this.dashFrames <= 0) {
                             this.dashing = false;
                             this.y = this.entryY;
-                            BulletPatterns.ring(this.x, this.y, 16, 3.5).forEach(b => bullets.push(b));
+                            // 冲撞落点缺口环：朝玩家方向留活路
+                            const p  = Player.getPos();
+                            const ga = Math.atan2(p.y - this.y, p.x - this.x);
+                            BulletPatterns.ringGap(this.x, this.y, 18, 3.5, 0, ga, 0.42,
+                                { bulletOpts: { color: '#b070ff' } })
+                                .forEach(b => bullets.push(b));
                         }
-                    } else {
-                        this.x = this.baseX + Math.sin(this.t * 0.02) * 90;
-                        this.dashTimer += dt;
-                        if (this.dashTimer >= this.dashInt) {
-                            this.dashTimer = 0;
+                    } else if (this.dashWindup > 0) {
+                        // 蓄力 telegraph：30 帧静止聚能，玩家"看见再躲"
+                        this.dashWindup -= dt;
+                        this.chargeP += dt;
+                        if (this.chargeP >= 6) {
+                            this.chargeP = 0;
+                            ParticleSystem.spawn(this.x, this.y,
+                                { count: 3, colors: ['#c080ff', '#fff', '#8030c0'],
+                                  speed: 2.2, life: 14, size: 2.5, shape: 'spark', scatter: 36 });
+                        }
+                        if (this.dashWindup <= 0) {
                             const p = Player.getPos();
                             const dx = p.x - this.x, dy = p.y - this.y;
                             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -117,6 +170,13 @@ var Boss4_Void = (() => {
                             this.dashVy = (dy / dist) * 5.5;
                             this.dashFrames = 28;
                             this.dashing = true;
+                        }
+                    } else {
+                        this.x = this.baseX + Math.sin(this.t * 0.02) * 90;
+                        this.dashTimer += dt;
+                        if (this.dashTimer >= this.dashInt) {
+                            this.dashTimer = 0;
+                            this.dashWindup = 30;
                         }
                         this.spiralTimer += dt;
                         if (this.spiralTimer >= 10) {
@@ -137,13 +197,16 @@ var Boss4_Void = (() => {
                         EnemyManager.spawnKind('interceptor', 2, { fromLeft: Math.random() < 0.5 });
                     }
                     this.aimedTimer += dt;
-                    if (this.aimedTimer >= 16) {
+                    if (this.aimedTimer >= 38) {
                         this.aimedTimer = 0;
+                        // 虚空蛇形弹：紫色棱晶左右蛇行逼近
                         const p = Player.getPos();
-                        BulletPatterns.aimed(cx, cy + 32, p.x, p.y, 5.5, { count: 3, spread: 0.22 }).forEach(b => bullets.push(b));
+                        BulletPatterns.snake(cx, cy + 32, p.x, p.y, 3.4, 3,
+                            { bulletOpts: { color: '#b07aff', life: 300 } })
+                            .forEach(b => bullets.push(b));
                     }
                     this.ringTimer += dt;
-                    if (this.ringTimer >= 45) {
+                    if (this.ringTimer >= 50) {
                         this.ringTimer = 0;
                         BulletPatterns.ring(cx, cy, 14, 3.3).forEach(b => bullets.push(b));
                     }
@@ -151,26 +214,76 @@ var Boss4_Void = (() => {
                 }
 
                 case 'enrage': {
+                    // 狂暴期：蓄力大招（引力坍缩爆发）+ 旋臂风车 + 必留缺口活路
+                    if (this.charge > 0) {
+                        // ── 蓄力中：38 帧聚能停火（telegraph + 呼吸间隙）─────
+                        this.charge += dt;
+                        this.chargeP += dt;
+                        if (this.chargeP >= 5) {
+                            this.chargeP = 0;
+                            ParticleSystem.spawn(cx, cy,
+                                { count: 4, colors: ['#d0a0ff', '#fff', '#9040e0'],
+                                  speed: 2.6, life: 13, size: 2.5, shape: 'spark', scatter: 44 });
+                        }
+                        if (this.charge >= this.chargeDur) {
+                            this.charge = 0;
+                            this.chargeCd = 0;
+                            this.restT = 42;          // 爆发后呼吸间隙
+                            const p  = Player.getPos();
+                            const ga = Math.atan2(p.y - cy, p.x - cx);
+                            // 爆发：缺口环（朝玩家留活路）+ 反向 bloom 坍缩星弹 = 34 发
+                            BulletPatterns.ringGap(cx, cy, 24, 3.4, this.segAngle, ga, 0.46,
+                                { bulletOpts: { color: '#c06aff' } })
+                                .forEach(b => bullets.push(b));
+                            BulletPatterns.bloom(cx, cy, 12, ga + 0.26,
+                                { speed: 4.6,
+                                  bulletOpts: { accel: -0.05, minSpeed: 0.8, life: 300,
+                                                color: '#f6a0ff', spin: 0.18 } })
+                                .forEach(b => bullets.push(b));
+                        }
+                        break;
+                    }
+
                     this.x = this.baseX + Math.sin(this.t * 0.03) * 120;
                     this.y = this.entryY + Math.sin(this.t * 0.06) * 40;
-                    this.enrageRingTimer += dt;
-                    if (this.enrageRingTimer >= this.enrageRingInt) {
-                        this.enrageRingTimer = 0;
-                        BulletPatterns.ring(cx, cy, 18, 4.0).forEach(b => bullets.push(b));
-                    }
+
+                    this.chargeCd += dt;
+                    if (this.chargeCd >= 130) { this.charge = 0.01; this.curlDir = -this.curlDir; break; }
+
+                    if (this.restT > 0) { this.restT -= dt; break; }
+
+                    // 双旋臂风车（取代旧高频环+密集自机狙，密度降但更有形）
                     this.spiralTimer += dt;
-                    if (this.spiralTimer >= 5) {
+                    if (this.spiralTimer >= 7) {
                         this.spiralTimer = 0;
-                        this.spiralAngle += 0.35;
-                        BulletPatterns.spiral(cx, cy, 5, 5.0, this.spiralAngle).forEach(b => bullets.push(b));
+                        this.spiralAngle += 0.17 * this.curlDir;
+                        BulletPatterns.spiralArms(cx, cy, 3, this.spiralAngle, 4.2,
+                            { bulletOpts: { color: '#a868ff' } })
+                            .forEach(b => bullets.push(b));
                     }
                     this.aimedTimer += dt;
-                    if (this.aimedTimer >= 10) {
+                    if (this.aimedTimer >= 26) {
                         this.aimedTimer = 0;
                         const p = Player.getPos();
-                        BulletPatterns.aimed(cx, cy + 32, p.x, p.y, 6.0, { count: 4, spread: 0.25 }).forEach(b => bullets.push(b));
+                        BulletPatterns.aimed(cx, cy + 32, p.x, p.y, 5.2, { count: 3, spread: 0.24 }).forEach(b => bullets.push(b));
                     }
                     break;
+                }
+            }
+
+            // 受损烟雾与火星（hp<40% 时每 6 帧节流一次）
+            if (this.hp < this.maxHp * 0.4) {
+                this.smokeT += dt;
+                if (this.smokeT >= 6) {
+                    this.smokeT = 0;
+                    const ox = (Math.random() - 0.5) * 44, oy = (Math.random() - 0.5) * 30;
+                    ParticleSystem.spawn(this.x + ox, this.y + oy,
+                        { count: 2, colors: ['#445', '#334', '#557'],
+                          speed: 0.8, life: 30, size: 4, drag: 0.99 });
+                    if (Math.random() < 0.5)
+                        ParticleSystem.spawn(this.x + ox, this.y + oy,
+                            { count: 2, colors: ['#d0a0ff', '#fff'],
+                              speed: 3, life: 10, size: 2, shape: 'spark' });
                 }
             }
 
@@ -299,6 +412,37 @@ var Boss4_Void = (() => {
                 ctx.shadowBlur  = 0; ctx.globalAlpha = 1;
                 ctx.fillStyle   = '#fff';
                 ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+
+                // ── 引力透镜环：反向旋转的虚线圆，体现时空扭曲 ─────────────
+                ctx.save();
+                ctx.rotate(-this.segAngle * 1.6);
+                ctx.strokeStyle = `rgba(190,140,255,${0.18 + pulse * 0.12})`;
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([7, 11]);
+                ctx.beginPath(); ctx.arc(0, 0, 52, 0, Math.PI * 2); ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+
+                // ── 蓄力 telegraph：聚能光球从小变大 + 颜色脉动 ────────────
+                const chargeProg = this.charge > 0 ? this.charge / this.chargeDur
+                                 : this.dashWindup > 0 ? 1 - this.dashWindup / 30 : 0;
+                if (chargeProg > 0) {
+                    const cr = 6 + chargeProg * 24;
+                    const fastPulse = 0.5 + Math.sin(this.t * 0.5) * 0.5;
+                    const og = ctx.createRadialGradient(0, 0, 1, 0, 0, cr);
+                    og.addColorStop(0,   '#fff');
+                    og.addColorStop(0.4, `rgba(220,150,255,${0.7 + fastPulse * 0.3})`);
+                    og.addColorStop(0.8, `rgba(140,50,220,${0.4 + chargeProg * 0.3})`);
+                    og.addColorStop(1,   'rgba(80,0,140,0)');
+                    ctx.shadowColor = '#d0a0ff'; ctx.shadowBlur = 14;
+                    ctx.fillStyle = og;
+                    ctx.beginPath(); ctx.arc(0, 0, cr, 0, Math.PI * 2); ctx.fill();
+                    ctx.shadowBlur = 0;
+                    // 收缩警示圈
+                    ctx.strokeStyle = `rgba(255,210,255,${0.3 + fastPulse * 0.4})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.arc(0, 0, cr + 10 + (1 - chargeProg) * 26, 0, Math.PI * 2); ctx.stroke();
+                }
             }
 
             this.drawHpBar(ctx, 68, 40);

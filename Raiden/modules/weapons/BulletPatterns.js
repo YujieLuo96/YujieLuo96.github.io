@@ -127,5 +127,85 @@ var BulletPatterns = (() => {
             }
             return arr;
         },
+
+        // ── 进阶弹幕模式（全部兼容 factory；行为参数走 opts.bulletOpts 透传）──
+
+        // 留安全缺口的环：gapAngle 方向 ±gapHalf 范围内不出弹 —— 经典"找缝隙钻"弹幕
+        ringGap(ex, ey, count, speed, offset, gapAngle, gapHalf = 0.45, opts = {}, factory = null) {
+            const arr   = [];
+            const bOpts = opts.bulletOpts;
+            for (let i = 0; i < count; i++) {
+                const a = (Math.PI * 2 / count) * i + offset;
+                let d = a - gapAngle;
+                while (d >  Math.PI) d -= Math.PI * 2;
+                while (d < -Math.PI) d += Math.PI * 2;
+                if (Math.abs(d) < gapHalf) continue;
+                arr.push(_b(ex, ey, a, speed, bOpts, factory));
+            }
+            return arr;
+        },
+
+        // 多旋臂：每条臂一发，逐帧递增 rotation 即形成风车/银河旋臂
+        spiralArms(ex, ey, arms, rotation, speed, opts = {}, factory = null) {
+            const arr   = [];
+            const bOpts = opts.bulletOpts;
+            for (let i = 0; i < arms; i++) {
+                const a = (Math.PI * 2 / arms) * i + rotation;
+                arr.push(_b(ex, ey, a, speed, bOpts, factory));
+            }
+            return arr;
+        },
+
+        // 横向弹墙：以 (ex,ey) 为中心、宽 width，留出第 gapIndex 个空位（<0 则不留）
+        wall(ex, ey, count, width, speed, gapIndex = -1, opts = {}, factory = null) {
+            const arr   = [];
+            const bOpts = opts.bulletOpts;
+            const step  = width / Math.max(count - 1, 1);
+            for (let i = 0; i < count; i++) {
+                if (i === gapIndex || i === gapIndex + 1) continue;
+                arr.push(_b(ex - width / 2 + step * i, ey, Math.PI / 2, speed, bOpts, factory));
+            }
+            return arr;
+        },
+
+        // 蛇形瞄准弹：count 发并排蛇行逼近（waveAmp/waveFreq 可由 opts 覆盖）
+        snake(ex, ey, px, py, speed, count = 3, opts = {}, factory = null) {
+            const base = Math.atan2(py - ey, px - ex);
+            const arr  = [];
+            for (let i = 0; i < count; i++) {
+                const bOpts = Object.assign({
+                    type: 'shard', radius: 4.5, color: '#5f8',
+                    waveAmp: 26, waveFreq: 0.14,
+                    wavePhase: (i / Math.max(count, 1)) * Math.PI * 2,
+                }, opts.bulletOpts || {});
+                const spread = count > 1 ? (i - (count - 1) / 2) * 0.12 : 0;
+                arr.push(_b(ex, ey, base + spread, speed, bOpts, factory));
+            }
+            return arr;
+        },
+
+        // 追踪火焰弹：限时追玩家的彗星（homing 帧数后改直线，留躲避窗口）
+        homingFlare(ex, ey, px, py, speed = 3.2, opts = {}, factory = null) {
+            const base  = Math.atan2(py - ey, px - ex);
+            const bOpts = Object.assign({
+                type: 'flare', radius: 4.5, color: '#f80', damage: 1,
+                homing: 110, homingTurn: 0.030, life: 360,
+            }, opts.bulletOpts || {});
+            return [_b(ex, ey, base, speed, bOpts, factory)];
+        },
+
+        // 绽放花弹：慢速星弹环出膛后逐渐加速散开，形成"花开"压迫感
+        bloom(ex, ey, count, offset = 0, opts = {}, factory = null) {
+            const arr = [];
+            for (let i = 0; i < count; i++) {
+                const bOpts = Object.assign({
+                    type: 'star', radius: 4, color: '#f6c', spin: 0.18,
+                    accel: 0.045, maxSpeed: 4.6,
+                }, opts.bulletOpts || {});
+                const a = (Math.PI * 2 / count) * i + offset;
+                arr.push(_b(ex, ey, a, opts.speed || 0.9, bOpts, factory));
+            }
+            return arr;
+        },
     };
 })();

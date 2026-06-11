@@ -34,6 +34,16 @@ var Boss5_Leviathan = (() => {
 
             this.spiralRot   = 0;
             this.baseX       = Renderer.W / 2;
+
+            // 新增：弹墙 / 蛇形弹 / overload 蓄力 telegraph / 受损烟雾
+            this.wallT       = 0;      // barrage 弹墙计时
+            this.snakeT      = 0;      // swarm 蛇形弹计时
+            this.armDir      = 1;      // 旋臂方向（各节体环节错相）
+            this.chargeT     = 0;      // overload 进场蓄力（0=未蓄力）
+            this.chargeDur   = 36;
+            this.chargeP     = 0;      // 蓄力粒子节流
+            this.smokeT      = 0;      // 受损烟雾节流
+            this.volleyLock  = 0;      // 大波次错帧锁：防多组弹幕同帧齐射爆量
         }
 
         // 0–3 based on HP; affects bullet count + intervals
@@ -58,6 +68,13 @@ var Boss5_Leviathan = (() => {
             // Reset all attack timers on mode switch
             this.siegeRingT = this.siegeAimT = this.barrageT =
             this.swarmT = this.swarmSpiT = this.overloadT = 0;
+            this.wallT = this.snakeT = 0;
+            this.armDir = -this.armDir;
+            // 模式切换闪光（反应堆换色瞬间）
+            ExplosionFX.mediumEnemy(this.x, this.y,
+                `hsl(${MODES[this.modeIdx].hue},90%,62%)`);
+            // OVERLOAD 进场前先蓄力 36 帧（telegraph + 呼吸间隙）
+            if (MODES[this.modeIdx].name === 'overload') this.chargeT = 0.01;
         }
 
         update(dt, fc) {
@@ -88,6 +105,7 @@ var Boss5_Leviathan = (() => {
             const mode = MODES[this.modeIdx].name;
             const cx   = this.x, cy = this.y;
             const bullets = [];
+            if (this.volleyLock > 0) this.volleyLock -= dt;
 
             // ── Movement per mode ─────────────────────────────────────────
             switch (mode) {
@@ -107,21 +125,48 @@ var Boss5_Leviathan = (() => {
                     break;
             }
 
+            // ── OVERLOAD 蓄力 telegraph：停火聚能，爆发开场缺口环 ──────────
+            if (mode === 'overload' && this.chargeT > 0) {
+                this.chargeT += dt;
+                this.chargeP += dt;
+                if (this.chargeP >= 6) {
+                    this.chargeP = 0;
+                    ParticleSystem.spawn(cx, cy - 6,
+                        { count: 4, colors: ['#ff8080', '#fff', '#ff4040'],
+                          speed: 2.4, life: 13, size: 2.5, shape: 'spark', scatter: 48 });
+                }
+                if (this.chargeT >= this.chargeDur) {
+                    this.chargeT = 0;
+                    // 开场爆发：朝玩家方向留缺口的大型红色弹环（26 发）
+                    const p  = Player.getPos();
+                    const ga = Math.atan2(p.y - cy, p.x - cx);
+                    BulletPatterns.ringGap(cx, cy - 6, 26, 3.6, this.turretAngle, ga, 0.5,
+                        { bulletOpts: { type: 'big', radius: 5, color: '#f55' } })
+                        .forEach(b => bullets.push(b));
+                }
+                this.checkEntered();
+                return bullets.length > 0 ? bullets : null;
+            }
+
             // ═══════════════════════════════════════════════════════════════
             //  MODE A — SIEGE: large rings + aimed shots
             // ═══════════════════════════════════════════════════════════════
             if (mode === 'siege' || mode === 'overload') {
                 const ringInt = Math.max(18, Math.round(62 / ix));
                 this.siegeRingT += dt;
-                if (this.siegeRingT >= ringInt) {
+                if (this.volleyLock <= 0 && this.siegeRingT >= ringInt) {
                     this.siegeRingT = 0;
-                    const cnt = Math.min(Math.round(16 * ix), 30);
+                    this.volleyLock = 14;
+                    const cnt = Math.min(Math.round(16 * ix), 24);
                     BulletPatterns.ring(cx, cy, cnt, 2.6, this.turretAngle)
                         .forEach(b => bullets.push(b));
-                    // Phase 2+ adds a second offset ring
+                    // Phase 2+ adds an offset GAP ring — 缺口朝玩家，留出钻缝活路
                     if (ph >= 2) {
-                        BulletPatterns.ring(cx, cy, Math.floor(cnt * 0.6), 3.8,
-                            this.turretAngle + Math.PI / cnt)
+                        const p  = Player.getPos();
+                        const ga = Math.atan2(p.y - cy, p.x - cx);
+                        BulletPatterns.ringGap(cx, cy, Math.floor(cnt * 0.4), 3.8,
+                            this.turretAngle + Math.PI / cnt, ga, 0.5,
+                            { bulletOpts: { color: '#fa6' } })
                             .forEach(b => bullets.push(b));
                     }
                 }
@@ -131,7 +176,8 @@ var Boss5_Leviathan = (() => {
                     this.siegeAimT = 0;
                     const p = Player.getPos();
                     const cnt = Math.min(2 + ph, 5);
-                    BulletPatterns.aimed(cx, cy + 40, p.x, p.y, 4.8 + ix * 0.6,
+                    BulletPatterns.aimed(cx, cy + 40, p.x, p.y,
+                        Math.min(5.4, 4.8 + ix * 0.5),
                         { count: cnt, spread: 0.30 })
                         .forEach(b => bullets.push(b));
                 }
@@ -143,8 +189,9 @@ var Boss5_Leviathan = (() => {
             if (mode === 'barrage' || mode === 'overload') {
                 const barrInt = Math.max(16, Math.round(48 / ix));
                 this.barrageT += dt;
-                if (this.barrageT >= barrInt) {
+                if (this.volleyLock <= 0 && this.barrageT >= barrInt) {
                     this.barrageT = 0;
+                    this.volleyLock = 10;
                     const p = Player.getPos();
                     const bulletsPerFan = Math.min(2 + ph, 6);
                     // 3 broadside turret offsets
@@ -161,6 +208,19 @@ var Boss5_Leviathan = (() => {
                                 -Math.PI / 2, 0.6).forEach(b => bullets.push(b));
                         });
                     }
+                }
+                // 横向下落弹墙：留 2 格空位逼玩家横移（巨兽推进压制感）
+                const wallInt = Math.max(95, Math.round(150 / ix));
+                this.wallT += dt;
+                if (this.volleyLock <= 0 && this.wallT >= wallInt) {
+                    this.wallT = 0;
+                    this.volleyLock = 14;
+                    const cnt = 11 + Math.min(ph, 2) * 2;
+                    BulletPatterns.wall(Renderer.W / 2, cy + 24, cnt,
+                        Renderer.W * 0.82, 2.4,
+                        1 + Math.floor(Math.random() * (cnt - 3)),
+                        { bulletOpts: { color: '#ffa040' } })
+                        .forEach(b => bullets.push(b));
                 }
             }
 
@@ -184,9 +244,28 @@ var Boss5_Leviathan = (() => {
                 this.swarmSpiT += dt;
                 if (this.swarmSpiT >= spiInt) {
                     this.swarmSpiT = 0;
-                    this.spiralRot += 0.16;
-                    const arms = 2 + ph;
-                    BulletPatterns.spiral(cx, cy, Math.min(arms, 5), 3.2, this.spiralRot)
+                    this.spiralRot += 0.16 * this.armDir;
+                    const arms = Math.min(2 + ph, 5);
+                    // 双发射口错相旋臂风车：绿色棱晶弹，巨兽节体感
+                    BulletPatterns.spiralArms(cx, cy - 6, arms, this.spiralRot, 3.2,
+                        { bulletOpts: { type: 'shard', color: '#6f9', life: 330 } })
+                        .forEach(b => bullets.push(b));
+                    // 第二节体错相反转旋臂 —— 仅 swarm 本体模式（overload 合流时收敛弹量）
+                    if (ph >= 1 && mode === 'swarm') {
+                        BulletPatterns.spiralArms(cx, cy + 22, arms,
+                            -this.spiralRot + Math.PI / arms, 2.7,
+                            { bulletOpts: { type: 'shard', color: '#3da', life: 330 } })
+                            .forEach(b => bullets.push(b));
+                    }
+                }
+                // 蛇形瞄准弹：左右蛇行的绿色棱晶逼近玩家
+                const snakeInt = Math.max(60, Math.round(105 / ix));
+                this.snakeT += dt;
+                if (this.snakeT >= snakeInt) {
+                    this.snakeT = 0;
+                    const p = Player.getPos();
+                    BulletPatterns.snake(cx, cy + 30, p.x, p.y, 3.3,
+                        ph >= 2 ? 4 : 3, { bulletOpts: { life: 300 } })
                         .forEach(b => bullets.push(b));
                 }
             }
@@ -196,12 +275,29 @@ var Boss5_Leviathan = (() => {
             // ═══════════════════════════════════════════════════════════════
             if (mode === 'overload') {
                 this.overloadT += dt;
-                if (this.overloadT >= 7) {
+                if (this.overloadT >= 11) {
                     this.overloadT = 0;
                     const p = Player.getPos();
-                    BulletPatterns.aimed(cx, cy, p.x, p.y, 6.8,
+                    BulletPatterns.aimed(cx, cy, p.x, p.y, 5.4,
                         { count: 3, spread: 0.14 })
                         .forEach(b => bullets.push(b));
+                }
+            }
+
+            // 受损烟雾与火星（phase 3 残血，每 6 帧节流）
+            if (ph >= 3) {
+                this.smokeT += dt;
+                if (this.smokeT >= 6) {
+                    this.smokeT = 0;
+                    const vx = Math.random() < 0.5 ? -30 : 30;
+                    ParticleSystem.spawn(cx + vx, cy + 10,
+                        { count: 2, colors: ['#444', '#333', '#665'],
+                          speed: 0.9, life: 32, size: 4.5, drag: 0.99,
+                          angle: -Math.PI / 2, spread: 1.0 });
+                    if (Math.random() < 0.45)
+                        ParticleSystem.spawn(cx + vx, cy + 10,
+                            { count: 2, colors: ['#fc6', '#f80'],
+                              speed: 3.2, life: 11, size: 2, shape: 'spark', gravity: 0.06 });
                 }
             }
 
@@ -425,6 +521,24 @@ var Boss5_Leviathan = (() => {
                 ctx.globalAlpha = 0.8;
                 ctx.beginPath(); ctx.arc(0, -6, 14, 0, Math.PI * 2); ctx.fill();
                 ctx.globalAlpha = 1;
+
+                // ── OVERLOAD 蓄力 telegraph：反应堆聚能球从小变大 + 警示圈 ──
+                if (this.chargeT > 0) {
+                    const prog = Math.min(1, this.chargeT / this.chargeDur);
+                    const fastPulse = 0.5 + Math.sin(this.t * 0.55) * 0.5;
+                    const cr = 8 + prog * 26;
+                    const og = ctx.createRadialGradient(0, -6, 1, 0, -6, cr);
+                    og.addColorStop(0,   '#fff');
+                    og.addColorStop(0.4, `rgba(255,120,100,${0.7 + fastPulse * 0.3})`);
+                    og.addColorStop(0.8, `rgba(255,40,30,${0.35 + prog * 0.35})`);
+                    og.addColorStop(1,   'rgba(180,0,0,0)');
+                    ctx.fillStyle = og;
+                    ctx.beginPath(); ctx.arc(0, -6, cr, 0, Math.PI * 2); ctx.fill();
+                    ctx.strokeStyle = `rgba(255,200,180,${0.3 + fastPulse * 0.45})`;
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(0, -6, cr + 8 + (1 - prog) * 30, 0, Math.PI * 2); ctx.stroke();
+                }
 
                 // ── Phase pip ring ─────────────────────────────────────────
                 for (let i = 0; i < 4; i++) {

@@ -9,11 +9,14 @@ var Vanguard = (() => {
             this.haltTimer  = 0;
             this.haltMax    = 280 + Math.random() * 100;
             this.shotTimer  = 0;
-            this.shotInt    = 55;
+            this.shotInt    = 62;
             this.driftX     = (Math.random() - 0.5) * 1.2;
+            this.volleyN    = 0;
+            this.smokeTimer = 0;
         }
 
         update(dt, fc) {
+            let out = null;
             switch (this.phase) {
                 case 'entry':
                     this.y += this.speed * 1.2 * dt;
@@ -27,8 +30,22 @@ var Vanguard = (() => {
                     this.shotTimer += dt;
                     if (this.shotTimer >= this.shotInt) {
                         this.shotTimer = 0;
-                        const p = Player.getPos();
-                        return BulletPatterns.aimed(this.x, this.y + 18, p.x, p.y, 4.5, { count: 3, spread: 0.38 });
+                        this.volleyN++;
+                        ParticleSystem.spawn(this.x, this.y + 18, {
+                            count: 5, angle: Math.PI / 2, spread: 1.4, speed: 2.2,
+                            size: 2, life: 12, colors: ['#cf8', '#8f4'], shape: 'spark'
+                        });
+                        if (this.volleyN % 3 === 0) {
+                            // 间歇穿插：经典三连瞄准弹
+                            const p = Player.getPos();
+                            out = BulletPatterns.aimed(this.x, this.y + 18, p.x, p.y, 4.5,
+                                { count: 3, spread: 0.38 });
+                        } else {
+                            // 签名技：正面弹墙压制，留缺口给玩家钻
+                            const gap = 1 + Math.floor(Math.random() * 4);   // gapIndex 1..4 / 7 发
+                            out = BulletPatterns.wall(this.x, this.y + 18, 7, 156, 3.0, gap,
+                                { bulletOpts: { color: '#9f5', radius: 4 } });
+                        }
                     }
                     if (this.haltTimer >= this.haltMax) this.phase = 'exit';
                     break;
@@ -37,10 +54,22 @@ var Vanguard = (() => {
                     this.y += this.speed * 2.0 * dt;
                     break;
             }
+
+            if (this.hp < this.maxHp * 0.4) {
+                this.smokeTimer += dt;
+                if (this.smokeTimer >= 8) {
+                    this.smokeTimer = 0;
+                    ParticleSystem.spawn(this.x + (Math.random() - 0.5) * 18, this.y - 6, {
+                        count: 1, angle: -Math.PI / 2, spread: 0.7, speed: 0.7,
+                        size: 3, life: 36, colors: ['#777', '#998', '#555'], drag: 0.985
+                    });
+                }
+            }
+
             this.x = Math.max(this.w / 2, Math.min(Renderer.W - this.w / 2, this.x));
             this.checkEntered();
             if (this.isOffscreen()) this.alive = false;
-            return null;
+            return out;
         }
 
         draw(ctx, dt, fc) {
@@ -101,6 +130,34 @@ var Vanguard = (() => {
                     ctx.beginPath(); ctx.arc(ox,16,2.5,0,Math.PI*2); ctx.fill();
                     ctx.shadowBlur = 0;
                 });
+
+                // 盾兵身份：机体前方（下侧）的脉动能量盾弧
+                ctx.shadowColor = '#6f6'; ctx.shadowBlur = 8;
+                ctx.strokeStyle = `rgba(140,255,150,${0.28 + pulse * 0.28})`;
+                ctx.lineWidth = 2.4;
+                ctx.beginPath(); ctx.arc(0, 2, 21, Math.PI * 0.22, Math.PI * 0.78); ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = `rgba(200,255,200,${0.18 + pulse * 0.2})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.arc(0, 2, 24, Math.PI * 0.3, Math.PI * 0.7); ctx.stroke();
+
+                // 弹墙预警：开火前 12 帧在炮口下方画出蓄能横排光点
+                if (this.phase === 'hold') {
+                    const chg = this.shotTimer - (this.shotInt - 12);
+                    if (chg > 0) {
+                        const k = chg / 12;
+                        ctx.fillStyle = `rgba(220,255,140,${0.25 + k * 0.55})`;
+                        for (let i = 0; i < 7; i++) {
+                            const bx = -78 + (156 / 6) * i;
+                            ctx.beginPath(); ctx.arc(bx, 22, 1.2 + k * 1.8, 0, Math.PI * 2); ctx.fill();
+                        }
+                        const tg = ctx.createRadialGradient(0, 18, 0, 0, 18, 4 + k * 5);
+                        tg.addColorStop(0, `rgba(230,255,180,${0.5 + k * 0.4})`);
+                        tg.addColorStop(1, 'rgba(120,220,80,0)');
+                        ctx.fillStyle = tg;
+                        ctx.beginPath(); ctx.arc(0, 18, 4 + k * 5, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
             }
 
             this.drawHpBar(ctx, 40, 26);

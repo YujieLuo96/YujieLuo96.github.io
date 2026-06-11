@@ -310,6 +310,39 @@
   #status {
     font-size: 13px;
     padding: 8px 18px;
-    bottom: 88px; /* lifted above FAB bar */
+    bottom: 88px; /* lifted above zoom bar */
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   12. Fullscreen LaTeX editor — stacked panes on small screens
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  .lxe-modal { inset: 0; border-radius: 0; }
+  .lxe-body  { flex-direction: column; }
+  .lxe-ta {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    font-size: 16px; /* prevents iOS zoom-on-focus */
+  }
+  .lxe-hint { display: none; }
+}
+
+@media (pointer: coarse) {
+
+  .lx-snip { min-width: 38px; height: 34px; font-size: 13px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   11. Zoom bar / counter — touch sizing
+   ═══════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+
+  .vz-btn {
+    min-width: 40px;
+    height: 40px;
+  }
+  .vz-btn svg { width: 16px; height: 16px; }
+  #vz-pct { min-width: 52px; font-size: 12.5px; }
 }

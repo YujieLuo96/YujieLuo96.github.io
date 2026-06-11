@@ -94,6 +94,13 @@ var Boss6_NeutronCluster = (() => {
             this.beamAngle     = 0;
             this.beamShotTimer = 0;
 
+            // 新增：弹幕交替 / 蓄力粒子 / 受损烟雾 状态
+            this.ringAlt  = false;   // 中心环：满环 / 缺口环 交替
+            this.orbAlt   = false;   // 中子球环 / 缺口轮环 交替
+            this.chargeP  = 0;       // 蓄力粒子节流
+            this.smokeT   = 0;       // 受损烟雾节流
+            this.volleyLock = 0;     // 大波次错帧锁：防多组弹幕同帧齐射爆量
+
             this.baseX = Renderer.W / 2;
             this.baseY = 0; // set after entry
         }
@@ -140,16 +147,35 @@ var Boss6_NeutronCluster = (() => {
 
             const cx = this.x, cy = this.y;
 
+            // 大招（巨束）期间停掉中心系攻击：telegraph 可读 + 呼吸间隙
+            const beamBusy = this.beamPhase !== 'idle';
+            if (this.volleyLock > 0) this.volleyLock -= dt;
+
             // ── Ring discharge from center ────────────────────────────────
             const ringInt = Math.max(26, Math.round(70 / ix));
             this.ringTimer += dt;
-            if (this.ringTimer >= ringInt) {
+            if (!beamBusy && this.volleyLock <= 0 && this.ringTimer >= ringInt) {
                 this.ringTimer = 0;
+                this.volleyLock = 12;
+                this.ringAlt = !this.ringAlt;
                 const cnt = 10 + ph * 3;
-                BulletPatterns.ring(cx, cy, cnt, 2.9 + ph * 0.35).forEach(b => bullets.push(b));
+                if (this.ringAlt) {
+                    // 缺口轮环：朝玩家方向留活路缺口
+                    const p  = Player.getPos();
+                    const ga = Math.atan2(p.y - cy, p.x - cx);
+                    BulletPatterns.ringGap(cx, cy, cnt + 3, 2.9 + ph * 0.35,
+                        this.spiralRot * 0.4, ga, 0.48,
+                        { bulletOpts: { color: '#4cf' } })
+                        .forEach(b => bullets.push(b));
+                } else {
+                    BulletPatterns.ring(cx, cy, cnt, 2.9 + ph * 0.35).forEach(b => bullets.push(b));
+                }
                 if (ph >= 1) {
-                    // Interleaved second ring, slightly faster
-                    BulletPatterns.ring(cx, cy, 9, 4.4, Math.PI / cnt).forEach(b => bullets.push(b));
+                    // Interleaved spark ring — 自旋四芒星电火花点缀
+                    BulletPatterns.ring(cx, cy, 9, 4.4, Math.PI / cnt,
+                        { bulletOpts: { type: 'star', radius: 3.5, color: '#8ef',
+                                        spin: 0.22, life: 300 } })
+                        .forEach(b => bullets.push(b));
                 }
             }
 
@@ -166,6 +192,13 @@ var Boss6_NeutronCluster = (() => {
                     if (i % 3 === 0 && ph >= 1) {
                         BulletPatterns.laserBeam(sx, sy, p.x, p.y, 10 + ph * 0.6, 1)
                             .forEach(b => bullets.push(b));
+                    } else if (i % 3 === 1 && ph >= 2) {
+                        // 电火花星弹：自旋四芒星缓拐向玩家方向（弧线）
+                        BulletPatterns.aimed(sx, sy, p.x, p.y, 3.6,
+                            { count: 2, spread: 0.5,
+                              bulletOpts: { type: 'star', radius: 3.5, color: '#aef',
+                                            spin: 0.24, turn: 0.012, life: 280 } })
+                            .forEach(b => bullets.push(b));
                     } else {
                         BulletPatterns.aimed(sx, sy, p.x, p.y,
                             4.0 + ph * 0.5, { count: ph >= 2 ? 2 : 1, spread: 0.22 })
@@ -178,8 +211,9 @@ var Boss6_NeutronCluster = (() => {
             if (ph >= 2) {
                 const resonInt = Math.max(48, Math.round(95 / ix));
                 this.resonTimer += dt;
-                if (this.resonTimer >= resonInt) {
+                if (!beamBusy && this.volleyLock <= 0 && this.resonTimer >= resonInt) {
                     this.resonTimer = 0;
+                    this.volleyLock = 12;
                     this.sats.forEach((_, i) => {
                         const sp = this._satPos(i);
                         BulletPatterns.fan(cx + sp.x, cy + sp.y,
@@ -190,7 +224,7 @@ var Boss6_NeutronCluster = (() => {
             }
 
             // ── Cascade spiral (phase 3): dense spiral from center ─────────
-            if (ph >= 3) {
+            if (ph >= 3 && !beamBusy) {
                 this.cascadeTimer += dt;
                 if (this.cascadeTimer >= 9) {
                     this.cascadeTimer = 0;
@@ -202,7 +236,7 @@ var Boss6_NeutronCluster = (() => {
             // ── Laser beams — fast aimed cyan bolts from center ───────────
             const laserInt = Math.max(50, Math.round(90 / ix));
             this.laserTimer += dt;
-            if (this.laserTimer >= laserInt) {
+            if (!beamBusy && this.laserTimer >= laserInt) {
                 this.laserTimer = 0;
                 const p    = Player.getPos();
                 const lCnt = 1 + Math.floor(ph / 2);          // 1→1, 2→2, 3→2
@@ -219,7 +253,7 @@ var Boss6_NeutronCluster = (() => {
             // ── Neutron pulse — slow purple-black beams with lightning ─────
             const pulseInt = Math.max(75, Math.round(130 / ix));
             this.pulseTimer += dt;
-            if (this.pulseTimer >= pulseInt) {
+            if (!beamBusy && this.pulseTimer >= pulseInt) {
                 this.pulseTimer = 0;
                 const p = Player.getPos();
                 BulletPatterns.neutronPulse(cx, cy, p.x, p.y, 5 + ph * 0.5)
@@ -234,11 +268,23 @@ var Boss6_NeutronCluster = (() => {
             // ── Neutron orbs — ring of drifting purple orbs from center ────
             const orbInt = Math.max(55, Math.round(110 / ix));
             this.orbTimer += dt;
-            if (this.orbTimer >= orbInt) {
+            if (!beamBusy && this.volleyLock <= 0 && this.orbTimer >= orbInt) {
                 this.orbTimer = 0;
-                const orbCnt = 6 + ph * 2;
-                BulletPatterns.neutronOrbs(cx, cy, orbCnt, 2.2 + ph * 0.3, this.spiralRot * 0.6)
-                    .forEach(b => bullets.push(b));
+                this.volleyLock = 12;
+                this.orbAlt = !this.orbAlt;
+                if (this.orbAlt) {
+                    const orbCnt = 6 + ph * 2;
+                    BulletPatterns.neutronOrbs(cx, cy, orbCnt, 2.2 + ph * 0.3, this.spiralRot * 0.6)
+                        .forEach(b => bullets.push(b));
+                } else {
+                    // 缺口轮环（与中子球环交替）：紫色慢弹环，缺口朝玩家方向留活路
+                    const p  = Player.getPos();
+                    const ga = Math.atan2(p.y - cy, p.x - cx);
+                    BulletPatterns.ringGap(cx, cy, 12 + ph * 2, 2.5 + ph * 0.25,
+                        this.spiralRot * 0.6, ga, 0.44,
+                        { bulletOpts: { color: '#b6f', radius: 4.5 } })
+                        .forEach(b => bullets.push(b));
+                }
             }
 
             // ── Mega screen-crossing beam ─────────────────────────────────
@@ -257,6 +303,14 @@ var Boss6_NeutronCluster = (() => {
                         this.beamAngle = Math.atan2(p.y - cy, p.x - cx);
                     }
                 } else if (this.beamPhase === 'aim') {
+                    // 蓄力粒子：聚能火花在核心周围收束（每 5 帧节流）
+                    this.chargeP += dt;
+                    if (this.chargeP >= 5) {
+                        this.chargeP = 0;
+                        ParticleSystem.spawn(cx, cy,
+                            { count: 4, colors: ['#8ef', '#fff', '#4cf'],
+                              speed: 2.4, life: 12, size: 2.5, shape: 'spark', scatter: 52 });
+                    }
                     if (this.beamTimer >= beamAimDur) {
                         this.beamTimer = 0;
                         this.beamShotTimer = 0;
@@ -280,7 +334,27 @@ var Boss6_NeutronCluster = (() => {
                     if (this.beamTimer >= beamFireDur) {
                         this.beamTimer = 0;
                         this.beamPhase = 'idle';
+                        // 大招结束：清零各攻击计时器 → 30+ 帧呼吸间隙，避免同帧齐射
+                        this.ringTimer = this.laserTimer = this.pulseTimer =
+                        this.orbTimer  = this.cascadeTimer = this.resonTimer = 0;
                     }
+                }
+            }
+
+            // 受损烟雾与火星（残血 phase 3，每 7 帧节流）
+            if (ph >= 3) {
+                this.smokeT += dt;
+                if (this.smokeT >= 7) {
+                    this.smokeT = 0;
+                    const a  = Math.random() * Math.PI * 2;
+                    const ox = Math.cos(a) * 24, oy = Math.sin(a) * 24;
+                    ParticleSystem.spawn(cx + ox, cy + oy,
+                        { count: 2, colors: ['#246', '#357', '#9cf'],
+                          speed: 1.2, life: 26, size: 3.5, drag: 0.985 });
+                    if (Math.random() < 0.5)
+                        ParticleSystem.spawn(cx + ox, cy + oy,
+                            { count: 2, colors: ['#aef', '#fff'],
+                              speed: 3.5, life: 9, size: 2, shape: 'spark' });
                 }
             }
 
@@ -456,6 +530,18 @@ var Boss6_NeutronCluster = (() => {
                             ctx.arc(d, 0, wr * (1 - d / 1600 * 0.28), 0, Math.PI * 2);
                             ctx.stroke();
                         });
+                        // 蓄力聚能球：从小变大 + 收缩警示圈（盖在核心上）
+                        const cr = 10 + aimProg * 26;
+                        const chg = ctx.createRadialGradient(0, 0, 1, 0, 0, cr);
+                        chg.addColorStop(0,   '#fff');
+                        chg.addColorStop(0.4, `rgba(160,240,255,${0.6 + aimProg * 0.4})`);
+                        chg.addColorStop(1,   'rgba(0,150,255,0)');
+                        ctx.fillStyle = chg;
+                        ctx.beginPath(); ctx.arc(0, 0, cr, 0, Math.PI * 2); ctx.fill();
+                        ctx.strokeStyle = `rgba(220,250,255,${0.25 + aimProg * 0.5})`;
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, cr + 8 + (1 - aimProg) * 34, 0, Math.PI * 2); ctx.stroke();
                     } else {
                         // Fire phase: full thick beam with lightning wrap
                         const shimmer = 0.84 + Math.sin(t * 0.88) * 0.10 + Math.sin(t * 2.1) * 0.06;

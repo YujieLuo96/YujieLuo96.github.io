@@ -9,6 +9,8 @@ var ParticleSystem = (() => {
 
     return {
         init() { /* pool already allocated at parse time */ },
+        // opts: count, angle, spread, speed, scatter, size, life, gravity,
+        //       color | colors[], shape ('dot'|'spark'), drag (默认 0.97)
         spawn(x, y, opts = {}) {
             const n = opts.count || 1;
             for (let i = 0; i < n; i++) {
@@ -26,6 +28,8 @@ var ParticleSystem = (() => {
                 p.life    = opts.life || 30;
                 p.maxLife = p.life;
                 p.gravity = opts.gravity || 0;
+                p.shape   = opts.shape || 'dot';
+                p.drag    = opts.drag !== undefined ? opts.drag : 0.97;
                 const cols = opts.colors || [opts.color || '#ff8'];
                 p.color = cols[Math.floor(Math.random() * cols.length)];
                 _active.push(p);
@@ -37,20 +41,33 @@ var ParticleSystem = (() => {
                 p.x  += p.vx * dt;
                 p.y  += p.vy * dt;
                 p.vy += p.gravity * dt;
-                p.vx *= 0.97; p.vy *= 0.97;
+                p.vx *= p.drag; p.vy *= p.drag;
                 p.size *= 0.975;
                 p.life -= dt;
                 if (p.life <= 0 || p.size < 0.15) { _ret(p); _active.splice(i, 1); }
             }
         },
         draw(ctx) {
+            let stroking = false;
             for (const p of _active) {
                 ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
-                ctx.fillStyle   = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, Math.max(0.1, p.size), 0, Math.PI * 2);
-                ctx.fill();
+                if (p.shape === 'spark') {
+                    // 速度方向拉长的火花线条 —— 高速碎片/金属火星
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth   = Math.max(0.4, p.size * 0.5);
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x - p.vx * 2.4, p.y - p.vy * 2.4);
+                    ctx.stroke();
+                    stroking = true;
+                } else {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, Math.max(0.1, p.size), 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
+            if (stroking) ctx.lineWidth = 1;
             ctx.globalAlpha = 1;
         },
         clear() { _active.forEach(p => _ret(p)); _active.length = 0; }

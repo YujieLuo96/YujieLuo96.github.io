@@ -1,12 +1,14 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════
-   Toolbar
-   deps: App, Canvas, NM, EM, Panel, IP, IO, Status
+   Toolbar — buttons, canvas click flows, keyboard shortcuts
+   deps: EB, Store, App, Canvas, NM, EM, Panel, IP, IO,
+         Status, History, ViewUI
 ═══════════════════════════════════════════════════════════ */
 const TB = {
   init() {
     const vp = document.getElementById('canvas-vp');
+    let nudgeTimer = null;
 
     // ── Save Choice Modal ──────────────────────────────────
     const scBackdrop = document.getElementById('sc-backdrop');
@@ -37,13 +39,21 @@ const TB = {
     });
 
     // ── Toolbar buttons ────────────────────────────────────
-    document.getElementById('btn-node').addEventListener('click', () => App.setMode('place'));
+    document.getElementById('btn-node').addEventListener('click', () =>
+      App.setMode(App.mode === 'place' ? 'default' : 'place'));
     document.getElementById('btn-conn').addEventListener('click', () =>
       App.setMode(App.mode === 'conn' ? 'default' : 'conn'));
     document.getElementById('btn-save').addEventListener('click', trySave);
 
+    function newCanvas() {
+      if (Store.nodes.size &&
+          !window.confirm('Clear the canvas and start a new graph?\n(Ctrl+Z can bring the current one back.)')) return;
+      IO.applyGraph([], [], 'New canvas');
+    }
+    document.getElementById('btn-new').addEventListener('click', newCanvas);
+
     // Load — use showOpenFilePicker (Chrome/Edge) to capture the FileSystemFileHandle,
-    // enabling saveOverwrite to open the save dialog in the same directory.
+    // enabling saveOverwrite to write back to the same file.
     // Falls back to <input type="file"> on unsupported browsers (Firefox).
     async function tryLoad() {
       if ('showOpenFilePicker' in window) {
@@ -67,8 +77,12 @@ const TB = {
       const f = e.target.files[0]; if (f) IO.load(f); e.target.value = '';
     });
 
+    // ── Canvas click flows ─────────────────────────────────
+    // Canvas overlay widgets (zoom bar etc.) must not act as canvas clicks
+    const onWidget = e => !!e.target.closest('#vz-zoombar');
+
     vp.addEventListener('click', async e => {
-      if (App.mode !== 'place') return;
+      if (App.mode !== 'place' || onWidget(e)) return;
       if (e.target.closest('.node') || e.target.closest('.e-hit')) { App.setMode('default'); return; }
       const canvasPos = Canvas.s2c(e.clientX, e.clientY);
       const vpRect    = vp.getBoundingClientRect();
@@ -81,7 +95,7 @@ const TB = {
     });
 
     vp.addEventListener('dblclick', async e => {
-      if (App.mode !== 'default') return;
+      if (App.mode !== 'default' || onWidget(e)) return;
       if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
       const canvasPos = Canvas.s2c(e.clientX, e.clientY);
       const vpRect    = vp.getBoundingClientRect();
@@ -90,7 +104,7 @@ const TB = {
     });
 
     vp.addEventListener('mousedown', e => {
-      if (e.button !== 0) return;
+      if (e.button !== 0 || onWidget(e)) return;
       if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
       if (App.mode === 'default') { Panel.close(); }  // Panel.close() calls clearAllSel internally
       if (App.mode === 'conn')    { NM.cancelConn(); }
@@ -103,21 +117,47 @@ const TB = {
       }
     });
 
+    // ── Keyboard shortcuts ─────────────────────────────────
     window.addEventListener('keydown', e => {
-      if (e.target.matches('input, textarea')) return;
+      if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod) {
+        const k = e.key.toLowerCase();
+        if      (k === 's') { e.preventDefault(); trySave(); }
+        else if (k === 'z') { e.preventDefault(); e.shiftKey ? History.redo() : History.undo(); }
+        else if (k === 'y') { e.preventDefault(); History.redo(); }
+        else if (k === 'd') { e.preventDefault(); NM.duplicateSelection(); }
+        else if (k === 'a') { e.preventDefault(); NM.setSelection([...Store.nodes.keys()]); }
+        else if (k === '0') { e.preventDefault(); ViewUI.resetZoom(); }
+        else if (k === '=' || k === '+') { e.preventDefault(); Canvas.zoomStep(1); }
+        else if (k === '-') { e.preventDefault(); Canvas.zoomStep(-1); }
+        return;
+      }
+      if (e.altKey) return;
+
       switch (e.key) {
         case 'Escape':
           App.setMode('default'); NM.cancelConn();
           IP.cancel(); Panel.close(); Status.hide(); break;
-        case 'n': case 'N': App.setMode('place'); break;
-        case 'c': case 'C': App.setMode(App.mode==='conn'?'default':'conn'); break;
+        case 'n': case 'N': App.setMode(App.mode === 'place' ? 'default' : 'place'); break;
+        case 'c': case 'C': App.setMode(App.mode === 'conn'  ? 'default' : 'conn');  break;
+        case 'f': case 'F': ViewUI.fitToContent(); break;
         case 'Delete': case 'Backspace':
-          if (e.ctrlKey) break;
-          if (App.selNode) { NM.remove(App.selNode); Panel.close(); App.selNode=null; }
-          else if (App.selEdge) { EM.remove(App.selEdge); Panel.close(); App.selEdge=null; }
+          if (NM.removeSelection()) { Panel.close(); }
+          else if (App.selEdge) { EM.remove(App.selEdge); Panel.close(); App.selEdge = null; }
           break;
-        case 's': case 'S':
-          if (e.ctrlKey||e.metaKey) { e.preventDefault(); trySave(); } break;
+        case 'ArrowLeft': case 'ArrowRight': case 'ArrowUp': case 'ArrowDown': {
+          const step = e.shiftKey ? 10 : 2;
+          const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+          const dy = e.key === 'ArrowUp'   ? -step : e.key === 'ArrowDown'  ? step : 0;
+          if (NM.nudgeSelection(dx, dy)) {
+            e.preventDefault();
+            clearTimeout(nudgeTimer);
+            nudgeTimer = setTimeout(() => EB.emit('graph:changed'), 450);
+          }
+          break;
+        }
       }
     });
   }

@@ -24,7 +24,8 @@ const MT = (() => {
   }
 
   function _onCanvasTouchStart(e) {
-    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (e.target.closest('.node') || e.target.closest('.e-hit') ||
+        e.target.closest('#vz-zoombar')) return;
     if (e.touches.length === 2) {
       _pan = null;
       const { tx, ty, sc } = Canvas.get();
@@ -127,7 +128,7 @@ const MT = (() => {
     _clearLP();
     const { moved, el } = _drag;
     _drag = null;
-    if (moved) return;
+    if (moved) { EB.emit('graph:changed'); return; }
     el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
   }
 
@@ -143,7 +144,8 @@ const MT = (() => {
   let _lastTap = null;
 
   function _onCanvasTap(e) {
-    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (e.target.closest('.node') || e.target.closest('.e-hit') ||
+        e.target.closest('#vz-zoombar')) return;
     if (App.mode !== 'default') return;
     const t = e.changedTouches[0], now = Date.now();
     if (_lastTap &&
@@ -196,7 +198,8 @@ const MT = (() => {
 
   /* ── Canvas empty-tap → clear selection ──────────────── */
   function _onCanvasEmptyTouchStart(e) {
-    if (e.target.closest('.node') || e.target.closest('.e-hit')) return;
+    if (e.target.closest('.node') || e.target.closest('.e-hit') ||
+        e.target.closest('#vz-zoombar')) return;
     if (App.mode === 'default') NM.clearAllSel();
     if (App.mode === 'conn')    NM.cancelConn();
   }

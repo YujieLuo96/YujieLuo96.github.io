@@ -15,6 +15,9 @@ var MidBoss2 = (() => {
             this.phaseStage = 1;
             this.summonTimer = 0;
             this.summonInt  = 180;
+            this.charge     = 0;     // >0 = 大招蓄力剩余帧
+            this.chargeMax  = 34;
+            this.specialT   = 0;
         }
 
         update(dt, fc) {
@@ -25,11 +28,14 @@ var MidBoss2 = (() => {
                     break;
 
                 case 'fight': {
-                    this.t += dt;
-                    this.armAngle += 0.022 * dt;
+                    const enraged = this.hp <= this.maxHp * 0.3;
+                    // 蓄力时机体减速悬停（telegraph 可读性）
+                    this.t += dt * (this.charge > 0 ? 0.3 : 1);
+                    this.armAngle += (enraged ? 0.034 : 0.022) * dt;
 
-                    // Figure-8 movement
-                    this.x = Renderer.W / 2 + Math.sin(this.t * 0.018) * 130;
+                    // Figure-8 movement（横幅按画布宽度收缩）
+                    const ampX = Math.min(130, Renderer.W * 0.36 - this.w / 2 - 10);
+                    this.x = Renderer.W / 2 + Math.sin(this.t * 0.018) * ampX;
                     this.y = this.entryY + Math.sin(this.t * 0.036) * 45;
 
                     if (this.phaseStage === 1 && this.hp <= this.maxHp * 0.5) {
@@ -37,9 +43,42 @@ var MidBoss2 = (() => {
                         this.shotInt  = 14;
                         this.burstInt = 38;
                         this.summonInt = 120;
+                        ExplosionFX.mediumEnemy(this.x - 22, this.y, '#f80');
+                        ExplosionFX.mediumEnemy(this.x + 22, this.y - 8, '#fa4');
+                        ExplosionFX.mediumEnemy(this.x, this.y + 14, '#48f');
                     }
 
                     const bullets = [];
+
+                    // 残血受损烟雾（节流）
+                    if (enraged && fc % 7 < 1)
+                        ParticleSystem.spawn(this.x + (Math.random() - 0.5) * 26, this.y - 4,
+                            { count: 1, colors: ['#667', '#889', '#a75'], speed: 0.5, life: 38, size: 3, gravity: -0.02 });
+
+                    // ── Stage 2 大招：蓄力 34 帧 → 蛇形水晶弹 + 双追踪彗星 ──
+                    if (this.phaseStage === 2) {
+                        if (this.charge > 0) {
+                            this.charge -= dt;
+                            if (fc % 5 < 1)
+                                ParticleSystem.spawn(this.x, this.y,
+                                    { count: 2, colors: ['#fc8', '#fff'], speed: 0.5, life: 13, size: 2, scatter: 20 });
+                            if (this.charge <= 0) {
+                                const p = Player.getPos();
+                                bullets.push(...BulletPatterns.snake(this.x, this.y + 20, p.x, p.y, 3.4, enraged ? 5 : 4));
+                                bullets.push(...BulletPatterns.homingFlare(this.x - 24, this.y + 10, p.x, p.y, 3.0, { bulletOpts: { homing: 95 } }));
+                                bullets.push(...BulletPatterns.homingFlare(this.x + 24, this.y + 10, p.x, p.y, 3.0, { bulletOpts: { homing: 95 } }));
+                                this.shotTimer  = -40;   // 爆发后呼吸间隙
+                                this.burstTimer = -30;
+                            }
+                            if (bullets.length > 0) return bullets;
+                            break;
+                        }
+                        this.specialT += dt;
+                        if (this.specialT >= (enraged ? 130 : 165)) {
+                            this.specialT = 0;
+                            this.charge = this.chargeMax;
+                        }
+                    }
 
                     this.shotTimer += dt;
                     if (this.shotTimer >= this.shotInt) {
@@ -53,9 +92,22 @@ var MidBoss2 = (() => {
                     this.burstTimer += dt;
                     if (this.burstTimer >= this.burstInt) {
                         this.burstTimer = 0;
-                        const cnt = this.phaseStage === 2 ? 12 : 8;
-                        const ring = BulletPatterns.ring(this.x, this.y, cnt, 3.0);
-                        if (ring) ring.forEach(s => bullets.push(s));
+                        if (this.phaseStage === 1) {
+                            // 4 条旋臂臂尖各发 2-way 小扇 —— 旋转风轮点射（蓝）
+                            for (let i = 0; i < 4; i++) {
+                                const a  = this.armAngle + i * Math.PI / 2;
+                                const tx = this.x + Math.sin(a) * 38;
+                                const ty = this.y - Math.cos(a) * 38;
+                                bullets.push(...BulletPatterns.fan(tx, ty, 2, 3.0, a - Math.PI / 2, 0.35,
+                                    { bulletOpts: { color: '#6af', radius: 4 } }));
+                            }
+                        } else {
+                            // 留缺口的环 —— 缺口朝向玩家当前位置，给活路（橙）
+                            const p = Player.getPos();
+                            const gapA = Math.atan2(p.y - this.y, p.x - this.x);
+                            bullets.push(...BulletPatterns.ringGap(this.x, this.y, enraged ? 18 : 14, 3.2,
+                                fc * 0.03, gapA, 0.5, { bulletOpts: { color: '#fa4' } }));
+                        }
                     }
 
                     if (this.phaseStage === 2) {
@@ -197,6 +249,18 @@ var MidBoss2 = (() => {
                 ctx.shadowBlur  = 0;
                 ctx.fillStyle   = '#fff';
                 ctx.beginPath(); ctx.arc(0, 0, 3, 0, Math.PI * 2); ctx.fill();
+            }
+
+            // ── 大招蓄力光球（telegraph：由小变大、脉动）──────────────────
+            if (!flash && this.charge > 0) {
+                const prog = 1 - this.charge / this.chargeMax;
+                const cr = 3 + prog * 11 + Math.sin((fc || 0) * 0.5) * 1.8;
+                const og = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
+                og.addColorStop(0,    '#fff');
+                og.addColorStop(0.45, hp2 ? 'rgba(255,170,60,0.9)' : 'rgba(120,190,255,0.9)');
+                og.addColorStop(1,    'rgba(0,0,0,0)');
+                ctx.fillStyle = og;
+                ctx.beginPath(); ctx.arc(0, 0, cr, 0, Math.PI * 2); ctx.fill();
             }
 
             this.drawHpBar(ctx, 56, 34);

@@ -1,7 +1,7 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════
-   EdgeModule
+   EdgeModule — curved edges, labels, selection, preview line
    deps: EB, Store, App, LX
 ═══════════════════════════════════════════════════════════ */
 const EM = (() => {
@@ -9,6 +9,7 @@ const EM = (() => {
   let _seq      = 0;
   let _selId    = null;
   let _lblLayer = null;
+  let _previewPath = null;   // dashed line shown while picking a connect target
   const _svg = () => document.getElementById('edges-group');
 
   function _makeGroup(data) {
@@ -119,17 +120,18 @@ const EM = (() => {
       (e.sourceId===tgtId && e.targetId===srcId)
     ).length;
     const data = {
-      id:             'e'+Date.now()+(++_seq),
+      id:             'e' + Date.now().toString(36) + '_' + (++_seq),
       sourceId:       srcId, targetId: tgtId,
       tag:            opts.tag            ?? '',
       curvatureIndex: opts.curvatureIndex ?? parallelCount,
-      _g: null, _lbl: null
+      _g: null, _lbl: null, _renderedTag: null
     };
     data._g   = _makeGroup(data);
     data._lbl = _makeLabel();
     _svg().appendChild(data._g);
     Store.addEdge(data);
     update(data.id);
+    EB.emit('graph:changed');
     return data;
   }
 
@@ -155,9 +157,15 @@ const EM = (() => {
         lbl.style.display = 'inline-block';
         lbl.style.left    = mid.x + 'px';
         lbl.style.top     = mid.y + 'px';
-        LX.render(data.tag, lbl);
+        // Re-render KaTeX only when the tag text actually changed —
+        // update() runs every frame while a node is dragged.
+        if (data._renderedTag !== data.tag) {
+          LX.render(data.tag, lbl);
+          data._renderedTag = data.tag;
+        }
       } else {
         lbl.style.display = 'none';
+        data._renderedTag = null;
       }
     }
   }
@@ -173,6 +181,7 @@ const EM = (() => {
     data._lbl?.remove();
     Store.removeEdge(id);
     if (_selId === id) { _selId = null; EB.emit('panel:close'); }
+    EB.emit('graph:changed');
   }
 
   function clearSel() {
@@ -187,6 +196,7 @@ const EM = (() => {
   }
 
   function load(data) {
+    data._renderedTag = null;
     data._g   = _makeGroup(data);
     data._lbl = _makeLabel();
     _svg().appendChild(data._g);
@@ -207,15 +217,42 @@ const EM = (() => {
     EB.emit('panel:showEdge', id);
   }
 
+  /* ── Connect-mode preview line ─────────────────────────── */
+
+  function _showPreview(srcId, x, y) {
+    const src = Store.nodes.get(srcId);
+    if (!src || !src._el) return;
+    if (!_previewPath) {
+      _previewPath = document.createElementNS(NS, 'path');
+      _previewPath.setAttribute('fill', 'none');
+      _previewPath.setAttribute('stroke', '#6366f1');
+      _previewPath.setAttribute('stroke-width', '1.5');
+      _previewPath.setAttribute('stroke-dasharray', '6 5');
+      _previewPath.setAttribute('pointer-events', 'none');
+      _previewPath.setAttribute('opacity', '0.7');
+      _svg().appendChild(_previewPath);
+    }
+    const scx = src.x + (src._el.offsetWidth  || 120) / 2;
+    const scy = src.y + (src._el.offsetHeight || 40)  / 2;
+    _previewPath.setAttribute('d', `M ${scx} ${scy} L ${x} ${y}`);
+    _previewPath.style.display = '';
+  }
+
+  function _clearPreview() {
+    if (_previewPath) _previewPath.style.display = 'none';
+  }
+
   function init() {
     _lblLayer = document.createElement('div');
     _lblLayer.id = 'edge-labels';
     document.getElementById('canvas-world').appendChild(_lblLayer);
 
-    EB.on('node:moved',      nodeId => updateForNode(nodeId));
-    EB.on('edge:create',     ({ srcId, tgtId, opts }) => create(srcId, tgtId, opts));
-    EB.on('edge:removeById', id => remove(id));
-    EB.on('sel:clearEdges',  () => clearSel());
+    EB.on('node:moved',          nodeId => updateForNode(nodeId));
+    EB.on('edge:create',         ({ srcId, tgtId, opts }) => create(srcId, tgtId, opts));
+    EB.on('edge:removeById',     id => remove(id));
+    EB.on('sel:clearEdges',      () => clearSel());
+    EB.on('edge:preview',        ({ srcId, x, y }) => _showPreview(srcId, x, y));
+    EB.on('edge:preview:clear',  () => _clearPreview());
   }
 
   return { init, create, update, updateForNode, remove, load, clearSel };

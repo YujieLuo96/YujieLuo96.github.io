@@ -9,6 +9,29 @@ var LightningGun = (() => {
         return { main: `hsl(${hue},100%,80%)`, core: '#fff', glow: `hsl(${hue},100%,65%)` };
     }
 
+    // 中点位移分形折线：每帧重新生成 → 天然电闪抖动，无需存历史轨迹
+    function _frac(x1, y1, x2, y2, iters, disp) {
+        let pts = [[x1, y1], [x2, y2]];
+        for (let d = 0; d < iters; d++) {
+            const next = [pts[0]];
+            for (let i = 0; i < pts.length - 1; i++) {
+                const mx = (pts[i][0] + pts[i + 1][0]) * 0.5 + (Math.random() - 0.5) * disp;
+                const my = (pts[i][1] + pts[i + 1][1]) * 0.5 + (Math.random() - 0.5) * disp;
+                next.push([mx, my], pts[i + 1]);
+            }
+            pts = next;
+            disp *= 0.55;
+        }
+        return pts;
+    }
+
+    function _strokePts(ctx, pts) {
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.stroke();
+    }
+
     class LightningBolt extends PlayerBulletBase {
         constructor(x, y, opts = {}) {
             super(x, y, { damage: opts.damage || 2.5, piercing: false });
@@ -18,8 +41,8 @@ var LightningGun = (() => {
             this.turn         = opts.turn || 0.11;
             this.target       = null;
             this.col          = opts.col || { main: '#fff8a0', core: '#fff', glow: '#ffe040' };
-            this.trail        = [];
             this.age          = 0;
+            this._sparked     = false;  // 接近目标时只迸一次电花
             this.needsEnemies = true; // flag for WeaponManager bullet update
         }
 
@@ -49,40 +72,73 @@ var LightningGun = (() => {
             }
             this.x += this.vx * dt;
             this.y += this.vy * dt;
-            // zigzag trail point
-            this.trail.push({ x: this.x + (Math.random() - 0.5) * 4, y: this.y });
-            if (this.trail.length > 12) this.trail.shift();
+            // 命中端点电花：贴近目标的一瞬迸出火花（每弹一次）
+            if (!this._sparked && this.target && this.target.alive) {
+                const dx = this.target.x - this.x, dy = this.target.y - this.y;
+                if (dx * dx + dy * dy < 22 * 22) {
+                    this._sparked = true;
+                    ParticleSystem.spawn(this.target.x, this.target.y, {
+                        count: 4, speed: 5, life: 12, size: 1.8,
+                        shape: 'spark', drag: 0.92,
+                        colors: [this.col.glow, this.col.main, '#fff']
+                    });
+                }
+            }
             if (this.age > 90 || this.isOffscreen()) this.alive = false;
         }
 
         draw(ctx) {
-            // Electric zigzag trail
-            if (this.trail.length > 1) {
-                ctx.strokeStyle = this.col.glow;
-                ctx.lineWidth   = 1.5;
-                ctx.shadowColor = this.col.glow; ctx.shadowBlur = 10;
-                ctx.globalAlpha = 0.55;
-                ctx.beginPath();
-                ctx.moveTo(this.trail[0].x, this.trail[0].y);
-                for (let i = 1; i < this.trail.length; i++) ctx.lineTo(this.trail[i].x, this.trail[i].y);
-                ctx.stroke();
-                ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-            }
-            // Bolt head
+            // 电弧尾迹：沿速度反方向的分形折线（每帧重生 → 自然抖动），带一条分叉
+            const spd  = this.speed;
+            const len  = 8 + spd * 2.6;
+            const tx   = this.x - this.vx / spd * len;
+            const ty   = this.y - this.vy / spd * len;
+            const pts  = _frac(this.x, this.y, tx, ty, 3, 9);
+            ctx.shadowColor = this.col.glow; ctx.shadowBlur = 10;
+            // 外层辉光弧
+            ctx.strokeStyle = this.col.glow;
+            ctx.lineWidth   = 2.2;
+            ctx.globalAlpha = 0.45;
+            _strokePts(ctx, pts);
+            // 白亮主脊
+            ctx.strokeStyle = this.col.core;
+            ctx.lineWidth   = 1;
+            ctx.globalAlpha = 0.9;
+            _strokePts(ctx, pts);
+            // 一级分叉：从折线中段斜出一条短支（递归分形一层）
+            const mid  = pts[Math.floor(pts.length / 2)];
+            const bAng = Math.atan2(ty - this.y, tx - this.x) + (Math.random() < 0.5 ? 0.8 : -0.8);
+            const bLen = len * 0.4;
+            ctx.strokeStyle = this.col.main;
+            ctx.lineWidth   = 1;
+            ctx.globalAlpha = 0.55;
+            _strokePts(ctx, _frac(mid[0], mid[1],
+                mid[0] + Math.cos(bAng) * bLen, mid[1] + Math.sin(bAng) * bLen, 2, 6));
+            ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+            // Bolt head（箭头形电芒 + 出膛光斑）
             const ang = Math.atan2(this.vy, this.vx);
             ctx.save();
             ctx.translate(this.x, this.y);
             ctx.rotate(ang + Math.PI / 2);
-            ctx.shadowColor = this.col.glow; ctx.shadowBlur = 12;
             const g = ctx.createLinearGradient(0, -15, 0, 6);
             g.addColorStop(0,   this.col.core);
             g.addColorStop(0.4, this.col.main);
             g.addColorStop(1,   'rgba(0,0,0,0)');
             ctx.fillStyle = g;
-            ctx.fillRect(-2.5, -15, 5, 19);
+            ctx.beginPath();
+            ctx.moveTo(0, -16); ctx.lineTo(3, -6); ctx.lineTo(1.6, 5);
+            ctx.lineTo(-1.6, 5); ctx.lineTo(-3, -6);
+            ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#fff';
             ctx.fillRect(-1, -13, 2, 14);
-            ctx.shadowBlur = 0;
+            if (this.age < 3) {
+                const k = 1 - this.age / 3;
+                ctx.globalAlpha = 0.8 * k;
+                ctx.fillStyle = this.col.core;
+                ctx.beginPath(); ctx.arc(0, 0, 5 + k * 6, 0, Math.PI * 2); ctx.fill();
+                ctx.globalAlpha = 1;
+            }
             ctx.restore();
         }
 

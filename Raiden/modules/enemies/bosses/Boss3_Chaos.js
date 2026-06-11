@@ -16,6 +16,13 @@ var Boss3_Chaos = (() => {
             this.shootInterval= 22;
             this.rotAngle     = 0;
             this.tentacleAng  = 0;
+            this.windmill     = 0;    // >0 = 风车持续剩余帧（传送落点展开）
+            this.windRot      = 0;
+            this.windDir      = 1;    // 每次传送反转旋向
+            this.windEmit     = 0;
+            this.charge       = 0;    // >0 = 花开大招蓄力剩余帧
+            this.chargeMax    = 36;
+            this.specialTimer = 0;
         }
         update(dt, fc) {
             if (!this.entered) {
@@ -28,40 +35,99 @@ var Boss3_Chaos = (() => {
             if (ratio <= 0.6 && this.phase < 2) {
                 this.phase = 2; this.shootInterval = 16;
                 this.teleportCool = 60;
+                ExplosionFX.mediumEnemy(this.x - 24, this.y, '#f4f');
+                ExplosionFX.mediumEnemy(this.x + 24, this.y - 10, '#a4f');
             }
             if (ratio <= 0.3 && this.phase < 3) {
-                this.phase = 3; this.shootInterval = 10;
+                this.phase = 3; this.shootInterval = 11;
+                ExplosionFX.mediumEnemy(this.x - 20, this.y + 12, '#f43');
+                ExplosionFX.mediumEnemy(this.x + 20, this.y - 12, '#f4f');
             }
             if (ratio <= 0.1 && this.phase < 4) {
-                this.phase = 4; this.shootInterval = 7;
+                this.phase = 4; this.shootInterval = 12;   // 单发更重，节奏放给风车/花弹叠层
+                ExplosionFX.mediumEnemy(this.x - 26, this.y, '#fc0');
+                ExplosionFX.mediumEnemy(this.x + 26, this.y, '#fc0');
+                ExplosionFX.mediumEnemy(this.x, this.y - 20, '#fff');
             }
 
             this.rotAngle    += 0.02 * dt;
-            this.tentacleAng += 0.03 * dt;
+            this.tentacleAng += (this.phase >= 4 ? 0.045 : 0.03) * dt;
 
-            // Teleport (phase 2+)
-            if (this.phase >= 2) {
+            // 残血能量泄漏：紫色余烬 + 火星（节流）
+            if (ratio <= 0.3) {
+                if (fc % 7 < 1)
+                    ParticleSystem.spawn(this.x + (Math.random() - 0.5) * 40, this.y + (Math.random() - 0.5) * 30,
+                        { count: 1, colors: ['#a4f', '#64f', '#856'], speed: 0.6, life: 36, size: 3, gravity: -0.015 });
+                if (fc % 15 < 1)
+                    ParticleSystem.spawn(this.x, this.y,
+                        { count: 2, colors: ['#fc8', '#f6f'], speed: 2.6, life: 12, size: 2, shape: 'spark' });
+            }
+
+            // Teleport (phase 2+) —— 落点展开双向反转风车（蓄力中不闪现）
+            if (this.phase >= 2 && this.charge <= 0) {
                 this.teleportCool -= dt;
                 if (this.teleportCool <= 0) {
-                    this.teleportCool = 80 - this.phase * 12;
                     this.targetX = 60 + Math.random() * (Renderer.W - 120);
                     this.targetY = 80 + Math.random() * 140;
                     // Teleport flash effect
                     ParticleSystem.spawn(this.x, this.y, { count: 20, colors: ['#a4f','#64f','#fff'], speed: 5, life: 20 });
                     this.x = this.targetX; this.y = this.targetY;
                     ParticleSystem.spawn(this.x, this.y, { count: 20, colors: ['#a4f','#64f','#fff'], speed: 5, life: 20 });
+                    this.windmill = 55 + this.phase * 8;
+                    this.windDir *= -1;                          // 双向反转
+                    this.windEmit = 0;
+                    this.teleportCool = this.windmill + 55 - this.phase * 5;
+                    this.shootTimer = -(this.windmill + 35);     // 风车期间普攻静默 + 收尾呼吸
                 }
-            } else {
+            } else if (this.phase < 2) {
                 // Phase 1: gentle sway
                 const dx = this.targetX - this.x, dy = this.targetY - this.y;
                 const d  = Math.sqrt(dx * dx + dy * dy) + 0.01;
                 this.x  += (dx / d) * Math.min(d, 1.5) * dt;
                 this.y  += (dy / d) * Math.min(d, 1.5) * dt;
-                this.targetX = Renderer.W / 2 + Math.sin(fc * 0.015) * 160;
+                this.targetX = Renderer.W / 2 + Math.sin(fc * 0.015) * Math.min(160, Renderer.W * 0.4 - 60);
                 this.targetY = 120 + Math.sin(fc * 0.01) * 40;
             }
 
             const bullets = [];
+
+            // ── 双向反转风车：青/品红水晶弹流（持续流 → 自带节奏）─────────
+            if (this.windmill > 0) {
+                this.windmill -= dt;
+                this.windRot  += 0.10 * this.windDir * dt;
+                this.windEmit += dt;
+                if (this.windEmit >= 6) {
+                    this.windEmit = 0;
+                    const arms = this.phase >= 4 ? 4 : 3;
+                    bullets.push(...BulletPatterns.spiralArms(this.x, this.y, arms, this.windRot, 3.0,
+                        { bulletOpts: { type: 'shard', radius: 4, color: '#3ef', life: 300 } }));
+                    bullets.push(...BulletPatterns.spiralArms(this.x, this.y, arms, -this.windRot + 0.5, 3.0,
+                        { bulletOpts: { type: 'shard', radius: 4, color: '#f4f', life: 300 } }));
+                }
+            }
+
+            // ── 花开大招（phase 3+）：蓄力 36 帧 → 双层 bloom 星弹 ────────
+            if (this.phase >= 3) {
+                if (this.charge > 0) {
+                    this.charge -= dt;
+                    if (fc % 5 < 1)
+                        ParticleSystem.spawn(this.x, this.y,
+                            { count: 2, colors: ['#f6c', '#fff', '#f4f'], speed: 0.6, life: 14, size: 2.3, scatter: 26 });
+                    if (this.charge <= 0) {
+                        bullets.push(...BulletPatterns.bloom(this.x, this.y, 18, Math.random() * Math.PI));
+                        bullets.push(...BulletPatterns.bloom(this.x, this.y, 12, Math.random() * Math.PI,
+                            { speed: 1.3, bulletOpts: { color: '#fc6', accel: 0.055, maxSpeed: 5.2 } }));
+                        this.shootTimer = Math.min(this.shootTimer, -40);   // 爆发后呼吸间隙
+                    }
+                    return bullets.length ? bullets : null;   // 蓄力期间停普攻
+                }
+                this.specialTimer += dt;
+                if (this.specialTimer >= (this.phase >= 4 ? 120 : 155) && this.windmill <= 0) {
+                    this.specialTimer = 0;
+                    this.charge = this.chargeMax;
+                }
+            }
+
             this.shootTimer += dt;
             if (this.shootTimer >= this.shootInterval) {
                 this.shootTimer = 0;
@@ -85,23 +151,24 @@ var Boss3_Chaos = (() => {
             const bullets = [];
             switch (this.phase) {
                 case 1:
-                    bullets.push(...BulletPatterns.aimed(this.x, this.y + 48, p.x, p.y, 6, { count: 3, spread: 0.45 }));
+                    bullets.push(...BulletPatterns.aimed(this.x, this.y + 48, p.x, p.y, 5.0, { count: 3, spread: 0.45 }));
                     if (fc % 35 < 1) bullets.push(...BulletPatterns.ring(this.x, this.y, 16, 4.5, fc * 0.04));
                     break;
                 case 2:
-                    bullets.push(...BulletPatterns.ring(this.x, this.y, 18, 5.5, fc * 0.05));
-                    bullets.push(...BulletPatterns.spiral(this.x, this.y, 6, 5, fc * 0.08));
+                    bullets.push(...BulletPatterns.ring(this.x, this.y, 18, 5.2, fc * 0.05));
+                    bullets.push(...BulletPatterns.aimed(this.x, this.y, p.x, p.y, 5.0, { count: 3, spread: 0.4 }));
                     break;
                 case 3:
-                    bullets.push(...BulletPatterns.ring(this.x, this.y, 20, 5.5, fc * 0.06));
-                    bullets.push(...BulletPatterns.aimed(this.x, this.y, p.x, p.y, 7, { count: 5, spread: 0.6 }));
-                    if (fc % 30 < 1) bullets.push(...BulletPatterns.spiral(this.x, this.y, 8, 6, fc * 0.1));
+                    bullets.push(...BulletPatterns.ring(this.x, this.y, 20, 5.2, fc * 0.06));
+                    bullets.push(...BulletPatterns.aimed(this.x, this.y, p.x, p.y, 5.4, { count: 5, spread: 0.6 }));
                     break;
-                case 4:
-                    bullets.push(...BulletPatterns.ring(this.x, this.y, 24, 6, fc * 0.07));
-                    bullets.push(...BulletPatterns.spiral(this.x, this.y, 8, 6.5, fc * 0.11));
-                    bullets.push(...BulletPatterns.aimed(this.x, this.y, p.x, p.y, 8, { count: 6, spread: 0.7 }));
+                case 4: {
+                    // 狂暴：大环留缺口（缺口朝玩家，给活路）+ 重瞄准扇
+                    const gapA = Math.atan2(p.y - this.y, p.x - this.x);
+                    bullets.push(...BulletPatterns.ringGap(this.x, this.y, 24, 5.5, fc * 0.07, gapA, 0.5));
+                    bullets.push(...BulletPatterns.aimed(this.x, this.y, p.x, p.y, 5.5, { count: 6, spread: 0.7 }));
                     break;
+                }
             }
             return bullets;
         }
@@ -246,6 +313,18 @@ var Boss3_Chaos = (() => {
                 ctx.fillStyle   = '#fff';
                 ctx.beginPath(); ctx.ellipse(-5, -6, 3.5, 2, -0.5, 0, Math.PI * 2); ctx.fill();
                 ctx.globalAlpha = 1;
+            }
+
+            // ── 花开大招蓄力 telegraph：瞳孔聚能光球由小变大、粉色脉动 ────
+            if (!flash && this.charge > 0) {
+                const prog = 1 - this.charge / this.chargeMax;
+                const cr = 4 + prog * 15 + Math.sin((fc || 0) * 0.55) * 2;
+                const og = ctx.createRadialGradient(0, 0, 0, 0, 0, cr);
+                og.addColorStop(0,    '#fff');
+                og.addColorStop(0.45, 'rgba(255,120,220,0.95)');
+                og.addColorStop(1,    'rgba(255,60,200,0)');
+                ctx.fillStyle = og;
+                ctx.beginPath(); ctx.arc(0, 0, cr, 0, Math.PI * 2); ctx.fill();
             }
 
             this.drawHpBar(ctx, 100, -62);

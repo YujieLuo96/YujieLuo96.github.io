@@ -15,12 +15,14 @@ var Spectre = (() => {
             this.visible    = true;
             this.alpha      = 1;
             this.shotTimer  = 0;
-            this.shotInt    = 36;
+            this.shotInt    = 38;
             this.echoes     = [];
             this.echoTimer  = 0;
+            this.smokeTimer = 0;
         }
 
         update(dt, fc) {
+            let out = null;
             switch (this.phase) {
                 case 'entry':
                     this.y += this.speed * 1.4 * dt;
@@ -40,12 +42,19 @@ var Spectre = (() => {
                     } else {
                         this.alpha = Math.max(0.08, this.alpha - 0.04 * dt);
                         if (this.visTimer >= this.visMax * 0.7) {
+                            // 相位现身：瞬移逼近 + 签名技蛇形弹三连
                             this.visible = true; this.visTimer = 0;
                             const p = Player.getPos();
                             const dx = p.x - this.x, dy = p.y - this.y;
                             const d  = Math.sqrt(dx*dx + dy*dy) || 1;
                             this.x  += (dx / d) * 22;
                             this.y  += (dy / d) * 12;
+                            ParticleSystem.spawn(this.x, this.y, {
+                                count: 8, speed: 2.6, size: 2, life: 16,
+                                colors: ['#c6f', '#a3f', '#fff'], shape: 'spark'
+                            });
+                            out = BulletPatterns.snake(this.x, this.y + 20, p.x, p.y, 3.6, 3,
+                                { bulletOpts: { color: '#c6f', radius: 4.5, life: 330 } });
                         }
                     }
 
@@ -62,12 +71,17 @@ var Spectre = (() => {
                         .map(e => ({ x: e.x, y: e.y, alpha: e.alpha - 0.022 * dt }))
                         .filter(e => e.alpha > 0);
 
-                    if (this.visible) {
+                    if (this.visible && !out) {
                         this.shotTimer += dt;
                         if (this.shotTimer >= this.shotInt) {
                             this.shotTimer = 0;
                             const p = Player.getPos();
-                            return BulletPatterns.aimed(this.x, this.y + 22, p.x, p.y, 6.0, { count: 3, spread: 0.18 });
+                            ParticleSystem.spawn(this.x, this.y + 22, {
+                                count: 3, angle: Math.PI / 2, spread: 0.8, speed: 2.2,
+                                size: 1.8, life: 10, colors: ['#d8f', '#a4f'], shape: 'spark'
+                            });
+                            out = BulletPatterns.aimed(this.x, this.y + 22, p.x, p.y, 5.2,
+                                { count: 2, spread: 0.16 });
                         }
                     }
                     if (this.haltTimer >= this.haltMax) this.phase = 'exit';
@@ -79,9 +93,21 @@ var Spectre = (() => {
                     this.y += this.speed * 2.2 * dt;
                     break;
             }
+
+            if (this.hp < this.maxHp * 0.4) {
+                this.smokeTimer += dt;
+                if (this.smokeTimer >= 8) {
+                    this.smokeTimer = 0;
+                    ParticleSystem.spawn(this.x + (Math.random() - 0.5) * 16, this.y - 8, {
+                        count: 1, angle: -Math.PI / 2, spread: 0.7, speed: 0.7,
+                        size: 3, life: 34, colors: ['#867', '#a8b', '#656'], drag: 0.985
+                    });
+                }
+            }
+
             this.checkEntered();
             if (this.isOffscreen()) this.alive = false;
-            return null;
+            return out;
         }
 
         draw(ctx, dt, fc) {
@@ -99,7 +125,10 @@ var Spectre = (() => {
             }
 
             ctx.save();
-            ctx.globalAlpha = this.alpha;
+            // 渐隐时叠加轻微闪烁，强化相位感
+            const shimmer = this.alpha < 0.85
+                ? 1 + Math.sin((fc || 0) * 0.5) * 0.12 * (1 - this.alpha) : 1;
+            ctx.globalAlpha = Math.max(0, Math.min(1, this.alpha * shimmer));
             ctx.translate(this.x, this.y);
             const flash = this._applyFlash(ctx, dt);
             const pulse = 0.5 + Math.sin((fc || 0) * 0.22) * 0.45;
@@ -153,6 +182,21 @@ var Spectre = (() => {
                 ctx.fillStyle = 'rgba(240,200,255,0.9)';
                 ctx.beginPath(); ctx.ellipse(-1,-11.5,1.4,2.2,0,0,Math.PI*2); ctx.fill();
                 ctx.shadowBlur = 0;
+
+                // 瞄准弹预警：开火前 10 帧炮口聚能
+                if (this.visible && this.phase === 'hunt') {
+                    const chg = this.shotTimer - (this.shotInt - 10);
+                    if (chg > 0) {
+                        const k = chg / 10;
+                        const tg = ctx.createRadialGradient(0, 22, 0, 0, 22, 3 + k * 5);
+                        tg.addColorStop(0, `rgba(240,190,255,${0.45 + k * 0.5})`);
+                        tg.addColorStop(0.6, 'rgba(180,80,255,0.4)');
+                        tg.addColorStop(1, 'rgba(100,0,200,0)');
+                        ctx.fillStyle = tg;
+                        ctx.beginPath(); ctx.arc(0, 22, 3 + k * 5, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+
                 if (!this.visible || this.alpha < 0.75) {
                     const phAlpha = ctx.globalAlpha * (1 - this.alpha) * 0.55;
                     ctx.globalAlpha = Math.max(0, phAlpha);
@@ -160,6 +204,17 @@ var Spectre = (() => {
                     for (let i = 0; i < 4; i++) {
                         const a = (i / 4) * Math.PI * 2 + (fc || 0) * 0.04;
                         ctx.beginPath(); ctx.arc(0, 0, 20 + Math.sin(a) * 3, a - 0.4, a + 0.4); ctx.stroke();
+                    }
+                    // 现身预警：相位环在即将现身的最后 14 帧向内收束并增亮
+                    if (!this.visible && this.phase === 'hunt') {
+                        const left = this.visMax * 0.7 - this.visTimer;
+                        if (left < 14) {
+                            const k = 1 - Math.max(0, left) / 14;
+                            ctx.globalAlpha = Math.min(1, 0.25 + k * 0.65);
+                            ctx.strokeStyle = '#e9f';
+                            ctx.lineWidth = 1.2 + k;
+                            ctx.beginPath(); ctx.arc(0, 0, 26 - k * 16, 0, Math.PI * 2); ctx.stroke();
+                        }
                     }
                     ctx.globalAlpha = this.alpha;
                 }

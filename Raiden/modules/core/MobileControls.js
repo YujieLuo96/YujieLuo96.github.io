@@ -126,6 +126,18 @@ var MobileControls = (() => {
         zone.addEventListener('touchmove',   _onMove,  { passive: false });
         zone.addEventListener('touchend',    _onEnd,   { passive: false });
         zone.addEventListener('touchcancel', _onEnd,   { passive: false });
+        // 混合设备（触屏笔记本）：摇杆区只消费触摸，鼠标事件原样转发给游戏画布，
+        // 避免激活后左侧 62% 区域鼠标被架空
+        ['mousedown', 'mousemove', 'mouseup'].forEach(type => {
+            zone.addEventListener(type, e => {
+                const cv = (typeof Renderer !== 'undefined' && Renderer.getCanvas) ? Renderer.getCanvas() : null;
+                if (!cv) return;
+                cv.dispatchEvent(new MouseEvent(type, {
+                    clientX: e.clientX, clientY: e.clientY,
+                    button: e.button, buttons: e.buttons, bubbles: false,
+                }));
+            });
+        });
 
         const bombBtn = document.createElement('div');
         bombBtn.textContent = 'BOMB';
@@ -183,13 +195,25 @@ var MobileControls = (() => {
         if (ctrl) ctrl.style.display = 'none';
     }
 
+    function _activate() {
+        if (_active) return;
+        _active = true;
+        _fit();
+        _build();
+        window.addEventListener('resize', _fit);
+    }
+
     return {
         init() {
             if (!_isTouch()) return;
-            _active = true;
-            _fit();
-            _build();
-            window.addEventListener('resize', _fit);
+            // 关键区分：仅"有触摸硬件"≠"用触摸玩"。
+            // 触屏笔记本等混合设备若立即激活，虚拟摇杆 zone 会拦截鼠标、
+            // Player 只读摇杆导致键盘失效 → 整个游戏键鼠瘫痪。
+            // 主输入为触摸（手机/平板，pointer:coarse）→ 立即激活；
+            // 否则延迟到第一次真实触摸再激活。
+            const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+            if (coarse) { _activate(); return; }
+            window.addEventListener('touchstart', _activate, { once: true, passive: true });
         },
         isActive()  { return _active; },
         getJoyDir() { return { vx: _joyVx, vy: _joyVy }; }

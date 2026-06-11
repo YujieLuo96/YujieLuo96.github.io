@@ -1,5 +1,5 @@
 var GameCore = (() => {
-    const STATE = { MENU:'menu', PLAYING:'playing', PAUSED:'paused', GAMEOVER:'gameover' };
+    const STATE = { MENU:'menu', PLAYING:'playing', PAUSED:'paused', GAMEOVER:'gameover', INTERMISSION:'intermission' };
 
     // Boss summoned when player first reaches this power level
     const POWER_BOSS_TRIGGERS = [
@@ -25,8 +25,6 @@ var GameCore = (() => {
     let _dt             = 1;
     let _fc             = 0;
 
-    let _powerBossTriggered = new Set();
-
     let _score          = 0;
     let _highScore      = parseInt(localStorage.getItem('raidenHS') || '0', 10);
     let _lives          = 3;
@@ -46,6 +44,21 @@ var GameCore = (() => {
     let _shakeDur = 0;
     let _shakeX   = 0;
     let _shakeY   = 0;
+
+    // ── 单局战绩统计 ────────────────────────────────────────────────────
+    let _kills     = 0;
+    let _maxCombo  = 0;
+    let _runFrames = 0;
+
+    // ── 打击感：顿帧 + 受击红闪 ─────────────────────────────────────────
+    let _hitStop  = 0;    // 大型击杀瞬间世界冻结帧数（渲染照常）
+    let _dmgFlash = 0;    // 受击全屏红闪计时
+    const DMG_FLASH_FRAMES = 14;
+
+    // ── 过关结算横幅（INTERMISSION 状态） ───────────────────────────────
+    const INTERMISSION_FRAMES = 230;
+    let _imTimer = 0;
+    let _imData  = null;   // { stageIdx, nextName, allClear, kills, timeSec }
 
     const _popups = [];
 
@@ -81,14 +94,44 @@ var GameCore = (() => {
             _addPopup(Renderer.W / 2, Renderer.H / 2 - 30, '⚠ DANGER! LOW HEALTH!', '#ff4444');
         }
         _shake(10, 22);
+        _dmgFlash = DMG_FLASH_FRAMES;
         AudioManager.playPlayerHit();
         ExplosionFX.playerHit(Player.x, Player.y);
+        // 标准 STG 惯例：死亡瞬间清空全屏敌弹，避免复活即被残留弹幕秒杀
+        EnemyManager.clearBullets();
         if (_lives <= 0) {
             _setState(STATE.GAMEOVER);
             AudioManager.playGameOver();
+            AudioManager.stopBgm();
+            _saveBestRun();
         } else {
             Player.restoreInvincibility();
         }
+    }
+
+    // ── 最佳战绩持久化（按分数判优） ────────────────────────────────────
+    function _loadBestRun() {
+        try { return JSON.parse(localStorage.getItem('raidenBest')) || null; }
+        catch { return null; }
+    }
+    function _saveBestRun() {
+        const best = _loadBestRun();
+        if (best && _score <= (best.score || 0)) return;
+        try {
+            localStorage.setItem('raidenBest', JSON.stringify({
+                score: _score, kills: _kills, combo: _maxCombo,
+                timeSec: Math.floor(_runFrames / 60),
+                stage: StageManager.getStageName(),
+            }));
+        } catch { /* ignore */ }
+    }
+
+    // Boss 出场统一警告：横幅 + 震屏 + 音效（供火力触发、关卡波次、无尽模式共用）
+    function _bossWarning(kind) {
+        _addPopup(Renderer.W / 2, Renderer.H / 3,
+            `⚠ ${POWER_BOSS_NAMES[kind] || 'BOSS'}  INCOMING!`, '#ff3333');
+        _shake(12, 30);
+        AudioManager.playBossAppear();
     }
 
     function _isBossType(type) {
@@ -99,6 +142,8 @@ var GameCore = (() => {
     function _handleEnemyKill(enemy) {
         const base   = enemy.score || 0;
         _combo++;
+        _kills++;
+        if (_combo > _maxCombo) _maxCombo = _combo;
         _comboTimer  = 120;
         _comboMult   = Math.min(5, 1 + Math.floor(_combo / 8) * 0.5);
         const earned = _addScore(base);
@@ -107,9 +152,11 @@ var GameCore = (() => {
         if (_isBossType(enemy.type)) {
             ExplosionFX.boss(enemy.x, enemy.y);
             AudioManager.playBossDie();
+            _hitStop = Math.max(_hitStop, 6);   // Boss 击杀顿帧
         } else if (enemy.type === 'midboss' || enemy.type === 'midboss2') {
             ExplosionFX.largeEnemy(enemy.x, enemy.y);
             AudioManager.playExplosion('large');
+            _hitStop = Math.max(_hitStop, 3);
         } else if (enemy.type === 'bomber' || enemy.type === 'elite' ||
                    enemy.type === 'gunship' || enemy.type === 'predator' || enemy.type === 'carrier') {
             ExplosionFX.mediumEnemy(enemy.x, enemy.y);
@@ -147,10 +194,19 @@ var GameCore = (() => {
                 const b = pbullets[bi];
                 if (!b.alive) continue;
                 const bb = b.getBounds();
-                if (b.type === 'plasma' && b.exploding) {
-                    if (Collision.rectsOverlap(bb, eb)) {
-                        if (e.takeDamage(b.damage)) _handleEnemyKill(e);
+                if (b.type === 'plasma') {
+                    // 等离子弹：命中后触发爆炸（而非直接销毁），爆炸期间对范围内
+                    // 每个敌人结算一次 AOE 伤害（hitSet 防止 14 帧爆炸窗口重复扣血）
+                    if (!Collision.rectsOverlap(bb, eb)) continue;
+                    if (!b.hitSet) b.hitSet = new Set();
+                    if (b.hitSet.has(e)) continue;
+                    if (!b.exploding) {
+                        b.explode();
+                        AudioManager.playExplosion(1);
+                        _shake(5, 12);
                     }
+                    b.hitSet.add(e);
+                    if (e.takeDamage(b.damage)) { _handleEnemyKill(e); break; }
                     continue;
                 }
                 if (!Collision.rectsOverlap(bb, eb)) continue;
@@ -276,7 +332,11 @@ var GameCore = (() => {
 
     // ── Item events ──────────────────────────────────────────────────────
     function _bindItemEvents() {
-        EventBus.on('item:power',      () => { Player.addPower(1); AudioManager.playCollect(); });
+        EventBus.on('item:power',      () => {
+            Player.addPower(1);
+            AudioManager.playCollect();
+            _addPopup(Player.x, Player.y - 34, `▲ PWR LV.${Player.powerLevel}`, '#9f8');
+        });
         EventBus.on('item:bomb',       () => { _bombs = Math.min(5, _bombs + 1); AudioManager.playCollect(); });
         EventBus.on('item:health',     () => { _lives = Math.min(5, _lives + 1); AudioManager.playCollect(); });
         EventBus.on('item:shield',     () => { Player.activateShield(600); AudioManager.playCollect(); });
@@ -295,6 +355,10 @@ var GameCore = (() => {
 
     function _bindInputEvents() {
         EventBus.on('input:keydown', (key) => {
+            // 图鉴优先拦截：打开状态下其余按键（含 Space/P）不应触发游戏操作
+            if (key === 'm' || key === 'M') { Codex.toggle(); return; }
+            if (Codex.isOpen()) { Codex.handleKey(key); return; }
+
             if (key === ' ' || key === 'Space') {
                 if (_state === STATE.PLAYING)  _useBomb(false);
                 else if (_state === STATE.MENU || _state === STATE.GAMEOVER) _startGame();
@@ -305,8 +369,10 @@ var GameCore = (() => {
                 else if (_state === STATE.PAUSED) _setState(STATE.PLAYING);
             }
             if (key === 't' || key === 'T') { _debugMode = !_debugMode; }
-            if (key === 'm' || key === 'M') { Codex.toggle(); return; }
-            if (Codex.isOpen()) { Codex.handleKey(key); return; }
+            if (key === 'n' || key === 'N') {
+                const m = AudioManager.toggleMuted();
+                _addPopup(Renderer.W / 2, Renderer.H / 2, m ? '◈ SOUND OFF' : '◈ SOUND ON', '#8ff');
+            }
 
             // ── Debug-mode controls ─────────────────────────────────────
             if (_debugMode) {
@@ -343,11 +409,13 @@ var GameCore = (() => {
         for (const b of ebullets) b.alive = false;
         for (const e of enemies) {
             if (e.alive) {
-                const dmg = _isBossType(e.type) ? 20 : e.maxHp;
-                e.takeDamage(dmg);
+                // 中型 Boss 同样受钳制伤害，避免一颗炸弹直接秒杀 45/60 HP 的 midboss
+                const capped = _isBossType(e.type) || e.type === 'midboss' || e.type === 'midboss2';
+                const killed = e.takeDamage(capped ? 20 : e.maxHp);
+                if (killed) _handleEnemyKill(e);
             }
         }
-        ExplosionFX.bomb();
+        ExplosionFX.bomb(Player.x, Player.y);   // 冲击波从机体位置扩散
         _shake(14, 30);
         AudioManager.playBomb();
     }
@@ -370,15 +438,23 @@ var GameCore = (() => {
         _weaponFlash        = null;
         _scoreNextMilestone = 10000;
         _popups.length      = 0;
-        _powerBossTriggered = new Set();
+        _kills              = 0;
+        _maxCombo           = 0;
+        _runFrames          = 0;
+        _imTimer            = 0;
+        _imData             = null;
+        _hitStop            = 0;
+        _dmgFlash           = 0;
         Player.reset();
         WeaponManager.reset();
         EnemyManager.reset();
         RewardManager.reset();
         ParticleSystem.clear();
         ExplosionFX.clear();
+        StageManager.init();            // 清空 Boss 已见集合（火力触发去重也依赖它）
         _startStage(0);
         _setState(STATE.PLAYING);
+        AudioManager.startBgm('stage');
     }
 
     function _startStage(idx) {
@@ -448,6 +524,9 @@ var GameCore = (() => {
             if (_scoreMultTimer <= 0) _scoreMult = 1;
         }
 
+        // 受击红闪衰减（不受暂停/顿帧影响，始终自然消退）
+        if (_dmgFlash > 0) _dmgFlash -= rawDt;
+
         // Screen shake
         if (_shakeDur > 0) {
             _shakeDur -= rawDt;
@@ -462,9 +541,39 @@ var GameCore = (() => {
 
         if (Codex.isOpen()) { Codex.update(rawDt); return; }
 
+        // ── 过关结算横幅：战场静默推进，倒计时结束后切入下一关/无尽 ────
+        if (_state === STATE.INTERMISSION) {
+            _fc++;
+            Player.update(_dt, _fc);
+            WeaponManager.update(_dt, Player, EnemyManager.getEnemies(), _fc);
+            RewardManager.update(_dt, _fc);
+            ParticleSystem.update(_dt);
+            ExplosionFX.update(_dt);
+            for (let i = _popups.length - 1; i >= 0; i--) {
+                const p = _popups[i];
+                p.y += p.vy; p.life -= _dt;
+                if (p.life <= 0) _popups.splice(i, 1);
+            }
+            _imTimer -= rawDt;
+            if (_imTimer <= 0) {
+                if (_imData && _imData.allClear) _startEndless();
+                else _startStage(_imData ? _imData.stageIdx + 1 : 0);
+                _imData = null;
+                _setState(STATE.PLAYING);
+            }
+            return;
+        }
+
         if (_state !== STATE.PLAYING) return;
 
         _fc++;
+        _runFrames += rawDt;
+
+        // BGM 情绪跟随战况：有 Boss 时切换为紧张曲目
+        AudioManager.setBgmMood(EnemyManager.hasBoss() ? 'boss' : 'stage');
+
+        // 顿帧：大型击杀瞬间世界冻结数帧（渲染继续），强化打击感
+        if (_hitStop > 0) { _hitStop -= rawDt; return; }
 
         if (_comboTimer > 0) {
             _comboTimer -= _dt;
@@ -480,17 +589,15 @@ var GameCore = (() => {
 
         Player.update(_dt, _fc);
 
-        // Power-level boss triggers — one boss at a time, each kind only once per run
+        // Power-level boss triggers — one boss at a time, each kind only once per run.
+        // 去重统一走 StageManager 的集合：关卡波次已出过的 Boss 不会因火力达标再刷一次
         if (!EnemyManager.hasBoss()) {
             const pw = Player.powerLevel;
             for (const tb of POWER_BOSS_TRIGGERS) {
-                if (pw >= tb.power && !_powerBossTriggered.has(tb.kind)) {
-                    _powerBossTriggered.add(tb.kind);
+                if (pw >= tb.power && !StageManager.isBossSeen(tb.kind)) {
                     StageManager.markBossTriggered(tb.kind);
                     EnemyManager.spawnKind(tb.kind, 1);
-                    _addPopup(Renderer.W / 2, Renderer.H / 3,
-                        `⚠ ${POWER_BOSS_NAMES[tb.kind]}  INCOMING!`, '#ff3333');
-                    _shake(12, 30);
+                    _bossWarning(tb.kind);
                     break;
                 }
             }
@@ -507,19 +614,21 @@ var GameCore = (() => {
 
         _doCollisions();
 
-        // Stage completion
+        // Stage completion → 进入结算横幅（INTERMISSION），数秒后自动切换
         if (!StageManager.isEndless() && StageManager.isComplete()) {
-            const si = StageManager.getStageIdx();
-            if (si + 1 < StageManager.getTotalStages()) {
-                _addPopup(Renderer.W / 2, Renderer.H / 2 - 20,
-                    `STAGE ${si + 1} CLEAR!`, '#ff8');
-                AudioManager.playStageClear();
-                _startStage(si + 1);
-            } else {
-                _addPopup(Renderer.W / 2, Renderer.H / 2 - 20, 'ALL CLEAR!  ENDLESS MODE BEGIN', '#ff0');
-                AudioManager.playStageClear();
-                _startEndless();
-            }
+            const si       = StageManager.getStageIdx();
+            const allClear = si + 1 >= StageManager.getTotalStages();
+            _imData = {
+                stageIdx: si,
+                allClear,
+                nextName: allClear ? 'ENDLESS MODE'
+                                   : (StageData[si + 1] ? StageData[si + 1].name : ''),
+                kills:    _kills,
+                timeSec:  Math.floor(_runFrames / 60),
+            };
+            _imTimer = INTERMISSION_FRAMES;
+            AudioManager.playStageClear();
+            _setState(STATE.INTERMISSION);
         }
     }
 
@@ -535,7 +644,7 @@ var GameCore = (() => {
         WeaponManager.draw(ctx, Player, _fc);
         EnemyManager.drawEnemies(ctx, _dt, _fc);
 
-        if (_state === STATE.PLAYING || _state === STATE.STAGE_CLEAR || _state === STATE.ALL_CLEAR) {
+        if (_state === STATE.PLAYING || _state === STATE.INTERMISSION) {
             Player.draw(ctx, _fc);
         }
 
@@ -662,14 +771,26 @@ var GameCore = (() => {
             powerLevel: Player.powerLevel,
             stageName: StageManager.getStageName(),
             weaponFlash: _weaponFlash,
-            bhWarning: _bhW
+            bhWarning: _bhW,
+            stageProgress: StageManager.getProgress(),
+            muted: AudioManager.isMuted(),
+            dmgFlash: Math.max(0, _dmgFlash / DMG_FLASH_FRAMES)
         };
         UIRenderer.draw(ctx, gd);
         Codex.draw(ctx);
 
-        if (_state === STATE.MENU)     UIRenderer.drawMenu(ctx, _fc);
+        if (_state === STATE.MENU)     UIRenderer.drawMenu(ctx, _fc, _loadBestRun());
         if (_state === STATE.PAUSED)   UIRenderer.drawPause(ctx);
-        if (_state === STATE.GAMEOVER) UIRenderer.drawGameOver(ctx, _score, _highScore);
+        if (_state === STATE.INTERMISSION && _imData) {
+            UIRenderer.drawStageClear(ctx, _imData, _fc, _imTimer / INTERMISSION_FRAMES);
+        }
+        if (_state === STATE.GAMEOVER) {
+            UIRenderer.drawGameOver(ctx, _score, _highScore, {
+                kills: _kills, combo: _maxCombo,
+                timeSec: Math.floor(_runFrames / 60),
+                stage: StageManager.getStageName(),
+            });
+        }
     }
 
     function _loop(ts) {
@@ -685,6 +806,7 @@ var GameCore = (() => {
         init(cfg) {
             Renderer.init(cfg.canvas);
             InputManager.init(cfg.canvas);
+            AudioManager.init();           // 原版漏掉了：AudioContext 解锁监听从未挂载
             BackgroundManager.init();
             ParticleSystem.init();
             WeaponManager.init();
@@ -713,6 +835,7 @@ var GameCore = (() => {
         activateTimeSlow(frames)       { _timeSlowActive = true; _timeSlowTimer = frames || 480; },
         activateMultiplier(m, frames)  { _scoreMult = m || 2; _scoreMultTimer = frames || 600; },
         shake(amt, dur) { _shake(amt, dur); },
-        addPopup(x, y, text, color) { _addPopup(x, y, text, color); }
+        addPopup(x, y, text, color) { _addPopup(x, y, text, color); },
+        bossWarning(kind) { _bossWarning(kind); }
     };
 })();

@@ -12,6 +12,12 @@ var Elite = (() => {
             this.phase        = 0;
             this.phaseTimer   = 0;
             this.shieldHp     = this.behavior === 'shield' ? 3 : 0;
+            // 签名组合技：3 连瞄准速射 + 间歇 ringGap 缺口环
+            this.burstLeft    = 0;
+            this.burstCd      = 0;
+            this.ringTimer    = Math.random() * 60;
+            this.ringInt      = 160;
+            this.smokeTimer   = 0;
         }
         update(dt, fc) {
             this.phaseTimer += dt;
@@ -47,17 +53,61 @@ var Elite = (() => {
             this.x = Math.max(this.w / 2, Math.min(Renderer.W - this.w / 2, this.x));
             this.checkEntered();
             if (this.isOffscreen()) { this.alive = false; return null; }
+
+            if (this.hp < this.maxHp * 0.4) {
+                this.smokeTimer += dt;
+                if (this.smokeTimer >= 8) {
+                    this.smokeTimer = 0;
+                    ParticleSystem.spawn(this.x + (Math.random() - 0.5) * 18, this.y - 6, {
+                        count: 1, angle: -Math.PI / 2, spread: 0.7, speed: 0.7,
+                        size: 3, life: 34, colors: ['#778', '#99a', '#556'], drag: 0.985
+                    });
+                }
+            }
+
             if (this.enteredScreen && this.y < Renderer.H - 60) {
+                const out = [];
+
+                // 3 连瞄准速射（每 7 帧一发）
+                if (this.burstLeft > 0) {
+                    this.burstCd -= dt;
+                    if (this.burstCd <= 0) {
+                        this.burstCd += 7;
+                        this.burstLeft--;
+                        const p = Player.getPos();
+                        ParticleSystem.spawn(this.x, this.y + 17, {
+                            count: 3, angle: Math.PI / 2, spread: 0.8, speed: 2.2,
+                            size: 1.8, life: 10, colors: ['#aef', '#4cf'], shape: 'spark'
+                        });
+                        BulletPatterns.aimed(this.x, this.y + 17, p.x, p.y, 5.2, { count: 1 })
+                            .forEach(b => out.push(b));
+                    }
+                }
                 this.shootTimer += dt;
                 if (this.shootTimer >= this.shootInterval) {
                     this.shootTimer = 0;
-                    if (this.behavior === 'circle')
-                        return BulletPatterns.ring(this.x, this.y, 8, 5, fc * 0.05);
-                    if (this.behavior === 'zigzag')
-                        return BulletPatterns.spiral(this.x, this.y, 6, 4.5, fc * 0.07);
-                    const p = Player.getPos();
-                    return BulletPatterns.aimed(this.x, this.y, p.x, p.y, 5.5, { count: 2, spread: 0.3 });
+                    this.burstLeft  = 3;
+                    this.burstCd    = 0;
                 }
+
+                // 间歇缺口环：缺口大致朝玩家附近，留逃生通道
+                this.ringTimer += dt;
+                if (this.ringTimer >= this.ringInt) {
+                    this.ringTimer = 0;
+                    const p = Player.getPos();
+                    const gapA = Math.atan2(p.y - this.y, p.x - this.x)
+                               + (Math.random() - 0.5) * 1.2;
+                    ParticleSystem.spawn(this.x, this.y, {
+                        count: 6, speed: 2.6, size: 2, life: 14,
+                        colors: ['#8ef', '#fff', '#4cf'], shape: 'spark'
+                    });
+                    BulletPatterns.ringGap(this.x, this.y, 10, 3.2,
+                        Math.random() * 0.6, gapA, 0.5,
+                        { bulletOpts: { color: '#4df', radius: 4, life: 360 } })
+                        .forEach(b => out.push(b));
+                }
+
+                if (out.length > 0) return out;
             }
             return null;
         }
@@ -96,14 +146,15 @@ var Elite = (() => {
             const flash = this._applyFlash(ctx, dt);
 
             if (!flash) {
-                // Engine exhaust
+                // Engine exhaust (flicker)
+                const efl = 1 + Math.sin((fc || 0) * 0.45) * 0.18;
                 ctx.shadowColor = '#2af'; ctx.shadowBlur = 12;
-                const eg = ctx.createRadialGradient(0, 19, 0, 0, 19, 10);
+                const eg = ctx.createRadialGradient(0, 19, 0, 0, 19, 10 * efl);
                 eg.addColorStop(0, 'rgba(100,210,255,0.9)');
                 eg.addColorStop(0.5, 'rgba(20,130,220,0.5)');
                 eg.addColorStop(1, 'rgba(0,60,180,0)');
                 ctx.fillStyle = eg;
-                ctx.beginPath(); ctx.ellipse(0, 19, 7, 10, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(0, 19, 7, 10 * efl, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.shadowBlur = 0;
             }
 
@@ -128,13 +179,35 @@ var Elite = (() => {
                 ctx.strokeStyle = `rgba(0,220,255,${conduit * 0.65})`; ctx.lineWidth = 0.8;
                 ctx.beginPath(); ctx.moveTo(-17,0); ctx.lineTo(-6,-7); ctx.lineTo(6,-7); ctx.lineTo(17,0); ctx.stroke();
                 ctx.beginPath(); ctx.moveTo(-13,10); ctx.lineTo(-4,4); ctx.lineTo(4,4); ctx.lineTo(13,10); ctx.stroke();
-                // Central weapon barrel
+
+                // Wingtip energy blades (pulsing)
+                [-1, 1].forEach(s => {
+                    ctx.fillStyle = `rgba(80,230,255,${0.3 + conduit * 0.4})`;
+                    ctx.beginPath();
+                    ctx.moveTo(s * 21, -2);
+                    ctx.lineTo(s * (26 + conduit * 2), 2);
+                    ctx.lineTo(s * 18, 5);
+                    ctx.closePath(); ctx.fill();
+                });
+
+                // Central weapon barrel + telegraph (burst 前 10 帧聚能)
                 ctx.fillStyle = '#001122';
                 ctx.beginPath(); ctx.rect(-2.5, 4, 5, 13); ctx.fill();
+                const chgB = Math.max(0, this.shootTimer - (this.shootInterval - 10)) / 10;
+                const barrelA = 0.4 + conduit * 0.45 + chgB * 0.5;
                 ctx.shadowColor = '#0af'; ctx.shadowBlur = 10;
-                ctx.fillStyle = `rgba(0,190,255,${0.4 + conduit * 0.45})`;
-                ctx.beginPath(); ctx.arc(0, 17, 3.5, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = `rgba(0,190,255,${Math.min(1, barrelA)})`;
+                ctx.beginPath(); ctx.arc(0, 17, 3.5 + chgB * 3, 0, Math.PI * 2); ctx.fill();
                 ctx.shadowBlur = 0;
+
+                // ringGap 预警：发射前 12 帧扩张的环形轮廓
+                const chgR = Math.max(0, this.ringTimer - (this.ringInt - 12)) / 12;
+                if (chgR > 0) {
+                    ctx.strokeStyle = `rgba(120,235,255,${0.2 + chgR * 0.6})`;
+                    ctx.lineWidth = 1.2 + chgR * 1.6;
+                    ctx.beginPath(); ctx.arc(0, 0, 24 + chgR * 10, 0, Math.PI * 2); ctx.stroke();
+                }
+
                 // Cockpit lens
                 const cg = ctx.createRadialGradient(0, -10, 1, 0, -10, 6);
                 cg.addColorStop(0, '#aaffff'); cg.addColorStop(0.5, '#2299cc'); cg.addColorStop(1, 'rgba(0,80,140,0.25)');

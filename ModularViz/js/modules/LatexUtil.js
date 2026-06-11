@@ -1,7 +1,7 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════
-   LatexUtil
+   LatexUtil — KaTeX rendering helpers
 ═══════════════════════════════════════════════════════════ */
 const LX = (() => {
   const _DELIMITERS = [
@@ -21,6 +21,33 @@ const LX = (() => {
     { left: '$',                   right: '$',                   display: false },
     { left: '\\(',                 right: '\\)',                 display: false }
   ];
+
+  // Convenience macros available in every math region (render-time only;
+  // saved files stay plain LaTeX and remain valid without them).
+  const _MACROS = {
+    '\\R':    '\\mathbb{R}',
+    '\\N':    '\\mathbb{N}',
+    '\\Z':    '\\mathbb{Z}',
+    '\\Q':    '\\mathbb{Q}',
+    '\\C':    '\\mathbb{C}',
+    '\\F':    '\\mathbb{F}',
+    '\\eps':  '\\varepsilon',
+    '\\abs':  '\\left|#1\\right|',
+    '\\norm': '\\left\\lVert#1\\right\\rVert',
+    '\\set':  '\\left\\{#1\\right\\}',
+    '\\inner':'\\left\\langle#1\\right\\rangle'
+  };
+
+  const _KATEX_OPTS = {
+    delimiters: _DELIMITERS,
+    macros: _MACROS,
+    errorColor: '#ef4444',
+    throwOnError: false
+  };
+
+  // Math-region matcher used for preview-safe truncation
+  // ($$ must precede $ in the alternation).
+  const _MATH_RE = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\begin\{(?:equation|align|gather|multline|alignat|CD)\*?\}[\s\S]*?\\end\{(?:equation|align|gather|multline|alignat|CD)\*?\}|\$(?:[^$\\]|\\.)*\$|\\\((?:[^\\]|\\.)*?\\\)/g;
 
   // Replace \\ in plain-text nodes with <br>; skip KaTeX-rendered subtrees.
   function _applyTextBreaks(el) {
@@ -60,12 +87,40 @@ const LX = (() => {
       span.dataset.paraIdx = i;
       span.textContent = part;
       if (window.renderMathInElement) {
-        window.renderMathInElement(span, { delimiters: _DELIMITERS, throwOnError: false });
+        window.renderMathInElement(span, _KATEX_OPTS);
       }
       _applyTextBreaks(span);
       el.appendChild(span);
     });
   }
 
-  return { render };
+  // ── Preview-safe truncation ──────────────────────────────
+  // Cuts the source at ~maxChars without ever splitting a math
+  // region (a half formula renders as an error). Oversized math
+  // regions are either included whole (if reasonable) or dropped.
+  function _truncate(src, maxChars) {
+    src = src.trim();
+    if (src.length <= maxChars) return src;
+    let cut = maxChars;
+    _MATH_RE.lastIndex = 0;
+    let m;
+    while ((m = _MATH_RE.exec(src)) !== null) {
+      const start = m.index, end = m.index + m[0].length;
+      if (start >= cut) break;
+      if (end > cut) {            // budget lands inside this math region
+        cut = (end <= maxChars * 2 || start < 40) ? end : start;
+        break;
+      }
+    }
+    const out = src.slice(0, cut).trimEnd();
+    return out + (out.length < src.length ? ' …' : '');
+  }
+
+  /** Compact rendered preview (node cards): truncated, no indent. */
+  function renderPreview(src, el, maxChars = 240) {
+    if (!src || !src.trim()) { el.innerHTML = ''; return; }
+    render(_truncate(src, maxChars), el, false);
+  }
+
+  return { render, renderPreview };
 })();

@@ -7,7 +7,14 @@ var StageManager = (() => {
     let _endless    = false;
     let _endlessDiff= 1;
     let _endlessTimer = 0;
+    let _endlessBossTimer = 0;   // 无尽模式周期性 Boss 计时
     let _seenBossKinds = new Set();
+
+    // 无尽模式 Boss 池：难度越高解锁越强的 Boss，可重复出场
+    const _ENDLESS_BOSS_POOL = [
+        'midboss', 'midboss2', 'boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7'
+    ];
+    const ENDLESS_BOSS_INTERVAL = 4200;  // 每 ~70 秒一只
 
     const _BOSS_KINDS = new Set([
         'midboss','midboss2','boss1','boss2','boss3','boss4','boss5','boss6','boss7'
@@ -17,7 +24,11 @@ var StageManager = (() => {
         if (!wave) return;
         // Skip if this boss type was already triggered (by power or an earlier wave)
         if (_BOSS_KINDS.has(wave.kind) && _seenBossKinds.has(wave.kind)) return;
-        if (_BOSS_KINDS.has(wave.kind)) _seenBossKinds.add(wave.kind);
+        if (_BOSS_KINDS.has(wave.kind)) {
+            _seenBossKinds.add(wave.kind);
+            // 关卡波次出场的 Boss 同样需要警告横幅与音效（原先只有火力触发的有）
+            if (typeof GameCore !== 'undefined' && GameCore.bossWarning) GameCore.bossWarning(wave.kind);
+        }
         if (wave.formation) {
             EnemyManager.spawnFormation(wave.kind, wave.count || 1, wave.formation);
         } else {
@@ -79,11 +90,21 @@ var StageManager = (() => {
             _endless      = true;
             _endlessDiff  = 1;
             _endlessTimer = 0;
+            _timer        = 0;
+            _endlessBossTimer = 2400;   // 提前预热，首只 Boss 约 30 秒后登场
             _waveIdx      = 0;
             _allSpawned   = false;
         },
 
         markBossTriggered(kind) { _seenBossKinds.add(kind); },
+        isBossSeen(kind)        { return _seenBossKinds.has(kind); },
+
+        // 关卡推进进度 0..1（按最后一波的时间点计），无尽模式返回 null
+        getProgress() {
+            if (_endless || !_waves.length) return null;
+            const last = _waves[_waves.length - 1].at;
+            return last > 0 ? Math.min(1, _timer / last) : null;
+        },
 
         update(dt, fc) {
             _timer += dt;
@@ -96,6 +117,16 @@ var StageManager = (() => {
                     _endlessWave(_endlessDiff);
                 }
                 _endlessDiff = 1 + Math.floor(_timer / 1800);
+
+                // 周期性 Boss：难度逐步解锁更强的池，可重复（不受 _seenBossKinds 限制）
+                _endlessBossTimer += dt;
+                if (_endlessBossTimer >= ENDLESS_BOSS_INTERVAL && !EnemyManager.hasBoss()) {
+                    _endlessBossTimer = 0;
+                    const poolMax = Math.min(_ENDLESS_BOSS_POOL.length, 2 + _endlessDiff);
+                    const kind = _ENDLESS_BOSS_POOL[Math.floor(Math.random() * poolMax)];
+                    EnemyManager.spawnKind(kind, 1);
+                    if (typeof GameCore !== 'undefined' && GameCore.bossWarning) GameCore.bossWarning(kind);
+                }
                 return;
             }
 

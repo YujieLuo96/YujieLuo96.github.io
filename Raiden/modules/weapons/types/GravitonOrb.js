@@ -52,10 +52,27 @@ var GravitonOrb = (() => {
             this.age            = 0;
             this.lightningTimer = 6;
             this.arcTargets     = [];
+            this._suck          = 0;   // 吸入粒子节流计时
         }
 
         update(dt) {
             this.age += dt;
+
+            // 吸入式粒子：在引力半径边缘生成、速度指向球心（每 3 帧 2 粒）
+            this._suck += dt;
+            if (this._suck >= 3) {
+                this._suck -= 3;
+                for (let k = 0; k < 2; k++) {
+                    const a = Math.random() * Math.PI * 2;
+                    const R = this.pullRadius * (0.45 + Math.random() * 0.5);
+                    ParticleSystem.spawn(this.x + Math.cos(a) * R, this.y + Math.sin(a) * R, {
+                        count: 1, angle: a + Math.PI, spread: 0.15,
+                        speed: R / 14, life: 15, size: 1.8,
+                        shape: 'spark', drag: 1.0,
+                        colors: ['#b060ff', '#8030e0', '#e0a0ff']
+                    });
+                }
+            }
 
             if (!this.stopped) {
                 this.y  += this.vy * dt;
@@ -104,18 +121,31 @@ var GravitonOrb = (() => {
             ctx.save();
             ctx.globalAlpha = fade;
 
-            // ── Expanding gravity ripple rings ───────────────────────────
+            // ── 收缩式引力环：从引力边界向球心坍缩的线圈（吸入感）──────────
             // Ring line width and opacity both scale with t
             const rippleLW = 1.0 + t * 2.2;                 // 1.0 … 3.2
             const rp1 = (age % 55) / 55;
             const rp2 = ((age + 27) % 55) / 55;
             ctx.lineWidth = rippleLW;
-            ctx.globalAlpha = fade * (1 - rp1) * (0.25 + t * 0.18);
+            // 半径随相位收缩，越接近球心越亮 → 视觉上被"吸进去"
+            ctx.globalAlpha = fade * rp1 * (0.25 + t * 0.18);
             ctx.strokeStyle = '#9020ff';
-            ctx.beginPath(); ctx.arc(x, y, rp1 * this.pullRadius, 0, Math.PI * 2); ctx.stroke();
-            ctx.globalAlpha = fade * (1 - rp2) * (0.18 + t * 0.14);
-            ctx.beginPath(); ctx.arc(x, y, rp2 * this.pullRadius, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(x, y, (1 - rp1) * this.pullRadius + coreR * 0.5, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = fade * rp2 * (0.18 + t * 0.14);
+            ctx.beginPath(); ctx.arc(x, y, (1 - rp2) * this.pullRadius + coreR * 0.5, 0, Math.PI * 2); ctx.stroke();
             ctx.globalAlpha = fade;
+
+            // ── 扭曲光环：两圈反向旋转的椭圆弧（引力透镜畸变感）────────────
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.lineWidth = 1.2 + t;
+            ctx.rotate(age * 0.045);
+            ctx.strokeStyle = `rgba(170,90,255,${(0.30 + t * 0.15) * fade})`;
+            ctx.beginPath(); ctx.ellipse(0, 0, coreR * 1.55, coreR * 1.02, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.rotate(-age * 0.080);
+            ctx.strokeStyle = `rgba(120,40,230,${(0.20 + t * 0.12) * fade})`;
+            ctx.beginPath(); ctx.ellipse(0, 0, coreR * 1.85, coreR * 1.15, 0, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
 
             // ── Outer nebula halo ────────────────────────────────────────
             // Blur and color intensity scale with t
@@ -224,7 +254,7 @@ var GravitonOrb = (() => {
                 ctx.shadowBlur = 0;
             }
 
-            ctx.globalAlpha = 1;
+            ctx.restore();   // 配对第 121 行的 save（漏掉会把晃动位移泄漏进全局变换，边缘清不掉）
         }
 
         getBounds() {

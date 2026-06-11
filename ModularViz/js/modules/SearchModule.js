@@ -1,8 +1,8 @@
 'use strict';
 
 /* ═══════════════════════════════════════════════════════════
-   SearchModule
-   deps: Store, Canvas
+   SearchModule — ranked search with keyboard navigation
+   deps: Store, Canvas, Status
 ═══════════════════════════════════════════════════════════ */
 const SM = (() => {
   const DEBOUNCE_MS   = 130;
@@ -12,6 +12,8 @@ const SM = (() => {
 
   let _debTimer   = null;
   let _highlights = new Set();
+  let _matches    = [];     // nodes currently shown in the dropdown
+  let _activeIdx  = -1;     // keyboard-highlighted dropdown row
 
   const _$      = id => document.getElementById(id);
   const _input  = ()  => _$('sm-input');
@@ -61,20 +63,23 @@ const SM = (() => {
     Canvas.focusOn(nd.x + w / 2, nd.y + h / 2, FOCUS_SCALE);
   }
 
-  /* ── match computation ── */
+  /* ── match computation (ranked) ── */
+  // Score: title prefix (3) > title substring (2) > content substring (1)
   function _getMatches(q) {
     if (!q) return [];
     const lower   = q.toLowerCase();
-    const results = [];
+    const scored  = [];
     for (const [, nd] of Store.nodes) {
-      const hit = (nd.title   || '').toLowerCase().includes(lower) ||
-                  (nd.content || '').toLowerCase().includes(lower);
-      if (hit) {
-        results.push(nd);
-        if (results.length >= MAX_RESULTS) break;
-      }
+      const title   = (nd.title   || '').toLowerCase();
+      const content = (nd.content || '').toLowerCase();
+      let score = 0;
+      if (title.startsWith(lower))      score = 3;
+      else if (title.includes(lower))   score = 2;
+      else if (content.includes(lower)) score = 1;
+      if (score) scored.push({ nd, score });
     }
-    return results;
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, MAX_RESULTS).map(s => s.nd);
   }
 
   /* ── dropdown rendering ── */
@@ -92,15 +97,39 @@ const SM = (() => {
   }
 
   function _strip(s) {
-    return (s||'').replace(/\$+/g,'').substring(0, CONTENT_STRIP);
+    return (s||'').replace(/\s+/g,' ').replace(/\$+/g,'').trim().substring(0, CONTENT_STRIP);
+  }
+
+  function _pick(nd) {
+    _highlightOne(nd.id);
+    _focusNode(nd.id);
+    _input().value = nd.title;
+    _clrBtn().classList.add('visible');
+    _closeDD();
+  }
+
+  function _closeDD() {
+    _dd().classList.remove('open');
+    _matches = [];
+    _activeIdx = -1;
+  }
+
+  function _setActive(idx) {
+    const dd = _dd();
+    _activeIdx = idx;
+    [...dd.querySelectorAll('.sd-item')].forEach((el, i) =>
+      el.classList.toggle('active', i === idx));
+    if (idx >= 0) dd.children[idx]?.scrollIntoView({ block: 'nearest' });
   }
 
   function _renderDD(matches, q) {
     const dd = _dd();
     dd.innerHTML = '';
+    _matches   = matches;
+    _activeIdx = -1;
     if (!matches.length) { dd.classList.remove('open'); return; }
 
-    matches.forEach(nd => {
+    matches.forEach((nd, i) => {
       const item = document.createElement('div');
       item.className = 'sd-item';
 
@@ -117,14 +146,8 @@ const SM = (() => {
         item.appendChild(sub);
       }
 
-      item.addEventListener('mousedown', e => {
-        e.preventDefault();
-        _highlightOne(nd.id);
-        _focusNode(nd.id);
-        _input().value = nd.title;
-        _clrBtn().classList.add('visible');
-        dd.classList.remove('open');
-      });
+      item.addEventListener('mousedown', e => { e.preventDefault(); _pick(nd); });
+      item.addEventListener('mousemove', () => _setActive(i));
 
       dd.appendChild(item);
     });
@@ -141,27 +164,43 @@ const SM = (() => {
 
   function _onSearch() {
     const q = (_input().value||'').trim();
-    _dd().classList.remove('open');
-    _highlightAll(q);
+    _closeDD();
+    const count = _highlightAll(q);
+    if (q) Status.show(count
+      ? `${count} match${count !== 1 ? 'es' : ''} highlighted`
+      : 'No matches', 2500);
   }
 
   function _onClear() {
     _input().value = '';
     _clrBtn().classList.remove('visible');
     clearHighlights();
-    _dd().classList.remove('open');
+    _closeDD();
     _input().focus();
   }
 
   /* ── public init ── */
   function init() {
-    // Widget HTML is already in the toolbar (index.html); just wire up events.
+    // Widget HTML is already in the toolbar (ModularViz.html); just wire up events.
     const inp = _input();
     if (!inp) return;
     inp.addEventListener('input', _onInput);
     inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter')  { e.preventDefault(); _onSearch(); }
-      if (e.key === 'Escape') { _onClear(); }
+      const open = _dd().classList.contains('open');
+      if (e.key === 'ArrowDown' && open) {
+        e.preventDefault();
+        _setActive((_activeIdx + 1) % _matches.length);
+      } else if (e.key === 'ArrowUp' && open) {
+        e.preventDefault();
+        _setActive((_activeIdx - 1 + _matches.length) % _matches.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (open && _activeIdx >= 0) _pick(_matches[_activeIdx]);
+        else _onSearch();
+      } else if (e.key === 'Escape') {
+        _onClear();
+        inp.blur();
+      }
       e.stopPropagation();
     });
     inp.addEventListener('focus', () => {
@@ -169,14 +208,14 @@ const SM = (() => {
       if (q) _renderDD(_getMatches(q), q);
     });
     inp.addEventListener('blur', () => {
-      setTimeout(() => _dd().classList.remove('open'), 200);
+      setTimeout(_closeDD, 200);
     });
 
     _$('sm-btn').addEventListener('click', _onSearch);
     _clrBtn().addEventListener('click', _onClear);
 
     document.addEventListener('mousedown', e => {
-      if (!_widget()?.contains(e.target)) _dd().classList.remove('open');
+      if (!_widget()?.contains(e.target)) _closeDD();
     });
   }
 
