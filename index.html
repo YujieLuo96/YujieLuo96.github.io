@@ -2,40 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="google-site-verification" content="DWGf9oDf6ntstZbbZs9AH_jUSGHbBa45-AlrT_TakOs">
     <title>Yujie Luo - Personal Homepage</title>
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-responsive.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --accent: #8bc5ff;
+            --link: #9fd0ff;
+            --text: #d6e1f1;
+            --text-strong: #ffffff;
+            --text-muted: #93a7c6;
+            --border-soft: rgba(120, 170, 220, 0.16);
+            --shadow-text: 0 1px 3px rgba(0, 0, 0, 0.55);
+            --sidebar-w: 272px;
+            --font-serif: 'Spectral', Georgia, 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+
         html {
             overflow-x: hidden;
-            background: linear-gradient(to bottom, #0a0a2a 0%, #0f1a30 30%, #1a2b4a 70%, #0a0a2a 100%);
+            background: linear-gradient(to bottom, #060a1f 0%, #0b1830 45%, #0e2140 75%, #070b22 100%);
+            background-attachment: fixed;
             min-height: 100%;
+            scroll-behavior: smooth;
         }
 
         body {
-            font-family: "Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif, "Georgia";
-            color: #f0f0f0;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--text);
+            line-height: 1.75;
             margin: 0;
-            position: relative;
-            background: transparent;
+            font-size: 16px;
             min-height: 100vh;
             -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        #particles-js {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: transparent;
-            pointer-events: none;
-        }
-
+        #particles-js,
         #stars-overlay {
             position: fixed;
             top: 0;
@@ -47,446 +55,467 @@
             pointer-events: none;
         }
 
-        .container {
-            background-color: rgba(10, 20, 50, 0.25);
-            padding: 30px;
-            margin-top: 20px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(120, 170, 220, 0.3);
-            border-radius: 8px;
-            position: relative;
-            box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
-            pointer-events: auto;
-            backdrop-filter: blur(2px);
-            -webkit-backdrop-filter: blur(2px);
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .content {
-            padding: 20px 0;
-        }
-
-        .hit-counter {
-            position: absolute;
-            top: 10px;
-            left: 30px;
-            z-index: 100;
-        }
-
-        .hit-counter a {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        .nav-menu {
-            margin: 15px 0 25px 0;
-            text-align: left;
-        }
-
-        .nav-link {
-            display: inline-block;
-            margin-right: 25px;
-            text-decoration: none;
-            color: #b0d0ff;
-            font-size: 17px;
-            font-weight: 600;
-            padding: 5px 0;
-            position: relative;
-            transition: color 0.2s ease, text-shadow 0.2s ease;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
-                         0 2px 1px rgba(0, 0, 0, 0.5),
-                         0 3px 3px rgba(0, 0, 0, 0.4),
-                         0 0 10px rgba(176, 208, 255, 0.3);
-        }
-
-        .nav-link:hover {
-            color: #ffffff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                         0 2px 3px rgba(0, 0, 0, 0.6),
-                         0 3px 6px rgba(0, 0, 0, 0.5),
-                         0 0 15px rgba(139, 197, 255, 0.7),
-                         0 0 25px rgba(139, 197, 255, 0.4);
-            text-decoration: none;
-        }
-
-        .nav-link:after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: #8bc5ff;
-            transition: width 0.3s ease;
-        }
-
-        .nav-link:hover:after {
-            width: 100%;
-        }
-
-        .header {
-            padding-bottom: 10px;
-            padding-top: 50px;
-        }
-
-        h2 {
-            color: #ffffff;
-            margin-top: 0;
-            margin-bottom: 5px;
-            font-weight: 700;
-            font-size: 28px;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
-                         0 2px 2px rgba(0, 0, 0, 0.7),
-                         0 3px 5px rgba(0, 0, 0, 0.6),
-                         0 4px 8px rgba(0, 0, 0, 0.4),
-                         0 0 15px rgba(0, 30, 60, 0.5),
-                         0 0 25px rgba(0, 40, 80, 0.3);
-            letter-spacing: 0.5px;
-        }
-
-        .profile-text {
-            text-align: left;
-        }
-
-        .profile-links {
-            margin-top: 5px;
-        }
-
-        h4 {
-            color: #e0f0ff;
-            margin-top: 30px;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid rgba(120, 170, 220, 0.4);
-            cursor: pointer;
-            position: relative;
-            font-weight: 700;
-            font-size: 20px;
-            transition: color 0.3s ease, text-shadow 0.3s ease;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                         0 2px 2px rgba(0, 0, 0, 0.6),
-                         0 3px 4px rgba(0, 0, 0, 0.5),
-                         0 0 12px rgba(0, 30, 60, 0.4);
-        }
-
-        h4:hover {
-            color: #ffffff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
-                         0 2px 3px rgba(0, 0, 0, 0.7),
-                         0 3px 6px rgba(0, 0, 0, 0.6),
-                         0 0 15px rgba(139, 197, 255, 0.6),
-                         0 0 20px rgba(139, 197, 255, 0.4);
-        }
-
-        h4:after {
-            content: '−';
-            position: absolute;
-            right: 0;
-            font-weight: bold;
-            color: #b0d0ff;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        h4.collapsed:after {
-            content: '+';
-        }
-
-        hr {
-            border-top: 1px solid rgba(120, 170, 220, 0.3);
-            margin: 25px 0;
-        }
-
-        ul {
-            padding-left: 20px;
-            margin-bottom: 20px;
-        }
-
-        li {
-            margin-bottom: 10px;
-            line-height: 1.5;
-            color: #f0f8ff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.5),
-                         0 2px 3px rgba(0, 0, 0, 0.3);
-        }
-
         a {
-            color: #a0d5ff;
+            color: var(--link);
             text-decoration: none;
-            transition: color 0.2s ease, text-shadow 0.2s ease;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.4),
-                         0 2px 3px rgba(0, 0, 0, 0.2);
+            transition: color 0.15s ease;
         }
 
         a:hover {
             color: #ffffff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                         0 2px 3px rgba(0, 0, 0, 0.6),
-                         0 3px 5px rgba(0, 0, 0, 0.4),
-                         0 0 12px rgba(110, 181, 255, 0.6),
-                         0 0 18px rgba(110, 181, 255, 0.4);
             text-decoration: underline;
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1px;
+            text-decoration-color: rgba(159, 208, 255, 0.55);
         }
 
-        .clearfix::after {
-            content: "";
-            clear: both;
-            display: table;
+        ::selection {
+            background: rgba(139, 197, 255, 0.26);
+            color: #ffffff;
         }
 
-        .section-content {
-            margin-bottom: 10px;
-            color: #f0f8ff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.4),
-                         0 2px 3px rgba(0, 0, 0, 0.2);
+        /* ---------- Sidebar ---------- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-w);
+            padding: 44px 30px 28px;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, rgba(8, 13, 30, 0.62) 0%, rgba(8, 14, 32, 0.42) 100%);
+            border-right: 1px solid var(--border-soft);
+            backdrop-filter: blur(7px);
+            -webkit-backdrop-filter: blur(7px);
+            z-index: 20;
+            overflow-y: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
 
-        .teaching-section {
-            margin-left: 15px;
-            margin-top: 10px;
+        .sidebar::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+            display: none;
         }
 
-        .teaching-section h5 {
-            font-size: 17px;
-            margin-top: 15px;
-            margin-bottom: 8px;
-            color: #d0e5ff;
-            font-weight: 700;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
-                         0 2px 2px rgba(0, 0, 0, 0.5),
-                         0 3px 4px rgba(0, 0, 0, 0.3);
+        .sidebar .name {
+            font-family: var(--font-serif);
+            color: var(--text-strong);
+            font-size: 30px;
+            font-weight: 500;
+            margin: 0 0 22px;
+            letter-spacing: 0.4px;
+            line-height: 1.2;
+            text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
         }
 
-        .profile-info {
-            margin-top: 15px;
-            margin-bottom: 15px;
-            color: #e8f8ff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.4),
-                         0 2px 3px rgba(0, 0, 0, 0.2);
+        .social-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px 10px;
+            margin-bottom: 30px;
         }
 
-        .profile-row {
-            margin-bottom: 5px;
+        .social-links a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            color: var(--text-muted);
+            border: 1px solid var(--border-soft);
+            border-radius: 999px;
+            transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
         }
 
-        .profile-row span {
-            color: #e8f8ff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.4),
-                         0 2px 3px rgba(0, 0, 0, 0.2);
+        .social-links a svg {
+            width: 18px;
+            height: 18px;
         }
 
-        p {
-            color: #f0f8ff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                         0 1px 2px rgba(0, 0, 0, 0.4),
-                         0 2px 3px rgba(0, 0, 0, 0.2);
+        .social-links a:hover {
+            background: rgba(139, 197, 255, 0.12);
+            border-color: rgba(139, 197, 255, 0.55);
+            color: #ffffff;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .site-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-soft);
+        }
+
+        .site-nav a {
+            color: var(--text-muted);
+            font-size: 14px;
+            letter-spacing: 0.2px;
+            padding: 7px 12px;
+            border-radius: 7px;
+            border-left: 2px solid transparent;
+            transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .site-nav a:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+            text-decoration: none;
+        }
+
+        .site-nav a.active {
+            color: #ffffff;
+            background: rgba(139, 197, 255, 0.10);
+            border-left-color: var(--accent);
+        }
+
+        .sidebar-spacer {
+            flex: 1 1 auto;
+            min-height: 28px;
+        }
+
+        .hit-counter {
+            opacity: 0.7;
+            transition: opacity 0.25s ease;
+        }
+
+        .hit-counter:hover {
+            opacity: 1;
+        }
+
+        .hit-counter a {
+            display: block;
+            margin-bottom: 6px;
+            line-height: 0;
         }
 
         .hit-counter img {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            padding: 5px;
+            background-color: rgba(255, 255, 255, 0.06);
+            border-radius: 5px;
+            padding: 4px;
+            max-width: 100%;
         }
 
+        .copyright {
+            margin: 16px 0 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-shadow: var(--shadow-text);
+        }
+
+        /* Mobile menu controls — hidden on desktop */
+        .nav-toggle,
+        .nav-backdrop { display: none; }
+
+        /* ---------- Main ---------- */
+        .main {
+            margin-left: var(--sidebar-w);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .main-inner {
+            max-width: 800px;
+            margin: 0;
+            padding: 0 60px;
+            transition: transform 0.62s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+        }
+
+        /* Each section is a full-height "page"; tall content scrolls within it */
+        section {
+            height: 100vh;
+            box-sizing: border-box;
+            padding: 8vh 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: safe center;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;        /* Firefox: hide scrollbar, keep scrolling */
+            -ms-overflow-style: none;     /* legacy Edge/IE */
+        }
+
+        section::-webkit-scrollbar {       /* Chrome/Safari */
+            width: 0;
+            height: 0;
+            display: none;
+        }
+
+        section:focus,
+        section:focus-visible { outline: none; }
+
+        section h3 {
+            font-family: var(--font-serif);
+            color: #eaf3ff;
+            font-size: 27px;
+            font-weight: 600;
+            margin: 0 0 20px;
+            letter-spacing: 0.2px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+        }
+
+        section h3:after {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 2px;
+            margin-top: 13px;
+            background: linear-gradient(90deg, var(--accent), rgba(139, 197, 255, 0));
+            border-radius: 2px;
+        }
+
+        @keyframes settleIn {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .main-inner > section.is-entering > h3,
+        .main-inner > section.is-entering > :nth-child(2) {
+            animation: settleIn 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .main-inner > section.is-entering > :nth-child(2) {
+            animation-delay: 0.05s;
+        }
+
+        p {
+            color: var(--text);
+            margin: 0 0 12px;
+            text-shadow: var(--shadow-text);
+        }
+
+        ul {
+            padding-left: 22px;
+            margin: 0 0 4px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            line-height: 1.65;
+            color: var(--text);
+            text-shadow: var(--shadow-text);
+        }
+
+        em { color: #eef4ff; }
+        strong { color: #eef4ff; }
+
+        .links-row a {
+            color: var(--link);
+            text-shadow: var(--shadow-text);
+        }
+
+        .teaching-section {
+            margin-top: 14px;
+        }
+
+        .teaching-section h4 {
+            font-size: 16px;
+            margin: 0 0 6px;
+            color: #cfe2ff;
+            font-weight: 600;
+            text-shadow: var(--shadow-text);
+        }
+
+        /* ---------- Stars ---------- */
         @keyframes twinkle {
             0%, 100% { opacity: 0.1; }
-            50% { opacity: 1; }
+            50% { opacity: 0.85; }
         }
 
         .twinkling-star {
             position: absolute;
-            background-color: white;
+            background-color: #ffffff;
             border-radius: 50%;
             animation: twinkle 3s infinite ease-in-out;
         }
 
-        @media (max-width: 768px) {
-            body {
-                background: transparent;
-                color: #f0f0f0;
+        /* ---------- Responsive ---------- */
+        @media (max-width: 900px) {
+            html, body {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-y: contain;
             }
 
-            .container {
-                padding: 20px 15px;
-                margin-top: 10px;
-                margin-bottom: 10px;
-                border: 1px solid rgba(120, 170, 220, 0.3);
-                border-radius: 8px;
-                box-shadow: 0 5px 25px rgba(0, 20, 40, 0.2);
-                backdrop-filter: blur(2px);
-                -webkit-backdrop-filter: blur(2px);
-                background-color: rgba(10, 20, 50, 0.25);
-                width: 95%;
+            body.nav-open {
+                overflow: hidden;
             }
 
-            .header {
-                padding-top: 30px;
-                padding-bottom: 5px;
+            /* Collapsed menu trigger in the top-right corner */
+            .nav-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                top: 14px;
+                right: 14px;
+                z-index: 60;
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                border: 1px solid var(--border-soft);
+                border-radius: 12px;
+                background: rgba(10, 16, 34, 0.55);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                cursor: pointer;
+                -webkit-tap-highlight-color: transparent;
             }
 
-            h2 {
-                font-size: 24px;
-                color: #ffffff;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
-                             0 1px 2px rgba(0, 0, 0, 0.7),
-                             0 2px 4px rgba(0, 0, 0, 0.6),
-                             0 3px 6px rgba(0, 0, 0, 0.4),
-                             0 0 12px rgba(0, 30, 60, 0.5),
-                             0 0 20px rgba(0, 40, 80, 0.3);
-                margin-top: 10px;
+            .nav-toggle-bars,
+            .nav-toggle-bars::before,
+            .nav-toggle-bars::after {
+                content: '';
+                display: block;
+                width: 20px;
+                height: 2px;
+                background: var(--text);
+                border-radius: 2px;
+                transition: transform 0.28s ease, background 0.2s ease;
             }
 
-            .hit-counter {
+            .nav-toggle-bars {
                 position: relative;
-                top: auto;
+            }
+
+            .nav-toggle-bars::before { position: absolute; top: -6px; left: 0; }
+            .nav-toggle-bars::after  { position: absolute; top: 6px;  left: 0; }
+
+            body.nav-open .nav-toggle-bars { background: transparent; }
+            body.nav-open .nav-toggle-bars::before { transform: translateY(6px) rotate(45deg); }
+            body.nav-open .nav-toggle-bars::after  { transform: translateY(-6px) rotate(-45deg); }
+
+            .nav-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(4, 8, 20, 0.5);
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease, visibility 0.3s ease;
+                z-index: 35;
+            }
+
+            body.nav-open .nav-backdrop {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            /* Sidebar collapses into a slide-in panel from the right */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                right: 0;
+                bottom: 0;
                 left: auto;
-                text-align: center;
+                width: min(82vw, 300px);
+                flex-direction: column;
+                padding: 70px 26px 28px;
+                border-right: none;
+                border-bottom: none;
+                border-left: 1px solid var(--border-soft);
+                background: linear-gradient(180deg, rgba(10, 16, 34, 0.94) 0%, rgba(8, 13, 30, 0.9) 100%);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                text-align: left;
+                transform: translateX(100%);
+                transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+                z-index: 45;
+                overflow-y: auto;
+            }
+
+            body.nav-open .sidebar {
+                transform: translateX(0);
+            }
+
+            .social-links {
+                justify-content: flex-start;
                 margin-bottom: 20px;
             }
 
-            .hit-counter a {
-                display: inline-block;
-                margin: 0 5px 10px;
+            .social-links a {
+                width: 44px;
+                height: 44px;
             }
 
-            .nav-menu {
-                margin: 10px 0 20px 0;
-                text-align: center;
+            .social-links a svg {
+                width: 20px;
+                height: 20px;
             }
 
-            .nav-link {
-                display: inline-block;
-                margin: 0 10px 10px;
-                font-size: 16px;
-                color: #b0d0ff;
-                padding: 8px 0;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
-                             0 1px 2px rgba(0, 0, 0, 0.5),
-                             0 2px 3px rgba(0, 0, 0, 0.4),
-                             0 0 8px rgba(176, 208, 255, 0.3);
+            .site-nav {
+                flex-direction: column;
+                gap: 2px;
             }
 
-            h4 {
-                font-size: 18px;
-                color: #e0f0ff;
-                margin-top: 25px;
-                margin-bottom: 12px;
-                border-bottom: 1px solid rgba(120, 170, 220, 0.4);
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                             0 1px 2px rgba(0, 0, 0, 0.6),
-                             0 2px 3px rgba(0, 0, 0, 0.5),
-                             0 0 10px rgba(0, 30, 60, 0.4);
-            }
-
-            p, li, .profile-info, .profile-row span, .section-content, .teaching-section h5 {
-                color: #f0f8ff;
+            .site-nav a {
+                padding: 11px 12px;
                 font-size: 15px;
-                line-height: 1.6;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                             0 1px 1px rgba(0, 0, 0, 0.5),
-                             0 2px 2px rgba(0, 0, 0, 0.3);
             }
 
-            .profile-text {
-                text-align: center;
+            .sidebar-spacer {
+                display: block;
             }
 
-            .profile-row {
-                margin-bottom: 8px;
+            .hit-counter {
+                margin-top: 22px;
+                display: flex;
+                justify-content: flex-start;
+                gap: 12px;
             }
 
-            .teaching-section {
-                margin-left: 10px;
+            .hit-counter a {
+                margin-bottom: 0;
             }
 
-            .teaching-section h5 {
-                font-size: 16px;
-                color: #d0e5ff;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
-                             0 1px 2px rgba(0, 0, 0, 0.5),
-                             0 2px 3px rgba(0, 0, 0, 0.3);
+            .copyright {
+                margin-top: 18px;
             }
 
-            ul {
-                padding-left: 18px;
+            /* Disable full-page paging on small screens — use normal flow */
+            .main {
+                margin-left: 0;
+                height: auto;
+                overflow: visible;
             }
 
-            a {
-                color: #a0d5ff;
-                text-decoration: none;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6),
-                             0 1px 1px rgba(0, 0, 0, 0.4),
-                             0 2px 2px rgba(0, 0, 0, 0.2);
+            .main-inner {
+                padding: 58px 22px 64px;
+                transform: none !important;
+                transition: none;
+                will-change: auto;
             }
 
-            a:hover {
-                color: #ffffff;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                             0 1px 3px rgba(0, 0, 0, 0.6),
-                             0 2px 5px rgba(0, 0, 0, 0.4),
-                             0 0 10px rgba(110, 181, 255, 0.6),
-                             0 0 15px rgba(110, 181, 255, 0.4);
-                text-decoration: underline;
+            section {
+                height: auto;
+                overflow: visible;
+                display: block;
+                padding: 0;
+                margin-bottom: 40px;
+                scroll-margin-top: 70px;
             }
         }
 
         @media (max-width: 480px) {
-            .container {
-                padding: 15px 10px;
-            }
-
-            h2 {
-                font-size: 22px;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.9),
-                             0 1px 1px rgba(0, 0, 0, 0.7),
-                             0 2px 3px rgba(0, 0, 0, 0.6),
-                             0 3px 5px rgba(0, 0, 0, 0.4),
-                             0 0 10px rgba(0, 30, 60, 0.5),
-                             0 0 15px rgba(0, 40, 80, 0.3);
-            }
-
-            .nav-link {
-                font-size: 15px;
-                margin: 0 8px 8px;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.7),
-                             0 1px 1px rgba(0, 0, 0, 0.5),
-                             0 2px 2px rgba(0, 0, 0, 0.4),
-                             0 0 6px rgba(176, 208, 255, 0.3);
-            }
-
-            h4 {
-                font-size: 17px;
-                text-shadow: 0 1px 0 rgba(0, 0, 0, 0.8),
-                             0 1px 1px rgba(0, 0, 0, 0.6),
-                             0 2px 2px rgba(0, 0, 0, 0.5),
-                             0 0 8px rgba(0, 30, 60, 0.4);
-            }
-
-            p, li, .profile-info, .profile-row span, .section-content {
-                font-size: 14px;
-            }
-
-            .hit-counter img {
-                max-width: 120px;
-            }
+            body { font-size: 15px; }
+            .sidebar .name { font-size: 25px; }
+            section h3 { font-size: 22px; }
+            .main-inner { padding: 30px 16px 56px; }
+            .hit-counter img { max-width: 130px; }
         }
 
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .container {
-                padding: 25px 20px;
-                width: 90%;
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .main-inner {
+                transition: transform 0.001s linear;
+                will-change: auto;
             }
-
-            .hit-counter {
-                top: 15px;
-                left: 20px;
-            }
+            .twinkling-star { animation: none !important; opacity: 0.5 !important; }
+            .main-inner > section.is-entering > h3,
+            .main-inner > section.is-entering > :nth-child(2) { animation: none !important; }
+            a, .social-links a, .site-nav a, .hit-counter { transition: none !important; }
         }
     </style>
 </head>
@@ -494,7 +523,49 @@
     <div id="particles-js"></div>
     <div id="stars-overlay"></div>
 
-    <div class="container">
+    <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sidebar">
+        <span class="nav-toggle-bars" aria-hidden="true"></span>
+    </button>
+    <div class="nav-backdrop" id="nav-backdrop"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <h1 class="name">Yujie Luo</h1>
+
+        <nav class="social-links">
+            <a href="mailto:lyj96@nus.edu.sg" title="Email" aria-label="Email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+                    <path d="m3 7 9 6 9-6"></path>
+                </svg>
+            </a>
+            <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank" title="Google Scholar" aria-label="Google Scholar">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3Z"></path>
+                    <path fill="none" stroke="currentColor" stroke-width="1.8" d="M6 12.5V16c0 1.66 2.69 3 6 3s6-1.34 6-3v-3.5"></path>
+                </svg>
+            </a>
+            <a href="CV.pdf" title="CV" aria-label="CV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path>
+                    <path d="M14 3v5h5"></path>
+                    <path d="M9 13h6M9 17h6"></path>
+                </svg>
+            </a>
+        </nav>
+
+        <nav class="site-nav">
+            <a href="#biography">Biography</a>
+            <a href="#research">Research Interests</a>
+            <a href="#publications">Publications</a>
+            <a href="#talks">Invited Talks</a>
+            <a href="#lectures">Lectures &amp; Seminars</a>
+            <a href="#visitings">Visitings</a>
+            <a href="#teaching">Teaching</a>
+            <a href="#miscellaneous">Miscellaneous</a>
+        </nav>
+
+        <div class="sidebar-spacer"></div>
+
         <div class="hit-counter">
             <a href="https://www.hitwebcounter.com" target="_blank">
                 <img src="https://hitwebcounter.com/counter/counter.php?page=8048856&style=0038&nbdigits=9&type=page&initCount=0"
@@ -506,31 +577,13 @@
             </a>
         </div>
 
-        <header class="header">
-            <div class="row header-content">
-                <div class="col-md-12">
-                    <div class="profile-text">
-                        <div class="profile-row">
-                            <h2>Yujie Luo</h2>
-                        </div>
-                        <div class="profile-row profile-links">
-                            <span>
-                                <a href="https://scholar.google.com/citations?hl=en&user=bNZ7howAAAAJ" target="_blank">Google Scholar</a>
-                            </span>
-                        </div>
-                        <div class="profile-row">
-                            <span><strong>Email:</strong> lyj96@nus.edu.sg or yujieluo96@gmail.com</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </header>
+        <p class="copyright">&copy; Yujie Luo</p>
+    </aside>
 
-        <div class="content main-content-wrapper">
-            <h4 data-toggle="collapse" data-target="#biography" aria-expanded="true">
-                Biography
-            </h4>
-            <div id="biography" class="section-content collapse in">
+    <main class="main">
+        <div class="main-inner">
+            <section id="biography">
+                <h3>Biography</h3>
                 <p>
                     I am currently a Peng Tsu Ann Assistant Professor at the Department of Mathematics, National University of Singapore.
                     I obtained my Ph.D. at the <a href="https://mathematics.jhu.edu/">Department of Mathematics at Johns Hopkins University</a>
@@ -539,19 +592,15 @@
                     I received my B.Sc. in Mathematics from the University of Science and Technology of China (USTC) in 2018.
                     You can find my <a href="CV.pdf">CV</a> here.
                 </p>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#research" aria-expanded="true">
-                Research Interests
-            </h4>
-            <div id="research" class="section-content collapse in">
+            <section id="research">
+                <h3>Research Interests</h3>
                 <p>I am interested in several areas of algebraic geometry, including birational geometry, algebraic dynamics, and minimal model program.</p>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#publications" aria-expanded="false" class="collapsed">
-                Publications & Preprints
-            </h4>
-            <div id="publications" class="section-content collapse">
+            <section id="publications">
+                <h3>Publications &amp; Preprints</h3>
                 <ul>
                     <li><em>Essential dimensions of polarized endomorphisms of certain algebraic surfaces</em> (joint with Qianli Fang and De-Qi Zhang). Preprint. [<a href="https://arxiv.org/abs/2606.24103" target="_blank">arXiv</a>]</li>
                     <li><em>Galois self-covers of projective spaces and essential dimensions</em> (joint with De-Qi Zhang). Preprint. [<a href="https://arxiv.org/abs/2606.10207" target="_blank">arXiv</a>]</li>
@@ -565,13 +614,14 @@
                     <li><em>A simple proof of ACC for MLD's for surfaces</em> (joint with Jingjun Han). <a href="https://link.springer.com/article/10.1007/s10114-023-2094-x" target="_blank">Acta Math. Sin. (Engl. Ser.)</a>, <strong>40</strong> (2024), 425-434.</li>
                     <li><em>Second largest accumulation point of minimal log discrepancies in dimension 3</em> (joint with Jihao Liu). Preprint, to appear in J. Pure. Appl. Algebra. [<a href="https://arxiv.org/abs/2104.15072" target="_blank">arXiv</a>]</li>
                 </ul>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#talks" aria-expanded="false" class="collapsed">
-                Invited Talks
-            </h4>
-            <div id="talks" class="section-content collapse">
+            <section id="talks">
+                <h3>Invited Talks</h3>
                 <ul>
+                    <li><em>Essential dimensions of polarized endomorphisms II</em>, <a href="https://www.math.sjtu.edu.cn/Default/seminarshow/tags/MDAwMDAwMDAwMLJ4hpaFyqF2" target="_blank">Algebraic Geometry and Topology Seminar, Shanghai Jiao Tong University</a>, July 4, 2026.</li>
+                    <li><em>Essential dimensions of polarized endomorphisms I</em>, <a href="https://www.math.sjtu.edu.cn/Default/seminarshow/tags/MDAwMDAwMDAwMLJ4hpaFtKF2" target="_blank">Algebraic Geometry and Topology Seminar, Shanghai Jiao Tong University</a>, July 3, 2026.</li>
+                    <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://www.math.nus.edu.sg/category/events/colloquia-seminars/topology-geometry-dynamics/" target="_blank">Topology, Geometry and Dynamics Seminar, National University of Singapore</a>, June 30, 2026.</li>
                     <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://sites.google.com/view/purduealgebraicgeometryseminar/home" target="_blank">Purdue Algebraic Geometry Seminar</a>, January 21, 2026.</li>
                     <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://scms.fudan.edu.cn/info/6223/11811.htm" target="_blank">Shanghai Center for Mathematical Sciences</a>, January 8, 2026.</li>
                     <li><em>Essential dimensions of polarized endomorphisms of abelian varieties</em>, <a href="https://math.ustc.edu.cn/2025/1222/c18702a717212/page.htm" target="_blank">Algebraic Geometry Seminar ar USTC</a>, December 25, 2025.</li>
@@ -585,23 +635,19 @@
                     <li><em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, Short talk at <a href="https://drive.google.com/file/d/1PuJ-Cmk3_-zPJLMf07lxQDFjc4as6bVJ/view" target="_blank">Simons conference-Rationality</a>, July 30, 2020.</li>
                     <li><em>On boundedness of divisors computing minimal log discrepancies for surfaces</em>, Algebraic Geometry Seminar (Online), The University of Tokyo, July 26, 2020.</li>
                 </ul>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#lectures" aria-expanded="false" class="collapsed">
-                Lectures and Seminar Talks
-            </h4>
-            <div id="lectures" class="section-content collapse">
+            <section id="lectures">
+                <h3>Lectures and Seminar Talks</h3>
                 <ul>
                     <li><em>Negative curves on $\mathbf{P}^2$ blowing up some points</em>, <a href="https://www.math.nus.edu.sg/category/events/colloquia-seminars/topology-geometry-dynamics/page/9/" target="_blank">National University of Singapore Geometry and Topology Seminar</a>.</li>
                     <li><em>Four lectures on the resolution of singularities</em>, <a href="https://chenjiangfudan.github.io/home/2021-summer-reading.html" target="_blank">Reading Workshop: Boundedness and Resolution at SCMS Fudan, 2021 summer</a>.</li>
                     <li><em>Logarithmic base change theorem and smooth descent of positivity of log canonical divisor</em>, <a href="https://web.math.princeton.edu/~le3339/preprint" target="_blank">Princeton preprint seminar</a>.</li>
                 </ul>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#visitings" aria-expanded="false" class="collapsed">
-                Visitings
-            </h4>
-            <div id="visitings" class="section-content collapse">
+            <section id="visitings">
+                <h3>Visitings</h3>
                 <ul>
                     <li><a href="https://math.ecnu.edu.cn/" target="_blank">Department of Mathematics at East China Normal University</a>, visiting scholar, Nov 2023--Dec 2023</li>
                     <li><a href="https://www.math.princeton.edu/" target="_blank">Department of Mathematics at Princeton University</a>, visiting scholar, Jan 2022--Feb 2023</li>
@@ -610,14 +656,12 @@
                     <li><a href="http://english.amss.cas.cn/">Chinese Academy of Sciences</a>, visiting student, October 2017--May 2018</li>
                     <li><a href="https://ww3.math.ucla.edu/" target="_blank">University of California, Los Angeles</a>, visiting student, July 2017--October 2017</li>
                 </ul>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#teaching" aria-expanded="false" class="collapsed">
-                Teaching Experience
-            </h4>
-            <div id="teaching" class="section-content collapse">
+            <section id="teaching">
+                <h3>Teaching Experience</h3>
                 <div class="teaching-section">
-                    <h5>National University of Singapore</h5>
+                    <h4>National University of Singapore</h4>
                     <ul>
                         <li>2025 Spring: Instructor, Algebra I MA2202</li>
                         <li>2025 Spring: Instructor, Algebraic Geometry of Curves and Surfaces MA4273</li>
@@ -627,7 +671,7 @@
                 </div>
 
                 <div class="teaching-section">
-                    <h5>Johns Hopkins University</h5>
+                    <h4>Johns Hopkins University</h4>
                     <ul>
                         <li>2022 Summer: Teaching assistant, Calculus III</li>
                         <li>2020 Fall - 2021 Fall: Teaching assistant, Linear Algebra</li>
@@ -637,17 +681,15 @@
                 </div>
 
                 <div class="teaching-section">
-                    <h5>University of Science and Technology of China</h5>
+                    <h4>University of Science and Technology of China</h4>
                     <ul>
                         <li>2017 Fall: Teaching assistant, Functional Analysis</li>
                     </ul>
                 </div>
-            </div>
+            </section>
 
-            <h4 data-toggle="collapse" data-target="#miscellaneous" aria-expanded="false" class="collapsed">
-                Miscellaneous
-            </h4>
-            <div id="miscellaneous" class="section-content collapse">
+            <section id="miscellaneous">
+                <h3>Miscellaneous</h3>
                 <ul>
                     <li><a href="google 404.html">Google 404</a></li>
                     <li><a href="Explode.html">Gravity</a></li>
@@ -657,177 +699,328 @@
                     <li><a href="Myxomycetes/Myxomycetes.html">Myxomycetes</a></li>
                     <li><a href="Raiden/Raiden.html">Raiden</a></li>
                 </ul>
-            </div>
+            </section>
         </div>
-    </div>
+    </main>
 
-    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
-
     <script>
         function createStaticStars() {
             const starsContainer = document.getElementById('stars-overlay');
-            const starCount = window.innerWidth < 768 ? 50 : 100;
+            const starCount = window.innerWidth < 768 ? 40 : 80;
 
             for (let i = 0; i < starCount; i++) {
                 const star = document.createElement('div');
                 star.className = 'twinkling-star';
 
-                const left = Math.random() * 100;
-                const top = Math.random() * 100;
-
-                const size = Math.random() * 3 + 1;
-
+                const size = Math.random() * 2 + 1;
                 const colors = ['#ffffff', '#b0d0ff', '#8bc5ff', '#ffdd99', '#ffccaa'];
-                const color = colors[Math.floor(Math.random() * colors.length)];
 
-                const delay = Math.random() * 5;
-
-                star.style.left = left + '%';
-                star.style.top = top + '%';
+                star.style.left = (Math.random() * 100) + '%';
+                star.style.top = (Math.random() * 100) + '%';
                 star.style.width = size + 'px';
                 star.style.height = size + 'px';
-                star.style.backgroundColor = color;
-                star.style.animationDelay = delay + 's';
-                star.style.opacity = Math.random() * 0.5 + 0.3;
+                star.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                star.style.animationDelay = (Math.random() * 5) + 's';
+                star.style.opacity = Math.random() * 0.4 + 0.15;
 
                 starsContainer.appendChild(star);
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            createStaticStars();
-
-            const isMobile = window.innerWidth < 768;
+        function initParticles() {
+            const isTouch = window.matchMedia('(pointer: coarse)').matches;
+            const isMobile = window.innerWidth < 768 || isTouch;
             const isSmallMobile = window.innerWidth < 480;
 
             particlesJS('particles-js', {
                 particles: {
                     number: {
-                        value: isSmallMobile ? 160 : (isMobile ? 200 : 300),
-                        density: {
-                            enable: true,
-                            value_area: isSmallMobile ? 700 : (isMobile ? 900 : 1500)
-                        }
+                        value: isSmallMobile ? 45 : (isMobile ? 70 : 90),
+                        density: { enable: true, value_area: isSmallMobile ? 800 : (isMobile ? 1000 : 1600) }
                     },
-                    color: {
-                        value: ["#ffffff", "#b0d0ff", "#8bc5ff", "#a8e6cf", "#ffccaa", "#ffdd99"]
-                    },
-                    shape: {
-                        type: "circle"
-                    },
-                    opacity: {
-                        value: 0.9,
-                        random: true,
-                        anim: {
-                            enable: true,
-                            speed: 1.5,
-                            opacity_min: 0.1,
-                            sync: false
-                        }
-                    },
-                    size: {
-                        value: isSmallMobile ? 2 : (isMobile ? 2.5 : 3.5),
-                        random: true,
-                        anim: {
-                            enable: true,
-                            speed: 3,
-                            size_min: 0.5,
-                            sync: false
-                        }
-                    },
+                    color: { value: ["#ffffff", "#b0d0ff", "#8bc5ff", "#a8e6cf", "#ffccaa", "#ffdd99"] },
+                    shape: { type: "circle" },
+                    opacity: { value: 0.55, random: true, anim: { enable: true, speed: 1.2, opacity_min: 0.1, sync: false } },
+                    size: { value: isSmallMobile ? 1.6 : (isMobile ? 2 : 2.4), random: true, anim: { enable: true, speed: 2, size_min: 0.4, sync: false } },
                     line_linked: {
                         enable: true,
-                        distance: isSmallMobile ? 100 : (isMobile ? 120 : 140),
+                        distance: isSmallMobile ? 110 : (isMobile ? 125 : 145),
                         color: "#8bc5ff",
-                        opacity: isSmallMobile ? 0.4 : (isMobile ? 0.5 : 0.6),
-                        width: isSmallMobile ? 0.6 : 0.8
+                        opacity: isSmallMobile ? 0.18 : (isMobile ? 0.22 : 0.28),
+                        width: 0.6
                     },
                     move: {
                         enable: true,
-                        speed: isSmallMobile ? 1 : (isMobile ? 1.5 : 2),
-                        direction: "none",
-                        random: true,
-                        straight: false,
-                        out_mode: "out",
-                        bounce: false,
-                        attract: {
-                            enable: true,
-                            rotateX: 600,
-                            rotateY: 1200
-                        }
+                        speed: isSmallMobile ? 0.7 : (isMobile ? 0.9 : 1.2),
+                        direction: "none", random: true, straight: false, out_mode: "out", bounce: false,
+                        attract: { enable: true, rotateX: 600, rotateY: 1200 }
                     }
                 },
                 interactivity: {
                     detect_on: "window",
                     events: {
-                        onhover: {
-                            enable: !isMobile,
-                            mode: "grab"
-                        },
-                        onclick: {
-                            enable: false,
-                            mode: "push"
-                        },
+                        onhover: { enable: !isMobile, mode: "grab" },
+                        onclick: { enable: false, mode: "push" },
                         resize: true
                     },
                     modes: {
-                        grab: {
-                            distance: 150,
-                            line_linked: {
-                                opacity: 0.8
-                            }
-                        },
-                        push: {
-                            particles_nb: 10
-                        }
+                        grab: { distance: 120, line_linked: { opacity: 0.35 } },
+                        push: { particles_nb: 10 }
                     }
                 },
-                retina_detect: true
+                retina_detect: !isTouch
             });
+        }
 
-            $(document).ready(function() {
-                $('#biography').addClass('in');
-                $('#research').addClass('in');
+        function initFullpage() {
+            const track = document.querySelector('.main-inner');
+            const sections = Array.from(document.querySelectorAll('.main-inner > section'));
+            const links = Array.from(document.querySelectorAll('.site-nav a'));
+            const last = sections.length - 1;
 
-                $('h4[data-toggle="collapse"]').click(function() {
-                    $(this).toggleClass('collapsed');
-                });
+            const isDesktop = () => window.innerWidth > 900;
+            const idxFromHref = (href) => {
+                const id = (href.split('#')[1] || '');
+                return sections.findIndex(s => s.id === id);
+            };
 
-                if ('ontouchstart' in window) {
-                    document.body.style.webkitOverflowScrolling = 'touch';
+            let current = 0;
+            let isAnimating = false;
+            let accum = 0;
+            let accumTimer = null;
+            const THRESHOLD = 70;   // accumulated wheel delta at a section edge needed to flip one page
+            const DURATION = 640;   // input lock window: CSS transition (620ms) + ~20ms guard
+
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            sections.forEach(s => { if (!s.hasAttribute('tabindex')) s.setAttribute('tabindex', '-1'); });
+
+            function particlesPause() {
+                const dom = window.pJSDom && window.pJSDom[0];
+                if (dom && dom.pJS && dom.pJS.fn && dom.pJS.fn.drawAnimFrame != null) {
+                    cancelAnimationFrame(dom.pJS.fn.drawAnimFrame);
+                    dom.pJS.fn.drawAnimFrame = null;
                 }
+            }
+            function particlesResume() {
+                const dom = window.pJSDom && window.pJSDom[0];
+                if (dom && dom.pJS && dom.pJS.fn && dom.pJS.fn.drawAnimFrame == null &&
+                    dom.pJS.fn.vendors && dom.pJS.fn.vendors.draw) {
+                    dom.pJS.fn.vendors.draw();
+                }
+            }
+
+            function setActive(i) {
+                links.forEach(a => a.classList.toggle('active', idxFromHref(a.getAttribute('href')) === i));
+            }
+
+            function go(i, immediate) {
+                i = Math.max(0, Math.min(last, i));
+                if (i === current || isAnimating) return;
+                isAnimating = true;
+                current = i;
+                if (!reduceMotion) particlesPause();          // free GPU/main thread for the transform
+                track.style.transform = 'translateY(' + (-i * 100) + 'vh)';
+                if (sections[i]) {
+                    sections[i].scrollTop = 0;
+                    sections[i].focus({ preventScroll: true });   // a11y: move focus to incoming section
+                }
+                // incoming-section settle (compositor-safe transform+opacity on the arriving heading/body)
+                if (!reduceMotion) {
+                    sections.forEach(s => s.classList.remove('is-entering'));
+                    if (sections[i]) {
+                        void sections[i].offsetWidth;             // restart the CSS animation
+                        sections[i].classList.add('is-entering');
+                    }
+                }
+                // nav highlight: instant for direct clicks, mid-transit for wheel/keyboard
+                if (immediate || reduceMotion) {
+                    setActive(i);
+                } else {
+                    setTimeout(() => setActive(i), Math.round(DURATION * 0.45));
+                }
+                setTimeout(() => {
+                    isAnimating = false;
+                    accum = 0;
+                    if (!reduceMotion) particlesResume();
+                }, DURATION);
+            }
+
+            // Is the current section scrolled to the edge in the wheel direction?
+            function atEdge(sec, dir) {
+                const scrollable = sec.scrollHeight - sec.clientHeight > 2;
+                if (!scrollable) return true;
+                if (dir > 0) return sec.scrollTop + sec.clientHeight >= sec.scrollHeight - 2;
+                return sec.scrollTop <= 2;
+            }
+
+            window.addEventListener('wheel', function (e) {
+                if (!isDesktop()) return;
+                if (e.target.closest && e.target.closest('.sidebar')) return; // let sidebar scroll
+                if (isAnimating) { e.preventDefault(); return; }   // hard lock while a flip animates (absorbs momentum)
+
+                const dir = e.deltaY > 0 ? 1 : -1;
+                const sec = sections[current];
+
+                // Inside a tall section that can still scroll: let it scroll natively first.
+                if (sec && !atEdge(sec, dir)) { accum = 0; return; }
+
+                // At a section edge: accumulate wheel delta and flip once past the threshold.
+                e.preventDefault();
+                if ((dir > 0 && current === last) || (dir < 0 && current === 0)) return;
+
+                accum += Math.abs(e.deltaY);
+                clearTimeout(accumTimer);
+                accumTimer = setTimeout(() => { accum = 0; }, 200);
+                if (accum >= THRESHOLD) { accum = 0; go(current + dir); }
+            }, { passive: false });
+
+            window.addEventListener('keydown', function (e) {
+                if (!isDesktop()) return;
+                if (e.altKey || e.ctrlKey || e.metaKey) return;        // don't fight browser shortcuts
+                const ae = document.activeElement;
+                // Only yield to elements with native key behavior; plain links still allow paging.
+                if (ae && ae.matches('input, textarea, select, button, [contenteditable=""], [contenteditable="true"]')) {
+                    return;
+                }
+                if (e.key === 'ArrowDown' || e.key === 'PageDown') { e.preventDefault(); go(current + 1); }
+                else if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); go(current - 1); }
+                else if (e.key === 'Home') { e.preventDefault(); go(0); }
+                else if (e.key === 'End') { e.preventDefault(); go(last); }
             });
 
-            setInterval(() => {
-                const stars = document.querySelectorAll('.twinkling-star');
-                stars.forEach(star => {
-                    if (Math.random() > 0.7) {
-                        star.style.opacity = Math.random() * Math.random()*0.8+0.2;
+            let touchStartY = null;
+            window.addEventListener('touchstart', function (e) {
+                if (!isDesktop()) return;
+                touchStartY = e.touches[0].clientY;
+            }, { passive: true });
+
+            window.addEventListener('touchmove', function (e) {
+                if (!isDesktop() || touchStartY === null) return;
+                if (e.target.closest && e.target.closest('.sidebar')) return;
+                const dy = touchStartY - e.touches[0].clientY;   // >0 = swipe up = go down
+                const dir = dy > 0 ? 1 : -1;
+                const sec = sections[current];
+                if (sec && !atEdge(sec, dir)) return;            // let tall section scroll first
+                if (Math.abs(dy) > 45) {
+                    e.preventDefault();
+                    if (!isAnimating) { touchStartY = null; go(current + dir); }
+                }
+            }, { passive: false });
+
+            window.addEventListener('touchend', function () { touchStartY = null; }, { passive: true });
+
+            links.forEach(function (a) {
+                a.addEventListener('click', function (e) {
+                    const i = idxFromHref(a.getAttribute('href'));
+                    if (i < 0) return;
+                    if (!isDesktop()) return; // mobile uses native anchor scrolling
+                    e.preventDefault();
+                    go(i, true);   // direct manipulation: highlight instantly
+                    a.blur();      // return focus to body so keyboard paging resumes
+                });
+            });
+
+            // On small screens (normal flow) keep the nav in sync with scroll position.
+            const observer = new IntersectionObserver(function (entries) {
+                if (isDesktop()) return;
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        const i = sections.findIndex(s => s.id === entry.target.id);
+                        if (i >= 0) setActive(i);
                     }
                 });
-            }, 1000);
+            }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+            sections.forEach(s => observer.observe(s));
+
+            function indexFromHash() {
+                const id = (location.hash || '').replace('#', '');
+                if (!id) return 0;
+                const i = sections.findIndex(s => s.id === id);
+                return i >= 0 ? i : 0;
+            }
+            function jumpTo(i) {
+                i = Math.max(0, Math.min(last, i));
+                current = i;
+                track.style.transition = 'none';
+                track.style.transform = 'translateY(' + (-i * 100) + 'vh)';
+                if (sections[i]) sections[i].scrollTop = 0;
+                setActive(i);
+                void track.offsetHeight;        // force reflow so the next transform animates
+                track.style.transition = '';    // restore the CSS-defined transition
+            }
+            window.addEventListener('hashchange', function () {
+                if (!isDesktop()) return;
+                const i = indexFromHash();
+                if (i !== current && !isAnimating) go(i, true);
+            });
+
+            if (isDesktop()) {
+                jumpTo(indexFromHash());   // deep-link: instant, no slide from page 0
+            } else {
+                setActive(indexFromHash());
+            }
+        }
+
+        function initMobileNav() {
+            const toggle = document.getElementById('nav-toggle');
+            const backdrop = document.getElementById('nav-backdrop');
+            const sidebar = document.getElementById('sidebar');
+            if (!toggle || !sidebar) return;
+
+            function setOpen(open) {
+                document.body.classList.toggle('nav-open', open);
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+            }
+
+            toggle.addEventListener('click', function () {
+                setOpen(!document.body.classList.contains('nav-open'));
+            });
+            if (backdrop) backdrop.addEventListener('click', function () { setOpen(false); });
+
+            // Tapping any link inside the panel closes the menu.
+            sidebar.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', function () { setOpen(false); });
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') setOpen(false);
+            });
+
+            // Leaving the mobile breakpoint clears the open state.
+            window.addEventListener('resize', function () {
+                if (window.innerWidth > 900) setOpen(false);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            createStaticStars();
+            initParticles();
+            initFullpage();
+            initMobileNav();
 
             let resizeTimer;
+            let lastW = window.innerWidth;
             window.addEventListener('resize', function() {
+                if (window.innerWidth === lastW) return;   // height-only (mobile URL bar): ignore
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(function() {
+                    if (window.innerWidth === lastW) return;
+                    lastW = window.innerWidth;
+
                     document.getElementById('stars-overlay').innerHTML = '';
                     createStaticStars();
 
                     const pJS = window.pJSDom && window.pJSDom[0] && window.pJSDom[0].pJS;
                     if (pJS) {
-                        const isMobileNow = window.innerWidth < 768;
+                        const coarseNow = window.matchMedia('(pointer: coarse)').matches;
+                        const isMobileNow = window.innerWidth < 768 || coarseNow;
                         const isSmallMobileNow = window.innerWidth < 480;
-
-                        pJS.particles.number.value = isSmallMobileNow ? 160 : (isMobileNow ? 200 : 300);
-                        pJS.particles.number.density.value_area = isSmallMobileNow ? 700 : (isMobileNow ? 900 : 1500);
-
-                        pJS.particles.line_linked.distance = isSmallMobileNow ? 100 : (isMobileNow ? 120 : 140);
-                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.4 : (isMobileNow ? 0.5 : 0.6);
-                        pJS.particles.line_linked.width = isSmallMobileNow ? 0.6 : 0.8;
-
+                        pJS.particles.number.value = isSmallMobileNow ? 45 : (isMobileNow ? 70 : 90);
+                        pJS.particles.number.density.value_area = isSmallMobileNow ? 800 : (isMobileNow ? 1000 : 1600);
+                        pJS.particles.line_linked.distance = isSmallMobileNow ? 110 : (isMobileNow ? 125 : 145);
+                        pJS.particles.line_linked.opacity = isSmallMobileNow ? 0.18 : (isMobileNow ? 0.22 : 0.28);
                         pJS.fn.particlesRefresh();
                     }
                 }, 250);
