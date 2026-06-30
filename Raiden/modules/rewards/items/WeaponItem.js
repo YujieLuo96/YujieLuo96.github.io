@@ -7,7 +7,8 @@ var WeaponItem = (() => {
         lightning_w: { label: 'LG', color: '#fff8a0', glow: 'rgba(255,240,64,0.45)'  },
         ice_w:       { label: 'IC', color: '#a0f0ff', glow: 'rgba(80,220,255,0.45)'  },
         satellite_w: { label: 'ST', color: '#ffb830', glow: 'rgba(255,184,48,0.45)'  },
-        graviton_w:  { label: 'GR', color: '#cc60ff', glow: 'rgba(204,96,255,0.45)'  }
+        graviton_w:  { label: 'GR', color: '#cc60ff', glow: 'rgba(204,96,255,0.45)'  },
+        shatter_w:   { label: 'SH', color: '#5fefff', glow: 'rgba(95,239,255,0.45)'  }
     };
     class WeaponItem extends ItemBase {
         constructor(x, y, weapKind) {

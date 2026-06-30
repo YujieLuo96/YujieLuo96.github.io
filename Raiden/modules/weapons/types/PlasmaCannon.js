@@ -1,5 +1,5 @@
 var PlasmaCannon = (() => {
-    const MAX_AMMO = 10;
+    const MAX_AMMO = 18;   // 10→18：等离子持续时间过短（audit），延长留用窗口
     let _ammo      = MAX_AMMO;
     let _fireTimer = 0;
     const INTERVAL = 38;

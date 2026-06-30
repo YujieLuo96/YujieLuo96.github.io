@@ -31,6 +31,9 @@ var Codex = (() => {
         elite:       { tags:['ADAPTIVE'],               atks:['RING×8 / 3-WAY / FAST AIM', '(RANDOM BEHAVIOR PER SPAWN)'] },
         spectre:     { tags:['STEALTH','PHASE-BLINK'],  atks:['3-SPIRAL BURST', 'BLINK + 4-WAY AIM'] },
         devastator:  { tags:['FIELD COMMANDER'],        atks:['3-SPREAD AIM', 'HOMING MISSILES ×2'] },
+        siren:       { tags:['LOCK-ON','RING-GAP'],     atks:['CHARGES → GAP-RING', '(SAFE GAP TRACKS YOUR BEARING)'] },
+        weaver:      { tags:['WEAVE','SERPENT'],        atks:['3× SINE-WAVE SNAKE AIM'] },
+        splitter:    { tags:['FRAGMENTS'],              atks:['2× AIMED FIRE', 'SPLITS INTO 3 DIVERS ON DEATH'] },
         midboss:     { tags:['MID BOSS'],               atks:['P1: RING×16 + AIM×3', 'P2: AIM×5 + SPIRAL×4'] },
         midboss2:    { tags:['MID BOSS'],               atks:['P1: RING×20 + AIM×3', 'P2: AIM×5 + SPIRAL ×8'] },
         boss1:       { tags:['BOSS · 3 PHASES'],        atks:['P1: RING×14 + TURRETS ×4', 'P2: +AIM×3 · P3: +SPIRAL'] },
@@ -40,6 +43,7 @@ var Codex = (() => {
         boss5:       { tags:['BOSS · 4 MODES'],         atks:['SIEGE / BARRAGE / SWARM', 'OVERLOAD (PHASE 2+ ONLY)'] },
         boss6:       { tags:['BOSS · 3 PHASES'],        atks:['NEUTRON RING×24 + LIGHTNING', 'CLUSTER BURST + RING NOVA'] },
         boss7:       { tags:['FINAL BOSS · 2 STAGES'],  atks:['RING+AIM+SPIRAL ALL AT ONCE', 'STAGE 2: RAGE + SUMMON ELITES'] },
+        boss8:       { tags:['BOSS · ARENA SHAPER'],    atks:['DROPS WALL-ARRAYS (MOVING GAP)', 'P2: DOUBLE WALLS · P3: GAP HOMERS'] },
     };
 
     const _IDATA = {
@@ -139,6 +143,20 @@ var Codex = (() => {
                 }
                 break;
             }
+            case 'siren': {
+                // 留缝环预览：缺口朝下（玩家方向）
+                for (let i = 0; i < 13; i++) {
+                    const a = (i / 13) * Math.PI * 2 + rng() * 0.1;
+                    let d = a - Math.PI / 2;
+                    while (d >  Math.PI) d -= Math.PI * 2;
+                    while (d < -Math.PI) d += Math.PI * 2;
+                    if (Math.abs(d) < 0.55) continue;
+                    shots.push({ ox:0, oy:0, vx:Math.cos(a)*S*0.85, vy:Math.sin(a)*S*0.85, col:'#ff5f8f' });
+                }
+                break;
+            }
+            case 'weaver':   aimed(3, S, 0.30, '#5ad7c0'); break;
+            case 'splitter': aimed(2, S, 0.22, '#ffa050'); break;
             case 'midboss': {
                 const p = cycle%2;
                 if (p===0) { ring(16, S*1.1, rng(), '#ff8844'); aimed(3, S*1.2, 0.4, '#ffaa44'); }
@@ -207,6 +225,15 @@ var Codex = (() => {
                 else if (p===1) { ring(14, S*1.1, rng(), '#ff4400'); aimed(3, S*1.3, 0.22, '#ffffff'); }
                 else if (p===2) { ring(14, S*1.2, rng(), '#ff6600'); aimed(3, S*1.3, 0.22, '#ffffff'); ring(10, S*0.9, rng()+Math.PI/14, '#ffaa44'); }
                 else { ring(20, S*1.4, rng(), '#ff3300'); aimed(3, S*1.5, 0.22, '#ffffff'); spiral(6, S*1.2, rng(), '#ffcc44'); }
+                break;
+            }
+            case 'boss8': {
+                // 弹墙阵预览：一排下落弹（中段留缺口）+ 瞄准爆发
+                for (let i = 0; i < 9; i++) {
+                    if (i === 4 || i === 5) continue;          // 缺口
+                    shots.push({ ox:(i-4)*7, oy:-8, vx:0, vy:S, col:'#7fe0ff' });
+                }
+                aimed(cycle%2===0 ? 3 : 4, S*1.1, 0.4, '#7fd0ff');
                 break;
             }
         }

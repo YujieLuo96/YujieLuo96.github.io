@@ -1,10 +1,31 @@
 var EnemyManager = (() => {
     let _enemies = [];
     let _ebullets = [];
+    // 无尽模式额外缩放（叠加在难度之上，随时间爬升 → 后期真正有牙）
+    let _endlessHp = 1, _endlessBullet = 1;
 
-    const BOSS_TYPES = new Set(['midboss', 'midboss2', 'boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7']);
+    const BOSS_TYPES = new Set(['midboss', 'midboss2', 'boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7', 'boss8']);
 
+    // 难度缩放：敌弹速度（boss/普通弹统一）
+    function _scaleBullet(b) {
+        const m = ((typeof Difficulty !== 'undefined') ? Difficulty.get().bulletMul : 1) * _endlessBullet;
+        if (m !== 1 && b && typeof b.vx === 'number') {
+            b.vx *= m; b.vy *= m;
+            if (b.maxSpeed) b.maxSpeed *= m;
+        }
+    }
+
+    // 难度缩放：敌人血量（保留 hp/maxHp 比例 → 不影响 Boss 相位阈值）
     function _make(kind, opts = {}) {
+        const e = _makeRaw(kind, opts);
+        if (e) {
+            const m = ((typeof Difficulty !== 'undefined') ? Difficulty.get().hpMul : 1) * _endlessHp;
+            if (m !== 1) { e.hp = Math.max(1, Math.round(e.hp * m)); e.maxHp = e.hp; }
+        }
+        return e;
+    }
+
+    function _makeRaw(kind, opts = {}) {
         const x = opts.x !== undefined ? opts.x : (60 + Math.random() * (Renderer.W - 120));
         const y = opts.y !== undefined ? opts.y : -60;
         switch (kind) {
@@ -26,18 +47,70 @@ var EnemyManager = (() => {
             case 'boss5':       return new Boss5_Leviathan.Boss5_Leviathan();
             case 'boss6':       return new Boss6_NeutronCluster.Boss6_NeutronCluster();
             case 'boss7':       return new Boss7_Sovereign.Boss7_Sovereign();
+            case 'boss8':       return new Boss8_Architect.Boss8();
             case 'marauder':    return new Marauder.Marauder(x, y);
             case 'spinner':     return new Spinner.Spinner(x, y);
             case 'vanguard':    return new Vanguard.Vanguard(x, y);
             case 'spectre':     return new Spectre.Spectre(x, y);
             case 'devastator':  return new Devastator.Devastator(x, y);
+            case 'siren':       return new Siren.Siren(x, y, opts);
+            case 'weaver':      return new Weaver.Weaver(x, y, opts);
+            case 'splitter':    return new Splitter.Splitter(x, y, opts);
+            case 'splitterling':return new Splitter.Splitterling(x, y, opts);
             default: return null;
         }
     }
 
+    // 通用几何编队坐标生成（适用于任意兵种；返回 {x,y,[vx]} 数组或 null）
+    function _formationPositions(formation, count) {
+        const W = Renderer.W;
+        switch (formation) {
+            case 'grid': {
+                const cols = Math.max(2, Math.min(count, Math.round(Math.sqrt(count * 1.6))));
+                const out  = [];
+                const mx   = W * 0.5 - (cols - 1) * 35;
+                for (let i = 0; i < count; i++) {
+                    const r = Math.floor(i / cols), c = i % cols;
+                    out.push({ x: mx + c * 70, y: -40 - r * 54 });
+                }
+                return out;
+            }
+            case 'arc': {
+                const out = [];
+                for (let i = 0; i < count; i++) {
+                    const t   = count > 1 ? i / (count - 1) : 0.5;
+                    const ang = (t - 0.5) * Math.PI * 0.9;
+                    out.push({ x: W * 0.5 + Math.sin(ang) * W * 0.36, y: -40 - Math.cos(ang) * 70 });
+                }
+                return out;
+            }
+            case 'diagonal': {
+                const out = [], fromLeft = Math.random() < 0.5;
+                for (let i = 0; i < count; i++) {
+                    out.push({
+                        x:  (fromLeft ? 36 : W - 36) + (fromLeft ? 1 : -1) * i * 10,
+                        y:  -40 - i * 46,
+                        vx: fromLeft ? 1.15 : -1.15
+                    });
+                }
+                return out;
+            }
+            case 'hourglass': {
+                const out = [], h = Math.ceil(count / 2);
+                for (let i = 0; i < h; i++) {
+                    out.push({ x: 34 + i * 26,      y: -30 - (h - i) * 20, vx: 1.0 });
+                    out.push({ x: W - 34 - i * 26,  y: -30 - (h - i) * 20, vx: -1.0 });
+                }
+                return out.slice(0, count);
+            }
+        }
+        return null;
+    }
+
     return {
-        init()  { _enemies = []; _ebullets = []; },
-        reset() { _enemies = []; _ebullets = []; },
+        init()  { _enemies = []; _ebullets = []; _endlessHp = 1; _endlessBullet = 1; },
+        reset() { _enemies = []; _ebullets = []; _endlessHp = 1; _endlessBullet = 1; },
+        setEndlessScale(hp, bullet) { _endlessHp = hp; _endlessBullet = bullet; },
 
         spawnKind(kind, count = 1, opts = {}) {
             for (let i = 0; i < count; i++) {
@@ -48,33 +121,26 @@ var EnemyManager = (() => {
 
         spawnFormation(kind, count, formation, opts = {}) {
             let arr = [];
-            switch (kind) {
-                case 'scout':
-                    switch (formation) {
-                        case 'line':   arr = Scout.spawnLine(count); break;
-                        case 'V':      arr = Scout.spawnV(count); break;
-                        case 'pincer': arr = Scout.spawnPincer(count); break;
-                        default:       arr = Scout.spawnLine(count);
-                    }
-                    break;
-                case 'interceptor':
-                    if (formation === 'sweep') {
-                        arr = Interceptor.spawnSweep(count);
-                    } else {
-                        arr = Array.from({ length: count }, () => _make(kind, opts)).filter(Boolean);
-                    }
-                    break;
-                case 'drone':
-                    if (formation === 'swarm') {
-                        const cx = opts.x || Renderer.W / 2;
-                        const cy = opts.y || -20;
-                        arr = Drone.spawnSwarm(count, cx, cy);
-                    } else {
-                        arr = Array.from({ length: count }, () => _make(kind, opts)).filter(Boolean);
-                    }
-                    break;
-                default:
-                    arr = Array.from({ length: count }, () => _make(kind, opts)).filter(Boolean);
+            // 1) 兵种专属编队工厂
+            if (kind === 'scout') {
+                if      (formation === 'V')      arr = Scout.spawnV(count);
+                else if (formation === 'pincer') arr = Scout.spawnPincer(count);
+                else                             arr = Scout.spawnLine(count);
+            } else if (kind === 'interceptor' && formation === 'sweep') {
+                arr = Interceptor.spawnSweep(count);
+            } else if (kind === 'drone' && formation === 'swarm') {
+                arr = Drone.spawnSwarm(count, opts.x || Renderer.W / 2, opts.y || -20);
+            } else if (kind === 'siren' && formation === 'line') {
+                arr = Siren.spawnLine(count);
+            }
+            // 2) 通用几何编队（grid / arc / diagonal / hourglass，任意兵种可用）
+            if (!arr.length) {
+                const pos = _formationPositions(formation, count);
+                if (pos) arr = pos.map(p => _make(kind, p)).filter(Boolean);
+            }
+            // 3) 兜底：随机散布
+            if (!arr.length) {
+                arr = Array.from({ length: count }, () => _make(kind, opts)).filter(Boolean);
             }
             _enemies.push(...arr);
         },
@@ -84,8 +150,8 @@ var EnemyManager = (() => {
                 if (!e.alive) continue;
                 const result = e.update(dt, fc);
                 if (result) {
-                    if (Array.isArray(result))                _ebullets.push(...result);
-                    else if (result instanceof EnemyBullet)  _ebullets.push(result);
+                    if (Array.isArray(result))               { for (const b of result) _scaleBullet(b); _ebullets.push(...result); }
+                    else if (result instanceof EnemyBullet)  { _scaleBullet(result); _ebullets.push(result); }
                 }
             }
             _enemies  = _enemies.filter(e => e.alive);

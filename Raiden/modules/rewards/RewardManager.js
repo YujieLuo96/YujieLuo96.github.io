@@ -18,7 +18,11 @@ var RewardManager = (() => {
         spinner:     { chance: 0.10, table: ['power','health'] },
         vanguard:    { chance: 0.20, table: ['power','bomb','health','shield'] },
         spectre:     { chance: 0.55, table: ['spread_w','homing_w','lightning_w','plasma_w','graviton_w','power','shield'] },
-        devastator:  { chance: 0.60, table: ['homing_w','plasma_w','laser_w','spread_w','power','bomb','shield'] }
+        devastator:  { chance: 0.60, table: ['homing_w','plasma_w','laser_w','spread_w','power','bomb','shield'] },
+        siren:       { chance: 0.45, table: ['shield','power','multiplier','ice_w'] },
+        weaver:      { chance: 0.20, table: ['power','health','ice_w'] },
+        splitter:    { chance: 0.40, table: ['power','bomb','spread_w'] },
+        splitterling:{ chance: 0.06, table: ['power'] }
     };
 
     function _makeItem(kind, x, y) {
@@ -38,6 +42,7 @@ var RewardManager = (() => {
             case 'ice_w':       return new WeaponItem.WeaponItem(x, y, 'ice_w');
             case 'satellite_w': return new WeaponItem.WeaponItem(x, y, 'satellite_w');
             case 'graviton_w':  return new WeaponItem.WeaponItem(x, y, 'graviton_w');
+            case 'shatter_w':   return new WeaponItem.WeaponItem(x, y, 'shatter_w');
             default: return null;
         }
     }
@@ -47,7 +52,7 @@ var RewardManager = (() => {
         reset() { _items = []; },
 
         tryDrop(enemy) {
-            const bossFinalTypes = new Set(['boss1','boss2','boss3','boss4','boss5','boss6','boss7']);
+            const bossFinalTypes = new Set(['boss1','boss2','boss3','boss4','boss5','boss6','boss7','boss8']);
             const dropKey = bossFinalTypes.has(enemy.type) ? 'boss' : enemy.type;
             const cfg = DROP_TABLES[dropKey] || DROP_TABLES['fighter'];
             const tbl = enemy.dropTable || cfg.table;

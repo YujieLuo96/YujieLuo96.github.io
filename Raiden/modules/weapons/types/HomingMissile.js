@@ -1,5 +1,5 @@
 var HomingMissile = (() => {
-    const MAX_AMMO = 22;
+    const MAX_AMMO = 36;   // 22→36：导弹约 7 秒即耗尽（audit），提高留存
     let _ammo      = MAX_AMMO;
     let _fireTimer = 0;
     const INTERVAL = 20;
@@ -25,6 +25,7 @@ var HomingMissile = (() => {
             this.turn   = 0.07;
             this.target = null;
             this.age    = 0;
+            this.retarget = 15;                    // 重新锁敌倒计时（帧驱动，帧率无关）
             this.bank   = 0;                       // 转向倾斜量（平滑）
             this.smoke  = Math.random() * 3.5;     // 排烟节流相位（错开各弹）
             this.col    = col || { body: '#c4e', glow: '#e6f', exhaust: '#ff8', trail: '#e6f' };
@@ -43,7 +44,9 @@ var HomingMissile = (() => {
 
         update(dt, enemies) {
             this.age += dt;
-            if (this.age % 15 < 1) this.target = this._pick(enemies);
+            // 周期重锁：用倒计时而非 age%15（连续浮点取模会跳过命中窗口，导致漏锁）
+            this.retarget -= dt;
+            if (this.retarget <= 0) { this.target = this._pick(enemies); this.retarget = 15; }
             let turned = 0;
             if (this.target && this.target.alive) {
                 const ta = Math.atan2(this.target.y - this.y, this.target.x - this.x);
@@ -56,8 +59,8 @@ var HomingMissile = (() => {
                 this.vx  = Math.cos(na) * this.speed;
                 this.vy  = Math.sin(na) * this.speed;
             }
-            // 倾斜感：朝转向方向滚转，无转向时缓慢回正
-            this.bank += (turned * 7 - this.bank) * Math.min(1, 0.18 * dt);
+            // 倾斜感：朝转向方向滚转，无转向时缓慢回正（指数平滑，帧率无关）
+            this.bank += (turned * 7 - this.bank) * (1 - Math.pow(0.82, dt));
             this.x += this.vx * dt; this.y += this.vy * dt;
             // 排气尾烟：每 ~3.5 帧 1 粒（节流）
             this.smoke += dt;

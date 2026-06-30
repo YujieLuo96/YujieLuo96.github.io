@@ -3,7 +3,7 @@ var WeaponManager = (() => {
         NORMAL:'normal', SPREAD:'spread', LASER:'laser',
         HOMING:'homing', PLASMA:'plasma',
         LIGHTNING:'lightning', ICE:'ice', SATELLITE:'satellite',
-        GRAVITON:'graviton'
+        GRAVITON:'graviton', SHATTER:'shatter'
     };
 
     let _special     = null;   // active special weapon (null = normal gun only)
@@ -14,6 +14,7 @@ var WeaponManager = (() => {
     function _resetSpecials() {
         SpreadGun.reset(); LaserBeam.reset(); HomingMissile.reset(); PlasmaCannon.reset();
         LightningGun.reset(); IceCrystal.reset(); TwinSatellite.reset(); GravitonOrb.reset();
+        ShatterBeam.reset();
     }
 
     function _refill(type) {
@@ -26,6 +27,7 @@ var WeaponManager = (() => {
             case W.ICE:       IceCrystal.refill();    break;
             case W.SATELLITE: TwinSatellite.refill(); break;
             case W.GRAVITON:  GravitonOrb.refill();  break;
+            case W.SHATTER:   ShatterBeam.refill();  break;
         }
     }
 
@@ -118,6 +120,13 @@ var WeaponManager = (() => {
                         if (GravitonOrb.isExhausted()) _special = null;
                         break;
                     }
+
+                    case W.SHATTER: {
+                        const sb = ShatterBeam.shoot(player, pw);
+                        if (sb.length) _bullets.push(...sb);
+                        if (ShatterBeam.isExhausted()) _special = null;
+                        break;
+                    }
                 }
             } else {
                 // Cool down laser when not in use
@@ -163,6 +172,7 @@ var WeaponManager = (() => {
                 case W.ICE:       return { cur: IceCrystal.getAmmo(),     max: IceCrystal.getMaxAmmo(),     type: W.ICE };
                 case W.SATELLITE: return { cur: TwinSatellite.getAmmo(),  max: TwinSatellite.getMaxAmmo(),  type: W.SATELLITE };
                 case W.GRAVITON:  return { cur: GravitonOrb.getAmmo(),   max: GravitonOrb.getMaxAmmo(),   type: W.GRAVITON };
+                case W.SHATTER:   return { cur: ShatterBeam.getAmmo(),   max: ShatterBeam.getMaxAmmo(),   type: W.SHATTER };
                 default:          return { cur: 0, max: 0, type: W.NORMAL };
             }
         }

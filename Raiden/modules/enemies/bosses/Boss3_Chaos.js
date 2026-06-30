@@ -3,7 +3,7 @@ var Boss3_Chaos = (() => {
         constructor() {
             super({ x: Renderer.W / 2, y: -110, hp: 220, score: 10000, type: 'boss3',
                     dropChance: 1.0,
-                    dropTable: ['power','bomb','health','shield','spread_w','homing_w','laser_w','plasma_w'],
+                    dropTable: ['power','bomb','health','shield','spread_w','homing_w','laser_w','plasma_w','shatter_w'],
                     w: 110, h: 95 });
             this.entryY       = 120;
             this.entered      = false;

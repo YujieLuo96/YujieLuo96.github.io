@@ -9,6 +9,7 @@ var WeaponRegistry = (() => {
         { key:'7', col:'#a0f0ff', label:'ICE CRYSTAL',     sub:'FREEZE BARRAGE',   desc:'Scatter barrage, freezes and slows enemies, 10 shots' },
         { key:'8', col:'#ffb830', label:'TWIN SATELLITE',  sub:'ORBIT TURRETS',    desc:'Two orbiting satellites that deal continuous damage' },
         { key:'9', col:'#cc60ff', label:'GRAVITON ORB',    sub:'GRAVITY FIELD',    desc:'Launches an orb that pulls enemies and chain-zaps them, 8 shots' },
+        { key:'0', col:'#5fefff', label:'SHATTER BEAM',    sub:'SPLIT BARRAGE',    desc:'Fast sine-wave bolts that shatter into a 3-way spread on impact' },
     ];
     return {
         register(def) { _defs.push(def); },

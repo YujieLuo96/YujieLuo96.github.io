@@ -2,7 +2,7 @@ var Devastator = (() => {
     class Devastator extends EnemyBase {
         constructor(x, y) {
             super({ x, y, hp: 28, score: 750, type: 'devastator',
-                    dropChance: 0.60, dropTable: ['homing_w','plasma_w','laser_w','spread_w','power','bomb','shield'],
+                    dropChance: 0.60, dropTable: ['homing_w','plasma_w','laser_w','spread_w','shatter_w','power','bomb','shield'],
                     w: 48, h: 44 });
             this.speed        = 0.75 + Math.random() * 0.3;
             this.holdY        = 90 + Math.random() * 90;

@@ -1,6 +1,7 @@
 var ExplosionFX = (() => {
     const _flashes = [];
     const _rings   = [];   // 冲击波扩散环（炸弹等）
+    const _delayed = [];   // 延迟二次/三次爆发（帧驱动，受暂停/结算冻结，不再用墙钟 setTimeout）
 
     function _flash(x, y, r, life, color) {
         _flashes.push({ x, y, r, life, maxLife: life, color: color || 'rgba(255,200,100,' });
@@ -33,13 +34,11 @@ var ExplosionFX = (() => {
             ParticleSystem.spawn(x, y, { count: 70, colors: [color, '#fff', '#fa0', '#f44'], speed: 7, life: 55, size: 9, scatter: 35 });
             ParticleSystem.spawn(x, y, { count: 26, colors: ['#ffd', '#fc8', color], speed: 11, life: 26, size: 4, shape: 'spark', scatter: 20 });
             ParticleSystem.spawn(x, y, { count: 14, colors: ['#f60', '#a42', '#666'], speed: 5, life: 60, size: 4.5, gravity: 0.08, scatter: 30 });
-            [0, 130, 260].forEach(delay => {
-                setTimeout(() => {
-                    if (_flashes.length < 20)
-                        ParticleSystem.spawn(x + (Math.random()-0.5)*80, y + (Math.random()-0.5)*50,
-                            { count: 25, colors: ['#f80','#ff4'], speed: 5, life: 32, size: 6 });
-                }, delay);
-            });
+            // 二次爆发立即一发 + 第 8/16 帧两发（帧驱动，暂停/结算时不会越过冻结继续炸）
+            ParticleSystem.spawn(x + (Math.random()-0.5)*80, y + (Math.random()-0.5)*50,
+                { count: 25, colors: ['#f80','#ff4'], speed: 5, life: 32, size: 6 });
+            _delayed.push({ x: x + (Math.random()-0.5)*80, y: y + (Math.random()-0.5)*50, delay: 8 });
+            _delayed.push({ x: x + (Math.random()-0.5)*80, y: y + (Math.random()-0.5)*50, delay: 16 });
             _flash(x, y, 100, 18);
             _ring(x, y, 10,  16, 34, '255,220,150', 7);
             _ring(x, y, -50, 13, 42, '255,140,80',  5);   // 延迟出现的第二冲击波
@@ -64,6 +63,16 @@ var ExplosionFX = (() => {
             _ring(cx, cy, -40, 26, 38, '120,200,255', 5);   // 负起始半径 = 延迟出现的第二环
         },
         update(dt) {
+            for (let i = _delayed.length - 1; i >= 0; i--) {
+                const d = _delayed[i];
+                d.delay -= dt;
+                if (d.delay <= 0) {
+                    if (_flashes.length < 20)
+                        ParticleSystem.spawn(d.x, d.y,
+                            { count: 25, colors: ['#f80', '#ff4'], speed: 5, life: 32, size: 6 });
+                    _delayed.splice(i, 1);
+                }
+            }
             for (let i = _flashes.length - 1; i >= 0; i--) {
                 _flashes[i].life -= dt;
                 if (_flashes[i].life <= 0) _flashes.splice(i, 1);
@@ -76,6 +85,8 @@ var ExplosionFX = (() => {
             }
         },
         draw(ctx) {
+            // 冲击波环用加色混合 → 明亮锐利的能量环（火光叠加感）
+            ctx.globalCompositeOperation = 'lighter';
             for (const r of _rings) {
                 if (r.r <= 0) continue;
                 const a = (r.life / r.maxLife) * 0.85;
@@ -83,6 +94,7 @@ var ExplosionFX = (() => {
                 ctx.lineWidth   = Math.max(1, r.width * (r.life / r.maxLife));
                 ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
             }
+            ctx.globalCompositeOperation = 'source-over';
             for (const f of _flashes) {
                 const t   = 1 - f.life / f.maxLife;
                 const r   = f.r * (0.3 + t * 0.7);
@@ -97,6 +109,6 @@ var ExplosionFX = (() => {
                 ctx.fill();
             }
         },
-        clear() { _flashes.length = 0; _rings.length = 0; }
+        clear() { _flashes.length = 0; _rings.length = 0; _delayed.length = 0; }
     };
 })();

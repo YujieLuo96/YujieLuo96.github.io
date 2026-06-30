@@ -91,7 +91,7 @@ var SpaceScene = (() => {
 
             for (const n of _nebulas) {
                 const pulse = 0.82 + 0.18 * Math.sin(_fc * 0.007 + n.pOff);
-                const a     = (0.22 * pulse).toFixed(2);
+                const a     = (0.15 * pulse).toFixed(2);   // 调暗星云：让它真正坐到星点之后（纵深更清晰）
                 const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, Math.max(n.rx, n.ry));
                 g.addColorStop(0, n.col + a + ')'); g.addColorStop(1, n.col + '0)');
                 ctx.fillStyle = g;

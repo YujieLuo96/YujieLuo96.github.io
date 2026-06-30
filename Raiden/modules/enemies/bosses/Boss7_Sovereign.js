@@ -3,7 +3,7 @@ var Boss7_Sovereign = (() => {
         constructor() {
             super({ x: Renderer.W / 2, y: -100, hp: 320, score: 10000,
                     type: 'boss7', dropChance: 1.0,
-                    dropTable: ['power','bomb','health','shield','spread_w','homing_w','laser_w','plasma_w','lightning_w','ice_w','graviton_w','multiplier','megabomb'],
+                    dropTable: ['power','bomb','health','shield','spread_w','homing_w','laser_w','plasma_w','lightning_w','ice_w','graviton_w','shatter_w','multiplier','megabomb'],
                     w: 80, h: 72 });
             this.phase       = 'entry';
             this.entryY      = 140;

@@ -12,20 +12,26 @@ var StageManager = (() => {
 
     // 无尽模式 Boss 池：难度越高解锁越强的 Boss，可重复出场
     const _ENDLESS_BOSS_POOL = [
-        'midboss', 'midboss2', 'boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7'
+        'midboss', 'midboss2', 'boss1', 'boss2', 'boss3', 'boss4', 'boss5', 'boss6', 'boss7', 'boss8'
     ];
     const ENDLESS_BOSS_INTERVAL = 4200;  // 每 ~70 秒一只
 
     const _BOSS_KINDS = new Set([
-        'midboss','midboss2','boss1','boss2','boss3','boss4','boss5','boss6','boss7'
+        'midboss','midboss2','boss1','boss2','boss3','boss4','boss5','boss6','boss7','boss8'
+    ]);
+    // 仅大型唯一 Boss 参与全局去重；midboss/midboss2 是各关复用的常规遭遇
+    const _MAJOR_BOSS_KINDS = new Set([
+        'boss1','boss2','boss3','boss4','boss5','boss6','boss7','boss8'
     ]);
 
     function _spawnWave(wave) {
         if (!wave) return;
-        // Skip if this boss type was already triggered (by power or an earlier wave)
-        if (_BOSS_KINDS.has(wave.kind) && _seenBossKinds.has(wave.kind)) return;
+        const major = _MAJOR_BOSS_KINDS.has(wave.kind);
+        // 仅大型 Boss(boss1-8) 全局去重（避免火力触发与波次重复刷同一只）；
+        // 原本把 midboss/midboss2 也去重，导致后续关卡的中型 Boss 波次被静默跳过（audit bug）
+        if (major && _seenBossKinds.has(wave.kind)) return;
         if (_BOSS_KINDS.has(wave.kind)) {
-            _seenBossKinds.add(wave.kind);
+            if (major) _seenBossKinds.add(wave.kind);
             // 关卡波次出场的 Boss 同样需要警告横幅与音效（原先只有火力触发的有）
             if (typeof GameCore !== 'undefined' && GameCore.bossWarning) GameCore.bossWarning(wave.kind);
         }
@@ -49,7 +55,10 @@ var StageManager = (() => {
             'carrier',
             'marauder',
             'spinner',
+            'weaver',
             'vanguard',
+            'siren',
+            'splitter',
             'spectre',
             'devastator',
         ];
@@ -61,6 +70,9 @@ var StageManager = (() => {
             scout:       ['line','V','pincer'],
             interceptor: ['sweep'],
             drone:       ['swarm'],
+            siren:       ['line'],
+            weaver:      ['arc','grid'],
+            splitter:    ['grid','diagonal'],
         };
         const fms = formationMap[kind];
         if (fms) {
@@ -117,6 +129,12 @@ var StageManager = (() => {
                     _endlessWave(_endlessDiff);
                 }
                 _endlessDiff = 1 + Math.floor(_timer / 1800);
+
+                // 无尽参数化缩放：血量每档 +7%（≤2.2x）、弹速每档 +3%（≤1.5x）→ 后期真正有压力
+                EnemyManager.setEndlessScale(
+                    Math.min(2.2, 1 + _endlessDiff * 0.07),
+                    Math.min(1.5, 1 + _endlessDiff * 0.03)
+                );
 
                 // 周期性 Boss：难度逐步解锁更强的池，可重复（不受 _seenBossKinds 限制）
                 _endlessBossTimer += dt;

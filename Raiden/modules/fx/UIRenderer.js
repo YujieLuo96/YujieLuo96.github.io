@@ -7,14 +7,15 @@ var UIRenderer = (() => {
         lightning: { label: 'LIGHTNING',    col: '#fff880' },
         ice:       { label: 'ICE CRYSTAL',  col: '#a0f0ff' },
         satellite: { label: 'SATELLITE',    col: '#ffb830' },
-        graviton:  { label: 'GRAVITON ORB', col: '#cc60ff' }
+        graviton:  { label: 'GRAVITON ORB', col: '#cc60ff' },
+        shatter:   { label: 'SHATTER BEAM', col: '#5fefff' }
     };
     const BOSS_NAMES = {
         midboss:  'CRUISER',          midboss2: 'CMD INTERCEPTOR',
         boss1:    'FORTRESS',         boss2:    'COLOSSUS',
         boss3:    'CHAOS',            boss4:    'THE VOID',
         boss5:    'LEVIATHAN',        boss6:    'NEUTRON CLUSTER',
-        boss7:    'CRIMSON SOVEREIGN'
+        boss7:    'CRIMSON SOVEREIGN', boss8:   'THE ARCHITECT'
     };
 
     // Corner-bracket panel with rivet bolts
@@ -129,6 +130,12 @@ var UIRenderer = (() => {
                     ammoInfo, frameCount, shieldTimer, powerLevel,
                     stageName, weaponFlash, bhWarning } = gd;
             const W = Renderer.W, H = Renderer.H;
+
+            // ── 恒定暗角：电影感取景框，弹幕/HUD 在边缘更醒目（极低强度，不挡判定区）──
+            const vg0 = ctx.createRadialGradient(W/2, H/2, H*0.44, W/2, H/2, H*0.82);
+            vg0.addColorStop(0, 'rgba(0,0,0,0)');
+            vg0.addColorStop(1, 'rgba(0,0,10,0.22)');
+            ctx.fillStyle = vg0; ctx.fillRect(0, 0, W, H);
 
             // ── 受击全屏红闪 ──────────────────────────────────────────────
             if (gd.dmgFlash > 0) {
@@ -435,6 +442,25 @@ var UIRenderer = (() => {
                 ctx.fillText(`${Math.floor(ratio * 100)}%`, bx + bw + 4, by);
             }
 
+            // ── Graze readout (bottom-left): count + charge bar ───────────
+            {
+                const gx = 8, gy = H - 26, bw = 92;
+                const gf = gd.grazeFlash || 0;
+                ctx.fillStyle = 'rgba(2,6,18,0.82)';
+                ctx.fillRect(gx - 3, gy - 3, bw + 6, 22);
+                ctx.font      = '8px "Courier New",monospace';
+                ctx.fillStyle = gf > 0 ? '#e6fbff' : '#3a9ab8';
+                ctx.fillText('GRAZE', gx, gy);
+                ctx.font      = 'bold 10px "Courier New",monospace';
+                ctx.fillStyle = '#bfe8ff';
+                ctx.fillText(String(gd.grazeCount || 0), gx + 38, gy - 1);
+                const ratio = Math.min(1, (gd.grazeMeter || 0) / (gd.grazeFull || 1));
+                ctx.fillStyle = 'rgba(16,26,36,0.9)';
+                ctx.fillRect(gx, gy + 11, bw, 3);
+                ctx.fillStyle = `rgba(120,225,255,${(0.55 + gf * 0.4).toFixed(2)})`;
+                ctx.fillRect(gx, gy + 11, bw * ratio, 3);
+            }
+
             // ── Cockpit HUD frame (screen-edge bracket decorations) ────────
             _hudFrame(ctx, W, H);
         },
@@ -475,12 +501,25 @@ var UIRenderer = (() => {
             ctx.fillStyle = '#2a5f7a';
             ctx.fillText('─── THUNDER FORCE ───', W / 2, ty + 70);
 
+            // Difficulty selector (◄ ► to change)
+            {
+                const d = (typeof Difficulty !== 'undefined') ? Difficulty.get() : { label: 'NORMAL', col: '#7cc8ff' };
+                ctx.font      = '8px "Courier New",monospace';
+                ctx.fillStyle = '#2a5f7a';
+                ctx.fillText('DIFFICULTY', W / 2, H / 2 - 16);
+                ctx.font        = 'bold 13px "Courier New",monospace';
+                ctx.fillStyle   = d.col;
+                ctx.shadowColor = d.col; ctx.shadowBlur = 9;
+                ctx.fillText(`◄   ${d.label}   ►`, W / 2, H / 2 - 4);
+                ctx.shadowBlur  = 0;
+            }
+
             // Blinking start prompt
             const p = 0.5 + Math.sin(fc * 0.06) * 0.48;
             ctx.globalAlpha = p;
             ctx.font        = 'bold 12px "Courier New",monospace';
             ctx.fillStyle   = '#ffdd00';
-            ctx.fillText('[ CLICK  OR  SPACE  TO  START ]', W / 2, H / 2 + 20);
+            ctx.fillText('[ CLICK  OR  SPACE  TO  START ]', W / 2, H / 2 + 22);
             ctx.globalAlpha = 1;
 
             // Controls panel
@@ -492,7 +531,7 @@ var UIRenderer = (() => {
             ctx.font      = '9px "Courier New",monospace';
             ctx.fillStyle = '#3a7088';
             ctx.fillText('MOVE · ARROWS/WASD    FOCUS · SHIFT    BOMB · SPACE', W / 2, cpy + 18);
-            ctx.fillText('PAUSE · P    CODEX · M    MUTE · N    TOUCH: DRAG', W / 2, cpy + 32);
+            ctx.fillText('PAUSE · P   CODEX · M   MUTE · N   SHAKE · V   ◄ ► DIFFICULTY', W / 2, cpy + 32);
 
             // 历史最佳战绩
             if (best && best.score > 0) {

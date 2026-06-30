@@ -4,7 +4,7 @@ var Elite = (() => {
     class Elite extends EnemyBase {
         constructor(x, y) {
             super({ x, y, hp: 6, score: 200, type: 'elite', dropChance: 0.45,
-                    dropTable: ['spread_w','homing_w','laser_w','plasma_w','power','shield'], w: 42, h: 42 });
+                    dropTable: ['spread_w','homing_w','laser_w','plasma_w','shatter_w','power','shield'], w: 42, h: 42 });
             this.behavior     = BEHAVIORS[Math.floor(Math.random() * BEHAVIORS.length)];
             this.speed        = 1.8;
             this.baseX        = x;

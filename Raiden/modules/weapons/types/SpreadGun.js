@@ -1,5 +1,5 @@
 var SpreadGun = (() => {
-    const MAX_AMMO = 180;
+    const MAX_AMMO = 220;   // 180→220：略增散弹留用窗口
     let _ammo      = MAX_AMMO;
     let _fireTimer = 0;
 

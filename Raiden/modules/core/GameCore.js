@@ -12,12 +12,13 @@ var GameCore = (() => {
         { power: 78,  kind: 'boss5'    },
         { power: 100, kind: 'boss6'    },
         { power: 128, kind: 'boss7'    },
+        { power: 150, kind: 'boss8'    },
     ];
     const POWER_BOSS_NAMES = {
         midboss: 'CRUISER', midboss2: 'COMMAND INTERCEPTOR',
         boss1: 'FORTRESS',  boss2: 'COLOSSUS',   boss3: 'CHAOS',
         boss4: 'THE VOID',  boss5: 'LEVIATHAN',  boss6: 'NEUTRON CLUSTER',
-        boss7: 'CRIMSON SOVEREIGN'
+        boss7: 'CRIMSON SOVEREIGN', boss8: 'THE ARCHITECT'
     };
 
     let _state          = STATE.MENU;
@@ -40,10 +41,27 @@ var GameCore = (() => {
     let _bhDamageTimer      = 0;
     let _weaponFlash        = null;
     let _scoreNextMilestone = 10000;
+
+    // ── 擦弹（graze）：贴着弹幕飞行赚分 + 蓄槽换炸弹，拉高技术上限 ─────────
+    const GRAZE_RADIUS = 32;     // 擦弹判定半径（机体中心起算，略大于判定框）
+    const GRAZE_FULL   = 45;     // 擦满一槽所需擦弹数 → 奖励
+    let _grazeCount    = 0;      // 本局擦弹累计
+    let _grazeMeter    = 0;      // 当前擦弹槽
+    let _grazeFlash    = 0;      // 擦弹瞬间机体光环计时
+
+    // ── 连击里程碑 + 分数线奖励（长线目标） ──────────────────────────────
+    const COMBO_MILES  = [10, 25, 50, 100, 200, 400];
+    let _comboMileIdx  = 0;
+    let _nextBombScore = 80000;   // 每 8 万分 +1 炸弹
+    let _nextLifeScore = 300000;  // 每 30 万分 +1 命
+
     let _shakeAmt = 0;
     let _shakeDur = 0;
     let _shakeX   = 0;
     let _shakeY   = 0;
+    let _shakeEnabled = true;
+    try { _shakeEnabled = localStorage.getItem('raidenShake') !== '0'; } catch (e) {}
+    let _stageMood = 'stage';   // 关卡 BGM 变体（按关序轮换，丰富听感）
 
     // ── 单局战绩统计 ────────────────────────────────────────────────────
     let _kills     = 0;
@@ -65,7 +83,8 @@ var GameCore = (() => {
     // ── Helpers ─────────────────────────────────────────────────────────
     function _addScore(pts) {
         if (_state !== STATE.PLAYING) return 0;
-        const earned = Math.round(pts * _comboMult * _scoreMult);
+        const dMul   = (typeof Difficulty !== 'undefined') ? Difficulty.get().scoreMul : 1;
+        const earned = Math.round(pts * _comboMult * _scoreMult * dMul);
         _score += earned;
         if (_score > _highScore) {
             _highScore = _score;
@@ -76,7 +95,69 @@ var GameCore = (() => {
                 `✦ ${(_scoreNextMilestone / 1000) | 0}K POINTS!`, '#ffe080');
             _scoreNextMilestone *= 2;
         }
+        // 分数线奖励：每 8 万分 +炸弹、每 30 万分 +命（满则折算积分），给长局推进目标
+        while (_score >= _nextBombScore) {
+            _nextBombScore += 80000;
+            if (_bombs < PlayerConfig.maxBombs) {
+                _bombs++;
+                _addPopup(Renderer.W / 2, Renderer.H / 2 - 72, '✦ SUPPLY DROP — +BOMB', '#3dd0ff');
+            }
+            AudioManager.playMilestone();
+        }
+        while (_score >= _nextLifeScore) {
+            _nextLifeScore += 300000;
+            if (_lives < PlayerConfig.maxLives) {
+                _lives++;
+                _addPopup(Renderer.W / 2, Renderer.H / 2 - 92, '✦ EXTEND — +1 HULL', '#ff90a0');
+            }
+            AudioManager.playMilestone();
+        }
         return earned;
+    }
+
+    // ── 擦弹结算：贴弹一次 → 加分 + 蓄槽，满槽换炸弹（或折算积分） ─────────
+    function _onGraze(x, y) {
+        _grazeCount++;
+        _grazeMeter++;
+        _grazeFlash = 10;
+        _addScore(30);
+        ParticleSystem.spawn(x, y, {
+            count: 2, colors: ['#fff', '#aef', '#7df'], speed: 2.6, life: 11, size: 1.7, shape: 'spark'
+        });
+        ParticleSystem.spawn(x, y, { count: 1, colors: ['#bfefff'], life: 14, size: 6, shape: 'ring' });
+        AudioManager.playGraze();
+        if (_grazeMeter >= GRAZE_FULL) {
+            _grazeMeter = 0;
+            if (_bombs < PlayerConfig.maxBombs) {
+                _bombs++;
+                _addPopup(Player.x, Player.y - 46, '✦ GRAZE BONUS — +BOMB', '#9ff');
+            } else {
+                _addScore(2500);
+                _addPopup(Player.x, Player.y - 46, '✦ GRAZE BONUS +2500', '#9ff');
+            }
+            AudioManager.playMilestone();
+            _shake(4, 9);
+        }
+    }
+
+    // ── 削弹：把全屏敌弹化作积分火花（炸弹、Boss 殒命时调用），既清场又奖励 ──
+    function _cancelBullets(perBullet) {
+        const ebullets = EnemyManager.getEnemyBullets();
+        let n = 0;
+        for (const b of ebullets) {
+            if (!b.alive) continue;
+            b.alive = false;
+            n++;
+            if (n <= 48) ParticleSystem.spawn(b.x, b.y,
+                { count: 2, colors: ['#9ff', '#4af', '#fff'], speed: 3, life: 13, size: 2.2 });
+            if (n % 5 === 0) ParticleSystem.spawn(b.x, b.y,
+                { count: 1, colors: ['#9ff'], life: 16, size: 7, shape: 'ring' });
+        }
+        if (n > 0) {
+            const earned = _addScore(n * (perBullet || 15));
+            _addPopup(Renderer.W / 2, Renderer.H * 0.42, `✦ BULLET CANCEL ×${n}  +${earned}`, '#9ff');
+        }
+        return n;
     }
 
     function _addPopup(x, y, text, color) {
@@ -84,6 +165,7 @@ var GameCore = (() => {
     }
 
     function _shake(amt, dur) {
+        if (!_shakeEnabled) return;     // 设置项：可关闭震屏（无障碍/偏好）
         if (amt > _shakeAmt) _shakeAmt = amt;
         if (dur > _shakeDur) _shakeDur = dur;
     }
@@ -136,7 +218,7 @@ var GameCore = (() => {
 
     function _isBossType(type) {
         return type === 'boss1' || type === 'boss2' || type === 'boss3' || type === 'boss4' ||
-               type === 'boss5' || type === 'boss6' || type === 'boss7';
+               type === 'boss5' || type === 'boss6' || type === 'boss7' || type === 'boss8';
     }
 
     function _handleEnemyKill(enemy) {
@@ -144,8 +226,14 @@ var GameCore = (() => {
         _combo++;
         _kills++;
         if (_combo > _maxCombo) _maxCombo = _combo;
-        _comboTimer  = 120;
-        _comboMult   = Math.min(5, 1 + Math.floor(_combo / 8) * 0.5);
+        _comboTimer  = 165;   // 连击窗口 ~2.75s（原 2s 太苛刻，散兵间隔即断链）
+        _comboMult   = Math.min(6, 1 + Math.floor(_combo / 8) * 0.5);
+        // 连击里程碑播报：10/25/50/100… 给即时成就反馈
+        if (_comboMileIdx < COMBO_MILES.length && _combo >= COMBO_MILES[_comboMileIdx]) {
+            _addPopup(Player.x, Player.y - 58, `${COMBO_MILES[_comboMileIdx]}  CHAIN!`, '#ffdd44');
+            AudioManager.playMilestone();
+            _comboMileIdx++;
+        }
         const earned = _addScore(base);
         _addPopup(enemy.x, enemy.y - 20, `+${earned}`);
 
@@ -153,10 +241,12 @@ var GameCore = (() => {
             ExplosionFX.boss(enemy.x, enemy.y);
             AudioManager.playBossDie();
             _hitStop = Math.max(_hitStop, 6);   // Boss 击杀顿帧
+            _cancelBullets(22);                 // 殒命削弹：清屏喘息 + 高额削弹分
         } else if (enemy.type === 'midboss' || enemy.type === 'midboss2') {
             ExplosionFX.largeEnemy(enemy.x, enemy.y);
             AudioManager.playExplosion('large');
             _hitStop = Math.max(_hitStop, 3);
+            _cancelBullets(14);
         } else if (enemy.type === 'bomber' || enemy.type === 'elite' ||
                    enemy.type === 'gunship' || enemy.type === 'predator' || enemy.type === 'carrier') {
             ExplosionFX.mediumEnemy(enemy.x, enemy.y);
@@ -177,6 +267,7 @@ var GameCore = (() => {
         const laserOn  = WeaponManager.isLaserActive();
         const px       = Player.x;
         const pb       = Player.getBounds();
+        const shatterSpawns = [];   // 碎裂弹命中后延迟注入的散射子（避免同帧重复命中本敌）
 
         // ── Player bullets & laser vs enemies ──────────────────────────
         for (let ei = 0; ei < enemies.length; ei++) {
@@ -209,6 +300,19 @@ var GameCore = (() => {
                     if (e.takeDamage(b.damage)) { _handleEnemyKill(e); break; }
                     continue;
                 }
+                if (b.type === 'shatter') {
+                    // 碎裂弹：命中即扣血 + 自毁，并向前散裂 3 枚（延迟注入，下一帧再参与碰撞）
+                    if (!Collision.rectsOverlap(bb, eb)) continue;
+                    const killed = e.takeDamage(b.damage);
+                    ExplosionFX.bulletHit(b.x, b.y);
+                    ParticleSystem.spawn(b.x, b.y,
+                        { count: 6, colors: ['#7ff0ff', '#fff', '#20c8ff'], speed: 4, life: 12, size: 2, shape: 'spark' });
+                    b.alive = false;
+                    for (const off of [-0.6, 0, 0.6])
+                        shatterSpawns.push(ShatterBeam.makeShard(b.x, b.y, -Math.PI / 2 + off, b.childDmg));
+                    if (killed) { _handleEnemyKill(e); break; }
+                    continue;
+                }
                 if (!Collision.rectsOverlap(bb, eb)) continue;
                 const killed = e.takeDamage(b.damage);
                 ExplosionFX.bulletHit(b.x, b.y);
@@ -224,14 +328,14 @@ var GameCore = (() => {
                     const tb = t.getBounds(e.x, e.y);
                     if (laserOn && Math.abs(px - (tb.x + tb.w / 2)) < 16) {
                         t.hp -= LaserBeam.getDmgPerFrame() * _dt;
-                        if (t.hp <= 0) ExplosionFX.mediumEnemy(e.x + t.ox, e.y + t.oy);
+                        if (t.hp <= 0) { ExplosionFX.mediumEnemy(e.x + t.ox, e.y + t.oy); _addScore(150); }
                     }
                     for (const b of pbullets) {
                         if (!b.alive) continue;
                         if (Collision.rectsOverlap(b.getBounds(), tb)) {
                             t.hp -= b.damage;
                             if (!b.piercing) b.alive = false;
-                            if (t.hp <= 0) ExplosionFX.mediumEnemy(e.x + t.ox, e.y + t.oy);
+                            if (t.hp <= 0) { ExplosionFX.mediumEnemy(e.x + t.ox, e.y + t.oy); _addScore(150); }
                         }
                     }
                 }
@@ -245,19 +349,22 @@ var GameCore = (() => {
                     const cb = c.getBounds(e.x, e.y);
                     if (laserOn && Math.abs(px - (cb.x + cb.w / 2)) < 16) {
                         c.hp -= LaserBeam.getDmgPerFrame() * _dt;
-                        if (c.hp <= 0) ExplosionFX.mediumEnemy(e.x + c.ox, e.y + c.oy);
+                        if (c.hp <= 0) { ExplosionFX.mediumEnemy(e.x + c.ox, e.y + c.oy); _addScore(150); }
                     }
                     for (const b of pbullets) {
                         if (!b.alive) continue;
                         if (Collision.rectsOverlap(b.getBounds(), cb)) {
                             c.hp -= b.damage;
                             if (!b.piercing) b.alive = false;
-                            if (c.hp <= 0) ExplosionFX.mediumEnemy(e.x + c.ox, e.y + c.oy);
+                            if (c.hp <= 0) { ExplosionFX.mediumEnemy(e.x + c.ox, e.y + c.oy); _addScore(150); }
                         }
                     }
                 }
             }
         }
+
+        // 碎裂弹散射子统一在敌人循环结束后注入（下一帧参与碰撞，飞向其它敌人）
+        if (shatterSpawns.length) WeaponManager.addBullets(shatterSpawns);
 
         // ── Graviton orbs: pull force + periodic lightning strikes ─────
         for (const b of pbullets) {
@@ -305,6 +412,13 @@ var GameCore = (() => {
                     } else {
                         if (Player.takeDamage()) _loseLife();
                     }
+                } else if (!b.grazed) {
+                    // 擦弹：贴着弹幕飞（判定框外、擦弹圈内）一次性结算，奖励贴脸走位
+                    const gdx = b.x - px, gdy = b.y - Player.y;
+                    if (gdx * gdx + gdy * gdy < GRAZE_RADIUS * GRAZE_RADIUS) {
+                        b.grazed = true;
+                        _onGraze(b.x, b.y);
+                    }
                 }
             }
         }
@@ -351,6 +465,7 @@ var GameCore = (() => {
         EventBus.on('item:ice_w',       () => { WeaponManager.setWeapon('ice');       AudioManager.playWeaponGet(); _weaponFlash = { type:'ice',       label:'ICE CRYSTAL',     timer:120 }; });
         EventBus.on('item:satellite_w', () => { WeaponManager.setWeapon('satellite'); AudioManager.playWeaponGet(); _weaponFlash = { type:'satellite', label:'TWIN SATELLITE',  timer:120 }; });
         EventBus.on('item:graviton_w',  () => { WeaponManager.setWeapon('graviton');  AudioManager.playWeaponGet(); _weaponFlash = { type:'graviton',  label:'GRAVITON ORB',    timer:120 }; });
+        EventBus.on('item:shatter_w',   () => { WeaponManager.setWeapon('shatter');   AudioManager.playWeaponGet(); _weaponFlash = { type:'shatter',   label:'SHATTER BEAM',    timer:120 }; });
     }
 
     function _bindInputEvents() {
@@ -358,6 +473,23 @@ var GameCore = (() => {
             // 图鉴优先拦截：打开状态下其余按键（含 Space/P）不应触发游戏操作
             if (key === 'm' || key === 'M') { Codex.toggle(); return; }
             if (Codex.isOpen()) { Codex.handleKey(key); return; }
+
+            // 设置项：V 切换震屏（全局，持久化）
+            if (key === 'v' || key === 'V') {
+                _shakeEnabled = !_shakeEnabled;
+                try { localStorage.setItem('raidenShake', _shakeEnabled ? '1' : '0'); } catch (e) {}
+                AudioManager.playCollect();
+                if (_state === STATE.PLAYING)
+                    _addPopup(Renderer.W / 2, Renderer.H / 2, _shakeEnabled ? '◈ SCREEN SHAKE ON' : '◈ SCREEN SHAKE OFF', '#8ff');
+                return;
+            }
+            // 菜单：◄ ► 切换难度
+            if (_state === STATE.MENU && (key === 'ArrowLeft' || key === 'ArrowRight') &&
+                typeof Difficulty !== 'undefined') {
+                Difficulty.cycle(key === 'ArrowRight' ? 1 : -1);
+                AudioManager.playCollect();
+                return;
+            }
 
             if (key === ' ' || key === 'Space') {
                 if (_state === STATE.PLAYING)  _useBomb(false);
@@ -389,6 +521,7 @@ var GameCore = (() => {
                 if (key === '7') WeaponManager.setWeapon('ice');
                 if (key === '8') WeaponManager.setWeapon('satellite');
                 if (key === '9') WeaponManager.setWeapon('graviton');
+                if (key === '0') WeaponManager.setWeapon('shatter');
                 if (key === 'l' || key === 'L') EnemyManager.spawnKind('boss5', 1);
                 if (key === 'k' || key === 'K') EnemyManager.spawnKind('boss6', 1);
                 if (key === 'j' || key === 'J') EnemyManager.spawnKind('boss7', 1);
@@ -405,8 +538,7 @@ var GameCore = (() => {
         if (!free && _bombs <= 0) return;
         if (!free) _bombs--;
         const enemies  = EnemyManager.getEnemies();
-        const ebullets = EnemyManager.getEnemyBullets();
-        for (const b of ebullets) b.alive = false;
+        _cancelBullets(12);   // 削弹化作积分火花（替代直接清空），炸弹也有削弹回报
         for (const e of enemies) {
             if (e.alive) {
                 // 中型 Boss 同样受钳制伤害，避免一颗炸弹直接秒杀 45/60 HP 的 midboss
@@ -425,8 +557,9 @@ var GameCore = (() => {
 
     function _startGame() {
         _score          = 0;
-        _lives          = PlayerConfig.initialLives;
-        _bombs          = PlayerConfig.initialBombs;
+        const _diff     = (typeof Difficulty !== 'undefined') ? Difficulty.get() : null;
+        _lives          = _diff ? _diff.lives : PlayerConfig.initialLives;
+        _bombs          = _diff ? _diff.bombs : PlayerConfig.initialBombs;
         _combo          = 0;
         _comboTimer     = 0;
         _comboMult      = 1;
@@ -437,6 +570,12 @@ var GameCore = (() => {
         _bhDamageTimer      = 0;
         _weaponFlash        = null;
         _scoreNextMilestone = 10000;
+        _grazeCount         = 0;
+        _grazeMeter         = 0;
+        _grazeFlash         = 0;
+        _comboMileIdx       = 0;
+        _nextBombScore      = 80000;
+        _nextLifeScore      = 300000;
         _popups.length      = 0;
         _kills              = 0;
         _maxCombo           = 0;
@@ -460,6 +599,7 @@ var GameCore = (() => {
     function _startStage(idx) {
         StageManager.startStage(idx);
         EnemyManager.reset();
+        _stageMood = (idx % 2 === 0) ? 'stage' : 'stage2';   // 关卡 BGM 交替
         const scene = (StageData[idx] && StageData[idx].scene) ? StageData[idx].scene : 'space';
         BackgroundManager.switchTo(scene);
     }
@@ -526,6 +666,7 @@ var GameCore = (() => {
 
         // 受击红闪衰减（不受暂停/顿帧影响，始终自然消退）
         if (_dmgFlash > 0) _dmgFlash -= rawDt;
+        if (_grazeFlash > 0) _grazeFlash -= rawDt;
 
         // Screen shake
         if (_shakeDur > 0) {
@@ -551,7 +692,7 @@ var GameCore = (() => {
             ExplosionFX.update(_dt);
             for (let i = _popups.length - 1; i >= 0; i--) {
                 const p = _popups[i];
-                p.y += p.vy; p.life -= _dt;
+                p.y += p.vy; p.life -= rawDt;   // 与 _imTimer 同用 rawDt：慢动作残留时结算横幅与浮字不脱节
                 if (p.life <= 0) _popups.splice(i, 1);
             }
             _imTimer -= rawDt;
@@ -570,14 +711,14 @@ var GameCore = (() => {
         _runFrames += rawDt;
 
         // BGM 情绪跟随战况：有 Boss 时切换为紧张曲目
-        AudioManager.setBgmMood(EnemyManager.hasBoss() ? 'boss' : 'stage');
+        AudioManager.setBgmMood(EnemyManager.hasBoss() ? 'boss' : _stageMood);
 
         // 顿帧：大型击杀瞬间世界冻结数帧（渲染继续），强化打击感
         if (_hitStop > 0) { _hitStop -= rawDt; return; }
 
         if (_comboTimer > 0) {
             _comboTimer -= _dt;
-            if (_comboTimer <= 0) { _combo = 0; _comboMult = 1; }
+            if (_comboTimer <= 0) { _combo = 0; _comboMult = 1; _comboMileIdx = 0; }
         }
 
         for (let i = _popups.length - 1; i >= 0; i--) {
@@ -648,6 +789,16 @@ var GameCore = (() => {
             Player.draw(ctx, _fc);
         }
 
+        // 擦弹光环：贴弹瞬间机体外圈一圈青白脉冲（与震屏同坐标系，跟机体）
+        if (_grazeFlash > 0 && _state === STATE.PLAYING) {
+            const ga = _grazeFlash / 10;
+            ctx.strokeStyle = `rgba(170,235,255,${(ga * 0.7).toFixed(2)})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(Player.x, Player.y, GRAZE_RADIUS + 4 - ga * 3, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
         ParticleSystem.draw(ctx);
         ExplosionFX.draw(ctx);
 
@@ -674,7 +825,7 @@ var GameCore = (() => {
             ctx.fillStyle   = 'rgba(0,10,0,0.82)';
             ctx.strokeStyle = '#0f0';
             ctx.lineWidth   = 1;
-            ctx.beginPath(); ctx.roundRect(px - 6, py - 6, 148, 249, 4); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.roundRect(px - 6, py - 6, 148, 266, 4); ctx.fill(); ctx.stroke();
 
             ctx.font         = 'bold 10px "Courier New",monospace';
             ctx.textBaseline = 'top';
@@ -730,6 +881,7 @@ var GameCore = (() => {
                 ['7', 'ICE',       'ice',       '#a0f0ff'],
                 ['8', 'SATELLITE', 'satellite', '#ffb830'],
                 ['9', 'GRAVITON',  'graviton',  '#cc60ff'],
+                ['0', 'SHATTER',   'shatter',   '#5fefff'],
             ];
             WEAPONS.forEach(([k, label, type, col], i) => {
                 const active = cur === type;
@@ -762,7 +914,7 @@ var GameCore = (() => {
             score: _score, highScore: _highScore,
             lives: _lives, bombs: _bombs,
             combo: _combo, comboMult: _comboMult,
-            comboTimer: _comboTimer, comboMax: 120,
+            comboTimer: _comboTimer, comboMax: 165,
             scoreMultiplier: _scoreMult, multiplierTimer: _scoreMultTimer,
             timeSlowActive: _timeSlowActive, timeSlowTimer: _timeSlowTimer,
             ammoInfo: WeaponManager.getAmmoInfo(),
@@ -774,7 +926,9 @@ var GameCore = (() => {
             bhWarning: _bhW,
             stageProgress: StageManager.getProgress(),
             muted: AudioManager.isMuted(),
-            dmgFlash: Math.max(0, _dmgFlash / DMG_FLASH_FRAMES)
+            dmgFlash: Math.max(0, _dmgFlash / DMG_FLASH_FRAMES),
+            grazeCount: _grazeCount, grazeMeter: _grazeMeter, grazeFull: GRAZE_FULL,
+            grazeFlash: Math.max(0, _grazeFlash / 10)
         };
         UIRenderer.draw(ctx, gd);
         Codex.draw(ctx);

@@ -84,9 +84,11 @@ var Player = (() => {
                 // 相对拖拽：按指针帧间增量直接位移——零延迟、机体不被手指/光标遮挡
                 const d = InputManager.consumePointerDelta();
                 const sens = DRAG_SENS * spdMul;
-                // 单帧增量钳制：防止其它输入方式切换过来时积累的增量造成瞬移
-                const ddx = Math.max(-40, Math.min(40, d.dx * sens));
-                const ddy = Math.max(-40, Math.min(40, d.dy * sens));
+                // 单帧增量钳制：防止其它输入方式切换过来时积累的增量造成瞬移。
+                // 上限随 dt 放大（帧率无关）：低帧率单帧位移更大，快速划动不被吞、120fps 不被削。
+                const capF = 40 * Math.max(1, dt);
+                const ddx = Math.max(-capF, Math.min(capF, d.dx * sens));
+                const ddy = Math.max(-capF, Math.min(capF, d.dy * sens));
                 _x += ddx;
                 _y += ddy;
                 // 增量同步进速度（驱动侧倾/尾焰，松手后保留少量惯性滑行）
@@ -97,8 +99,9 @@ var Player = (() => {
             }
 
             if (!dragged) {
-                // 速度平滑：~3 帧加速到满、~3 帧停稳，消除数字键的瞬移生硬感
-                const k = Math.min(1, ACCEL_K * dt);
+                // 速度平滑：~3 帧加速到满、~3 帧停稳，消除数字键的瞬移生硬感。
+                // 指数式平滑 → 帧率无关：dt=1 时仍等于 ACCEL_K，但 30/120fps 手感一致。
+                const k = 1 - Math.pow(1 - ACCEL_K, dt);
                 _vx += (tvx - _vx) * k;
                 _vy += (tvy - _vy) * k;
                 _x  += _vx * dt;
@@ -110,7 +113,7 @@ var Player = (() => {
 
             // 侧倾随横向速度平滑过渡
             const bankTarget = Math.max(-1, Math.min(1, _vx / CFG.speed));
-            _bank += (bankTarget - _bank) * Math.min(1, 0.22 * dt);
+            _bank += (bankTarget - _bank) * (1 - Math.pow(0.78, dt));   // 指数平滑（帧率无关，dt=1 等于 0.22）
 
             // 引擎尾焰粒子流：移动越快越密，Focus 模式收束变蓝白
             _trailTimer += dt;

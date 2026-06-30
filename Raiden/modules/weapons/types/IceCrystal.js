@@ -1,5 +1,5 @@
 var IceCrystal = (() => {
-    const MAX_AMMO = 140;
+    const MAX_AMMO = 180;   // 140→180：延长冰晶弹幕留用窗口
     let _ammo      = MAX_AMMO;
     let _fireTimer = 0;
 

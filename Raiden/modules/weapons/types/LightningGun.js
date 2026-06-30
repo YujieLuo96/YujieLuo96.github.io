@@ -1,5 +1,5 @@
 var LightningGun = (() => {
-    const MAX_AMMO = 22;
+    const MAX_AMMO = 32;   // 22→32：延长闪电链留用窗口
     let _ammo = MAX_AMMO;
     let _fireTimer = 0;
 
@@ -42,6 +42,7 @@ var LightningGun = (() => {
             this.target       = null;
             this.col          = opts.col || { main: '#fff8a0', core: '#fff', glow: '#ffe040' };
             this.age          = 0;
+            this.retarget     = 12;     // 重新锁敌倒计时（帧驱动，帧率无关）
             this._sparked     = false;  // 接近目标时只迸一次电花
             this.needsEnemies = true; // flag for WeaponManager bullet update
         }
@@ -59,7 +60,9 @@ var LightningGun = (() => {
 
         update(dt, enemies) {
             this.age += dt;
-            if (this.age % 12 < 1) this.target = this._pick(enemies);
+            // 周期重锁：用倒计时而非 age%12（连续浮点取模会跳过命中窗口，导致漏锁/乱飞）
+            this.retarget -= dt;
+            if (this.retarget <= 0) { this.target = this._pick(enemies); this.retarget = 12; }
             if (this.target && this.target.alive) {
                 const ta  = Math.atan2(this.target.y - this.y, this.target.x - this.x);
                 const ca  = Math.atan2(this.vy, this.vx);

@@ -2,7 +2,7 @@ var Spectre = (() => {
     class Spectre extends EnemyBase {
         constructor(x, y) {
             super({ x, y, hp: 18, score: 620, type: 'spectre',
-                    dropChance: 0.55, dropTable: ['spread_w','homing_w','lightning_w','plasma_w','graviton_w','power','shield'],
+                    dropChance: 0.55, dropTable: ['spread_w','homing_w','lightning_w','plasma_w','graviton_w','shatter_w','power','shield'],
                     w: 40, h: 44 });
             this.speed      = 1.6 + Math.random() * 0.4;
             this.holdY      = 80 + Math.random() * 100;

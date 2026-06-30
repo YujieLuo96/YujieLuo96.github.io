@@ -13,9 +13,9 @@ var NormalGun = (() => {
     }
 
     // 火力分级 → 弹形进化档（数值不变，仅视觉）：
-    // T1 光珠 → T2 加侧鳍 → T3 锐针尖 → T4 燕尾刃 → T5 光谱伴流线
+    // T1 光珠 → T2 加侧鳍 → T3 锐针尖 → T4 燕尾刃 → T5 光谱伴流线 → T6 加重泛光 → T7 幻影侧翼
     function _tier(pw) {
-        return pw >= 21 ? 5 : pw >= 16 ? 4 : pw >= 11 ? 3 : pw >= 6 ? 2 : 1;
+        return pw >= 76 ? 7 : pw >= 51 ? 6 : pw >= 21 ? 5 : pw >= 16 ? 4 : pw >= 11 ? 3 : pw >= 6 ? 2 : 1;
     }
 
     // ── 精灵缓存：自机弹随火力可达每帧 200+ 发，每弹每帧建渐变 + shadowBlur
@@ -39,7 +39,7 @@ var NormalGun = (() => {
         const cx = w / 2, cy = h / 2;
 
         c.shadowColor = col.glow;
-        c.shadowBlur  = 8;
+        c.shadowBlur  = tier >= 7 ? 14 : tier >= 6 ? 11 : 8;   // 高阶档加重泛光
         const g = c.createLinearGradient(0, cy - lenQ * 0.55, 0, cy + lenQ * 0.45);
         g.addColorStop(0,   'rgba(0,0,0,0)');
         g.addColorStop(0.2, col.main);
@@ -88,6 +88,22 @@ var NormalGun = (() => {
             c.moveTo(cx - szQ * 0.95, cy - lenQ * 0.30); c.lineTo(cx - szQ * 0.95, cy + lenQ * 0.42);
             c.moveTo(cx + szQ * 0.95, cy - lenQ * 0.30); c.lineTo(cx + szQ * 0.95, cy + lenQ * 0.42);
             c.stroke();
+            c.globalAlpha = 1;
+        }
+        // T7：两道半透明幻影侧翼（速度与威压的视觉化）
+        if (tier >= 7) {
+            c.globalAlpha = 0.35;
+            c.fillStyle   = col.core;
+            c.beginPath();
+            c.moveTo(cx - szQ * 1.25, cy - lenQ * 0.22);
+            c.lineTo(cx - szQ * 0.70, cy + lenQ * 0.28);
+            c.lineTo(cx - szQ * 1.05, cy + lenQ * 0.34);
+            c.closePath();
+            c.moveTo(cx + szQ * 1.25, cy - lenQ * 0.22);
+            c.lineTo(cx + szQ * 0.70, cy + lenQ * 0.28);
+            c.lineTo(cx + szQ * 1.05, cy + lenQ * 0.34);
+            c.closePath();
+            c.fill();
             c.globalAlpha = 1;
         }
         c.fillStyle  = col.core;

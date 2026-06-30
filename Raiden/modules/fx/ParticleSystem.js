@@ -48,7 +48,8 @@ var ParticleSystem = (() => {
             }
         },
         draw(ctx) {
-            let stroking = false;
+            // 加色混合：粒子辉光相互叠加更亮 → 爆炸/火花更有能量感（深色背景上呈泛光）
+            ctx.globalCompositeOperation = 'lighter';
             for (const p of _active) {
                 ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
                 if (p.shape === 'spark') {
@@ -59,7 +60,14 @@ var ParticleSystem = (() => {
                     ctx.moveTo(p.x, p.y);
                     ctx.lineTo(p.x - p.vx * 2.4, p.y - p.vy * 2.4);
                     ctx.stroke();
-                    stroking = true;
+                } else if (p.shape === 'ring') {
+                    // 随年龄扩张的细环 —— 擦弹/削弹冲击波
+                    const rr = Math.max(1, (p.maxLife - p.life) * 0.7 + 2);
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth   = Math.max(0.5, p.size * 0.45);
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+                    ctx.stroke();
                 } else {
                     ctx.fillStyle = p.color;
                     ctx.beginPath();
@@ -67,7 +75,8 @@ var ParticleSystem = (() => {
                     ctx.fill();
                 }
             }
-            if (stroking) ctx.lineWidth = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.lineWidth   = 1;
             ctx.globalAlpha = 1;
         },
         clear() { _active.forEach(p => _ret(p)); _active.length = 0; }

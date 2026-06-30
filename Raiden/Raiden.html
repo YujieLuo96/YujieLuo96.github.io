@@ -179,6 +179,7 @@
 <script src="modules/core/Renderer.js"></script>
 <script src="modules/core/Collision.js"></script>
 <script src="modules/core/InputManager.js"></script>
+<script src="modules/core/Difficulty.js"></script>
 
 <!-- 1b. Asset registries — must load before any asset file that calls register() -->
 <script src="modules/data/EnemyRegistry.js"></script>
@@ -211,6 +212,7 @@
 <script src="modules/weapons/types/IceCrystal.js"></script>
 <script src="modules/weapons/types/TwinSatellite.js"></script>
 <script src="modules/weapons/types/GravitonOrb.js"></script>
+<script src="modules/weapons/types/ShatterBeam.js"></script>
 
 <!-- 7. WeaponManager (aggregates weapon types) -->
 <script src="modules/weapons/WeaponManager.js"></script>
@@ -233,6 +235,9 @@
 <script src="modules/enemies/soldiers/Elite.js"></script>
 <script src="modules/enemies/soldiers/Spectre.js"></script>
 <script src="modules/enemies/soldiers/Devastator.js"></script>
+<script src="modules/enemies/soldiers/Siren.js"></script>
+<script src="modules/enemies/soldiers/Weaver.js"></script>
+<script src="modules/enemies/soldiers/Splitter.js"></script>
 
 <!-- 10. Boss enemies -->
 <script src="modules/enemies/bosses/MidBoss.js"></script>
@@ -244,6 +249,7 @@
 <script src="modules/enemies/bosses/Boss5_Leviathan.js"></script>
 <script src="modules/enemies/bosses/Boss6_NeutronCluster.js"></script>
 <script src="modules/enemies/bosses/Boss7_Sovereign.js"></script>
+<script src="modules/enemies/bosses/Boss8_Architect.js"></script>
 
 <!-- 11. EnemyManager (aggregates all enemy types) -->
 <script src="modules/enemies/EnemyManager.js"></script>
@@ -267,6 +273,10 @@
 <script src="modules/scene/scenes/AsteroidScene.js"></script>
 <script src="modules/scene/scenes/SolarScene.js"></script>
 <script src="modules/scene/scenes/BlackholeScene.js"></script>
+<script src="modules/scene/scenes/CrystallineNebulaScene.js"></script>
+
+<!-- 14b. Foreground parallax (near-field depth layer, used by BackgroundManager) -->
+<script src="modules/scene/ForegroundParallaxLayer.js"></script>
 
 <!-- 15. BackgroundManager -->
 <script src="modules/scene/BackgroundManager.js"></script>

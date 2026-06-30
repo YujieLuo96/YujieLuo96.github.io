@@ -77,6 +77,15 @@ var AudioManager = (() => {
             leadType: 'square', leadVol: 0.028, leadLen: 0.5,
             hat: true,
         },
+        // 关卡变体 B：根音上移、节奏稍快的小调推进（按关序与 stage 交替，丰富听感）
+        stage2: {
+            bpm: 124, root: 3,
+            bass: [0, 0, 7, 0, 5, 5, 12, 5, 3, 3, 10, 3, 7, 5, 3, 0],
+            bassType: 'triangle', bassVol: 0.13, bassLen: 0.85,
+            lead: [12, null, 15, null, 19, null, 17, 15, null, 12, null, 19, null, 15, null, 12],
+            leadType: 'square', leadVol: 0.026, leadLen: 0.5,
+            hat: true,
+        },
         // Boss：D 根音 + 减五度的紧张推进
         boss: {
             bpm: 148, root: 5,
@@ -201,6 +210,9 @@ var AudioManager = (() => {
         },
         playGameOver()   { [0,1,2].forEach(i => _beep(440 / Math.pow(1.4, i), 'sawtooth', 0.3, 0.12, i * 0.28)); },
         playStageClear() { [0,1,2,3].forEach(i => _beep(440 * Math.pow(1.25, i), 'sine', 0.15, 0.1, i * 0.12)); },
+        playGraze()      { _beep(2600, 'sine', 0.025, 0.016); },   // 擦弹微响（克制，不刺耳）
+        playMilestone()  { [0,1,2].forEach(i => _beep(720 * Math.pow(1.32, i), 'sine', 0.10, 0.06, i * 0.05)); },
+        playWarp()       { _noise(0.34, 0.06, 480); _beep(540, 'sine', 0.30, 0.04); _beep(170, 'sawtooth', 0.36, 0.045, 0.05); },
 
         setMuted(v)      { _muted = v; if (_master) _master.gain.value = v ? 0 : 1; },
         isMuted()        { return _muted; },
