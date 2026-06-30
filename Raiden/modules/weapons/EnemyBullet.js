@@ -95,10 +95,13 @@ var EnemyBullet = (() => {
         } else {
             // 竖向弹体，绘制时按速度方向旋转
             const len = r * 2.6;
-            const w   = Math.ceil(r * 1.5) + 4;
-            const h   = Math.ceil(len * 2) + 4;
+            const w   = Math.ceil(r * 1.5) + 8;
+            const h   = Math.ceil(len * 2) + 8;
             cv.width = w; cv.height = h;
             const cx = w / 2, cy = h / 2;
+            // 暗底描边：在亮背景(太阳表面 / 爆炸泛光 / 晶体星云)上保证敌弹始终可读
+            c.fillStyle = 'rgba(6,0,4,0.5)';
+            c.beginPath(); c.ellipse(cx, cy, r * 0.9, len * 0.86, 0, 0, Math.PI * 2); c.fill();
             const g = c.createLinearGradient(0, cy - len, 0, cy + len);
             g.addColorStop(0,    'rgba(255,100,100,0)');
             g.addColorStop(0.25, color);

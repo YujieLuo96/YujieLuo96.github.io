@@ -2,9 +2,14 @@ var ExplosionFX = (() => {
     const _flashes = [];
     const _rings   = [];   // 冲击波扩散环（炸弹等）
     const _delayed = [];   // 延迟二次/三次爆发（帧驱动，受暂停/结算冻结，不再用墙钟 setTimeout）
+    const _lights  = [];   // 动态泛光：爆炸瞬间向周围场景/敌机投射的加色光（光照感）
 
     function _flash(x, y, r, life, color) {
         _flashes.push({ x, y, r, life, maxLife: life, color: color || 'rgba(255,200,100,' });
+    }
+
+    function _light(x, y, r, life, rgb) {
+        _lights.push({ x, y, r, life, maxLife: life, rgb: rgb || '255,200,120' });
     }
 
     function _ring(x, y, startR, speed, life, rgb, width) {
@@ -21,6 +26,7 @@ var ExplosionFX = (() => {
             ParticleSystem.spawn(x, y, { count: 10, colors: ['#ffd', color], speed: 7.5, life: 16, size: 3, shape: 'spark' });
             _flash(x, y, 36, 8);
             _ring(x, y, 4, 5, 14, '255,210,140', 2.5);
+            _light(x, y, 58, 14, '255,190,110');
         },
         largeEnemy(x, y, color) {
             ParticleSystem.spawn(x, y, { count: 30, colors: [color, '#fff', '#fa0'], speed: 5.5, life: 36, size: 6 });
@@ -29,6 +35,7 @@ var ExplosionFX = (() => {
             ParticleSystem.spawn(x, y, { count: 8, colors: ['#f60', '#a42'], speed: 4, life: 46, size: 3.5, gravity: 0.09 });
             _flash(x, y, 60, 10);
             _ring(x, y, 6, 7, 20, '255,200,120', 4);
+            _light(x, y, 92, 20, '255,170,90');
         },
         boss(x, y, color) {
             ParticleSystem.spawn(x, y, { count: 70, colors: [color, '#fff', '#fa0', '#f44'], speed: 7, life: 55, size: 9, scatter: 35 });
@@ -42,6 +49,7 @@ var ExplosionFX = (() => {
             _flash(x, y, 100, 18);
             _ring(x, y, 10,  16, 34, '255,220,150', 7);
             _ring(x, y, -50, 13, 42, '255,140,80',  5);   // 延迟出现的第二冲击波
+            _light(x, y, 180, 38, '255,200,120');         // 大范围照亮场景的反应堆爆光
         },
         bulletHit(x, y) {
             ParticleSystem.spawn(x, y, { count: 4, colors: ['#ff8', '#fa0'], speed: 2.5, life: 10, size: 2.5 });
@@ -53,6 +61,7 @@ var ExplosionFX = (() => {
         playerHit(x, y) {
             ParticleSystem.spawn(x, y, { count: 35, colors: ['#f80', '#f40', '#ff0'], speed: 5.5, life: 38, size: 5 });
             _flash(x, y, 60, 10);
+            _light(x, y, 110, 22, '255,120,90');
         },
         // 炸弹：全屏闪光 + 从引爆点（玩家位置）扩散的双冲击波环
         bomb(x, y) {
@@ -61,6 +70,7 @@ var ExplosionFX = (() => {
             _flash(cx, cy, Renderer.H * 1.2, 22, 'rgba(255,230,80,');
             _ring(cx, cy, 12,  30, 30, '255,240,160', 8);
             _ring(cx, cy, -40, 26, 38, '120,200,255', 5);   // 负起始半径 = 延迟出现的第二环
+            _light(cx, cy, Renderer.H * 0.85, 30, '255,235,150');   // 炸弹全场爆光
         },
         update(dt) {
             for (let i = _delayed.length - 1; i >= 0; i--) {
@@ -83,10 +93,26 @@ var ExplosionFX = (() => {
                 r.life -= dt;
                 if (r.life <= 0) _rings.splice(i, 1);
             }
+            for (let i = _lights.length - 1; i >= 0; i--) {
+                _lights[i].life -= dt;
+                if (_lights[i].life <= 0) _lights.splice(i, 1);
+            }
         },
         draw(ctx) {
             // 冲击波环用加色混合 → 明亮锐利的能量环（火光叠加感）
             ctx.globalCompositeOperation = 'lighter';
+            // 动态泛光：先铺一层加色光晕，照亮周围场景与敌机
+            for (const L of _lights) {
+                const t = L.life / L.maxLife;
+                const r = L.r * (0.55 + (1 - t) * 0.45);
+                const a = t * t * 0.5;
+                const g = ctx.createRadialGradient(L.x, L.y, 0, L.x, L.y, r);
+                g.addColorStop(0,   `rgba(${L.rgb},${a.toFixed(3)})`);
+                g.addColorStop(0.5, `rgba(${L.rgb},${(a * 0.38).toFixed(3)})`);
+                g.addColorStop(1,   `rgba(${L.rgb},0)`);
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(L.x, L.y, r, 0, Math.PI * 2); ctx.fill();
+            }
             for (const r of _rings) {
                 if (r.r <= 0) continue;
                 const a = (r.life / r.maxLife) * 0.85;
@@ -109,6 +135,6 @@ var ExplosionFX = (() => {
                 ctx.fill();
             }
         },
-        clear() { _flashes.length = 0; _rings.length = 0; _delayed.length = 0; }
+        clear() { _flashes.length = 0; _rings.length = 0; _delayed.length = 0; _lights.length = 0; }
     };
 })();

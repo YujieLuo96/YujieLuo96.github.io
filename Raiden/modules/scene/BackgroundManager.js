@@ -77,6 +77,25 @@ var BackgroundManager = (() => {
                 ctx.globalAlpha = alpha;
                 _next.draw(ctx);
                 ctx.globalAlpha = 1;
+
+                // 切场 warp 拉丝：径向加速线（中段最强）→ 关卡推进的"跃迁"仪式感
+                const wA = Math.sin(alpha * Math.PI);
+                if (wA > 0.03) {
+                    const cx = Renderer.W / 2, cy = Renderer.H / 2;
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.strokeStyle = `rgba(190,215,255,${(wA * 0.5).toFixed(3)})`;
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    for (let i = 0; i < 30; i++) {
+                        const a  = (i / 30) * Math.PI * 2 + i * 0.31;
+                        const r0 = 36 + alpha * 130;
+                        const r1 = r0 + 28 + wA * 140;
+                        ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+                        ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+                    }
+                    ctx.stroke();
+                    ctx.globalCompositeOperation = 'source-over';
+                }
             }
             // 近景视差层：背景之上、战斗实体之下，统一为所有场景补足纵深
             if (typeof ForegroundParallaxLayer !== 'undefined') ForegroundParallaxLayer.draw(ctx);

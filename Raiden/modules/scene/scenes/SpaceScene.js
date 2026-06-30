@@ -1,6 +1,62 @@
 var SpaceScene = (() => {
     let _stars = [], _nebulas = [], _meteors = [], _fc = 0;
     let _deepStars = [], _warpLines = [];
+    let _galaxy = null;
+    let _meteorRate = 0.004;   // 每局随机：从稀疏到流星雨，增加重玩变化
+
+    // 远方旋涡星系：场景焦点锚，给"穿行浩瀚宇宙"的尺度感（加色淡绘，缓慢自转漂移）
+    function _mkGalaxy(W, H) {
+        const arms = [];
+        for (let arm = 0; arm < 2; arm++) {
+            for (let i = 0; i < 64; i++) {
+                const t = i / 64;
+                arms.push({
+                    r:    9 + t * 128,
+                    a:    arm * Math.PI + t * 5.6,
+                    size: 0.5 + Math.random() * 1.5,
+                    br:   (1 - t) * 0.65 + 0.12,
+                    col:  Math.random() < 0.5 ? '200,210,255' : '255,228,196',
+                });
+            }
+        }
+        return {
+            x: W * (Math.random() < 0.5 ? 0.78 : 0.2),
+            y: H * (0.16 + Math.random() * 0.14),
+            rot: Math.random() * Math.PI, drift: -(0.003 + Math.random() * 0.004),
+            tilt: 0.36 + Math.random() * 0.14, arms,
+        };
+    }
+
+    function _drawGalaxy(ctx, g) {
+        ctx.save();
+        ctx.translate(g.x, g.y);
+        ctx.rotate(g.rot);
+        ctx.scale(1, g.tilt);
+        ctx.globalCompositeOperation = 'lighter';
+        // 外晕
+        const halo = ctx.createRadialGradient(0, 0, 0, 0, 0, 152);
+        halo.addColorStop(0,   'rgba(170,160,255,0.05)');
+        halo.addColorStop(0.4, 'rgba(110,80,200,0.022)');
+        halo.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(0, 0, 152, 0, Math.PI * 2); ctx.fill();
+        // 旋臂星点
+        for (const d of g.arms) {
+            ctx.globalAlpha = d.br * 0.16;
+            ctx.fillStyle = `rgb(${d.col})`;
+            ctx.beginPath(); ctx.arc(Math.cos(d.a) * d.r, Math.sin(d.a) * d.r, d.size, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // 核球
+        const core = ctx.createRadialGradient(0, 0, 0, 0, 0, 28);
+        core.addColorStop(0,   'rgba(255,250,232,0.18)');
+        core.addColorStop(0.4, 'rgba(255,222,176,0.08)');
+        core.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = core;
+        ctx.beginPath(); ctx.arc(0, 0, 28, 0, Math.PI * 2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.restore();
+    }
 
     function _mkStar(initial) {
         const layer = Math.floor(Math.random() * 3);
@@ -41,6 +97,8 @@ var SpaceScene = (() => {
                 { x: W*0.52, y: H*0.72, rx: W*0.20, ry: 56,  col: 'rgba(45,60,170,',  spd: 0.06, pOff: 2.0 },
             ];
             _warpLines = Array.from({ length: 22 }, () => _mkWarpLine(W, H));
+            _galaxy = _mkGalaxy(W, H);
+            _meteorRate = 0.0028 + Math.random() * 0.0050;
             _meteors = [];
             _fc = 0;
         },
@@ -54,7 +112,7 @@ var SpaceScene = (() => {
             }
             for (const n of _nebulas) { n.y += n.spd * dt; if (n.y > H + 100) n.y = -100; }
 
-            if (Math.random() < 0.004 * dt) {
+            if (Math.random() < _meteorRate * dt) {
                 _meteors.push({
                     x: Math.random() * W, y: -20,
                     vx: 2 + Math.random() * 3, vy: 4 + Math.random() * 4,
@@ -75,6 +133,12 @@ var SpaceScene = (() => {
                 wl.dist += wl.spd * dt;
                 if (wl.dist > maxD) Object.assign(wl, _mkWarpLine(W, H), { dist: 15 + Math.random() * 50 });
             }
+
+            if (_galaxy) {
+                _galaxy.rot += 0.0006 * dt;
+                _galaxy.x   += _galaxy.drift * dt;
+                if (_galaxy.x < -180) { _galaxy.x = W + 180; _galaxy.y = H * (0.16 + Math.random() * 0.14); }
+            }
         },
 
         draw(ctx) {
@@ -88,6 +152,9 @@ var SpaceScene = (() => {
             ctx.fillStyle = '#c4d4f0';
             for (const ds of _deepStars) ctx.fillRect(ds.x | 0, ds.y | 0, 1, 1);
             ctx.globalAlpha = 1;
+
+            // 远方旋涡星系（深空之后、星云之前）
+            if (_galaxy) _drawGalaxy(ctx, _galaxy);
 
             for (const n of _nebulas) {
                 const pulse = 0.82 + 0.18 * Math.sin(_fc * 0.007 + n.pOff);
@@ -139,14 +206,27 @@ var SpaceScene = (() => {
                 const prog = m.life / m.maxLife;
                 for (let i = 1; i < m.trail.length; i++) {
                     ctx.globalAlpha = (i / m.trail.length) * prog * 0.7;
-                    ctx.strokeStyle = m.col; ctx.lineWidth = 1.5;
+                    ctx.strokeStyle = m.col; ctx.lineWidth = 1.6;
                     ctx.beginPath(); ctx.moveTo(m.trail[i-1].x, m.trail[i-1].y);
                     ctx.lineTo(m.trail[i].x, m.trail[i].y); ctx.stroke();
                 }
-                ctx.globalAlpha = prog;
-                ctx.fillStyle = '#fff';
-                ctx.beginPath(); ctx.arc(m.x, m.y, 2, 0, Math.PI * 2); ctx.fill();
             }
+            ctx.globalAlpha = 1;
+            // 流星头部 + 再入灼烧光晕（加色脉冲，越靠近越炽烈）
+            ctx.globalCompositeOperation = 'lighter';
+            for (const m of _meteors) {
+                const prog = m.life / m.maxLife;
+                const aura = 4 + Math.sin(_fc * 0.3 + m.x * 0.1) * 1.4;
+                const ag = ctx.createRadialGradient(m.x, m.y, 0, m.x, m.y, aura * 2.6);
+                ag.addColorStop(0,   `rgba(255,242,215,${(prog * 0.85).toFixed(2)})`);
+                ag.addColorStop(0.5, `rgba(255,180,90,${(prog * 0.30).toFixed(2)})`);
+                ag.addColorStop(1,   'rgba(255,120,40,0)');
+                ctx.fillStyle = ag;
+                ctx.beginPath(); ctx.arc(m.x, m.y, aura * 2.6, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(m.x, m.y, 1.6, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'source-over';
             ctx.globalAlpha = 1;
         }
     };

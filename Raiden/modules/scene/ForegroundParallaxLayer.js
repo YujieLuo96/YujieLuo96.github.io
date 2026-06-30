@@ -6,6 +6,10 @@
 // ──────────────────────────────────────────────────────────────────────────
 var ForegroundParallaxLayer = (() => {
     let _bands = [];
+    let _motion = 'fall';
+    let _fc = 0;
+    // 各场景的近景运动语汇：太空轻摆、太阳余烬上浮、黑洞被引力牵引、星云走曲线
+    const MOTION = { space: 'sway', asteroid: 'fall', solar: 'rise', blackhole: 'gravity', nebula: 'curve' };
 
     // 每个场景 2 条带：近带更快更大（streak 拉成竖线 → 速度残影），稍远带为柔点
     const PRESETS = {
@@ -50,6 +54,7 @@ var ForegroundParallaxLayer = (() => {
             spd: band.speed * (0.7 + Math.random() * 0.6),
             col: band.colors[Math.floor(Math.random() * band.colors.length)],
             drift: (Math.random() - 0.5) * 0.45,
+            phase: Math.random() * Math.PI * 2,
             a:   band.alpha * (0.55 + Math.random() * 0.45),
         };
     }
@@ -58,12 +63,15 @@ var ForegroundParallaxLayer = (() => {
         setScene(name) {
             const preset = PRESETS[name];
             _bands = [];
+            _motion = MOTION[name] || 'fall';
             if (!preset) return;
             const W = Renderer.W, H = Renderer.H;
+            const rise = _motion === 'rise';
             for (const b of preset.bands) {
                 _bands.push({
                     parts:  Array.from({ length: b.count }, () => _mkPart(b, W, H, true)),
                     streak: b.streak || 0,
+                    rise,
                 });
             }
         },
@@ -71,11 +79,38 @@ var ForegroundParallaxLayer = (() => {
         update(dt) {
             if (!_bands.length) return;
             const W = Renderer.W, H = Renderer.H;
+            _fc += dt;
+            // 黑洞引力中心（如当前场景提供）
+            let well = null;
+            if (_motion === 'gravity' && typeof BackgroundManager !== 'undefined' && BackgroundManager.getBlackhole) {
+                well = BackgroundManager.getBlackhole();
+            }
             for (const band of _bands) {
                 for (const p of band.parts) {
-                    p.y += p.spd * dt;
-                    p.x += p.drift * dt;
-                    if (p.y > H + 10) { p.y = -8; p.x = Math.random() * W; }
+                    // 纵向：余烬上浮 / 其余下坠，越界回卷
+                    if (band.rise) {
+                        p.y -= p.spd * dt;
+                        if (p.y < -8) { p.y = H + 8; p.x = Math.random() * W; }
+                    } else {
+                        p.y += p.spd * dt;
+                        if (p.y > H + 10) { p.y = -8; p.x = Math.random() * W; }
+                    }
+                    // 横向：场景相关运动语汇
+                    if (_motion === 'sway') {
+                        p.x += Math.sin(_fc * 0.01 + p.y * 0.012) * 0.32 * dt + p.drift * 0.5 * dt;
+                    } else if (_motion === 'gravity' && well) {
+                        const dx = well.x - p.x, dy = well.y - p.y;
+                        const d  = Math.hypot(dx, dy) || 1;
+                        if (d < well.pullRadius) {
+                            const f = (1 - d / well.pullRadius) * 0.55 * dt;
+                            p.x += (dx / d) * f; p.y += (dy / d) * f;
+                        }
+                        p.x += p.drift * dt;
+                    } else if (_motion === 'curve') {
+                        p.x += Math.sin(_fc * 0.008 + p.y * 0.02 + p.phase) * 0.42 * dt;
+                    } else {
+                        p.x += p.drift * dt;
+                    }
                     if (p.x < -10) p.x = W + 10; else if (p.x > W + 10) p.x = -10;
                 }
             }

@@ -483,6 +483,14 @@ var GameCore = (() => {
                     _addPopup(Renderer.W / 2, Renderer.H / 2, _shakeEnabled ? '◈ SCREEN SHAKE ON' : '◈ SCREEN SHAKE OFF', '#8ff');
                 return;
             }
+            // 设置项：C 切换后期处理（调色/暗角/色散）
+            if ((key === 'c' || key === 'C') && typeof PostFX !== 'undefined') {
+                const on = PostFX.toggle();
+                AudioManager.playCollect();
+                if (_state === STATE.PLAYING)
+                    _addPopup(Renderer.W / 2, Renderer.H / 2, on ? '◈ POST-FX ON' : '◈ POST-FX OFF', '#8ff');
+                return;
+            }
             // 菜单：◄ ► 切换难度
             if (_state === STATE.MENU && (key === 'ArrowLeft' || key === 'ArrowRight') &&
                 typeof Difficulty !== 'undefined') {
@@ -679,6 +687,7 @@ var GameCore = (() => {
         }
 
         BackgroundManager.update(rawDt);
+        if (typeof PostFX !== 'undefined') PostFX.update(rawDt, BackgroundManager.getCurrentName());
 
         if (Codex.isOpen()) { Codex.update(rawDt); return; }
 
@@ -930,6 +939,15 @@ var GameCore = (() => {
             grazeCount: _grazeCount, grazeMeter: _grazeMeter, grazeFull: GRAZE_FULL,
             grazeFlash: Math.max(0, _grazeFlash / 10)
         };
+        if (typeof PostFX !== 'undefined') {
+            PostFX.draw(ctx, {
+                boss: EnemyManager.hasBoss(),
+                lives: _lives,
+                frameCount: _fc,
+                bhWarn: _bhW ? _bhW.intensity : 0
+            });
+        }
+
         UIRenderer.draw(ctx, gd);
         Codex.draw(ctx);
 

@@ -138,7 +138,42 @@ var CrystallineNebulaScene = (() => {
                     ctx.quadraticCurveTo(f.cx + wob, f.cy, f.x1, f.y1);
                     ctx.stroke();
                 }
+                // 分叉裂纹：从曲线中点斜出 2 支（模拟应力裂解，读作"晶体开裂"而非"光束"）
+                const mx = 0.25 * f.x0 + 0.5 * (f.cx + wob) + 0.25 * f.x1;
+                const my = 0.25 * f.y0 + 0.5 * f.cy + 0.25 * f.y1;
+                const dir = Math.atan2(f.y1 - f.y0, f.x1 - f.x0);
+                const blen = Math.hypot(f.x1 - f.x0, f.y1 - f.y0) * 0.35;
+                ctx.strokeStyle = `hsla(${f.hue},100%,84%,${(0.24 * t).toFixed(3)})`;
+                ctx.lineWidth = 1;
+                for (const sgn of [-1, 1]) {
+                    const ba = dir + sgn * 0.62;
+                    const ex = mx + Math.cos(ba) * blen, ey = my + Math.sin(ba) * blen;
+                    ctx.beginPath();
+                    ctx.moveTo(mx, my);
+                    ctx.quadraticCurveTo(mx + Math.cos(ba) * blen * 0.5 + sgn * wob * 0.4,
+                                         my + Math.sin(ba) * blen * 0.5, ex, ey);
+                    ctx.stroke();
+                }
                 ctx.shadowBlur = 0;
+            }
+
+            // ── 晶格共振连线：每枚晶体连向最近邻的一缕微光（统一"矿脉"观感）──
+            for (let i = 0; i < _crystals.length; i++) {
+                const a = _crystals[i];
+                let nb = null, nd = 130 * 130;
+                for (let j = 0; j < _crystals.length; j++) {
+                    if (j === i) continue;
+                    const b = _crystals[j];
+                    const dx = a.x - b.x, dy = a.y - b.y;
+                    const d2 = dx * dx + dy * dy;
+                    if (d2 < nd) { nd = d2; nb = b; }
+                }
+                if (nb) {
+                    const pulse = 0.5 + 0.5 * Math.sin(fc * 0.04 + i);
+                    ctx.strokeStyle = `hsla(${a.hue},80%,62%,${(0.045 + pulse * 0.055).toFixed(3)})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(nb.x, nb.y); ctx.stroke();
+                }
             }
 
             // ── 冰尘微粒 ─────────────────────────────────────────────────
@@ -187,6 +222,21 @@ var CrystallineNebulaScene = (() => {
                 ctx.beginPath();
                 ctx.arc(-c.sz * 0.2, -c.sz * 0.2, c.sz * 0.12 * gl + 0.6, 0, Math.PI * 2);
                 ctx.fill();
+                // 顶点折射辉光（加色，按 glintPhase 逐顶点呼吸 → 内部折光感）
+                ctx.globalCompositeOperation = 'lighter';
+                c.verts.forEach((v, vi) => {
+                    const vg2 = 0.4 + 0.6 * Math.sin(c.glintPhase + vi * 0.5);
+                    if (vg2 < 0.15) return;
+                    const vx = Math.cos(v.a) * v.r, vy = Math.sin(v.a) * v.r;
+                    const br = (1.3 + vg2 * 1.0);
+                    const vgr = ctx.createRadialGradient(vx, vy, 0, vx, vy, br * 2.4);
+                    vgr.addColorStop(0,   `rgba(255,255,255,${(vg2 * 0.5).toFixed(2)})`);
+                    vgr.addColorStop(0.5, `hsla(${c.hue},100%,72%,${(vg2 * 0.3).toFixed(2)})`);
+                    vgr.addColorStop(1,   'rgba(0,0,0,0)');
+                    ctx.fillStyle = vgr;
+                    ctx.beginPath(); ctx.arc(vx, vy, br * 2.4, 0, Math.PI * 2); ctx.fill();
+                });
+                ctx.globalCompositeOperation = 'source-over';
                 ctx.restore();
             }
         }

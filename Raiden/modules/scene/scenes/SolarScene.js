@@ -333,6 +333,21 @@ var SolarScene = (() => {
                 ctx.beginPath(); ctx.arc(_cme.x, SURF_Y, cr, Math.PI, Math.PI * 2); ctx.fill();
             }
 
+            // ── Stellar-wind curtains: 两侧从表面升腾的等离子帘（加色辉光，正弦摇曳）──
+            ctx.globalCompositeOperation = 'lighter';
+            for (let side = 0; side < 2; side++) {
+                const baseX = side === 0 ? W * 0.18 : W * 0.82;
+                for (let k = 0; k < 5; k++) {
+                    const xx = baseX + (k - 2) * 12 + Math.sin(fc * 0.012 + k + side * 2) * 18;
+                    const cg = ctx.createLinearGradient(0, SURF_Y, 0, H * 0.10);
+                    cg.addColorStop(0, 'rgba(255,170,60,0.055)');
+                    cg.addColorStop(1, 'rgba(255,120,30,0)');
+                    ctx.fillStyle = cg;
+                    ctx.fillRect(xx - 10, H * 0.10, 20, SURF_Y - H * 0.10);
+                }
+            }
+            ctx.globalCompositeOperation = 'source-over';
+
             // ── Solar wind streams ────────────────────────────────────────
             ctx.lineCap = 'round';
             for (const s of _streams) {
@@ -362,7 +377,7 @@ var SolarScene = (() => {
             // Convection cells (granulation) — two offset layers
             const CS = 26;
             for (let sx = 0; sx < W; sx += CS) {
-                const phase  = fc * 0.040 + sx * 0.108;
+                const phase  = fc * 0.080 + sx * 0.108;   // 翻倍闪动 → 表面更"沸腾"
                 const amp    = 4.5 + Math.sin(phase) * 3.2;
                 const bright = 0.12 + Math.abs(Math.sin(phase * 0.72)) * 0.15;
                 const cg = ctx.createRadialGradient(sx, SURF_Y, 0, sx, SURF_Y, CS * 1.15);
@@ -373,7 +388,7 @@ var SolarScene = (() => {
                 ctx.fillRect(sx - CS, SURF_Y - amp, CS * 2, amp + 7);
             }
             for (let sx = CS / 2; sx < W; sx += CS) {
-                const phase  = fc * 0.036 + sx * 0.092 + 1.55;
+                const phase  = fc * 0.072 + sx * 0.092 + 1.55;
                 const bright = 0.07 + Math.abs(Math.sin(phase * 0.80)) * 0.10;
                 const cg = ctx.createRadialGradient(sx, SURF_Y + 12, 0, sx, SURF_Y + 12, CS * 0.92);
                 cg.addColorStop(0,   `rgba(255,185,52,${bright})`);

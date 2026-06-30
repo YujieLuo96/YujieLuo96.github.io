@@ -2,6 +2,7 @@ var BlackholeScene = (() => {
     let _stars = [], _fc = 0, _t = 0;
     let _bx = 0, _by = 0, _baseX = 0, _baseY = 0;
     let _particles = [];
+    let _accFlares = [];   // 吸积盘偶发磁重联耀斑
 
     const PULL_RADIUS   = 220;
     const DAMAGE_RADIUS = 38;
@@ -48,6 +49,7 @@ var BlackholeScene = (() => {
             _by = _baseY;
             _initStars(W, H);
             _initParticles();
+            _accFlares = [];
         },
 
         update(dt) {
@@ -65,6 +67,18 @@ var BlackholeScene = (() => {
                     p.orbitSpeed = 0.005 + 1.8 / p.dist;
                     p.alpha = Math.random() * 0.55 + 0.2;
                 }
+            }
+            // 偶发吸积耀斑（磁重联爆闪）：~每 9 秒一次
+            if (Math.random() < 0.0018 * dt) {
+                _accFlares.push({
+                    angle: Math.random() * Math.PI * 2,
+                    dist:  DAMAGE_RADIUS * 1.3 + Math.random() * 50,
+                    life:  0, maxLife: 40 + Math.random() * 20
+                });
+            }
+            for (let i = _accFlares.length - 1; i >= 0; i--) {
+                _accFlares[i].life += dt;
+                if (_accFlares[i].life >= _accFlares[i].maxLife) _accFlares.splice(i, 1);
             }
         },
 
@@ -258,12 +272,12 @@ var BlackholeScene = (() => {
 
             // -- Photon ring with chromatic aberration --
             // Red-shifted outer component (longer wavelengths escape from deeper in the potential well)
-            const phRed = ctx.createRadialGradient(0, 0, phR + 5, 0, 0, phR + 24);
+            const phRed = ctx.createRadialGradient(0, 0, phR + 6, 0, 0, phR + 28);
             phRed.addColorStop(0,   'rgba(255,80,40,0)');
-            phRed.addColorStop(0.4, `rgba(255,100,30,${0.20 + phPulse * 0.10})`);
+            phRed.addColorStop(0.4, `rgba(255,96,28,${0.27 + phPulse * 0.11})`);
             phRed.addColorStop(1,   'rgba(200,40,0,0)');
             ctx.fillStyle = phRed;
-            ctx.beginPath(); ctx.arc(0, 0, phR + 24, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(0, 0, phR + 28, 0, Math.PI * 2); ctx.fill();
 
             // White/violet outer halo
             const phOut = ctx.createRadialGradient(0, 0, phR, 0, 0, phR + 28);
@@ -285,10 +299,18 @@ var BlackholeScene = (() => {
             // Blue-shifted inner component (shorter wavelengths from near-horizon region)
             const phBlue = ctx.createRadialGradient(0, 0, DAMAGE_RADIUS + 1, 0, 0, phR);
             phBlue.addColorStop(0,    'rgba(0,0,0,0)');
-            phBlue.addColorStop(0.65, `rgba(110,185,255,${0.16 + phPulse * 0.10})`);
-            phBlue.addColorStop(1,    `rgba(155,210,255,${0.22 + phPulse * 0.13})`);
+            phBlue.addColorStop(0.65, `rgba(110,190,255,${0.24 + phPulse * 0.12})`);
+            phBlue.addColorStop(1,    `rgba(165,215,255,${0.32 + phPulse * 0.14})`);
             ctx.fillStyle = phBlue;
             ctx.beginPath(); ctx.arc(0, 0, phR, 0, Math.PI * 2); ctx.fill();
+
+            // 中频绿带：三色色散补全（红外移 + 绿中频 + 蓝近视界），时空畸变更剧烈
+            const phGreen = ctx.createRadialGradient(0, 0, phR * 0.9, 0, 0, phR + 12);
+            phGreen.addColorStop(0,   'rgba(60,220,170,0)');
+            phGreen.addColorStop(0.5, `rgba(90,235,185,${(0.07 + phPulse * 0.04).toFixed(3)})`);
+            phGreen.addColorStop(1,   'rgba(60,220,170,0)');
+            ctx.fillStyle = phGreen;
+            ctx.beginPath(); ctx.arc(0, 0, phR + 12, 0, Math.PI * 2); ctx.fill();
 
             // Thin bright core peak
             const phCore = ctx.createRadialGradient(0, 0, phR - 3, 0, 0, phR + 5);
@@ -328,6 +350,23 @@ var BlackholeScene = (() => {
             }
             ctx.globalAlpha = 1;
             ctx.shadowBlur  = 0;
+
+            // ── 吸积盘偶发耀斑（加色爆闪，沿轨道分布；让吸积盘"活跃进食"）──
+            ctx.globalCompositeOperation = 'lighter';
+            for (const f of _accFlares) {
+                const ft = f.life / f.maxLife;
+                const fr = 4 + ft * 18;
+                const fa = (1 - ft) * 0.6;
+                const fx = bx + Math.cos(f.angle) * f.dist;
+                const fy = by + Math.sin(f.angle) * f.dist * 0.28;
+                const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+                fg.addColorStop(0,   `rgba(255,235,170,${fa.toFixed(3)})`);
+                fg.addColorStop(0.4, `rgba(255,170,80,${(fa * 0.5).toFixed(3)})`);
+                fg.addColorStop(1,   'rgba(255,120,0,0)');
+                ctx.fillStyle = fg;
+                ctx.beginPath(); ctx.arc(fx, fy, fr, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.globalCompositeOperation = 'source-over';
         },
 
         getBlackhole() {

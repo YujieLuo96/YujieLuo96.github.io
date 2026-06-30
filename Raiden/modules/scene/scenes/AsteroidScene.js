@@ -1,15 +1,26 @@
 var AsteroidScene = (() => {
     let _stars = [], _asteroids = [], _dust = [], _clouds = [], _fc = 0;
     let _bgPlanet = null, _farAsteroids = [], _collisionFlash = null;
+    let _lanes = [], _laneSum = 0, _comet = null, _cometTimer = 0;
     const ASTEROID_COUNT = 22, DUST_COUNT = 60, CLOUD_COUNT = 8;
 
     // Fixed light source direction (upper-right)
     const LX = 0.48, LY = -0.88;
 
+    // 轨道带加权选择：上带快下带慢，asteroids 聚集成"带"而非随机散布
+    function _pickLane() {
+        if (!_lanes.length) return null;
+        let r = Math.random() * _laneSum;
+        for (const L of _lanes) { r -= L.weight; if (r <= 0) return L; }
+        return _lanes[_lanes.length - 1];
+    }
+
     function _makeAsteroid(W, H, initial) {
         const sz = 12 + Math.random() * 46;
+        const lane = _pickLane();
         const x  = initial ? Math.random() * W : W + sz + 10;
-        const y  = initial ? Math.random() * H : Math.random() * H * 0.94;
+        const y  = lane ? lane.yc + (Math.random() - 0.5) * H * 0.15
+                        : (initial ? Math.random() * H : Math.random() * H * 0.94);
         const n  = 7 + Math.floor(Math.random() * 5);
         const pts = [];
         for (let i = 0; i < n; i++) {
@@ -50,8 +61,8 @@ var AsteroidScene = (() => {
         }
         return {
             x, y, sz, pts, craters, col, hi, lo, glowCol,
-            vx: -(0.30 + Math.random() * 0.72),
-            vy: (Math.random() - 0.5) * 0.30,
+            vx: -((lane ? lane.vx : 0.55) * (0.7 + Math.random() * 0.6)),
+            vy: (Math.random() - 0.5) * 0.22,
             rot: Math.random() * Math.PI * 2,
             rotSpd: (Math.random() - 0.5) * 0.013,
             trailLen: Math.random() < 0.28 ? 8 + Math.random() * 20 : 0
@@ -74,6 +85,14 @@ var AsteroidScene = (() => {
         init() {
             const W = Renderer.W, H = Renderer.H;
             _fc = 0;
+            // 轨道带（决定 asteroids 聚集 y 与速度）—— 必须先于陨石生成
+            _lanes = [
+                { yc: H * 0.24, weight: 0.30, vx: 0.95 },
+                { yc: H * 0.50, weight: 0.42, vx: 0.62 },
+                { yc: H * 0.74, weight: 0.28, vx: 0.42 },
+            ];
+            _laneSum = _lanes.reduce((s, L) => s + L.weight, 0);
+            _comet = null; _cometTimer = 0;
             // Stars with Milky Way band concentration
             _stars = [];
             for (let i = 0; i < 190; i++) {
@@ -182,6 +201,25 @@ var AsteroidScene = (() => {
                 _collisionFlash.life += dt;
                 if (_collisionFlash.life >= _collisionFlash.maxLife) _collisionFlash = null;
             }
+
+            // 轨道穿越彗星（罕见）：明亮冰体斜向横切，拖加色辉尾
+            _cometTimer += dt;
+            if (!_comet && _cometTimer > 900 && Math.random() < 0.005 * dt) {
+                _cometTimer = 0;
+                const down = Math.random() < 0.5;
+                _comet = {
+                    x: W + 40, y: H * (0.12 + Math.random() * 0.30),
+                    vx: -(1.6 + Math.random() * 1.2),
+                    vy: (0.5 + Math.random() * 0.6) * (down ? 1 : -1),
+                    r: 4 + Math.random() * 4, trail: []
+                };
+            }
+            if (_comet) {
+                _comet.trail.push({ x: _comet.x, y: _comet.y });
+                if (_comet.trail.length > 22) _comet.trail.shift();
+                _comet.x += _comet.vx * dt; _comet.y += _comet.vy * dt;
+                if (_comet.x < -60 || _comet.y < -60 || _comet.y > H + 60) _comet = null;
+            }
         },
 
         draw(ctx) {
@@ -206,6 +244,16 @@ var AsteroidScene = (() => {
             mw.addColorStop(1,    'rgba(0,0,0,0)');
             ctx.fillStyle = mw;
             ctx.fillRect(0, 0, W, H);
+
+            // ── 轨道带微光（让"带状结构"隐约可辨，区别于随机散布）────────────
+            for (const L of _lanes) {
+                const lg = ctx.createLinearGradient(0, L.yc - H * 0.09, 0, L.yc + H * 0.09);
+                lg.addColorStop(0,   'rgba(205,182,140,0)');
+                lg.addColorStop(0.5, 'rgba(205,182,140,0.038)');
+                lg.addColorStop(1,   'rgba(205,182,140,0)');
+                ctx.fillStyle = lg;
+                ctx.fillRect(0, L.yc - H * 0.09, W, H * 0.18);
+            }
 
             // ── Background gas giant (deepest layer) ─────────────────────────
             {
@@ -387,6 +435,29 @@ var AsteroidScene = (() => {
                 ctx.restore();
             }
             ctx.lineCap = 'butt';
+
+            // ── 轨道穿越彗星（明亮冰体 + 加色辉尾）────────────────────────────
+            if (_comet) {
+                ctx.globalCompositeOperation = 'lighter';
+                for (let i = 1; i < _comet.trail.length; i++) {
+                    const a = (i / _comet.trail.length) * 0.5;
+                    ctx.strokeStyle = `rgba(180,225,255,${a.toFixed(3)})`;
+                    ctx.lineWidth   = (i / _comet.trail.length) * _comet.r * 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(_comet.trail[i-1].x, _comet.trail[i-1].y);
+                    ctx.lineTo(_comet.trail[i].x, _comet.trail[i].y);
+                    ctx.stroke();
+                }
+                const cg = ctx.createRadialGradient(_comet.x, _comet.y, 0, _comet.x, _comet.y, _comet.r * 3);
+                cg.addColorStop(0,   'rgba(235,248,255,0.9)');
+                cg.addColorStop(0.4, 'rgba(150,210,255,0.4)');
+                cg.addColorStop(1,   'rgba(80,150,255,0)');
+                ctx.fillStyle = cg;
+                ctx.beginPath(); ctx.arc(_comet.x, _comet.y, _comet.r * 3, 0, Math.PI * 2); ctx.fill();
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = '#fff';
+                ctx.beginPath(); ctx.arc(_comet.x, _comet.y, _comet.r * 0.7, 0, Math.PI * 2); ctx.fill();
+            }
 
             // ── Collision flash (rare debris impact event) ───────────────────
             if (_collisionFlash) {

@@ -160,3 +160,71 @@ rate only — no HP/bullet scaling).
   endless scaling, additive bloom.
 - Correctness: 7 audit-confirmed bugs fixed + the boss-dedup progression bug;
   the whole game is now frame-rate independent.
+
+---
+
+# Visual Polish Series (scenes + graphics) · vg1–vg10
+
+A second 10-version pass focused purely on **scene design** and **画面/visuals**,
+driven by a 5-lens visual audit (55 findings). Verified by a scene-render smoke
+test (all 5 scenes + PostFX + explosions, 300 frames each + transition stress)
+plus the full functional regression suite — all green.
+
+## vg1.0 — PostFX foundation (`fx/PostFX.js`)
+A full-screen post layer drawn above the action, below the HUD: **per-scene color
+grade** (soft-light tint that smoothly cross-fades by scene), a **dynamic vignette**
+(idle / boss-pulse / low-health red throb), and **chromatic edge fringing**
+(red/blue corner split that intensifies near bosses and the black hole). Toggle
+with `C`. Consolidated the old static + danger vignettes here.
+
+## vg2.0 — Explosion bloom + dynamic scene lighting
+Explosions now cast an **additive light** onto the surroundings (medium/large/boss/
+bomb/player-hit), so the whole scene and nearby ships flash-lit in warm light as
+things blow up — real "lighting" feel on canvas2d, cleanly reset each frame.
+
+## vg3.0 — SpaceScene overhaul
+A **distant lensed spiral galaxy** (twin log-spiral arms + core bloom, additive,
+slow rotation/drift) anchors the composition; meteors gained a **burning reentry
+aura** (pulsing additive head) so they read as ablative entry, not drifting dots.
+
+## vg4.0 — AsteroidScene belt structure
+Asteroids now cluster into weighted **orbital lanes** (upper faster, lower slower)
+with faint density bands, so it reads as a structured debris belt; a rare bright
+**ice-comet** streaks across with an additive glow tail.
+
+## vg5.0 — SolarScene polish
+Doubled the **granulation flicker** so the surface roils, and added two rising
+**stellar-wind plasma curtains** (additive, sine-swaying) for a "furnace ejecting
+structured plasma" identity.
+
+## vg6.0 — BlackholeScene polish
+**Three-color photon-ring dispersion** (stronger red-out / new green mid-band /
+stronger blue-in) for extreme-curvature drama, plus **episodic accretion flares**
+(magnetic-reconnection mini-flares orbiting the disk) so it feels actively feeding.
+
+## vg7.0 — Crystalline Nebula richness
+Crystals gained **per-vertex refraction blooms** (additive, breathing), fissures now
+**fork into fractal branches**, and a **resonance lattice** of faint lines links each
+crystal to its nearest neighbor — a coherent mineral matrix, not scattered shapes.
+
+## vg8.0 — Parallax depth + scene-aware motion
+The near-field layer now moves **per scene**: space sways, solar embers rise, the
+black hole **pulls foreground debris toward the well** (via `getBlackhole()`), and
+the nebula drifts on curves — so the foreground belongs to its scene.
+
+## vg9.0 — Bullet readability
+Added a **dark contrast underlay** to the common enemy-bullet sprite so projectiles
+stay legible against the now-busier/brighter scenes and bloom — the cardinal
+shmup rule. (Player bullets already velocity-stretch via their cached length.)
+
+## vg10.0 — Cinematic transitions + variety + QA
+Stage scene-changes now fire a **hyperspace warp-streak burst** (radial accelerating
+lines, additive, peaking mid-fade) on top of the tint flash + audio sting.
+SpaceScene randomizes **meteor density per run** for replay variety. Full regression
++ scene-render smoke suite green.
+
+### Net visual result
+A reusable PostFX grade/vignette/aberration layer, explosion-driven scene lighting,
+five scenes each with a stronger signature and ambient set-pieces, scene-aware
+parallax, cinematic warp transitions, and guaranteed bullet readability — all on
+plain canvas2d, with bounded particle budgets and the whole suite passing.

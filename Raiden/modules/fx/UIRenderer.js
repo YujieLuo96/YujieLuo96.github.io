@@ -130,12 +130,7 @@ var UIRenderer = (() => {
                     ammoInfo, frameCount, shieldTimer, powerLevel,
                     stageName, weaponFlash, bhWarning } = gd;
             const W = Renderer.W, H = Renderer.H;
-
-            // ── 恒定暗角：电影感取景框，弹幕/HUD 在边缘更醒目（极低强度，不挡判定区）──
-            const vg0 = ctx.createRadialGradient(W/2, H/2, H*0.44, W/2, H/2, H*0.82);
-            vg0.addColorStop(0, 'rgba(0,0,0,0)');
-            vg0.addColorStop(1, 'rgba(0,0,10,0.22)');
-            ctx.fillStyle = vg0; ctx.fillRect(0, 0, W, H);
+            // 注：场景调色 / 动态暗角 / 残血红角 已统一由 PostFX 处理（HUD 之下绘制）
 
             // ── 受击全屏红闪 ──────────────────────────────────────────────
             if (gd.dmgFlash > 0) {
@@ -143,15 +138,6 @@ var UIRenderer = (() => {
                 fg.addColorStop(0, `rgba(255,30,30,${gd.dmgFlash * 0.10})`);
                 fg.addColorStop(1, `rgba(255,0,0,${gd.dmgFlash * 0.34})`);
                 ctx.fillStyle = fg; ctx.fillRect(0, 0, W, H);
-            }
-
-            // ── Danger vignette ───────────────────────────────────────────
-            if (lives === 1) {
-                const pulse = Math.abs(Math.sin(frameCount * 0.048)) * 0.16;
-                const vg = ctx.createRadialGradient(W/2, H/2, H*0.26, W/2, H/2, H*0.82);
-                vg.addColorStop(0, 'rgba(180,0,0,0)');
-                vg.addColorStop(1, `rgba(180,0,0,${pulse})`);
-                ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
             }
 
             // ── Blackhole gravity edge glow ───────────────────────────────
@@ -531,7 +517,7 @@ var UIRenderer = (() => {
             ctx.font      = '9px "Courier New",monospace';
             ctx.fillStyle = '#3a7088';
             ctx.fillText('MOVE · ARROWS/WASD    FOCUS · SHIFT    BOMB · SPACE', W / 2, cpy + 18);
-            ctx.fillText('PAUSE · P   CODEX · M   MUTE · N   SHAKE · V   ◄ ► DIFFICULTY', W / 2, cpy + 32);
+            ctx.fillText('PAUSE · P   CODEX · M   MUTE · N   SHAKE · V   FX · C   ◄ ► DIFF', W / 2, cpy + 32);
 
             // 历史最佳战绩
             if (best && best.score > 0) {
