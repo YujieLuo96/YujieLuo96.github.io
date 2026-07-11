@@ -1,0 +1,6 @@
+OPENAI_API_KEY=replace-with-a-local-development-key
+# The requested default is gpt-5.3-mini. Override only on the server if that
+# exact model ID is not enabled for the OpenAI project.
+OPENAI_MODEL=gpt-5.3-mini
+MOCK_MODE=true
+ALLOW_NO_ORIGIN=true

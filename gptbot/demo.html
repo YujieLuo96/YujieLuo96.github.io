@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ask this site — component preview</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      color: #dce8f8;
+      font-family: system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(57, 107, 172, .22), transparent 34%),
+        linear-gradient(#060a1f, #0e2140 72%, #070b22);
+    }
+    main { width: min(680px, calc(100vw - 40px)); }
+    h1 { margin: 0 0 10px; font-family: Georgia, serif; font-weight: 500; }
+    p { max-width: 580px; color: #9eb0ca; line-height: 1.7; }
+    code { color: #b9dbff; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Ask this site</h1>
+    <p>Standalone component preview. Open the button in the lower-right corner. Configure <code>gptbot/config.js</code> after deploying the Worker.</p>
+  </main>
+  <ask-this-site></ask-this-site>
+  <script src="config.js"></script>
+  <script type="module" src="gptbot.js"></script>
+</body>
+</html>

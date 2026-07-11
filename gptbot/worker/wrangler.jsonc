@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ask-this-site",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-01",
+  "vars": {
+    "ALLOWED_ORIGINS": "https://scheme96.github.io",
+    "MAX_OUTPUT_TOKENS": "700"
+  },
+  // Optional production-grade rate limiting binding. The Worker also has a
+  // best-effort per-isolate fallback for local development.
+  // "ratelimits": [{
+  //   "name": "RATE_LIMITER",
+  //   "namespace_id": "1001",
+  //   "simple": { "limit": 8, "period": 60 }
+  // }]
+}
