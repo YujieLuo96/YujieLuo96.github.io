@@ -93,7 +93,10 @@ class AskThisSite extends HTMLElement {
 
   connectedCallback() {
     this._bind();
-    this._addMessage('assistant', INTRO);
+    if (!this._introduced) {
+      this._introduced = true;
+      this._addMessage('assistant', INTRO);
+    }
   }
 
   disconnectedCallback() {
@@ -235,8 +238,11 @@ class AskThisSite extends HTMLElement {
   }
 
   _trapFocus(event) {
-    const focusable = Array.from(this.shadowRoot.querySelectorAll('button:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'))
-      .filter((node) => node.offsetParent !== null);
+    const focusable = Array.from(this._els.panel.querySelectorAll('button:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'))
+      .filter((node) => {
+        const style = getComputedStyle(node);
+        return node.offsetParent !== null && style.visibility !== 'hidden' && style.display !== 'none';
+      });
     if (!focusable.length) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];

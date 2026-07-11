@@ -2,3 +2,8 @@
 
 # JetBrains IDE 配置(个人本地设置,不应提交)
 .idea/
+
+# Ask this site: local secrets and Worker build state
+gptbot/worker/.dev.vars
+gptbot/worker/node_modules/
+gptbot/worker/.wrangler/

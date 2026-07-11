@@ -123,6 +123,10 @@ function unwrapLatexCommands(value) {
 
 function latexToText(latex) {
   let value = removeLatexComments(latex);
+  const documentStart = value.indexOf('\\begin{document}');
+  if (documentStart >= 0) value = value.slice(documentStart + '\\begin{document}'.length);
+  const documentEnd = value.indexOf('\\end{document}');
+  if (documentEnd >= 0) value = value.slice(0, documentEnd);
   value = value
     .replace(/\\begin\{[^}]+\}/g, '\n')
     .replace(/\\end\{[^}]+\}/g, '\n')
