@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Yujie Luo">
+    <meta name="description" content="Direct and original versions of the proof of Totally Invariant Subvarieties of Projective Space.">
+    <title>Totally Invariant Subvarieties of Projective Space — AI4Math</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --link: #9fd0ff;
+            --text: #d6e1f1;
+            --text-muted: #93a7c6;
+            --border-soft: rgba(120, 170, 220, 0.16);
+            --font-serif: 'Spectral', Georgia, 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        html {
+            min-height: 100%;
+            background: linear-gradient(to bottom, #060a1f 0%, #0b1830 45%, #0e2140 75%, #070b22 100%);
+            background-attachment: fixed;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 16px;
+            line-height: 1.75;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: var(--link);
+            text-decoration: none;
+            text-underline-offset: 4px;
+        }
+
+        a:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        a:focus-visible {
+            outline: 2px solid var(--link);
+            outline-offset: 6px;
+            border-radius: 2px;
+        }
+
+        ::selection {
+            background: rgba(139, 197, 255, 0.26);
+            color: #fff;
+        }
+
+        .page {
+            width: min(100%, 900px);
+            margin: 0 auto;
+            padding: 48px 32px 80px;
+        }
+
+        .back-link {
+            display: inline-block;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .paper-header {
+            margin: 48px 0 40px;
+        }
+
+        .section-label {
+            margin: 0 0 14px;
+            color: var(--text-muted);
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0 0 22px;
+            color: #fff;
+            font-family: var(--font-serif);
+            font-size: clamp(30px, 5vw, 44px);
+            font-weight: 500;
+            line-height: 1.25;
+            text-wrap: balance;
+            overflow-wrap: break-word;
+        }
+
+        .authors {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .versions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px;
+        }
+
+        .version {
+            padding: 26px 28px;
+            border: 1px solid var(--border-soft);
+            border-radius: 10px;
+            background: rgba(8, 14, 32, 0.42);
+        }
+
+        h2 {
+            margin: 0;
+            color: #fff;
+            font-family: var(--font-serif);
+            font-size: 25px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .page-count {
+            margin: 6px 0 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .pdf-link {
+            display: inline-block;
+            padding: 8px 0;
+            text-decoration: underline;
+            text-decoration-color: rgba(159, 208, 255, 0.45);
+        }
+
+        @media (max-width: 600px) {
+            .page { padding: 28px 22px 56px; }
+            .paper-header { margin: 32px 0; }
+            .versions { grid-template-columns: 1fr; gap: 16px; }
+            .version { padding: 22px 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <nav aria-label="Return navigation">
+            <a class="back-link" href="../index.html#ai4math">&larr; Back to AI4Math</a>
+        </nav>
+        <main>
+            <header class="paper-header">
+                <p class="section-label">AI4Math</p>
+                <h1>Totally Invariant Subvarieties of Projective Space</h1>
+                <p class="authors">GPT 5.6 Pro, Communicated by Yujie Luo and Sheng Meng.</p>
+            </header>
+            <div class="versions">
+                <section class="version" aria-labelledby="direct-version">
+                    <h2 id="direct-version">direct version</h2>
+                    <p class="page-count">10 pages</p>
+                    <a class="pdf-link" href="direct%20version.pdf" aria-label="Read direct version PDF">Read PDF &rarr;</a>
+                </section>
+                <section class="version" aria-labelledby="original-version">
+                    <h2 id="original-version">original version</h2>
+                    <p class="page-count">12 pages</p>
+                    <a class="pdf-link" href="original%20version.pdf" aria-label="Read original version PDF">Read PDF &rarr;</a>
+                </section>
+            </div>
+        </main>
+    </div>
+</body>
+</html>
