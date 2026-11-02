@@ -2,9 +2,14 @@
 \usepackage{url}
 \usepackage[colorlinks,linkcolor=black,anchorcolor=black,citecolor=black,pdfauthor={Yujie Luo},pdftitle={Curriculum Vitae - Yujie Luo}]{hyperref}
 \usepackage{pifont}
-\usepackage[latin1] { inputenc}
+\usepackage{iftex}
+\ifPDFTeX
+\usepackage[utf8]{inputenc}
+\fi
+\usepackage[OT1]{fontenc}
 \usepackage[scaled=0.92]{helvet}	% set Helvetica as the sans-serif font
 \renewcommand{\rmdefault}{ptm}		% set Times as the default text font
+\renewcommand{\ttdefault}{cmtt}       % preserve the original typewriter font
 
 % If AMS-LaTeX is used, it can be loaded before or after mtpro2
 \usepackage{amsmath}		
@@ -112,6 +117,7 @@ Algebraic geometry, including birational geometry, algebraic dynamics, and the m
 \section{\sc Publications $\&$ Preprints}
 
 \begin{list1}
+\item \textit{Varieties Admitting Polarized Galois Endomorphisms} (joint with Zhiyuan Jiang). Preprint. [\href{https://arxiv.org/abs/2610.05248}{arxiv}]
 \item \textit{Log Calabi--Yau structure for endomorphisms on $\mathbf{P}^n$} (joint with Sheng Meng). Preprint. [\href{https://arxiv.org/abs/2608.02114}{arxiv}]
 \item \textit{Sharp bounds for totally invariant cycles of projective varieties} (joint with Wentao Chang). Preprint. [\href{https://arxiv.org/abs/2607.27738}{arxiv}]
 \item \textit{Essential dimensions of polarized endomorphisms of certain algebraic surfaces} (joint with Qianli Fang and De-Qi Zhang). Preprint. [\href{https://arxiv.org/abs/2606.24103}{arxiv}]
@@ -155,9 +161,10 @@ Algebraic geometry, including birational geometry, algebraic dynamics, and the m
 
 \section{\sc Visitings}
 
-{\bf  Graduate}
+{\bf  Research Visits}
 
 \begin{tabular}{@{}p{1.5in}p{7in}}
+Jun 2026--Jul 2026& SCMS at Fudan University, visiting scholar\\
 Nov 2023--Dec 2023& Department of Mathematics at East China Normal University\\
 Jan 2022--Feb 2023& Department of Mathematics at Princeton University\\
 May 2022--June 2023& Department of Mathematics at University of Utah\\
@@ -165,12 +172,14 @@ Jul 2021--Aug 2021& SCMS at Fudan University\\
 Oct 2020--Jul 2021& BICMR at Peking University
 \end{tabular}
 
+\begin{minipage}[t]{\textwidth}
 {\bf  Undergraduate}
 
 \begin{tabular}{@{}p{1.5in}p{7in}}
 Oct 2017--May 2018 & Chinese Academy of Sciences\\
 Jul 2017--Oct 2017& University of California, Los Angeles
 \end{tabular}
+\end{minipage}
 
 \section{\sc Honors and Awards}
 
@@ -207,6 +216,7 @@ Jul 2017--Oct 2017& University of California, Los Angeles
 {\bf  University of Science and Technology of China}
 
 \begin{tabular}{@{}p{1.5in}p{4in}}
+2026 Fall & Instructor, Algebraic Geometry I\\
 2017 Fall & Teaching assistant, Functional Analysis\\
 \end{tabular}
 
