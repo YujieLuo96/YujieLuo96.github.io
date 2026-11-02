@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090e13">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23090e13'/%3E%3Cg fill='none' stroke='%237ce8c6' stroke-width='1.5'%3E%3Ccircle cx='16' cy='16' r='10'/%3E%3Ccircle cx='16' cy='16' r='4'/%3E%3C/g%3E%3Cg fill='%237ce8c6'%3E%3Ccircle cx='16' cy='6' r='2'/%3E%3Ccircle cx='7.3' cy='21' r='2'/%3E%3Ccircle cx='24.7' cy='21' r='2'/%3E%3C/g%3E%3C/svg%3E">
+  <meta name="description" content="一个由简单规则生长的微观宇宙。实时编辑粒子间的吸引与排斥，探索大规模 Particle Life 人工生命系统。">
+  <title>Particle Life — 微观宇宙实验室</title>
+  <style>:root{color-scheme:dark;--bg:#090e13;--panel:#10171df0;--ink:#e5ecec;--muted:#89979c;--dim:#56646b;--mint:#7ce8c6;--line:#dcefff13;--panel-w:340px;--mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;--sans:Inter,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{background:radial-gradient(ellipse at 42% 45%,#12232a 0,#090e13 65%);color:var(--ink);font-family:var(--sans);font-size:12px;-webkit-font-smoothing:antialiased}button,input,select{font:inherit}button{cursor:pointer;color:inherit;border:0;background:none}a{color:inherit;text-decoration:none}button,select,input{outline:none}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--mint);outline-offset:4px}button:disabled,select:disabled{opacity:.35;cursor:not-allowed}svg{display:block;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}button,summary{touch-action:manipulation}#life-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}.mono{font-family:var(--mono)}.chrome{transition:opacity .24s,transform .24s}.app-header{height:88px;position:fixed;inset:0 0 auto;display:flex;align-items:center;padding:0 32px;z-index:5;pointer-events:none;background:linear-gradient(180deg,#090e13d9,#090e1300)}.app-header>*{pointer-events:auto}.brand{display:flex;align-items:center;gap:12px}.brand-symbol{width:35px;height:35px;color:var(--mint);stroke-width:1;flex-shrink:0}.symbol-dot{fill:#090e13;stroke-width:1.5}.brand-copy{display:block}.brand strong{font-size:16px;font-weight:550;letter-spacing:2.1px;display:block;line-height:1.1;white-space:nowrap}.brand i{font-weight:300;font-style:normal;color:#647c80;margin:0 4px}.brand-version{font-family:var(--mono);font-size:8px;color:#5b7978;border:1px solid #7ce8c626;border-radius:3px;padding:2px 3px;vertical-align:5px;margin-left:9px;letter-spacing:0}.brand small{display:block;font-size:9px;letter-spacing:4px;color:#839798;margin-top:8px}.header-center{margin:auto;font-family:var(--mono);font-size:8px;letter-spacing:1.35px;color:#5f7177;display:flex;align-items:center;gap:13px}.header-line{width:25px;height:1px;background:#49615e}.header-actions{display:flex;gap:9px;align-items:center}.icon-button{width:32px;height:32px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;color:#879ba1;transition:background .15s,color .15s}.icon-button:hover{color:var(--ink);background:#ffffff09}.icon-button svg{width:19px;height:19px}.panel-toggle{display:flex;align-items:center;gap:8px;border:1px solid #c9eddf23;border-radius:5px;height:34px;padding:0 11px;font-size:10px;letter-spacing:.5px;color:#b3cac8;background:#111e2161;margin-left:7px}.panel-toggle svg{width:15px;height:15px;stroke-width:1.15}.panel-toggle:hover{border-color:#7ce8c655;color:var(--mint)}.observation-hud{position:fixed;top:119px;left:35px;z-index:2;pointer-events:none}.live-row{display:flex;align-items:center;gap:7px;font-size:9px;letter-spacing:.6px;color:#91aaa8}.live-dot{height:5px;width:5px;border-radius:50%;background:var(--mint);box-shadow:0 0 9px #7ce8c649}.hud-slash{margin:0 3px;color:#3c5154}.live-row .mono{font-size:7px;letter-spacing:1.3px;color:#56716f}.observation-title{margin-top:19px;font-size:23px;font-weight:350;letter-spacing:2px;color:#c8dcda}.observation-title>span{color:var(--mint)}.observation-hud p{font-size:10px;color:#58716f;letter-spacing:1px;margin-top:9px}.viewport-frame{position:fixed;left:25px;right:calc(var(--panel-w) + 63px);top:101px;bottom:88px;pointer-events:none;z-index:1;opacity:.45}.viewport-frame span{position:absolute;width:13px;height:13px;border-color:#6b969242;border-style:solid}.viewport-frame span:nth-child(1){top:0;left:0;border-width:1px 0 0 1px}.viewport-frame span:nth-child(2){top:0;right:0;border-width:1px 1px 0 0}.viewport-frame span:nth-child(3){bottom:0;left:0;border-width:0 0 1px 1px}.viewport-frame span:nth-child(4){bottom:0;right:0;border-width:0 1px 1px 0}
+.control-panel{position:fixed;right:28px;top:102px;bottom:88px;width:var(--panel-w);z-index:4;display:flex;flex-direction:column;background:var(--panel);border:1px solid #a1c9cc20;border-radius:10px;box-shadow:0 16px 56px #00000038;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);overflow:hidden}.panel-heading{display:flex;justify-content:space-between;align-items:center;padding:21px 21px 18px;border-bottom:1px solid var(--line);flex-shrink:0}.eyebrow{font-family:var(--mono);font-size:7px;color:#637c7b;letter-spacing:1.35px}.panel-heading h1{font-size:16px;font-weight:400;letter-spacing:1px;margin:8px 0 0}.panel-index{font-family:var(--mono);font-size:9px;color:#42655d}.panel-scroll{overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#94ceb526 transparent}.panel-scroll::-webkit-scrollbar{width:3px}.panel-scroll::-webkit-scrollbar-thumb{background:#94ceb526;border-radius:5px}.preset-section{padding:19px 20px 18px;border-bottom:1px solid var(--line)}.section-title{display:flex;align-items:center;justify-content:space-between}.section-title h2{font-size:11px;letter-spacing:.6px;font-weight:450;margin:0;display:flex;align-items:center;gap:8px;color:#d5e2e2}.section-title>span{font-family:var(--mono);font-size:7px;letter-spacing:.7px;color:#536970}.preset-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:13px}.preset{display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid #a7c5cf16;border-radius:4px;font-size:10px;color:#7e9499;padding:8px 3px;background:#ffffff02;white-space:nowrap;transition:background .18s,border-color .18s,color .18s}.preset-mark{font-family:var(--mono);font-size:14px;line-height:12px;opacity:.8}.preset:hover{background:#7ce8c606;border-color:#7ce8c62e;color:#b8dad0}.preset.active,.preset[aria-pressed=true]{background:#7ce8c60c;border-color:#7ce8c645;color:#a0efd6}.matrix-section{padding:20px;border-bottom:1px solid var(--line)}.section-dot{height:4px;width:4px;border-radius:50%;background:#7ce8c699}.matrix-intro{font-size:9px;color:#637c7c;margin:9px 0 17px;letter-spacing:.5px}.matrix-wrap{padding:0 0 0 0}.matrix-grid{display:grid;gap:4px;width:100%;align-items:stretch;justify-items:stretch;min-height:190px}.matrix-cell{aspect-ratio:1;min-width:0;min-height:0;padding:0;border:1px solid #b7e2d012;border-radius:4px;background:color-mix(in srgb,var(--cell-color,#7ce8c6) calc(8% + var(--cell-strength,0)*36%),#101820);color:color-mix(in srgb,var(--cell-color,#7ce8c6) 60%,#e4eeee);font-family:var(--mono);font-size:10px;font-weight:400;font-variant-numeric:tabular-nums;transition:filter .12s,border-color .12s;position:relative}.matrix-cell:hover{filter:brightness(1.4);border-color:#e9ffff88}.matrix-cell.is-selected,.matrix-cell.selected,.matrix-cell[aria-pressed=true]{border-color:#ddfff0;box-shadow:0 0 0 1px #ddfff01a,inset 0 0 12px #e0fff012;filter:brightness(1.1)}.matrix-axis{display:flex;align-items:center;justify-content:center;min-width:0;aspect-ratio:1;color:var(--cell-color,#9eb3b5);font-family:var(--mono);font-size:10px;font-weight:400;border-radius:4px}.matrix-axis .dot,.matrix-axis i{height:8px;width:8px;border-radius:50%;background:var(--cell-color,currentColor);display:block;box-shadow:0 0 10px color-mix(in srgb,var(--cell-color,currentColor) 22%,transparent)}.matrix-corner{position:relative;color:#455b60;font-size:11px;display:flex;align-items:center;justify-content:center}.matrix-legend{display:flex;align-items:center;gap:9px;margin:12px 0 0;font-size:8px;color:#6f8a89}.matrix-legend>span{display:flex;align-items:center;gap:5px;white-space:nowrap}.matrix-legend i{width:4px;height:4px;border-radius:50%;display:block}.legend-negative{background:#ff8475}.legend-positive{background:#7ce8c6}.matrix-legend .legend-scale{height:2px;flex:1;background:linear-gradient(90deg,#ff847564,#43585d42 50%,#7ce8c664)}.matrix-hint{font-size:8px;color:#496369;line-height:1.7;margin:10px 0 14px;letter-spacing:.2px}.matrix-editor{background:#070d126e;border:1px solid #a2c7d01a;border-radius:5px;padding:12px 12px 8px}.matrix-editor-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#9ab4b3;margin-bottom:10px;min-height:15px}.matrix-editor-top>span{display:flex;align-items:center;gap:5px}.matrix-editor output{font-family:var(--mono);font-size:12px;color:#c0ecd9}.editor-extremes{display:flex;justify-content:space-between;font-family:var(--mono);font-size:7px;color:#415961;margin-top:4px}.matrix-editor input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,#bf605459,#23373c 50%,#7ce8c659)}.matrix-editor input[type=range]::-moz-range-track{background:linear-gradient(90deg,#bf605459,#23373c 50%,#7ce8c659)}.matrix-actions{display:flex;margin-top:10px;gap:7px}.matrix-actions button{flex:1;padding:8px 0;font-size:9px;color:#7c9698;background:#1320266e;border:1px solid #afd8e412;border-radius:4px}.matrix-actions button:hover{color:#c9e7df;border-color:#7ce8c63a}.mutate-button{display:flex;align-items:center;gap:7px;width:100%;margin-top:10px;padding:9px 0 0;color:#9ec4b8;font-size:10px}.mutate-button svg{height:14px;width:14px;color:var(--mint);stroke-width:1.1}.mutate-button small{font-size:8px;font-weight:400;margin-left:auto;color:#4f6d6b}.mutate-button:hover>span{color:var(--mint)}.panel-section{padding:0 20px;border-bottom:1px solid var(--line)}.panel-section summary{list-style:none;display:flex;justify-content:space-between;align-items:center;padding:18px 0;cursor:pointer;user-select:none}.panel-section summary::-webkit-details-marker{display:none}.panel-section summary strong{font-size:11px;font-weight:450;letter-spacing:.6px;display:block;color:#bbcece}.panel-section summary small{display:block;font-family:var(--mono);font-size:7px;letter-spacing:.7px;color:#4b646a;margin-top:5px}.expand-mark{font-family:var(--mono);font-size:17px;font-weight:300;font-style:normal;color:#6e9286;transition:transform .2s}.panel-section[open] .expand-mark{transform:rotate(45deg);color:var(--mint)}.details-content{padding:2px 0 19px}.select-row{display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#97aeb2;margin-bottom:12px;gap:10px}select{appearance:none;background:#172229;color:#b9d0d0;border:1px solid #91bac723;border-radius:4px;padding:7px 25px 7px 10px;font-family:var(--mono);font-size:11px;min-width:120px;max-width:65%;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%237d999d' stroke-width='1'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}select option{background:#142029;color:#ccdcdf}.control-note{font-size:9px;line-height:1.8;color:#506b71;margin:4px 0 16px}.seed-label{font-size:10px;color:#8ba5aa;display:flex;gap:8px;align-items:center;margin-bottom:9px}.seed-label span{font-family:var(--mono);font-size:7px;color:#47636a;letter-spacing:1px}.seed-row{display:flex;gap:7px}.seed-row input{width:0;min-width:0;flex:1;background:#0c151b;border:1px solid #97b9c323;border-radius:4px;color:#b3ceca;padding:8px 10px;font-family:var(--mono);font-size:11px}.seed-row button{border:1px solid #7ce8c621;background:#7ce8c607;border-radius:4px;font-size:9px;color:#9cc1b7;padding:0 10px;white-space:nowrap}.seed-row button span{margin-left:8px;color:var(--mint)}.seed-row button:hover{border-color:#7ce8c65c}.slider-control+.slider-control{margin-top:19px}.slider-label{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:10px;color:#a3b9bd}.slider-label output{font-family:var(--mono);font-size:10px;color:#8ecbb7;min-width:30px;text-align:right}.range-caption{display:flex;justify-content:space-between;font-size:8px;color:#4c6970;margin-top:4px}input[type=range]{--progress:50%;appearance:none;-webkit-appearance:none;width:100%;display:block;height:14px;margin:0;background:transparent;cursor:pointer;accent-color:var(--mint)}input[type=range]::-webkit-slider-runnable-track{height:2px;border-radius:3px;background:linear-gradient(to right,#7ce8c6b8 0 var(--progress),#7b9dab29 var(--progress) 100%)}input[type=range]::-moz-range-track{height:2px;background:#7b9dab29}input[type=range]::-moz-range-progress{height:2px;background:#7ce8c6b8}input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:8px;height:8px;margin-top:-3px;border-radius:50%;border:0;background:#a0ebd2;box-shadow:0 0 0 3px #7ce8c609;transition:box-shadow .15s}input[type=range]::-moz-range-thumb{width:8px;height:8px;border-radius:50%;border:0;background:#a0ebd2}input[type=range]:hover::-webkit-slider-thumb{box-shadow:0 0 0 5px #7ce8c61a}.toggle-row{display:flex;align-items:center;color:#9cb3b8;font-size:10px;margin-top:20px;cursor:pointer;position:relative}.toggle-row input{position:absolute;right:0;width:29px;height:18px;opacity:0}.toggle-track{margin-left:auto;width:29px;height:16px;border:1px solid #86bbac38;border-radius:12px;background:#080e14;position:relative;transition:background .2s}.toggle-track::after{content:"";position:absolute;left:3px;top:3px;width:8px;height:8px;border-radius:50%;background:#536f73;transition:transform .2s,background .2s}.toggle-row input:checked+.toggle-track{background:#7ce8c619;border-color:#7ce8c64d}.toggle-row input:checked+.toggle-track::after{transform:translateX(13px);background:var(--mint)}.toggle-row input:focus-visible+.toggle-track{outline:2px solid var(--mint);outline-offset:3px}.file-actions{display:flex;gap:9px;padding:19px 20px 0}.file-actions button{flex:1;display:flex;justify-content:center;align-items:center;gap:6px;color:#8ea9ac;border:1px solid #a3c7d01c;border-radius:4px;font-size:10px;padding:9px 0}.file-actions button svg{width:15px;height:15px;stroke-width:1.2}.file-actions button:hover{color:var(--mint);border-color:#7ce8c63b}.file-note{font-size:8px;line-height:1.7;color:#4a656d;padding:0 20px;margin:9px 0 0}.panel-end{font-family:var(--mono);font-size:6px;letter-spacing:.65px;display:flex;align-items:center;gap:7px;justify-content:center;color:#3d595e;padding:21px 20px}.panel-end span{height:1px;width:15px;background:#486a602e}
+.scene-note{position:fixed;left:36px;bottom:119px;display:flex;align-items:center;gap:11px;pointer-events:none;z-index:2}.coordinate-cross{font-family:var(--mono);font-size:20px;font-weight:300;color:#456f64}.scene-note strong{font-size:10px;font-weight:400;color:#5a7e78;letter-spacing:1px;display:block}.scene-note small{font-family:var(--mono);font-size:6px;letter-spacing:1.1px;color:#344e50;display:block;margin-top:6px}.interaction-dock{position:fixed;left:calc((100% - var(--panel-w) - 50px)/2);bottom:111px;transform:translateX(-50%);z-index:3;display:flex;align-items:center;gap:5px;height:49px;border:1px solid #9fbfb82a;background:#111b21e8;border-radius:8px;padding:0 9px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 32px #0003}.playback-group,.pointer-tools{display:flex;align-items:center;gap:3px}.pause-button{display:flex;align-items:center;gap:5px;height:31px;background:var(--mint);color:#0b2922;border-radius:4px;padding:0 10px 0 7px;font-size:10px;font-weight:550;white-space:nowrap}.pause-button svg{width:17px;height:17px;stroke-width:2}.pause-button:hover{background:#a0f2d8}.interaction-dock .icon-button{width:29px;height:31px}.interaction-dock .icon-button svg{width:17px;height:17px}.dock-divider{height:20px;width:1px;background:#9bbec51c;margin:0 4px}.tool-button{display:flex;align-items:center;justify-content:center;gap:5px;padding:0 8px;height:31px;font-size:9px;color:#657f84;border:1px solid transparent;border-radius:4px;white-space:nowrap}.tool-button svg{width:15px;height:15px;stroke-width:1.2}.tool-button:hover{color:#b7d9cf;background:#ffffff04}.tool-button.active,.tool-button[aria-pressed=true]{background:#7ce8c609;color:#b1e5d2;border-color:#7ce8c626}.status-bar{position:fixed;bottom:0;left:30px;right:30px;height:72px;border-top:1px solid #8ebac318;display:flex;align-items:center;gap:24px;z-index:2;background:linear-gradient(0deg,#090e13a8,#090e1300)}.backend-status{display:flex;align-items:center;gap:9px;min-width:125px}.backend-icon{width:25px;height:25px;border:1px solid #7ce8c61d;border-radius:5px;color:#609e8d;display:flex;align-items:center;justify-content:center;background:#7ce8c604}.backend-icon svg{width:16px;height:16px;stroke-width:1}.backend-status strong{font-family:var(--mono);font-size:10px;font-weight:500;color:#95c0b3;letter-spacing:.2px;display:block}.backend-status small{font-size:8px;color:#4e7270;display:block;margin-top:4px}.footer-divider{height:23px;width:1px;background:#95bfc21a}.telemetry{display:flex;gap:30px}.metric{display:flex;flex-direction:column;gap:5px;min-width:60px}.metric>span{font-family:var(--mono);font-size:6px;letter-spacing:1px;color:#526e74}.metric strong,.metric b{font-family:var(--mono);font-size:14px;font-weight:400;font-variant-numeric:tabular-nums;letter-spacing:.15px;color:#b5c9c8}.metric strong small{font-size:7px;color:#47666a;letter-spacing:.6px}.observation-time{margin-left:12px;display:flex;align-items:center;gap:10px;white-space:nowrap}.observation-time span{font-family:var(--mono);font-size:6px;letter-spacing:1px;color:#46646a}.observation-time strong{font-family:var(--mono);font-size:10px;font-weight:400;color:#779d93}.footer-signature{margin-left:auto;font-family:var(--mono);font-size:6px;letter-spacing:1px;color:#36565a;white-space:nowrap}.footer-signature span{padding:0 7px;color:#345449}.cinema-exit{position:fixed;left:50%;bottom:23px;transform:translate(-50%,10px);display:flex;align-items:center;gap:7px;color:#a1c1b9;background:#142329b8;border:1px solid #7ce8c635;border-radius:5px;padding:9px 13px;font-size:10px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:10}.cinema-exit svg{height:15px;width:15px}.cinema-exit kbd{font-size:8px;color:#668d80;border:1px solid #7ce8c622;margin-left:6px}.toast{position:fixed;left:calc((100% - var(--panel-w) - 50px)/2);bottom:178px;transform:translate(-50%,8px);max-width:min(420px,80vw);width:max-content;padding:12px 17px;background:#142329f2;border:1px solid #7ce8c633;box-shadow:0 8px 24px #0003;border-radius:6px;font-size:11px;line-height:1.7;color:#bdd8cd;z-index:12;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}.toast.visible,.toast.is-visible{opacity:1;transform:translate(-50%,0)}body.panel-collapsed .control-panel{opacity:0;transform:translateX(24px);pointer-events:none}body.panel-collapsed .interaction-dock,body.panel-collapsed .toast{left:50%}body.panel-collapsed .viewport-frame{right:25px}body.cinema-mode .chrome,body.cinema-mode .viewport-frame{opacity:0;pointer-events:none}body.cinema-mode .cinema-exit{opacity:1;pointer-events:auto;transform:translate(-50%,0)}body.cinema-mode .toast{left:50%;bottom:80px}.help-dialog{width:min(490px,calc(100vw - 32px));max-height:calc(100dvh - 50px);overflow:auto;margin:auto;background:#101b23f9;color:#d6e4e0;border:1px solid #8cc9b536;border-radius:12px;padding:27px 29px;box-shadow:0 22px 110px #0007;scrollbar-width:thin;scrollbar-color:#648d7e44 transparent}.help-dialog::backdrop{background:#050a10bd;backdrop-filter:blur(7px)}.dialog-top{display:flex;justify-content:space-between;align-items:center}.dialog-top .icon-button{height:24px;width:24px;color:#749690}.help-dialog h2{font-size:26px;line-height:1.5;font-weight:350;letter-spacing:2px;margin:25px 0 19px}.help-dialog p{font-size:12px;color:#8ea9ab;line-height:1.9;letter-spacing:.3px}.help-dialog p strong{font-weight:400;color:#bbd7cb}.shortcut-list{margin:22px 0 25px}.shortcut-list div{display:flex;justify-content:space-between;border-bottom:1px solid #adcad612;padding:10px 0;font-size:11px}.shortcut-list dt{color:#a0b8b9}.shortcut-list dd{margin:0;color:#648a89;font-size:10px}kbd{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:3px;border:1px solid #a0c6b829;background:#7ce8c605;color:#9bc6b6}.help-model{padding-top:6px}.help-model h3{font-size:12px;font-weight:400;color:#a7d2c2;letter-spacing:1px}.help-model p{font-size:10px;line-height:1.9;color:#6c9091}.help-credit a{color:#8fbfae;text-decoration:underline;text-underline-offset:3px}.help-credit{padding-top:10px;border-top:1px solid var(--line)}
+@media(min-width:1700px){:root{--panel-w:360px}.app-header{padding:0 42px;height:96px}.control-panel{right:38px;top:115px;bottom:100px}.observation-hud{left:46px;top:138px}.viewport-frame{left:35px;top:114px;right:calc(var(--panel-w) + 73px);bottom:100px}.scene-note{left:46px;bottom:135px}.interaction-dock{bottom:127px}.status-bar{left:40px;right:40px;height:83px}.panel-heading{padding:23px}.preset-section,.matrix-section{padding-left:23px;padding-right:23px}.panel-section{padding-left:23px;padding-right:23px}.matrix-cell{font-size:11px}}
+@media(max-width:1250px){.header-center{display:none}.header-actions{margin-left:auto}.scene-note{display:none}.status-bar{gap:18px}.telemetry{gap:24px}.observation-time{margin-left:0}.footer-signature{display:none}.observation-time{margin-left:auto}.observation-title{font-size:20px}.observation-hud p{font-size:9px}.interaction-dock{gap:3px;padding:0 7px}.tool-button{padding:0 6px}.tool-button span{display:none}}
+@media(max-width:950px){:root{--panel-w:310px}.app-header{padding:0 22px;height:78px}.brand strong{font-size:14px;letter-spacing:1.6px}.brand-symbol{width:31px;height:31px}.brand small{font-size:8px;letter-spacing:3px}.brand-version{display:none}.panel-toggle{margin-left:1px}.control-panel{right:18px;top:92px;bottom:82px}.panel-heading{padding:18px}.preset-section,.matrix-section{padding-left:17px;padding-right:17px}.panel-section{padding-left:17px;padding-right:17px}.matrix-cell{font-size:9px}.observation-hud{top:110px;left:25px}.live-row .mono,.hud-slash{display:none}.observation-title{font-size:17px;letter-spacing:1px}.observation-hud p{max-width:160px;line-height:1.8}.viewport-frame{top:91px;left:17px;right:calc(var(--panel-w) + 40px);bottom:82px}.interaction-dock{left:calc((100% - var(--panel-w) - 35px)/2);height:45px;bottom:102px;gap:2px;padding:0 6px}.interaction-dock .icon-button{width:25px}.playback-group,.pointer-tools{gap:0}.tool-button{padding:0 5px}.dock-divider{margin:0 2px}.pause-button{font-size:9px;padding:0 7px 0 5px;gap:3px}.pause-button svg{width:15px;height:15px}.status-bar{left:20px;right:20px;height:67px;gap:15px}.telemetry{gap:20px}.backend-status{min-width:115px}.metric strong,.metric b{font-size:12px}.metric>span{font-size:6px;letter-spacing:.6px}.observation-time span{display:none}.toast{left:calc((100% - var(--panel-w) - 35px)/2);max-width:calc(100vw - var(--panel-w) - 60px);bottom:164px;font-size:10px}}
+@media(max-height:810px) and (min-width:681px){.app-header{height:76px}.control-panel{top:88px;bottom:79px}.viewport-frame{top:87px;bottom:79px}.observation-hud{top:106px}.panel-heading{padding-top:17px;padding-bottom:15px}.preset-section{padding-top:16px;padding-bottom:16px}.matrix-section{padding-top:17px;padding-bottom:17px}.status-bar{height:65px}.interaction-dock{bottom:98px}.scene-note{bottom:108px}.observation-title{font-size:20px}.toast{bottom:160px}}
+@media(max-width:680px){:root{--mobile-panel-h:min(44dvh,410px)}.app-header{padding:0 17px;height:73px}.brand{gap:9px}.brand-symbol{width:30px;height:30px}.brand strong{font-size:13px;letter-spacing:1.8px}.brand small{font-size:7px;letter-spacing:3px;margin-top:6px}.header-actions{gap:4px}.header-actions .icon-button{width:28px;height:30px}.header-actions .icon-button svg{width:17px;height:17px}.desktop-fullscreen{display:none}.panel-toggle{height:30px;padding:0 7px;margin-left:2px}.panel-toggle span{display:none}.panel-toggle svg{width:16px;height:16px}.observation-hud{top:86px;left:21px}.live-row{font-size:8px;gap:6px}.live-dot{width:4px;height:4px}.observation-title{font-size:16px;margin-top:11px;letter-spacing:1.5px}.observation-hud p{font-size:8px;margin-top:6px;max-width:none;letter-spacing:.7px}.viewport-frame{top:80px;left:12px;right:12px;bottom:calc(var(--mobile-panel-h) + 139px)}.viewport-frame span{width:10px;height:10px}.control-panel{top:auto;bottom:74px;left:12px;right:12px;width:auto;height:var(--mobile-panel-h);border-radius:12px;z-index:5}.panel-heading{padding:15px 18px 12px}.panel-heading h1{font-size:13px;margin-top:5px;letter-spacing:.6px}.panel-heading .eyebrow{font-size:6px}.panel-index{font-size:8px}.preset-section{padding:14px 17px 15px}.section-title h2{font-size:10px}.section-title>span{font-size:6px}.preset-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:10px}.preset{font-size:9px;padding:7px 3px}.preset-mark{font-size:12px}.matrix-section{padding:17px}.matrix-grid{max-width:315px;margin:auto;min-height:180px}.matrix-cell{font-size:10px}.matrix-intro{font-size:8px;margin:8px 0 13px}.matrix-hint{font-size:8px}.matrix-legend{max-width:315px;margin:11px auto 0}.matrix-editor-top{font-size:10px}.matrix-actions button{font-size:9px}.panel-section{padding:0 17px}.panel-section summary{padding:16px 0}.panel-section summary strong{font-size:10px}.panel-section summary small{font-size:6px}.details-content{padding-bottom:17px}.file-actions{padding-left:17px;padding-right:17px}.file-note{padding-left:17px;padding-right:17px}.interaction-dock{bottom:calc(var(--mobile-panel-h) + 87px);left:50%;height:42px;max-width:calc(100vw - 26px);padding:0 8px;gap:3px;border-radius:7px;z-index:4}.pause-button{height:28px;font-size:9px;padding:0 8px 0 5px}.tool-button{height:28px;padding:0 6px}.tool-button svg{width:15px;height:15px}.interaction-dock .icon-button{width:27px;height:28px}.interaction-dock .icon-button svg{width:16px;height:16px}.dock-divider{height:17px;margin:0 3px}.status-bar{height:61px;left:17px;right:17px;gap:14px;bottom:env(safe-area-inset-bottom,0);background:linear-gradient(0deg,#090e13,#090e1300)}.backend-status{gap:6px;min-width:106px}.backend-icon{height:23px;width:23px}.backend-icon svg{height:14px;width:14px}.backend-status strong{font-size:8px}.backend-status small{font-size:7px;margin-top:4px}.footer-divider{display:none}.telemetry{gap:18px}.metric{min-width:45px;gap:5px}.metric>span{font-size:5px;letter-spacing:.7px}.metric strong,.metric b{font-size:11px}.metric strong small{font-size:6px}.step-metric{display:none}.observation-time{margin-left:auto}.observation-time strong{font-size:9px}.toast{bottom:calc(var(--mobile-panel-h) + 146px);left:50%;max-width:calc(100vw - 36px);font-size:10px;padding:10px 14px}.cinema-exit{bottom:22px}.help-dialog{padding:22px 23px;max-height:calc(100dvh - 32px)}.help-dialog h2{font-size:23px;letter-spacing:1px;margin-top:21px}.help-dialog p{font-size:11px}.help-model p{font-size:10px}body.panel-collapsed .control-panel{transform:translateY(24px)}body.panel-collapsed .interaction-dock{bottom:82px}body.panel-collapsed .viewport-frame{right:12px;bottom:133px}body.panel-collapsed .toast{bottom:145px}}
+@media(max-width:370px){.brand strong{font-size:11px;letter-spacing:1.4px}.brand-symbol{height:27px;width:27px}.brand small{font-size:6px;letter-spacing:2.5px}.app-header{padding:0 13px}.header-actions{gap:1px}.interaction-dock{gap:2px;padding:0 5px}.dock-divider{margin:0 2px}.interaction-dock .icon-button{width:24px}.tool-button{padding:0 5px}.status-bar{left:14px;right:14px;gap:10px}.backend-status{min-width:96px}.backend-status strong{font-size:7px}.telemetry{gap:12px}.observation-time{display:none}}
+@media(max-height:570px) and (orientation:landscape){.app-header{height:62px}.control-panel{top:72px;bottom:66px}.viewport-frame{top:72px;bottom:66px}.observation-hud{top:86px}.observation-title{font-size:16px;margin-top:11px}.observation-hud p{display:none}.status-bar{height:55px}.interaction-dock{bottom:80px;height:40px}.panel-heading{padding-top:13px;padding-bottom:12px}.panel-heading h1{font-size:13px}.scene-note{display:none}.toast{bottom:135px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;scroll-behavior:auto!important}}
+
+.scale-section{padding:17px 20px 18px;border-bottom:1px solid var(--line);background:#7ce8c602}.scale-controls{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(0,.7fr) minmax(0,1.18fr);gap:8px;margin-top:13px}.scale-controls label{display:flex;flex-direction:column;gap:7px;min-width:0}.scale-controls label>span{font-size:9px;color:#789695;letter-spacing:.2px}.scale-controls select{width:100%;min-width:0;max-width:none;font-size:10px;padding:8px 20px 8px 8px;background-position:right 7px center;border-color:#91bac72d}.scale-controls label:first-child select{color:#bde8d9;border-color:#7ce8c635;background-color:#7ce8c606}.error-card{position:fixed;z-index:25;top:50%;left:calc((100% - var(--panel-w) - 50px)/2);transform:translate(-50%,-50%);width:min(420px,calc(100vw - 40px));max-height:calc(100dvh - 80px);overflow:auto;padding:24px 26px;color:#dbe6df;background:#142129f7;border:1px solid #eb9c7e50;border-radius:10px;box-shadow:0 15px 70px #0007;font-size:12px;line-height:1.9;overflow-wrap:anywhere}.error-card h2,.error-card h3{font-size:17px;font-weight:450;color:#efb59f;margin:0 0 11px}.error-card p{margin:9px 0;color:#93afb0}.error-card button{margin-top:12px;padding:8px 12px;border:1px solid #7ce8c63d;border-radius:5px;background:#7ce8c60c;color:#b3e4d0;font-size:11px}.error-card a{color:#a7dfcb;text-decoration:underline;text-underline-offset:3px}body.panel-collapsed .error-card,body.cinema-mode .error-card{left:50%}
+@media(min-width:1700px){.scale-section{padding-left:23px;padding-right:23px}}
+@media(max-width:950px){.scale-section{padding-left:17px;padding-right:17px}.scale-controls{gap:6px}.scale-controls select{font-size:9px;padding-left:6px}}
+@media(max-height:810px) and (min-width:681px){.scale-section{padding-top:15px;padding-bottom:16px}}
+@media(max-width:680px){.scale-section{padding:14px 17px 16px}.scale-controls{margin-top:11px;gap:8px}.scale-controls label>span{font-size:9px}.scale-controls select{font-size:10px;padding-top:8px;padding-bottom:8px}.error-card{left:50%;top:42%;padding:21px 22px}}
+</style>
+  <script>/* Independent Particle Life implementation. GPU-resident compact spatial grid.
+ * Particle interactions are asymmetric by design: matrix[receiver][neighbor].
+ * A five-dispatch counting grid avoids both all-pairs work and overflowing bins.
+ */
+(() => {
+  'use strict';
+  const DEFAULTS = {radius:40,force:180,friction:6,repulsion:1.5,beta:.3,quality:'balanced'};
+  const LIMITS = {radius:[15,90],force:[30,500],friction:[.5,15],repulsion:[.5,3],beta:[.1,.6]};
+  const SHADER = `
+struct Config {
+  dims: vec4<u32>,
+  world: vec4<f32>,
+  dynamics: vec4<f32>,
+  controls: vec4<f32>,
+  pointer: vec4<f32>,
+  misc: vec4<u32>,
+};
+struct Particle { position:vec2<f32>, velocity:vec2<f32>, kind:f32, pad0:f32, pad1:f32, pad2:f32 };
+@group(0) @binding(0) var<uniform> cfg:Config;
+@group(0) @binding(1) var<storage,read> particlesIn:array<Particle>;
+@group(0) @binding(2) var<storage,read_write> particlesOut:array<Particle>;
+@group(0) @binding(3) var<storage,read_write> counts:array<atomic<u32>>;
+@group(0) @binding(4) var<storage,read_write> starts:array<u32>;
+@group(0) @binding(5) var<storage,read_write> cursors:array<atomic<u32>>;
+@group(0) @binding(6) var<storage,read_write> spatialParticles:array<vec4<f32>>;
+@group(0) @binding(7) var<storage,read_write> blocks:array<u32>;
+@group(0) @binding(8) var<storage,read> interactionRules:array<f32>;
+var<workgroup> partial:array<u32,256>;
+fn cell(p:vec2<f32>) -> vec2<u32> {
+  let v = (p + cfg.world.xy*.5) / cfg.world.zw;
+  return min(vec2<u32>(max(v,vec2<f32>(0))),cfg.dims.zw-vec2<u32>(1));
+}
+fn hash(value:u32) -> u32 {
+  var x=value;
+  x=(x^(x>>16u))*0x7feb352du;
+  x=(x^(x>>15u))*0x846ca68bu;
+  return x^(x>>16u);
+}
+fn wrappedDelta(d:vec2<f32>) -> vec2<f32> {
+  return d - round(d/cfg.world.xy)*cfg.world.xy;
+}
+@compute @workgroup_size(256)
+fn histogram(@builtin(global_invocation_id) gid:vec3<u32>) {
+  let i=gid.x;
+  if(i>=cfg.dims.x){return;}
+  let c=cell(particlesIn[i].position);
+  atomicAdd(&counts[c.x+c.y*cfg.dims.z],1u);
+}
+@compute @workgroup_size(256)
+fn scanCells(@builtin(global_invocation_id) gid:vec3<u32>,@builtin(local_invocation_id) lid:vec3<u32>,@builtin(workgroup_id) wid:vec3<u32>) {
+  let i=gid.x;
+  var v=0u;
+  if(i<cfg.misc.y){v=atomicLoad(&counts[i]);}
+  partial[lid.x]=v;
+  workgroupBarrier();
+  var offset=1u;
+  loop {
+    if(offset>=256u){break;}
+    var previous=0u;
+    if(lid.x>=offset){previous=partial[lid.x-offset];}
+    workgroupBarrier();
+    partial[lid.x]+=previous;
+    workgroupBarrier();
+    offset*=2u;
+  }
+  if(i<cfg.misc.y){starts[i]=partial[lid.x]-v;}
+  if(lid.x==255u){blocks[wid.x]=partial[255];}
+}
+@compute @workgroup_size(1)
+fn scanBlocks() {
+  var prefix=0u;
+  for(var i=0u;i<cfg.misc.z;i++){
+    let amount=blocks[i];
+    blocks[i]=prefix;
+    prefix+=amount;
+  }
+}
+@compute @workgroup_size(256)
+fn scatter(@builtin(global_invocation_id) gid:vec3<u32>) {
+  let i=gid.x;
+  if(i>=cfg.dims.x){return;}
+  let grid=cell(particlesIn[i].position);
+  let c=grid.x+grid.y*cfg.dims.z;
+  let address=starts[c]+blocks[c/256u]+atomicAdd(&cursors[c],1u);
+  // Compact position/type tuples avoid a dependent random particle-buffer read
+  // for every interaction. IDs fit exactly in f32 throughout the supported range.
+  spatialParticles[address]=vec4<f32>(particlesIn[i].position,particlesIn[i].kind,f32(i));
+}
+@compute @workgroup_size(128)
+fn integrate(@builtin(global_invocation_id) gid:vec3<u32>) {
+  let sortedIndex=gid.x;
+  if(sortedIndex>=cfg.dims.x){return;}
+  // Adjacent SIMD lanes process adjacent cells. Particle identities and output
+  // indices remain unchanged, while neighboring lanes reuse the same cache lines.
+  let i=u32(spatialParticles[sortedIndex].w);
+  let p=particlesIn[i];
+  let home=vec2<i32>(cell(p.position));
+  let radius=cfg.dynamics.x;
+  let inverseRadius=1./radius;
+  let beta=cfg.controls.x;
+  let inverseBeta=1./beta;
+  let inverseBand=1./(1.-beta);
+  var force=vec2<f32>(0);
+  for(var oy=-1;oy<=1;oy++){
+    if((cfg.dims.w==1u && oy!=0)||(cfg.dims.w==2u && oy==1)){continue;}
+    let cy=u32((home.y+oy+i32(cfg.dims.w))%i32(cfg.dims.w));
+    var shiftY=0.;
+    if(home.y+oy<0){shiftY=-cfg.world.y;}
+    if(home.y+oy>=i32(cfg.dims.w)){shiftY=cfg.world.y;}
+    for(var ox=-1;ox<=1;ox++){
+      if((cfg.dims.z==1u && ox!=0)||(cfg.dims.z==2u && ox==1)){continue;}
+      let cx=u32((home.x+ox+i32(cfg.dims.z))%i32(cfg.dims.z));
+      var shiftX=0.;
+      if(home.x+ox<0){shiftX=-cfg.world.x;}
+      if(home.x+ox>=i32(cfg.dims.z)){shiftX=cfg.world.x;}
+      if(cfg.dims.z>=3u&&cfg.dims.w>=3u){
+        let lower=vec2<f32>(f32(cx),f32(cy))*cfg.world.zw-cfg.world.xy*.5+vec2<f32>(shiftX,shiftY);
+        let nearest=clamp(p.position,lower,lower+cfg.world.zw)-p.position;
+        if(dot(nearest,nearest)>=radius*radius){continue;}
+      }
+      let c=cx+cy*cfg.dims.z;
+      let population=atomicLoad(&counts[c]);
+      if(population==0u){continue;}
+      var take=population;
+      if(cfg.controls.w>0.){take=min(population,u32(cfg.controls.w));}
+      let weight=f32(population)/f32(take);
+      let base=starts[c]+blocks[c/256u];
+      let jitter=f32(hash(i^(c*374761393u)^((cfg.misc.x/4u)*668265263u)) & 65535u)/65536.;
+      for(var sample=0u;sample<take;sample++){
+        var slot=sample;
+        if(take<population){slot=min(population-1u,u32((f32(sample)+jitter)*weight));}
+        let neighbor=spatialParticles[base+slot];
+        let j=u32(neighbor.w);
+        if(j==i){continue;}
+        var delta=neighbor.xy-p.position+vec2<f32>(shiftX,shiftY);
+        if(cfg.dims.z<3u||cfg.dims.w<3u){delta=wrappedDelta(neighbor.xy-p.position);}
+        let d2=dot(delta,delta);
+        if(d2<0.00000001||d2>=radius*radius){continue;}
+        let inverseDistance=inverseSqrt(d2);
+        let q=d2*inverseDistance*inverseRadius;
+        var strength=0.;
+        if(q<beta){strength=cfg.dynamics.w*(q*inverseBeta-1.);}
+        else {strength=interactionRules[u32(p.kind)*8u+u32(neighbor.z)]*(1.-abs(2.*q-1.-beta)*inverseBand);}
+        force+=delta*(strength*weight*inverseDistance);
+      }
+    }
+  }
+  var acceleration=force*cfg.dynamics.y;
+  if(cfg.pointer.w!=0.){
+    let delta=wrappedDelta(cfg.pointer.xy-p.position);
+    let distance=length(delta);
+    if(distance>0.0001&&distance<cfg.pointer.z){
+      acceleration+=delta/distance*(1.-distance/cfg.pointer.z)*cfg.pointer.w;
+    }
+  }
+  let maxAcceleration=radius*80.;
+  let a2=dot(acceleration,acceleration);
+  if(a2>maxAcceleration*maxAcceleration){acceleration*=maxAcceleration*inverseSqrt(a2);}
+  let dt=cfg.controls.y;
+  var velocity=(p.velocity+acceleration*dt)*exp(-cfg.dynamics.z*dt);
+  let maxSpeed=radius*6.;
+  let speed2=dot(velocity,velocity);
+  if(speed2>maxSpeed*maxSpeed){velocity*=maxSpeed*inverseSqrt(speed2);}
+  var position=p.position+velocity*dt;
+  position-=floor((position+cfg.world.xy*.5)/cfg.world.xy)*cfg.world.xy;
+  particlesOut[i]=Particle(position,velocity,p.kind,0.,0.,0.);
+}`;
+
+  // Force gathering has a separate read-only resource view. Keeping counts as
+  // atomic storage here can turn every neighbor-cell lookup into an interlocked
+  // operation on some GPUs, and prevents ordinary read-only cache behavior.
+  const INTEGRATION_SHADER=(SHADER.slice(0,SHADER.indexOf('@compute'))+
+    SHADER.slice(SHADER.indexOf('@compute @workgroup_size(128)')))
+    .replace('var<storage,read_write> counts:array<atomic<u32>>','var<storage,read> counts:array<u32>')
+    .replace('var<storage,read_write> cursors:array<atomic<u32>>','var<storage,read> cursors:array<u32>')
+    .replace('var<storage,read_write> starts:','var<storage,read> starts:')
+    .replace('var<storage,read_write> spatialParticles:','var<storage,read> spatialParticles:')
+    .replace('var<storage,read_write> blocks:','var<storage,read> blocks:')
+    .replace('var<workgroup> partial:array<u32,256>;','')
+    .replaceAll('atomicLoad(&counts[c])','counts[c]');
+
+  function sanitized(incoming={},previous=DEFAULTS){
+    const result={...previous};
+    for(const [key,[lo,hi]] of Object.entries(LIMITS))if(Number.isFinite(Number(incoming[key])))result[key]=Math.max(lo,Math.min(hi,Number(incoming[key])));
+    if(['exact','balanced','fast'].includes(incoming.quality))result.quality=incoming.quality;
+    return result;
+  }
+  function seeded(seed){let value=seed>>>0;return()=>{let t=value+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}
+  function initializeState(config,count,species){
+    const width=Math.max(400,Math.sqrt(count/.0125*1.6));
+    const world=config.world?.length===2?config.world.map(Number):[width,width/1.6];
+    if(world.some(v=>!Number.isFinite(v)||v<1))throw Error('Invalid world dimensions.');
+    const data=new Float32Array(count*8);
+    if(config.initialState){
+      if(config.initialState.length!==data.length)throw Error('Initial state length does not match count.');
+      data.set(config.initialState);
+      for(let i=0;i<count;i++){const j=i*8;if(![data[j],data[j+1],data[j+2],data[j+3],data[j+4]].every(Number.isFinite))throw Error('Initial state must be finite.');data[j+4]=Math.max(0,Math.min(species-1,Math.floor(data[j+4])));for(let d=0;d<2;d++)data[j+d]-=Math.floor((data[j+d]+world[d]/2)/world[d])*world[d];}
+    }else{
+      const rng=seeded(Number.isFinite(Number(config.seed))?Number(config.seed):1);
+      for(let i=0;i<count;i++){const j=i*8;data[j]=(rng()-.5)*world[0];data[j+1]=(rng()-.5)*world[1];data[j+4]=i%species;}
+    }
+    return {data,world};
+  }
+  class ParticleGPUEngine {
+    static async create(){
+      if(!navigator.gpu)throw Error('当前浏览器没有启用 WebGPU。');
+      const adapter=await navigator.gpu.requestAdapter({powerPreference:'high-performance'});
+      if(!adapter)throw Error('无法获得 WebGPU 显卡适配器。');
+      const device=await adapter.requestDevice();
+      const engine=new ParticleGPUEngine(device,adapter);
+      try{await engine.compile();}catch(error){device.destroy();throw error;}
+      return engine;
+    }
+    constructor(device,adapter){
+      this.device=device;this.adapter=adapter;this.params={...DEFAULTS};this.stateBuffers=[];this.gridBuffers=[];
+      this.count=0;this.species=6;this.world=[400,250];this.index=0;this.tick=0;this.time=0;this.lost=false;
+      this.integrationWorkgroupSize=128;
+      this.uniformData=new ArrayBuffer(96);this.uf=new Float32Array(this.uniformData);this.ui=new Uint32Array(this.uniformData);
+      this.uniformBuffer=device.createBuffer({size:96,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+      this.matrixBuffer=device.createBuffer({size:256,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+      this.stats={backend:'WebGPU',cells:0,quality:'balanced',maxCandidates:144,memoryBytes:0,overflow:0};
+      device.lost.then(info=>{this.lost=true;this.stats.error=info.message||'GPU device lost';});
+    }
+    async compile(){
+      const device=this.device;
+      if(![32,64,128,256].includes(this.integrationWorkgroupSize))this.integrationWorkgroupSize=128;
+      const entries=[{binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'uniform'}}];
+      for(let binding=1;binding<=8;binding++)entries.push({binding,visibility:GPUShaderStage.COMPUTE,buffer:{type:binding===1||binding===8?'read-only-storage':'storage'}});
+      this.layout=device.createBindGroupLayout({entries});
+      const pipelineLayout=device.createPipelineLayout({bindGroupLayouts:[this.layout]});
+      const integrationEntries=entries.map(entry=>({...entry,buffer:{type:entry.binding===0?'uniform':entry.binding===2?'storage':'read-only-storage'}}));
+      this.integrationLayout=device.createBindGroupLayout({entries:integrationEntries});
+      const integrationPipelineLayout=device.createPipelineLayout({bindGroupLayouts:[this.integrationLayout]});
+      const module=device.createShaderModule({label:'Particle Life spatial grid and integration',code:SHADER});
+      const report=await module.getCompilationInfo();
+      const errors=report.messages.filter(m=>m.type==='error');
+      if(errors.length)throw Error(errors.map(m=>`WGSL ${m.lineNum}:${m.linePos} ${m.message}`).join('\n'));
+      this.pipelines={};
+      await Promise.all(['histogram','scanCells','scanBlocks','scatter'].map(async entryPoint=>{
+        this.pipelines[entryPoint]=await device.createComputePipelineAsync({label:entryPoint,layout:pipelineLayout,compute:{module,entryPoint}});
+      }));
+      const integrationCode=INTEGRATION_SHADER.replace('@compute @workgroup_size(128)',`@compute @workgroup_size(${this.integrationWorkgroupSize})`);
+      const integrationModule=device.createShaderModule({label:'Particle Life cached read-only force gathering',code:integrationCode});
+      const integrationReport=await integrationModule.getCompilationInfo();
+      const integrationErrors=integrationReport.messages.filter(m=>m.type==='error');
+      if(integrationErrors.length)throw Error(integrationErrors.map(m=>`WGSL ${m.lineNum}:${m.linePos} ${m.message}`).join('\n'));
+      this.pipelines.integrate=await device.createComputePipelineAsync({label:'integrate',layout:integrationPipelineLayout,compute:{module:integrationModule,entryPoint:'integrate'}});
+    }
+    buffer(size,usage){return this.device.createBuffer({size:Math.max(4,Math.ceil(size/4)*4),usage});}
+    async init(config){
+      const count=Math.floor(Number(config.count));const species=Math.floor(Number(config.species??6));
+      if(!Number.isFinite(count)||count<1||count>250000)throw Error('GPU 粒子数量必须介于 1 与 250,000 之间。');
+      if(!Number.isFinite(species)||species<1||species>8)throw Error('Particle species must be between 1 and 8.');
+      await this.device.queue.onSubmittedWorkDone();
+      for(const b of this.stateBuffers)b.destroy();
+      this.count=count;this.species=species;this.params=sanitized(config.params);this.index=0;this.tick=0;this.time=0;
+      const {data,world}=initializeState(config,count,species);this.world=world;
+      const usage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC|GPUBufferUsage.VERTEX;
+      this.stateBuffers=[this.buffer(data.byteLength,usage),this.buffer(data.byteLength,usage)];
+      this.device.queue.writeBuffer(this.stateBuffers[0],0,data);this.device.queue.writeBuffer(this.stateBuffers[1],0,data);
+      this.allocateGrid();this.setMatrix(config.matrix||new Float32Array(species*species));
+      return this;
+    }
+    allocateGrid(){
+      if(!this.count)return;
+      for(const b of this.gridBuffers)b.destroy();
+      this.gx=Math.max(1,Math.floor(this.world[0]/this.params.radius));
+      this.gy=Math.max(1,Math.floor(this.world[1]/this.params.radius));
+      this.cells=this.gx*this.gy;this.blockCount=Math.ceil(this.cells/256);
+      const usage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST;
+      this.counts=this.buffer(this.cells*4,usage);this.starts=this.buffer(this.cells*4,usage);this.cursors=this.buffer(this.cells*4,usage);
+      this.indices=this.buffer(this.count*16,usage);this.blocks=this.buffer(this.blockCount*4,usage);
+      this.gridBuffers=[this.counts,this.starts,this.cursors,this.indices,this.blocks];
+      const makeBindGroups=layout=>[0,1].map(i=>this.device.createBindGroup({layout,entries:[
+        {binding:0,resource:{buffer:this.uniformBuffer}},
+        {binding:1,resource:{buffer:this.stateBuffers[i]}},{binding:2,resource:{buffer:this.stateBuffers[1-i]}},
+        {binding:3,resource:{buffer:this.counts}},{binding:4,resource:{buffer:this.starts}},
+        {binding:5,resource:{buffer:this.cursors}},{binding:6,resource:{buffer:this.indices}},
+        {binding:7,resource:{buffer:this.blocks}},{binding:8,resource:{buffer:this.matrixBuffer}}
+      ]}));
+      this.bindGroups=makeBindGroups(this.layout);this.integrationBindGroups=makeBindGroups(this.integrationLayout);
+      this.stats.cells=this.cells;
+      this.stats.memoryBytes=this.count*80+this.cells*12+this.blockCount*4+352;
+    }
+    setParams(params){const old=this.params.radius;this.params=sanitized(params,this.params);if(old!==this.params.radius)this.allocateGrid();}
+    setMatrix(matrix){
+      const packed=new Float32Array(64);const n=this.species;
+      if(!matrix||matrix.length!==n&&matrix.length!==n*n&&matrix.length!==64)throw Error('Invalid interaction matrix shape.');
+      const nested=Array.isArray(matrix[0])||ArrayBuffer.isView(matrix[0]);
+      const stride=!nested&&matrix.length===64?8:n;
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){const value=Number(nested?matrix[i][j]:matrix[i*stride+j]);if(!Number.isFinite(value))throw Error('Interaction matrix values must be finite.');packed[i*8+j]=Math.max(-1,Math.min(1,value));}
+      this.matrix=packed;this.device.queue.writeBuffer(this.matrixBuffer,0,packed);
+    }
+    get stateBuffer(){return this.stateBuffers[this.index];}
+    encodeStep(encoder,dt,pointer){
+      if(this.lost)throw Error('GPU device lost. Reload the simulation.');
+      if(!this.count)return;
+      if(!Number.isFinite(dt)||dt<0)throw Error('Invalid simulation timestep.');
+      dt=Math.min(dt,1/30);
+      if(dt===0)return;
+      const p=this.params,u=this.ui,f=this.uf;
+      u[0]=this.count;u[1]=this.species;u[2]=this.gx;u[3]=this.gy;
+      f[4]=this.world[0];f[5]=this.world[1];f[6]=this.world[0]/this.gx;f[7]=this.world[1]/this.gy;
+      f[8]=p.radius;f[9]=p.force;f[10]=p.friction;f[11]=p.repulsion;
+      f[12]=p.beta;f[13]=dt;f[14]=this.time;f[15]=p.quality==='exact'?0:p.quality==='fast'?4:16;
+      const active=pointer&&['attract','repel'].includes(pointer.mode)&&Number.isFinite(pointer.x)&&Number.isFinite(pointer.y);
+      f[16]=active?pointer.x:0;f[17]=active?pointer.y:0;f[18]=Math.max(1,Number(pointer?.radius)||p.radius*2.5);
+      f[19]=active?(pointer.mode==='attract'?1:-1)*Math.min(4000,Math.max(0,Number(pointer.strength)||1200)):0;
+      u[20]=this.tick;u[21]=this.cells;u[22]=this.blockCount;u[23]=0;
+      this.device.queue.writeBuffer(this.uniformBuffer,0,this.uniformData);
+      encoder.clearBuffer(this.counts);encoder.clearBuffer(this.cursors);
+      const dispatch=(name,groups)=>{const pass=encoder.beginComputePass({label:name});pass.setPipeline(this.pipelines[name]);pass.setBindGroup(0,(name==='integrate'?this.integrationBindGroups:this.bindGroups)[this.index]);pass.dispatchWorkgroups(groups);pass.end();};
+      dispatch('histogram',Math.ceil(this.count/256));dispatch('scanCells',this.blockCount);dispatch('scanBlocks',1);
+      dispatch('scatter',Math.ceil(this.count/256));dispatch('integrate',Math.ceil(this.count/this.integrationWorkgroupSize));
+      this.index=1-this.index;this.tick++;this.time+=dt;
+      this.stats.quality=p.quality;this.stats.maxCandidates=f[15]?9*f[15]:null;this.stats.time=this.time;this.stats.count=this.count;
+    }
+    async readState(){
+      const size=this.count*32;
+      const read=this.buffer(size,GPUBufferUsage.COPY_DST|GPUBufferUsage.MAP_READ);
+      const encoder=this.device.createCommandEncoder();encoder.copyBufferToBuffer(this.stateBuffer,0,read,0,size);
+      this.device.queue.submit([encoder.finish()]);
+      try{await read.mapAsync(GPUMapMode.READ);const result=new Float32Array(read.getMappedRange().slice(0));read.unmap();return result;}finally{read.destroy();}
+    }
+    destroy(){for(const b of [...this.stateBuffers,...this.gridBuffers,this.uniformBuffer,this.matrixBuffer])b.destroy();this.device.destroy();}
+  }
+  ParticleGPUEngine.defaults=Object.freeze({...DEFAULTS});
+  window.ParticleGPUEngine=ParticleGPUEngine;
+})();
+</script>
+  <script>/* Particle Life renderer: shared GPU storage, one instanced draw, no per-frame readback. */
+(function () {
+  'use strict';
+  const DEFAULT_PALETTE = ['#7ce8c6','#ff8475','#f4d477','#9aa7ff','#ef9ed2','#72c9f4','#e6c79c','#b8df74'];
+  const QUAD = new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]);
+  const GPU_COMMON = `
+    struct Scene {
+      resolution: vec2f, origin: vec2f,
+      camera: vec2f, world: vec2f,
+      scale: f32, radius: f32, glow: f32, grid: f32,
+      colors: array<vec4f, 8>,
+      time: f32, spacing: f32, reserved0: f32, reserved1: f32,
+    }
+    @group(0) @binding(0) var<uniform> scene: Scene;
+    struct VertexOut { @builtin(position) position: vec4f, @location(0) local: vec2f, @location(1) color: vec3f }
+  `;
+  const GPU_PARTICLES = GPU_COMMON + `
+    struct Particle { position: vec2f, velocity: vec2f, kind: f32, pad0: f32, pad1: f32, pad2: f32 }
+    @group(0) @binding(1) var<storage, read> particles: array<Particle>;
+    @vertex fn vertexMain(@builtin(vertex_index) vertex: u32, @builtin(instance_index) instance: u32) -> VertexOut {
+      let corners = array<vec2f,4>(vec2f(-1.,-1.),vec2f(1.,-1.),vec2f(-1.,1.),vec2f(1.,1.));
+      let local = corners[vertex];
+      let particle = particles[instance];
+      let displacement = (particle.position - scene.camera) * scene.scale;
+      let pixel = scene.origin + vec2f(displacement.x,-displacement.y) + local * scene.radius;
+      var out: VertexOut;
+      out.position = vec4f(pixel / scene.resolution * vec2f(2.,-2.) + vec2f(-1.,1.),0.,1.);
+      out.local = local;
+      out.color = scene.colors[min(7u,u32(max(0.,particle.kind)))].rgb;
+      return out;
+    }
+    @fragment fn fragmentMain(in: VertexOut) -> @location(0) vec4f {
+      let r = length(in.local);
+      let aa = max(fwidth(r),.025);
+      if (r > 1.) { discard; }
+      let core = 1. - smoothstep(.51-aa,.51+aa,r);
+      let halo = (1. - r)*(1. - r) * scene.glow * .52;
+      let alpha = max(core*.91,halo);
+      let color = mix(in.color,vec3f(1.),core*.10);
+      return vec4f(color*alpha,alpha);
+    }
+  `;
+  const GPU_BACKGROUND = GPU_COMMON + `
+    struct BackgroundOut { @builtin(position) position: vec4f, @location(0) uv: vec2f }
+    @vertex fn vertexMain(@builtin(vertex_index) index: u32) -> BackgroundOut {
+      let p = vec2f(f32((index << 1u) & 2u),f32(index & 2u));
+      var out: BackgroundOut;
+      out.position = vec4f(p*2.-1.,0.,1.);
+      out.uv = vec2f(p.x,1.-p.y);
+      return out;
+    }
+    @fragment fn fragmentMain(in: BackgroundOut) -> @location(0) vec4f {
+      let pixel = in.uv * scene.resolution;
+      let normalized = (pixel-scene.origin)/max(scene.resolution.x,scene.resolution.y);
+      let glow = max(0.,1.-dot(normalized,normalized)*2.8);
+      var color = vec3f(.025,.037,.049) + glow*vec3f(.009,.014,.017);
+      if (scene.grid > .5) {
+        let world = (pixel-scene.origin)*vec2f(1.,-1.)/scene.scale+scene.camera;
+        let coordinate = world/scene.spacing;
+        let distance = abs(fract(coordinate+.5)-.5);
+        let edge = max(fwidth(coordinate),vec2f(.0001));
+        let line = 1.-smoothstep(vec2f(0.),edge*.65,distance);
+        color += vec3f(.11,.17,.19)*max(line.x,line.y)*.18;
+        let boundary = max(abs(world.x)-scene.world.x*.5,abs(world.y)-scene.world.y*.5);
+        let outline = 1.-smoothstep(.3/scene.scale,1.2/scene.scale,abs(boundary));
+        color += vec3f(.12,.28,.27)*outline*.45;
+      }
+      return vec4f(color,1.);
+    }
+  `;
+  const GL_BACKGROUND_VERTEX = `#version 300 es
+    precision highp float;
+    out vec2 uv;
+    void main(){ vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2)); gl_Position=vec4(p*2.-1.,0.,1.); uv=vec2(p.x,1.-p.y); }
+  `;
+  const GL_BACKGROUND_FRAGMENT = `#version 300 es
+    precision highp float;
+    in vec2 uv; out vec4 outColor;
+    uniform vec2 resolution,origin,camera,world;
+    uniform float scale,spacing,grid;
+    void main(){
+      vec2 pixel=uv*resolution;
+      vec2 normalized=(pixel-origin)/max(resolution.x,resolution.y);
+      float glow=max(0.,1.-dot(normalized,normalized)*2.8);
+      vec3 color=vec3(.025,.037,.049)+glow*vec3f(.009,.014,.017);
+      if(grid>.5){
+        vec2 p=(pixel-origin)*vec2(1.,-1.)/scale+camera;
+        vec2 coordinate=p/spacing;
+        vec2 distance=abs(fract(coordinate+.5)-.5);
+        vec2 edge=max(fwidth(coordinate),vec2(.0001));
+        vec2 line=1.-smoothstep(vec2(0.),edge*.65,distance);
+        color+=vec3(.11,.17,.19)*max(line.x,line.y)*.18;
+        float boundary=max(abs(p.x)-world.x*.5,abs(p.y)-world.y*.5);
+        float outline=1.-smoothstep(.3/scale,1.2/scale,abs(boundary));
+        color+=vec3(.12,.28,.27)*outline*.45;
+      }
+      outColor=vec4(color,1.);
+    }
+  `.replace('vec3f(', 'vec3(');
+  const GL_PARTICLE_VERTEX = `#version 300 es
+    precision highp float;
+    layout(location=0) in vec2 corner;
+    layout(location=1) in vec4 state0;
+    layout(location=2) in vec4 state1;
+    uniform vec2 resolution,origin,camera;
+    uniform float scale,radius;
+    uniform vec4 colors[8];
+    out vec2 local; out vec3 color;
+    void main(){
+      vec2 displacement=(state0.xy-camera)*scale;
+      vec2 pixel=origin+vec2(displacement.x,-displacement.y)+corner*radius;
+      gl_Position=vec4(pixel/resolution*vec2(2.,-2.)+vec2(-1.,1.),0.,1.);
+      local=corner;color=colors[clamp(int(state1.x),0,7)].rgb;
+    }
+  `;
+  const GL_PARTICLE_FRAGMENT = `#version 300 es
+    precision highp float;
+    in vec2 local;in vec3 color;out vec4 outColor;uniform float glow;
+    void main(){
+      float r=length(local);if(r>1.)discard;
+      float aa=max(fwidth(r),.025);
+      float core=1.-smoothstep(.51-aa,.51+aa,r);
+      float halo=(1.-r)*(1.-r)*glow*.52;
+      float alpha=max(core*.91,halo);
+      outColor=vec4(mix(color,vec3(1.),core*.10)*alpha,alpha);
+    }
+  `;
+
+  function hexColor(value) {
+    const text = String(value || '').replace('#','');
+    const valid = /^[0-9a-f]{6}$/i.test(text) ? text : 'ffffff';
+    return [parseInt(valid.slice(0,2),16)/255,parseInt(valid.slice(2,4),16)/255,parseInt(valid.slice(4,6),16)/255,1];
+  }
+  function makeProgram(gl, vertex, fragment) {
+    const shaders = [[gl.VERTEX_SHADER,vertex],[gl.FRAGMENT_SHADER,fragment]].map(([kind,source])=>{
+      const shader=gl.createShader(kind);gl.shaderSource(shader,source);gl.compileShader(shader);
+      if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader));return shader;
+    });
+    const program=gl.createProgram();shaders.forEach(s=>gl.attachShader(program,s));gl.linkProgram(program);
+    if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(program));shaders.forEach(s=>gl.deleteShader(s));return program;
+  }
+
+  class ParticleRenderer {
+    constructor(canvas, options={}) {
+      this.canvas=canvas;this.device=options.device||null;this.world=[1200,750];
+      this.zoom=1;this.camera={x:0,y:0};this.origin={x:0,y:0};this.scale=1;
+      this.width=1;this.height=1;this.count=0;this.capacity=0;this.dpr=1;this.maxDpr=1.5;
+      this.mode='pan';this.pointers=new Map();this.listeners=[];this.lost=false;
+      this.currentSettings={};this.uniforms=new Float32Array(48);this.paletteKey='';this.colors=new Float32Array(32);
+      this.stats={renderer:this.device?'WebGPU':'WebGL 2',drawCalls:2,verticesPerParticle:this.device?4:6,particles:0,pixelRatio:1,sharedStorage:!!this.device};
+      this.setPalette(DEFAULT_PALETTE);
+      if(this.device)this.initializeGPU();else this.initializeGL();
+      this.bindInteractions();
+      this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(canvas);
+      this.resize();
+    }
+    initializeGPU() {
+      const device=this.device;
+      this.context=this.canvas.getContext('webgpu');
+      if(!this.context)throw new Error('WebGPU 画布不可用。');
+      this.format=navigator.gpu.getPreferredCanvasFormat();
+      this.context.configure({device,format:this.format,alphaMode:'opaque',usage:GPUTextureUsage.RENDER_ATTACHMENT|GPUTextureUsage.COPY_SRC});
+      device.pushErrorScope('validation');
+      this.uniformBuffer=device.createBuffer({label:'Particle Life render uniforms',size:192,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+      // Reuse the shared diagonal vertices within each instance: four vertex
+      // invocations/storage reads instead of six for the same two triangles.
+      this.indexBuffer=device.createBuffer({label:'Particle Life quad indices',size:12,usage:GPUBufferUsage.INDEX|GPUBufferUsage.COPY_DST});
+      device.queue.writeBuffer(this.indexBuffer,0,new Uint16Array([0,1,2,2,1,3]));
+      this.particleLayout=device.createBindGroupLayout({entries:[
+        {binding:0,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform',minBindingSize:192}},
+        {binding:1,visibility:GPUShaderStage.VERTEX,buffer:{type:'read-only-storage'}},
+      ]});
+      this.backgroundLayout=device.createBindGroupLayout({entries:[{binding:0,visibility:GPUShaderStage.VERTEX|GPUShaderStage.FRAGMENT,buffer:{type:'uniform',minBindingSize:192}}]});
+      const particleModule=device.createShaderModule({label:'Particle Life particle renderer',code:GPU_PARTICLES});
+      const backgroundModule=device.createShaderModule({label:'Particle Life background renderer',code:GPU_BACKGROUND});
+      this.particlePipeline=device.createRenderPipeline({label:'Particle Life instanced discs',layout:device.createPipelineLayout({bindGroupLayouts:[this.particleLayout]}),vertex:{module:particleModule,entryPoint:'vertexMain'},fragment:{module:particleModule,entryPoint:'fragmentMain',targets:[{format:this.format,blend:{color:{srcFactor:'one',dstFactor:'one-minus-src-alpha'},alpha:{srcFactor:'one',dstFactor:'one-minus-src-alpha'}}}]},primitive:{topology:'triangle-list'}});
+      this.backgroundPipeline=device.createRenderPipeline({label:'Particle Life backdrop',layout:device.createPipelineLayout({bindGroupLayouts:[this.backgroundLayout]}),vertex:{module:backgroundModule,entryPoint:'vertexMain'},fragment:{module:backgroundModule,entryPoint:'fragmentMain',targets:[{format:this.format}]},primitive:{topology:'triangle-list'}});
+      this.backgroundBindGroup=device.createBindGroup({layout:this.backgroundLayout,entries:[{binding:0,resource:{buffer:this.uniformBuffer}}]});
+      this.particleBindGroups=new WeakMap();
+      this.ready=Promise.all([device.popErrorScope(),particleModule.getCompilationInfo(),backgroundModule.getCompilationInfo()]).then(([error,...infos])=>{
+        const errors=infos.flatMap(info=>info.messages.filter(m=>m.type==='error').map(m=>m.message));
+        if(error||errors.length)throw new Error(error?.message||errors.join('\n'));
+        return this;
+      });
+      // Consumers may await ready; also surface failures to the shared application handler.
+      this.ready.catch(error=>this.emitError(error.message));
+    }
+    initializeGL() {
+      const gl=this.canvas.getContext('webgl2',{alpha:false,antialias:false,depth:false,stencil:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});
+      if(!gl)throw new Error('当前浏览器未能启动 WebGL 2 绘制。');this.gl=gl;
+      this.particleProgram=makeProgram(gl,GL_PARTICLE_VERTEX,GL_PARTICLE_FRAGMENT);
+      this.backgroundProgram=makeProgram(gl,GL_BACKGROUND_VERTEX,GL_BACKGROUND_FRAGMENT);
+      const locations=(program,names)=>Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+      this.particleUniforms=locations(this.particleProgram,['resolution','origin','camera','scale','radius','glow','colors[0]']);
+      this.backgroundUniforms=locations(this.backgroundProgram,['resolution','origin','camera','world','scale','spacing','grid']);
+      this.backgroundVao=gl.createVertexArray();this.particleVao=gl.createVertexArray();
+      this.geometryBuffer=gl.createBuffer();this.stateBuffer=gl.createBuffer();
+      gl.bindVertexArray(this.particleVao);
+      gl.bindBuffer(gl.ARRAY_BUFFER,this.geometryBuffer);gl.bufferData(gl.ARRAY_BUFFER,QUAD,gl.STATIC_DRAW);
+      gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ARRAY_BUFFER,this.stateBuffer);
+      gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,4,gl.FLOAT,false,32,0);gl.vertexAttribDivisor(1,1);
+      gl.enableVertexAttribArray(2);gl.vertexAttribPointer(2,4,gl.FLOAT,false,32,16);gl.vertexAttribDivisor(2,1);
+      gl.bindVertexArray(null);gl.disable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+      const debug=gl.getExtension('WEBGL_debug_renderer_info');
+      if(debug)this.stats.gpuRenderer=gl.getParameter(debug.UNMASKED_RENDERER_WEBGL);
+      this.ready=Promise.resolve(this);
+      this.listen(this.canvas,'webglcontextlost',event=>{event.preventDefault();this.lost=true;this.emitError('绘图上下文中断，请重新加载页面。');});
+    }
+    emitError(message){this.canvas.dispatchEvent(new CustomEvent('renderererror',{detail:message}));}
+    listen(target,name,callback,options){target.addEventListener(name,callback,options);this.listeners.push([target,name,callback,options]);}
+    bindInteractions(){
+      const canvas=this.canvas;canvas.style.touchAction='none';canvas.style.cursor='grab';
+      const local=event=>{const rect=canvas.getBoundingClientRect();return{x:event.clientX-rect.left,y:event.clientY-rect.top};};
+      this.listen(canvas,'pointerdown',event=>{
+        if(event.pointerType==='mouse'&&event.button!==0&&event.button!==1)return;
+        const point=local(event);this.pointers.set(event.pointerId,{...point,pan:this.mode==='pan'||event.button===1});
+        canvas.setPointerCapture(event.pointerId);canvas.style.cursor=this.mode==='pan'?'grabbing':'crosshair';
+      });
+      this.listen(canvas,'pointermove',event=>{
+        const previous=this.pointers.get(event.pointerId);if(!previous)return;
+        const point=local(event);
+        if(this.pointers.size>1){
+          let other;for(const[id,p]of this.pointers)if(id!==event.pointerId){other=p;break;}
+          const before=Math.hypot(previous.x-other.x,previous.y-other.y),after=Math.hypot(point.x-other.x,point.y-other.y);
+          if(before>2)this.zoomAt(after/before,(point.x+other.x)*.5,(point.y+other.y)*.5);
+        }else if(previous.pan){this.camera.x-=(point.x-previous.x)/this.scale;this.camera.y+=(point.y-previous.y)/this.scale;}
+        this.pointers.set(event.pointerId,{...point,pan:previous.pan});
+      });
+      const release=event=>{this.pointers.delete(event.pointerId);if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);canvas.style.cursor=this.mode==='pan'?'grab':'crosshair';};
+      this.listen(canvas,'pointerup',release);this.listen(canvas,'pointercancel',release);this.listen(canvas,'lostpointercapture',event=>this.pointers.delete(event.pointerId));
+      this.listen(canvas,'wheel',event=>{event.preventDefault();const point=local(event);const units=event.deltaMode===1?16:event.deltaMode===2?this.height:1;this.zoomAt(Math.exp(-Math.max(-200,Math.min(200,event.deltaY*units))*.0015),point.x,point.y);},{passive:false});
+      this.listen(canvas,'dblclick',()=>{if(this.mode==='pan')this.resetCamera(this.world);});
+      this.listen(window,'resize',()=>this.resize());
+    }
+    setInteractionMode(mode){this.mode=['pan','attract','repel','none'].includes(mode)?mode:'pan';this.canvas.style.cursor=this.mode==='pan'?'grab':'crosshair';}
+    setPalette(palette){
+      const key=(palette||DEFAULT_PALETTE).join(',');if(key===this.paletteKey)return;this.paletteKey=key;
+      for(let i=0;i<8;i++)this.colors.set(hexColor(palette?.[i]||DEFAULT_PALETTE[i]),i*4);
+    }
+    resize(){
+      const rect=this.canvas.getBoundingClientRect();this.width=Math.max(1,Math.round(rect.width));this.height=Math.max(1,Math.round(rect.height));
+      this.dpr=Math.min(window.devicePixelRatio||1,this.maxDpr);
+      const width=Math.max(1,Math.round(this.width*this.dpr)),height=Math.max(1,Math.round(this.height*this.dpr));
+      if(this.canvas.width!==width)this.canvas.width=width;if(this.canvas.height!==height)this.canvas.height=height;
+      this.stats.pixelRatio=this.dpr;this.updateView(this.currentSettings);
+    }
+    setResolutionScale(maxDpr){this.maxDpr=Math.max(.5,Math.min(2,Number(maxDpr)||1));this.resize();}
+    updateView(settings={}){
+      if(settings.world&&settings.world[0]>0&&settings.world[1]>0)this.world=[settings.world[0],settings.world[1]];
+      const immersive=!!settings.cinema;const mobile=this.width<=680;
+      const sidebar=immersive||mobile?0:this.width<=950?350:380;
+      const usableWidth=Math.max(100,this.width-sidebar-(mobile?24:48));
+      const mobileTop=this.height>700?154:124;
+      const mobileBottom=this.height-Math.min(this.height*.44,410)-142;
+      const usableHeight=Math.max(90,immersive?this.height-50:mobile?mobileBottom-mobileTop:this.height-160);
+      this.origin.x=(this.width-sidebar)*.5;this.origin.y=immersive?this.height*.5:mobile?(mobileTop+mobileBottom)*.5:this.height*.52;
+      this.scale=Math.min(usableWidth/this.world[0],usableHeight/this.world[1])*.94*this.zoom;
+      this.stats.zoom=this.zoom;
+    }
+    zoomAt(factor,x,y){const before=this.screenToWorld(x,y);this.zoom=Math.max(.2,Math.min(30,this.zoom*factor));this.updateView(this.currentSettings);const after=this.screenToWorld(x,y);this.camera.x+=before.x-after.x;this.camera.y+=before.y-after.y;}
+    resetCamera(world){if(world)this.world=[world[0],world[1]];this.zoom=1;this.camera.x=0;this.camera.y=0;this.updateView({...this.currentSettings,world:this.world});}
+    screenToWorld(x,y){if(typeof x==='object'){y=x.y;x=x.x;}return{x:(x-this.origin.x)/this.scale+this.camera.x,y:(this.origin.y-y)/this.scale+this.camera.y};}
+    worldToScreen(x,y){if(typeof x==='object'){y=x.y;x=x.x;}return{x:(x-this.camera.x)*this.scale+this.origin.x,y:this.origin.y-(y-this.camera.y)*this.scale};}
+    getPointerWorld(event){const rect=this.canvas.getBoundingClientRect();return this.screenToWorld(event.clientX-rect.left,event.clientY-rect.top);}
+    fillUniforms(settings){
+      this.currentSettings=settings;this.updateView(settings);this.setPalette(settings.palette||DEFAULT_PALETTE);
+      const u=this.uniforms;u[0]=this.width;u[1]=this.height;u[2]=this.origin.x;u[3]=this.origin.y;
+      u[4]=this.camera.x;u[5]=this.camera.y;u[6]=this.world[0];u[7]=this.world[1];u[8]=this.scale;
+      // World-sized particles become subpixel at high population. A minimum core
+      // keeps the entire population visible; zooming still reveals its structure.
+      u[9]=Math.max(.78,Math.min(24,(Number(settings.pointSize)||1.5)*this.scale*1.8));
+      u[10]=Math.max(0,Math.min(1,Number(settings.glow??.5)));u[11]=settings.showGrid?1:0;
+      u.set(this.colors,12);u[44]=Number(settings.time)||0;u[45]=Number(settings.gridSpacing)||50;u[46]=0;u[47]=0;
+    }
+    renderGpu(encoder,stateBuffer,count,settings={}){
+      if(this.lost)return;this.fillUniforms(settings);this.count=count;this.stats.particles=count;
+      this.device.queue.writeBuffer(this.uniformBuffer,0,this.uniforms);
+      let bindGroup=this.particleBindGroups.get(stateBuffer);
+      if(!bindGroup){bindGroup=this.device.createBindGroup({layout:this.particleLayout,entries:[{binding:0,resource:{buffer:this.uniformBuffer}},{binding:1,resource:{buffer:stateBuffer}}]});this.particleBindGroups.set(stateBuffer,bindGroup);}
+      const pass=encoder.beginRenderPass({label:'Particle Life canvas',colorAttachments:[{view:this.context.getCurrentTexture().createView(),loadOp:'clear',storeOp:'store',clearValue:{r:.025,g:.037,b:.049,a:1}}]});
+      pass.setPipeline(this.backgroundPipeline);pass.setBindGroup(0,this.backgroundBindGroup);pass.draw(3);
+      pass.setPipeline(this.particlePipeline);pass.setBindGroup(0,bindGroup);pass.setIndexBuffer(this.indexBuffer,'uint16');pass.drawIndexed(6,count);pass.end();
+    }
+    setData(data,count){
+      if(this.device)throw new Error('GPU renderer consumes the simulation storage buffer directly.');
+      if(!(data instanceof Float32Array)||!Number.isFinite(count)||count<0||data.length<count*8)throw new Error('粒子渲染数据无效。');
+      const gl=this.gl;gl.bindBuffer(gl.ARRAY_BUFFER,this.stateBuffer);
+      if(data.byteLength>this.capacity){this.capacity=data.byteLength;gl.bufferData(gl.ARRAY_BUFFER,this.capacity,gl.DYNAMIC_DRAW);}
+      gl.bufferSubData(gl.ARRAY_BUFFER,0,data);this.count=Math.floor(count);this.stats.particles=this.count;
+    }
+    render(settings={}){
+      if(this.lost)return;if(this.device)throw new Error('Use renderGpu with the shared command encoder.');
+      this.fillUniforms(settings);const u=this.uniforms,gl=this.gl;
+      gl.viewport(0,0,this.canvas.width,this.canvas.height);gl.disable(gl.BLEND);gl.useProgram(this.backgroundProgram);gl.bindVertexArray(this.backgroundVao);
+      const bg=this.backgroundUniforms;gl.uniform2f(bg.resolution,u[0],u[1]);gl.uniform2f(bg.origin,u[2],u[3]);gl.uniform2f(bg.camera,u[4],u[5]);gl.uniform2f(bg.world,u[6],u[7]);gl.uniform1f(bg.scale,u[8]);gl.uniform1f(bg.spacing,u[45]);gl.uniform1f(bg.grid,u[11]);gl.drawArrays(gl.TRIANGLES,0,3);
+      if(this.count){gl.enable(gl.BLEND);gl.useProgram(this.particleProgram);gl.bindVertexArray(this.particleVao);const p=this.particleUniforms;
+        gl.uniform2f(p.resolution,u[0],u[1]);gl.uniform2f(p.origin,u[2],u[3]);gl.uniform2f(p.camera,u[4],u[5]);gl.uniform1f(p.scale,u[8]);gl.uniform1f(p.radius,u[9]);gl.uniform1f(p.glow,u[10]);gl.uniform4fv(p['colors[0]'],this.colors);gl.drawArraysInstanced(gl.TRIANGLES,0,6,this.count);}
+      gl.bindVertexArray(null);
+    }
+    renderCpu(data,count,settings={}){this.setData(data,count);this.render(settings);}
+    dispose(){
+      this.resizeObserver.disconnect();for(const[target,name,callback,options]of this.listeners)target.removeEventListener(name,callback,options);this.listeners.length=0;
+      if(this.device){this.uniformBuffer.destroy();this.indexBuffer.destroy();this.context.unconfigure();}else{const gl=this.gl;gl.deleteBuffer(this.geometryBuffer);gl.deleteBuffer(this.stateBuffer);gl.deleteVertexArray(this.backgroundVao);gl.deleteVertexArray(this.particleVao);gl.deleteProgram(this.backgroundProgram);gl.deleteProgram(this.particleProgram);}
+    }
+  }
+  ParticleRenderer.DEFAULT_PALETTE=DEFAULT_PALETTE;
+  window.ParticleRenderer=ParticleRenderer;
+})();
+</script>
+  <script>window.PARTICLE_WORKER_SOURCE="/* CPU fallback: same force law as GPU, compact grid, transferable frame buffers. */\n'use strict';\n(() => {\n  const DEFAULTS={radius:40,force:180,friction:6,repulsion:1.5,beta:.3,quality:'balanced'};\n  const LIMITS={radius:[15,90],force:[30,500],friction:[.5,15],repulsion:[.5,3],beta:[.1,.6]};\n  let params={...DEFAULTS},count=0,species=6,world=[400,250],state=new Float32Array(0),next=new Float32Array(0);\n  let matrix=new Float32Array(64),counts,starts,cursors,indices,gx,gy,cells,tick=0,time=0,comparisons=0;\n  function configure(incoming={},replace=false){\n    const old=params.radius;if(replace)params={...DEFAULTS};\n    for(const [key,[lo,hi]] of Object.entries(LIMITS))if(Number.isFinite(Number(incoming[key])))params[key]=Math.max(lo,Math.min(hi,Number(incoming[key])));\n    if(['exact','balanced','fast'].includes(incoming.quality))params.quality=incoming.quality;\n    if(count&&(replace||old!==params.radius))allocateGrid();\n  }\n  function seeded(seed){let value=seed>>>0;return()=>{let t=value+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};}\n  function hash(x){x=Math.imul(x^x>>>16,0x7feb352d);x=Math.imul(x^x>>>15,0x846ca68b);return(x^x>>>16)>>>0;}\n  function setMatrix(input){\n    const n=species;if(!input||input.length!==n&&input.length!==n*n&&input.length!==64)throw Error('Invalid interaction matrix shape.');\n    const nested=Array.isArray(input[0])||ArrayBuffer.isView(input[0]);const stride=!nested&&input.length===64?8:n;\n    const packed=new Float32Array(64);\n    for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=Number(nested?input[i][j]:input[i*stride+j]);if(!Number.isFinite(v))throw Error('Interaction matrix must be finite.');packed[i*8+j]=Math.max(-1,Math.min(1,v));}\n    matrix=packed;\n  }\n  function allocateGrid(){\n    gx=Math.max(1,Math.floor(world[0]/params.radius));gy=Math.max(1,Math.floor(world[1]/params.radius));cells=gx*gy;\n    counts=new Int32Array(cells);starts=new Int32Array(cells);cursors=new Int32Array(cells);indices=new Int32Array(count);\n  }\n  function cellOf(x,y){return Math.max(0,Math.min(gx-1,Math.floor((x+world[0]/2)*gx/world[0])))+Math.max(0,Math.min(gy-1,Math.floor((y+world[1]/2)*gy/world[1])))*gx;}\n  function initialize(config){\n    const n=Math.floor(Number(config.count));const kinds=Math.floor(Number(config.species??6));\n    if(!Number.isFinite(n)||n<1||n>16000)throw Error('CPU 兼容模式最多支持 16,000 个粒子。');\n    if(!Number.isFinite(kinds)||kinds<1||kinds>8)throw Error('Particle species must be between 1 and 8.');\n    count=n;species=kinds;tick=0;time=0;comparisons=0;\n    const width=Math.max(400,Math.sqrt(count/.0125*1.6));world=config.world?.length===2?config.world.map(Number):[width,width/1.6];\n    if(world.some(v=>!Number.isFinite(v)||v<1))throw Error('Invalid world dimensions.');\n    state=new Float32Array(count*8);next=new Float32Array(count*8);configure(config.params,true);setMatrix(config.matrix||new Float32Array(species*species));\n    if(config.initialState){\n      if(config.initialState.length!==state.length)throw Error('Initial state length mismatch.');state.set(config.initialState);\n      for(let i=0;i<count;i++){const j=i*8;for(let k=0;k<5;k++)if(!Number.isFinite(state[j+k]))throw Error('Initial state must be finite.');state[j+4]=Math.max(0,Math.min(species-1,Math.floor(state[j+4])));for(let d=0;d<2;d++)state[j+d]-=Math.floor((state[j+d]+world[d]/2)/world[d])*world[d];}\n    }else{const rng=seeded(Number.isFinite(Number(config.seed))?Number(config.seed):1);for(let i=0;i<count;i++){const j=i*8;state[j]=(rng()-.5)*world[0];state[j+1]=(rng()-.5)*world[1];state[j+4]=i%species;}}\n    emit(null,0);\n  }\n  function buildGrid(){\n    counts.fill(0);for(let i=0;i<count;i++)counts[cellOf(state[i*8],state[i*8+1])]++;\n    let sum=0;for(let c=0;c<cells;c++){starts[c]=sum;cursors[c]=sum;sum+=counts[c];}\n    for(let i=0;i<count;i++)indices[cursors[cellOf(state[i*8],state[i*8+1])]++]=i;\n  }\n  function step(dt,pointer){\n    buildGrid();comparisons=0;\n    const w=world[0],h=world[1],r=params.radius,r2=r*r,beta=params.beta;\n    const budget=params.quality==='exact'?Infinity:params.quality==='fast'?4:16;\n    const damping=Math.exp(-params.friction*dt),maxA=r*80,maxV=r*6;\n    const active=pointer&&['attract','repel'].includes(pointer.mode)&&Number.isFinite(pointer.x)&&Number.isFinite(pointer.y);\n    const pointerR=Math.max(1,Number(pointer?.radius)||r*2.5);\n    const pointerF=active?(pointer.mode==='attract'?1:-1)*Math.min(4000,Math.max(0,Number(pointer.strength)||1200)):0;\n    for(let i=0;i<count;i++){\n      const a=i*8,x=state[a],y=state[a+1],kind=state[a+4],home=cellOf(x,y),hx=home%gx,hy=Math.floor(home/gx);\n      let fx=0,fy=0;\n      for(let oy=-1;oy<=1;oy++){\n        if(gy===1&&oy!==0||gy===2&&oy===1)continue;\n        const cy=(hy+oy+gy)%gy;\n        for(let ox=-1;ox<=1;ox++){\n          if(gx===1&&ox!==0||gx===2&&ox===1)continue;\n          const c=(hx+ox+gx)%gx+cy*gx,population=counts[c];if(!population)continue;\n          const take=Math.min(population,budget),weight=population/take;\n          const jitter=(hash(i^Math.imul(c,374761393)^Math.imul(Math.floor(tick/4),668265263))&65535)/65536;\n          for(let sample=0;sample<take;sample++){\n            const slot=take===population?sample:Math.min(population-1,Math.floor((sample+jitter)*weight));\n            const j=indices[starts[c]+slot];comparisons++;if(j===i)continue;\n            const b=j*8;let dx=state[b]-x,dy=state[b+1]-y;dx-=Math.round(dx/w)*w;dy-=Math.round(dy/h)*h;\n            const d2=dx*dx+dy*dy;if(d2<1e-8||d2>=r2)continue;\n            const d=Math.sqrt(d2),q=d/r;\n            const strength=q<beta?params.repulsion*(q/beta-1):matrix[kind*8+state[b+4]]*(1-Math.abs(2*q-1-beta)/(1-beta));\n            const f=strength*weight/d;fx+=dx*f;fy+=dy*f;\n          }\n        }\n      }\n      let ax=fx*params.force,ay=fy*params.force;\n      if(pointerF){let dx=pointer.x-x,dy=pointer.y-y;dx-=Math.round(dx/w)*w;dy-=Math.round(dy/h)*h;const d=Math.hypot(dx,dy);if(d>1e-4&&d<pointerR){const f=(1-d/pointerR)*pointerF/d;ax+=dx*f;ay+=dy*f;}}\n      const acceleration=Math.hypot(ax,ay);if(acceleration>maxA){ax*=maxA/acceleration;ay*=maxA/acceleration;}\n      let vx=(state[a+2]+ax*dt)*damping,vy=(state[a+3]+ay*dt)*damping;\n      const speed=Math.hypot(vx,vy);if(speed>maxV){vx*=maxV/speed;vy*=maxV/speed;}\n      let px=x+vx*dt,py=y+vy*dt;px-=Math.floor((px+w/2)/w)*w;py-=Math.floor((py+h/2)/h)*h;\n      next[a]=px;next[a+1]=py;next[a+2]=vx;next[a+3]=vy;next[a+4]=kind;next[a+5]=next[a+6]=next[a+7]=0;\n    }\n    const old=state;state=next;next=old;tick++;time+=dt;\n  }\n  function emit(recycle,stepMs){\n    const bytes=count*32;const buffer=recycle instanceof ArrayBuffer&&recycle.byteLength===bytes?recycle:new ArrayBuffer(bytes);\n    new Float32Array(buffer).set(state);\n    self.postMessage({type:'frame',buffer,count,world:world.slice(),stats:{stepMs,time,comparisons,cells,quality:params.quality,maxCandidates:params.quality==='exact'?null:params.quality==='fast'?36:144,backend:'CPU Worker',count}},[buffer]);\n  }\n  self.onmessage=({data})=>{\n    try{\n      if(data.type==='init')initialize(data);\n      else if(data.type==='params')configure(data.params);\n      else if(data.type==='matrix')setMatrix(data.matrix);\n      else if(data.type==='step'){\n        if(!count)throw Error('Initialize the simulation first.');\n        if(!Number.isFinite(data.dt)||data.dt<0)throw Error('Invalid timestep.');\n        const dt=Math.min(1/30,data.dt),start=performance.now();if(dt>0)step(dt,data.pointer);emit(data.buffer,performance.now()-start);\n      }\n    }catch(error){self.postMessage({type:'error',message:error.message});}\n  };\n})();\n";</script>
+<script>(() => {
+  'use strict';
+  const boot=async()=>{
+    const $=id=>document.getElementById(id), palette=['#7ce8c6','#ff8475','#f4d477','#9aa7ff','#ef9ed2','#72c9f4','#e6c79c','#b8df74'];
+    const names=['薄荷','珊瑚','琥珀','鸢尾','樱粉','冰蓝','沙金','新芽'];
+    const counts=[2000,8000,16000,32000,64000,100000,250000];
+    const limits={radius:[15,90],force:[30,500],friction:[.5,15],repulsion:[.5,3],beta:[.1,.6]};
+    const defaults={radius:40,force:180,friction:6,repulsion:1.5,beta:.3,quality:'balanced'};
+    let params={...defaults},count=16000,species=6,seed=104729,preset='primordial',matrix=[];
+    let selected=[0,1],paused=false,loading=true,fatal=false,backend='starting',time=0,frameMs=0,fps=0,frames=0;
+    let gpu=null,renderer=null,worker=null,canvas=$('life-canvas'),spare=null,cpuBusy=false,workerURL=null;
+    let pending=false,capturing=false,generation=0,requestedSteps=0,tool='pan',pointer={mode:'none',x:0,y:0,radius:90,strength:180};
+    let toastTimer,lastFrame=performance.now(),fpsAt=lastFrame,drawCount=0,stepCount=0,simHz=0,world=[1000,625],deviceInfo='';
+    const random=initial=>{let a=initial>>>0;return()=>{a+=0x6d2b79f5;let t=a;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;};};
+    const toast=message=>{const el=$('toast');el.textContent=message;el.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('visible'),3800);};
+    const status=text=>{if($('status-text'))$('status-text').textContent=text;};
+    const failure=message=>{if(fatal)return;fatal=true;loading=false;status('模拟已停止');toast(message);const el=document.createElement('div');el.className='error-card';el.setAttribute('role','alert');el.textContent=message;const btn=document.createElement('button');btn.textContent='重新载入';btn.onclick=()=>location.reload();el.append(btn);document.body.append(el);};
+    const randomSeed=()=>crypto.getRandomValues(new Uint32Array(1))[0];
+    function makeMatrix(name,n,s) {
+      const rng=random(s),a=new Array(n*n);
+      for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+        const next=(j-i+n)%n, prev=(i-j+n)%n;
+        let v;
+        if(name==='cells')v=i===j?.78:Math.floor(i/2)===Math.floor(j/2)?.36:-.32;
+        else if(name==='chains')v=i===j?.18:next===1?.88:prev===1?-.6:-.08;
+        else if(name==='orbit')v=i===j?.35:next===1?.8:prev===1?-.28:.04;
+        else if(name==='crystal')v=i===j?.35:.25+.2*Math.cos((i-j)*Math.PI*2/n);
+        else if(name==='chaos')v=rng()*2-1;
+        else v=i===j?.65:next===1?.48:prev===1?-.35:(rng()-.6)*.6;
+        a[i*n+j]=Math.round(v*100)/100;
+      }
+      return a;
+    }
+    matrix=makeMatrix(preset,species,seed);
+    const markCustom=()=>{document.querySelectorAll('[data-preset]').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-pressed','false');});};
+    function matrixChanged(){if(gpu)gpu.setMatrix(matrix);if(worker)worker.postMessage({type:'matrix',matrix});drawMatrix();markCustom();}
+    function drawMatrix(){
+      const grid=$('matrix-grid');grid.style.gridTemplateColumns=`24px repeat(${species},minmax(0,1fr))`;grid.replaceChildren();
+      const corner=document.createElement('span');corner.className='matrix-corner';corner.textContent='↘';grid.append(corner);
+      for(let j=0;j<species;j++){const el=document.createElement('span');el.className='matrix-axis';el.style.setProperty('--cell-color',palette[j]);el.textContent=String(j+1);el.title=names[j]+' · 影响来源';grid.append(el);}
+      for(let i=0;i<species;i++){
+        const label=document.createElement('span');label.className='matrix-axis';label.style.setProperty('--cell-color',palette[i]);label.textContent=String(i+1);label.title=names[i]+' · 受力粒子';grid.append(label);
+        for(let j=0;j<species;j++){
+          const value=matrix[i*species+j],b=document.createElement('button');b.className='matrix-cell'+(selected[0]===i&&selected[1]===j?' is-selected':'');b.dataset.row=i;b.dataset.col=j;
+          b.style.setProperty('--cell-color',value<0?'#ff8475':'#7ce8c6');b.style.setProperty('--cell-strength',String(Math.abs(value)));b.setAttribute('aria-pressed',String(selected[0]===i&&selected[1]===j));b.title=`${names[i]} 受到 ${names[j]} 的作用：${value>0?'吸引':value<0?'排斥':'中性'} ${value.toFixed(2)}`;
+          b.setAttribute('aria-label',b.title);b.textContent=value===0?'·':(value>0?'+':'')+value.toFixed(1);b.onclick=()=>{selected=[i,j];drawMatrix();};
+          grid.append(b);
+        }
+      }
+      $('selected-pair').textContent=`${names[selected[0]]} ← ${names[selected[1]]}`;
+      $('matrix-value').value=matrix[selected[0]*species+selected[1]];
+      $('matrix-output').textContent=Number($('matrix-value').value).toFixed(2);updateRange($('matrix-value'));
+    }
+    function updateRange(el){const v=Number(el.value);el.style.setProperty('--progress',(100*(v-Number(el.min))/(Number(el.max)-Number(el.min)))+'%');const key=el.dataset.param||el.id;const out=document.querySelector(`[data-value="${key}"]`);if(out)out.textContent=key==='time-scale'?v.toFixed(1)+'×':Number.isInteger(v)?String(v):v.toFixed(2).replace(/0$/,'');}
+    function syncUI(){
+      $('count-select').value=String(count);$('species-select').value=String(species);$('seed-input').value=seed;$('quality-select').value=params.quality;
+      document.querySelectorAll('[data-param]').forEach(el=>{el.value=params[el.dataset.param];updateRange(el);});
+      document.querySelectorAll('[data-preset]').forEach(b=>{const active=b.dataset.preset===preset;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});drawMatrix();
+      $('count-value').textContent=count.toLocaleString('en-US');$('mode-value').textContent={fast:'快速采样',balanced:'均衡采样',exact:'完整邻域'}[params.quality];
+    }
+    function config(){return {count,species,seed,preset,params:{...params},matrix:[...matrix]};}
+    async function restart(){
+      const ticket=++generation;loading=true;pointer.mode='none';status('正在构建粒子世界…');time=0;requestedSteps=0;syncUI();
+      try{
+        if(backend==='gpu'){
+          await gpu.device.queue.onSubmittedWorkDone();if(ticket!==generation)return;
+          await gpu.init(config());if(ticket!==generation)return;
+          world=[...gpu.world];renderer.resetCamera(world);loading=false;status(paused?'观察已暂停':'生命正在涌现');
+        } else {
+          if(worker)worker.terminate();spare=null;cpuBusy=true;
+          worker=new Worker(workerURL||'cpu.worker.js');
+          worker.onerror=e=>failure('兼容计算线程出错：'+e.message);
+          worker.onmessage=({data})=>{
+            if(ticket!==generation)return;
+            if(data.type==='error'){failure('模拟遇到错误：'+(data.message||data.error));return;}
+            if(data.type!=='frame')return;
+            renderer.setData(new Float32Array(data.buffer),data.count);spare=data.buffer;cpuBusy=false;frameMs=data.stats?.stepMs||0;time=data.stats?.time||0;stepCount++;
+            if(loading){world=[...data.world];renderer.resetCamera(world);loading=false;status(paused?'观察已暂停':'生命正在涌现');}
+          };
+          worker.postMessage({type:'init',...config()});
+        }
+      }catch(e){failure('无法建立粒子系统：'+e.message);}
+    }
+    function setParams(){if(gpu)gpu.setParams(params);if(worker)worker.postMessage({type:'params',params});$('mode-value').textContent={fast:'快速采样',balanced:'均衡采样',exact:'完整邻域'}[params.quality];}
+    const settings=()=>({world,time,palette,pointSize:Number($('point-size')?.value||1.6),glow:Number($('glow')?.value||.45),showGrid:!!$('show-grid')?.checked,cinema:document.body.classList.contains('cinema-mode')||document.body.classList.contains('panel-collapsed'),pointer});
+    function updatePause(){const b=$('pause-btn');b.setAttribute('aria-pressed',String(paused));b.setAttribute('aria-label',paused?'继续模拟':'暂停模拟');const text=b.querySelector('[data-pause-label]');if(text)text.textContent=paused?'继续':'暂停';const icon=b.querySelector('[data-pause-icon]');if(icon)icon.innerHTML=paused?'<path d="m8 5 11 7-11 7Z"/>':'<path d="M8 5v14M16 5v14"/>';document.body.classList.toggle('is-paused',paused);status(paused?'观察已暂停':'生命正在涌现');}
+    function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+    async function capture(){if(loading||fatal||capturing)return;capturing=true;try{if(backend==='gpu'){await gpu.device.queue.onSubmittedWorkDone();const e=gpu.device.createCommandEncoder();renderer.renderGpu(e,gpu.stateBuffer,count,settings());gpu.device.queue.submit([e.finish()]);await gpu.device.queue.onSubmittedWorkDone();}else renderer.render(settings());await new Promise(resolve=>canvas.toBlob(blob=>{if(blob){download(blob,'particle-life-'+seed+'.png');toast('已保存当前画面');}else toast('当前浏览器未能生成截图');resolve();},'image/png'));}catch(e){toast('截图失败：'+e.message);}finally{capturing=false;}}
+    function validateConfig(data){
+      if(!data||data.format!=='particle-life-rules'||data.version!==1)throw Error('文件不是受支持的 Particle Life 规则文件');
+      if(!counts.includes(data.count)||!Number.isInteger(data.species)||data.species<3||data.species>8)throw Error('粒子数或种类数无效');
+      if(!Number.isInteger(data.seed)||data.seed<0||data.seed>4294967295)throw Error('种子无效');
+      if(!Array.isArray(data.matrix)||data.matrix.length!==data.species**2||data.matrix.some(v=>typeof v!=='number'||!Number.isFinite(v)||v< -1||v>1))throw Error('作用矩阵必须是范围 −1 至 1 的数值');
+      if(!data.params||!['fast','balanced','exact'].includes(data.params.quality))throw Error('计算模式无效');
+      for(const [k,[min,max]]of Object.entries(limits))if(typeof data.params[k]!=='number'||!Number.isFinite(data.params[k])||data.params[k]<min||data.params[k]>max)throw Error('参数超出范围：'+k);
+      return data;
+    }
+    async function importRules(data){const d=validateConfig(data);species=d.species;count=backend==='cpu'?Math.min(d.count,16000):d.count;seed=d.seed;preset=Object.hasOwn({primordial:1,cells:1,chains:1,orbit:1,crystal:1,chaos:1},d.preset)?d.preset:'primordial';params={...defaults,...Object.fromEntries(Object.keys(defaults).map(k=>[k,d.params[k]]))};matrix=[...d.matrix];selected=[0,1];await restart();markCustom();toast(count!==d.count?'已导入规则；兼容模式使用 16,000 粒子':'已导入规则与随机种子');}
+    try{
+      if(new URLSearchParams(location.search).get('cpu')==='1')throw Error('已选择 CPU 兼容测试模式');
+      gpu=await window.ParticleGPUEngine.create();await gpu.init(config());renderer=new window.ParticleRenderer(canvas,{device:gpu.device});await renderer.ready;backend='gpu';world=[...gpu.world];
+      deviceInfo=gpu.device.adapterInfo?.description||gpu.device.adapterInfo?.device||'WebGPU';
+      gpu.device.addEventListener('uncapturederror',event=>failure('GPU 计算错误：'+event.error.message));
+      gpu.device.lost.then(info=>{if(!fatal)failure('GPU 连接已中断：'+info.message+'。请重新载入。');});
+    }catch(error){
+      gpu?.destroy();gpu=null;backend='cpu';
+      try{const replacement=canvas.cloneNode();canvas.replaceWith(replacement);canvas=replacement;renderer=new window.ParticleRenderer(canvas);if(window.PARTICLE_WORKER_SOURCE)workerURL=URL.createObjectURL(new Blob([window.PARTICLE_WORKER_SOURCE],{type:'text/javascript'}));}
+      catch(e){failure('此浏览器无法运行 WebGPU 或 WebGL 2：'+e.message);return;}
+      for(const option of $('count-select').options)if(Number(option.value)>16000)option.disabled=true;
+      toast('已启用 CPU 兼容模式，支持最多 16,000 粒子。'+error.message);
+    }
+    $('backend-label').textContent=backend==='gpu'?'WEBGPU COMPUTE':'CPU WORKER + WEBGL';
+    if($('step-label'))$('step-label').textContent=backend==='gpu'?'GPU FRAME':'CPU STEP';
+    $('step-value').parentElement.title=backend==='gpu'?'GPU 队列完成耗时，包含计算与绘制；不是单独的着色器时间':'Worker 中一次物理计算的耗时';
+    canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();failure('图形上下文已中断，请重新载入页面。');});
+    const updatePointer=e=>{const p=renderer.getPointerWorld(e);pointer.x=p.x;pointer.y=p.y;pointer.radius=params.radius*2.5;};
+    canvas.addEventListener('pointerdown',e=>{if(renderer.pointers.size>1){pointer.mode='none';return;}if(tool==='pan'||e.button>0)return;canvas.setPointerCapture(e.pointerId);updatePointer(e);pointer.mode=tool;});
+    canvas.addEventListener('pointermove',e=>{if(renderer.pointers.size>1){pointer.mode='none';return;}if(pointer.mode!=='none')updatePointer(e);});
+    for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{pointer.mode='none';});
+    document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;pointer.mode='none';renderer.setInteractionMode(tool);document.querySelectorAll('[data-tool]').forEach(el=>{el.classList.toggle('active',el===b);el.setAttribute('aria-pressed',String(el===b));});}));
+    document.querySelectorAll('input[type=range]').forEach(el=>{updateRange(el);el.addEventListener('input',()=>{updateRange(el);if(el.dataset.param){params[el.dataset.param]=Number(el.value);setParams();markCustom();}});});
+    $('matrix-value').addEventListener('input',()=>{matrix[selected[0]*species+selected[1]]=Number($('matrix-value').value);matrixChanged();});
+    $('matrix-random-btn').onclick=()=>{matrix=makeMatrix('chaos',species,randomSeed());matrixChanged();toast('已生成新的有向作用规则');};
+    $('matrix-symmetric-btn').onclick=()=>{for(let i=0;i<species;i++)for(let j=i+1;j<species;j++)matrix[i*species+j]=matrix[j*species+i]=Math.round((matrix[i*species+j]+matrix[j*species+i])*50)/100;matrixChanged();toast('双向作用已设为相同强度');};
+    $('matrix-zero-btn').onclick=()=>{matrix.fill(0);matrixChanged();toast('已清空类型间作用，保留近距离排斥');};
+    $('mutate-btn').onclick=()=>{const rng=random(randomSeed());matrix=matrix.map(v=>Math.round(Math.max(-1,Math.min(1,v+(rng()-.5)*.32))*100)/100);matrixChanged();toast('规则已发生轻微变异');};
+    document.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>{preset=b.dataset.preset;params={...defaults,quality:params.quality};if(preset==='crystal'){params.repulsion=2.2;params.friction=9;}if(preset==='chaos'){params.friction=3.5;}if(preset==='chains'){params.force=240;params.friction=4;}matrix=makeMatrix(preset,species,seed);restart();}));
+    $('count-select').onchange=()=>{count=Number($('count-select').value);restart();};
+    $('species-select').onchange=()=>{species=Number($('species-select').value);selected=[0,1];matrix=makeMatrix(preset,species,seed);restart();};
+    $('quality-select').onchange=()=>{params.quality=$('quality-select').value;setParams();if(params.quality==='exact'&&count>=64000)toast('完整邻域会计算全部近邻，密集区域的耗时可能明显增加');};
+    $('seed-btn').onclick=()=>{const v=Number($('seed-input').value);if(!Number.isInteger(v)||v<0||v>4294967295){toast('请输入 0 至 4294967295 的整数种子');return;}seed=v;restart();};
+    $('pause-btn').onclick=()=>{paused=!paused;updatePause();};$('reset-btn').onclick=()=>restart();
+    $('step-btn').onclick=()=>{paused=true;updatePause();requestedSteps++;};$('capture-btn').onclick=capture;
+    $('panel-toggle').onclick=()=>{const collapsed=document.body.classList.toggle('panel-collapsed');$('panel-toggle').setAttribute('aria-expanded',String(!collapsed));};
+    $('cinema-btn').onclick=()=>{const on=document.body.classList.toggle('cinema-mode');$('cinema-btn').setAttribute('aria-pressed',String(on));};$('cinema-exit-btn').onclick=()=>$('cinema-btn').click();
+    $('fullscreen-btn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{toast('当前窗口不支持全屏，可使用浏览器的 F11');}};
+    $('help-btn').onclick=()=>$('help-dialog').showModal();$('close-help').onclick=()=>$('help-dialog').close();$('help-dialog').onclick=e=>{if(e.target===$('help-dialog'))$('help-dialog').close();};
+    $('save-btn').onclick=()=>{download(new Blob([JSON.stringify({format:'particle-life-rules',version:1,...config()},null,2)],{type:'application/json'}),'particle-life-rules-'+seed+'.json');toast('已保存规则、参数与初始种子');};
+    $('load-btn').onclick=()=>$('file-input').click();$('file-input').onchange=async()=>{const file=$('file-input').files[0];if(!file)return;try{if(file.size>1000000)throw Error('规则文件过大');await importRules(JSON.parse(await file.text()));}catch(e){toast('未导入：'+e.message);}finally{$('file-input').value='';}};
+    document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey||e.altKey||$('help-dialog').open)return;const key=e.key.toLowerCase();if(e.code==='Space'){e.preventDefault();$('pause-btn').click();}else if(key==='r')$('reset-btn').click();else if(key==='h')$('cinema-btn').click();else if(key==='p')capture();else if(key==='.')$('step-btn').click();else if(key==='escape')document.body.classList.remove('cinema-mode');});
+    window.particleLife={get state(){return {...config(),backend,paused,loading,fatal,time,fps,frameMs,simHz,world:[...world],deviceInfo,engineStats:gpu?.stats||null};},get engine(){return gpu;},get renderer(){return renderer;},get pointer(){return {...pointer};},exportRules:()=>({format:'particle-life-rules',version:1,...config()}),importRules,readState:()=>gpu?gpu.readState():Promise.reject(Error('CPU snapshot is not enabled')),restart};
+    await restart();
+    function animate(now){
+      if(fatal)return;
+      const elapsed=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;
+      if(!loading&&!capturing&&!document.hidden){
+        const advance=!paused||requestedSteps>0;
+        const dt=Math.min(.033333,1/60*Number($('time-scale').value));
+        if(backend==='gpu'&&!pending){
+          try{
+            const encoder=gpu.device.createCommandEncoder();if(advance){gpu.encodeStep(encoder,dt,pointer);time+=dt;stepCount++;if(requestedSteps>0)requestedSteps--;}
+            renderer.renderGpu(encoder,gpu.stateBuffer,count,settings());const started=performance.now();gpu.device.queue.submit([encoder.finish()]);pending=true;
+            gpu.device.queue.onSubmittedWorkDone().then(()=>{frameMs=performance.now()-started;pending=false;drawCount++;}).catch(e=>failure('GPU 队列失败：'+e.message));
+          }catch(e){failure('绘制失败：'+e.message);}
+        }else if(backend==='cpu'){
+          renderer.render(settings());drawCount++;
+          if(advance&&!cpuBusy&&worker){cpuBusy=true;const msg={type:'step',dt,pointer:{...pointer}};if(spare){msg.buffer=spare;worker.postMessage(msg,[spare]);spare=null;}else worker.postMessage(msg);if(requestedSteps>0)requestedSteps--;}
+        }
+        if(now-fpsAt>=750){fps=Math.round(drawCount*1000/(now-fpsAt));simHz=stepCount*1000/(now-fpsAt);drawCount=0;stepCount=0;fpsAt=now;$('fps-value').textContent=fps;$('step-value').textContent=frameMs.toFixed(1);const seconds=Math.floor(time);$('elapsed-value').textContent=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');}
+      }
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+    window.addEventListener('pagehide',()=>{worker?.terminate();if(workerURL)URL.revokeObjectURL(workerURL);},{once:true});
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
+})();
+</script>
+</head>
+<body>
+  <canvas id="life-canvas" tabindex="0" aria-label="二维粒子生命模拟，拖动平移，滚轮或双指缩放"></canvas>
+  <div class="viewport-frame" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+  <header class="app-header chrome">
+    <a class="brand" href="#" aria-label="Particle Life 微观宇宙实验室">
+      <svg class="brand-symbol" viewBox="0 0 36 36" fill="none" aria-hidden="true"><circle cx="18" cy="18" r="12.5"/><circle cx="18" cy="18" r="5"/><circle class="symbol-dot" cx="18" cy="5.5" r="2.4"/><circle class="symbol-dot" cx="7.2" cy="24.3" r="2.4"/><circle class="symbol-dot" cx="28.8" cy="24.3" r="2.4"/></svg>
+      <span class="brand-copy"><strong>PARTICLE <i>/</i> LIFE<span class="brand-version">01</span></strong><small>微观宇宙实验室</small></span>
+    </a>
+    <div class="header-center"><span class="header-line"></span> SIMPLE RULES. EMERGENT WORLDS.</div>
+    <div class="header-actions">
+      <button class="icon-button" id="help-btn" title="操作与模型说明" aria-label="打开帮助"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M9.7 8.8a2.45 2.45 0 0 1 4.7 1c0 1.8-2.4 1.8-2.4 3.7M12 16.8v.1"/></svg></button>
+      <button class="icon-button desktop-fullscreen" id="fullscreen-btn" title="全屏" aria-label="切换全屏"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/></svg></button>
+      <button class="panel-toggle" id="panel-toggle" aria-controls="control-panel" aria-expanded="true"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14M7 3v4m6 1v4m-5 1v4"/></svg><span>实验控制台</span></button>
+    </div>
+  </header>
+
+  <div class="observation-hud chrome">
+    <div class="live-row"><span class="live-dot"></span><span id="status-text">正在准备培养皿</span><span class="hud-slash">/</span><span class="mono">LIVE CULTURE</span></div>
+    <div class="observation-title">让规则，长出形状<span>。</span></div>
+    <p>每一个粒子，只感知附近的世界。</p>
+  </div>
+
+  <aside class="control-panel chrome" id="control-panel" aria-label="粒子生命实验控制台">
+    <div class="panel-heading"><div><span class="eyebrow">THE RULES OF THIS WORLD</span><h1>定义你的微观宇宙</h1></div><span class="panel-index">[ 01 ]</span></div>
+    <div class="panel-scroll">
+      <section class="preset-section" aria-labelledby="preset-heading">
+        <div class="section-title"><h2 id="preset-heading">从一个世界开始</h2><span>PRESETS</span></div>
+        <div class="preset-list">
+          <button class="preset active" data-preset="primordial" aria-pressed="true"><span class="preset-mark">✳</span>原初汤</button>
+          <button class="preset" data-preset="cells" aria-pressed="false"><span class="preset-mark">◉</span>细胞群落</button>
+          <button class="preset" data-preset="chains" aria-pressed="false"><span class="preset-mark">∿</span>流动链条</button>
+          <button class="preset" data-preset="orbit" aria-pressed="false"><span class="preset-mark">◎</span>追逐轨道</button>
+          <button class="preset" data-preset="crystal" aria-pressed="false"><span class="preset-mark">◇</span>晶格秩序</button>
+          <button class="preset" data-preset="chaos" aria-pressed="false"><span class="preset-mark">⁙</span>混沌碰撞</button>
+        </div>
+      </section>
+
+      <section class="scale-section" aria-labelledby="scale-heading">
+        <div class="section-title"><h2 id="scale-heading">规模与计算</h2><span>PERFORMANCE</span></div>
+        <div class="scale-controls">
+          <label for="count-select"><span>粒子数量</span><select id="count-select"><option value="2000">2,000</option><option value="8000">8,000</option><option value="16000" selected>16,000</option><option value="32000">32,000</option><option value="64000">64,000</option><option value="100000">100,000</option><option value="250000">250,000</option></select></label>
+          <label for="species-select"><span>种类</span><select id="species-select"><option value="3">3 种</option><option value="4">4 种</option><option value="5">5 种</option><option value="6" selected>6 种</option><option value="7">7 种</option><option value="8">8 种</option></select></label>
+          <label for="quality-select"><span>邻域计算</span><select id="quality-select"><option value="fast">快速采样</option><option value="balanced" selected>均衡采样</option><option value="exact">完整邻域</option></select></label>
+        </div>
+      </section>
+
+      <section class="matrix-section" aria-labelledby="matrix-heading">
+        <div class="section-title matrix-title"><h2 id="matrix-heading">相互作用矩阵<span class="section-dot"></span></h2><span>INTERACTIONS</span></div>
+        <p class="matrix-intro">改变一格，观察整个世界的回应。</p>
+        <div class="matrix-wrap"><div id="matrix-grid" class="matrix-grid" role="group" aria-label="粒子种类之间的相互作用规则"></div></div>
+        <div class="matrix-legend"><span><i class="legend-negative"></i>排斥 −</span><span class="legend-scale"></span><span>＋ 吸引<i class="legend-positive"></i></span></div>
+        <p id="matrix-hint" class="matrix-hint">行：受力粒子 → 列：影响来源。<br>正值吸引，负值排斥。</p>
+        <div class="matrix-editor" id="matrix-editor">
+          <div class="matrix-editor-top"><span id="selected-pair">选择一个交互关系</span><output id="matrix-output" for="matrix-value">0.00</output></div>
+          <input id="matrix-value" type="range" min="-1" max="1" step="0.05" value="0" aria-label="当前选中粒子关系的吸引或排斥强度">
+          <div class="editor-extremes"><span>−1.00</span><span>0</span><span>+1.00</span></div>
+        </div>
+        <div class="matrix-actions"><button id="matrix-random-btn" title="重新随机生成所有相互作用">随机规则</button><button id="matrix-symmetric-btn" title="让每对粒子的作用对称">对称化</button><button id="matrix-zero-btn" title="将类型间相互作用归零，保留近距排斥">归零</button></div>
+        <button class="mutate-button" id="mutate-btn"><svg viewBox="0 0 18 18" fill="none" aria-hidden="true"><path d="M3 5h3l6 8h3M3 13h3l2-3m2-2 2-3h3m-3-2 3 2-3 2m0 4 3 2-3 2"/></svg><span>轻微突变</span><small>发现一个相近的世界</small></button>
+      </section>
+
+      <details class="panel-section">
+        <summary><span><strong>世界与种子</strong><small>WORLD & INITIAL CONDITIONS</small></span><i class="expand-mark">+</i></summary>
+        <div class="details-content">
+          <p class="control-note">数量增加时，世界同步扩展以保持初始密度。采样模式以局部近似换取计算速度。</p>
+          <label class="seed-label" for="seed-input">世界种子 <span>SEED</span></label><div class="seed-row"><input type="number" id="seed-input" value="104729" min="0" max="4294967295" step="1" inputmode="numeric"><button id="seed-btn" title="应用种子并重新初始化">重新播种<span>↗</span></button></div>
+        </div>
+      </details>
+
+      <details class="panel-section">
+        <summary><span><strong>运动的法则</strong><small>PARTICLE DYNAMICS</small></span><i class="expand-mark">+</i></summary>
+        <div class="details-content">
+          <div class="slider-control"><div class="slider-label"><label for="param-radius">感知半径</label><output for="param-radius" data-value="radius">40</output></div><input type="range" id="param-radius" data-param="radius" min="15" max="90" step="1" value="40"><div class="range-caption"><span>局部相遇</span><span>更远的联系</span></div></div>
+          <div class="slider-control"><div class="slider-label"><label for="param-force">作用力强度</label><output for="param-force" data-value="force">180</output></div><input type="range" id="param-force" data-param="force" min="30" max="500" step="5" value="180"></div>
+          <div class="slider-control"><div class="slider-label"><label for="param-friction">运动阻尼</label><output for="param-friction" data-value="friction">6.0</output></div><input type="range" id="param-friction" data-param="friction" min="0.5" max="15" step="0.1" value="6"></div>
+          <div class="slider-control"><div class="slider-label"><label for="param-repulsion">近距排斥</label><output for="param-repulsion" data-value="repulsion">1.5</output></div><input type="range" id="param-repulsion" data-param="repulsion" min="0.5" max="3" step="0.1" value="1.5"></div>
+          <div class="slider-control"><div class="slider-label"><label for="param-beta">排斥区比例</label><output for="param-beta" data-value="beta">0.30</output></div><input type="range" id="param-beta" data-param="beta" min="0.1" max="0.6" step="0.01" value="0.3"></div>
+        </div>
+      </details>
+
+      <details class="panel-section">
+        <summary><span><strong>观察方式</strong><small>OPTICS & DISPLAY</small></span><i class="expand-mark">+</i></summary>
+        <div class="details-content">
+          <div class="slider-control"><div class="slider-label"><label for="point-size">粒子大小</label><output for="point-size" data-value="point-size">1.6</output></div><input type="range" id="point-size" min="0.6" max="3.5" step="0.1" value="1.6"></div>
+          <div class="slider-control"><div class="slider-label"><label for="glow">微光强度</label><output for="glow" data-value="glow">0.45</output></div><input type="range" id="glow" min="0" max="1" step="0.05" value="0.45"></div>
+          <div class="slider-control"><div class="slider-label"><label for="time-scale">时间倍率</label><output for="time-scale" data-value="time-scale">1.0×</output></div><input type="range" id="time-scale" min="0.1" max="2" step="0.1" value="1"></div>
+          <label class="toggle-row" for="show-grid"><span>显示空间网格</span><input type="checkbox" id="show-grid"><span class="toggle-track" aria-hidden="true"></span></label>
+        </div>
+      </details>
+
+      <div class="file-actions"><button id="save-btn"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v9m-3-3 3 3 3-3M4 12v4h12v-4"/></svg>保存规则</button><button id="load-btn"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 12V3m-3 3 3-3 3 3M4 12v4h12v-4"/></svg>载入规则</button><input type="file" id="file-input" accept=".json,application/json" hidden></div>
+      <p class="file-note">保存参数、规则矩阵与种子，不包含当前粒子位置。</p>
+      <div class="panel-end"><span></span> EVERYTHING STARTS WITH AN INTERACTION <span></span></div>
+    </div>
+  </aside>
+
+  <div class="scene-note chrome"><span class="coordinate-cross">+</span><div><strong>无预设轨迹的共同演化</strong><small>LOCAL INTERACTIONS / GLOBAL PATTERNS</small></div></div>
+
+  <div class="interaction-dock chrome" role="group" aria-label="模拟播放与交互工具">
+    <div class="playback-group"><button class="pause-button" id="pause-btn" aria-label="暂停模拟" title="暂停 / 继续 · Space"><svg data-pause-icon viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span data-pause-label>暂停</span></button><button class="icon-button" id="step-btn" title="前进一帧 · ." aria-label="前进一帧"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 5 10 7-10 7ZM19 5v14"/></svg></button><button class="icon-button" id="reset-btn" title="按当前参数重置 · R" aria-label="重置模拟"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 6M4 4v6h6"/></svg></button></div>
+    <span class="dock-divider"></span>
+    <div class="pointer-tools" role="group" aria-label="指针工具"><button class="tool-button active" data-tool="pan" aria-pressed="true" title="拖动画面平移"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v18M3 12h18M9 6l3-3 3 3M6 9l-3 3 3 3m3 3 3 3 3-3m3-9 3 3-3 3"/></svg><span>平移</span></button><button class="tool-button" data-tool="attract" aria-pressed="false" title="按住以吸引附近粒子"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="m4 4 4 4H4m4 0V4m12 0-4 4V4m0 4h4M4 20l4-4H4m4 0v4m12 0-4-4v4m0-4h4"/></svg><span>吸引</span></button><button class="tool-button" data-tool="repel" aria-pressed="false" title="按住以推开附近粒子"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="2"/><path d="M8 8 4 4v4m0-4h4m8 4 4-4h-4m4 0v4M8 16l-4 4h4m-4 0v-4m12 0 4 4v-4m0 4h-4"/></svg><span>排斥</span></button></div>
+    <span class="dock-divider"></span>
+    <button class="icon-button" id="capture-btn" aria-label="保存当前画面" title="保存画面 · P"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m8 5 1.5-2h5L16 5h4v14H4V5z"/><circle cx="12" cy="12" r="3.5"/></svg></button><button class="icon-button" id="cinema-btn" aria-label="切换沉浸模式" title="沉浸模式 · H"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 8V4h4m8 0h4v4M4 16v4h4m12-4v4h-4M9 9h6v6H9z"/></svg></button>
+  </div>
+
+  <footer class="status-bar chrome">
+    <div class="backend-status"><span class="backend-icon"><svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M6 1v3m4-3v3m2 2h3m-3 4h3M6 12v3m4-3v3M1 6h3m-3 4h3"/></svg></span><span><strong id="backend-label">初始化引擎</strong><small id="mode-value">等待设备</small></span></div>
+    <span class="footer-divider"></span>
+    <div class="telemetry"><div class="metric"><span>PARTICLES</span><strong id="count-value">16,000</strong></div><div class="metric"><span>RENDER RATE</span><strong><b id="fps-value">—</b><small> FPS</small></strong></div><div class="metric step-metric"><span>FRAME / STEP</span><strong><b id="step-value">—</b><small> MS</small></strong></div></div>
+    <div class="observation-time"><span>SIMULATION TIME</span><strong id="elapsed-value">00:00</strong></div>
+    <div class="footer-signature">ARTIFICIAL LIFE <span>/</span> REAL EMERGENCE</div>
+  </footer>
+
+  <button id="cinema-exit-btn" class="cinema-exit" title="返回控制台 · H"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 4v3H4m9-3v3h3M7 16v-3H4m9 3v-3h3"/></svg>返回控制台 <kbd>H</kbd></button>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="help-dialog" class="help-dialog"><div class="dialog-top"><span class="eyebrow">A GUIDE TO YOUR MICROCOSMOS</span><button id="close-help" class="icon-button" aria-label="关闭说明"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><h2>一些简单的规则，<br>一个复杂的世界。</h2><p>不同颜色代表不同种类。每个粒子只与感知半径内的邻居相互作用：靠得很近时排斥，在更远处根据矩阵吸引或排斥。</p><p>矩阵的<strong>行是受力粒子，列是影响来源</strong>。作用可以不对称：一种粒子追向另一种，而对方选择远离。环形边界让粒子从另一侧重新进入世界。</p><dl class="shortcut-list"><div><dt>平移 / 缩放</dt><dd>拖动 / 滚轮 / 双指</dd></div><div><dt>恢复视野</dt><dd>双击画布</dd></div><div><dt>暂停 / 继续</dt><dd><kbd>Space</kbd></dd></div><div><dt>前进一帧</dt><dd><kbd>.</kbd></dd></div><div><dt>按当前参数重置</dt><dd><kbd>R</kbd></dd></div><div><dt>沉浸模式 / 截图</dt><dd><kbd>H</kbd> / <kbd>P</kbd></dd></div></dl><div class="help-model"><h3>把性能留给粒子</h3><p>支持 WebGPU 的设备会在显卡上直接计算与绘制，最高可选择 250,000 粒子。兼容模式使用 CPU，支持的数量较低。粒子增加时，世界随之扩展，保持近似相同的初始密度。</p><p>“完整邻域”计算感知范围内全部邻居；“均衡采样”和“快速采样”限制邻域工作量，属于性能近似。密集团簇、较大感知半径和高分辨率会增加耗时，请以实时性能读数为准。</p><p>这些形态由局部相互作用产生，是类生命的自组织结构。模型不包含生物意义上的遗传、代谢或繁殖。</p><p class="help-credit">灵感来自 <a href="https://github.com/hunar4321/particle-life" target="_blank" rel="noopener noreferrer">Particle Life</a>，独立实现。</p></div></dialog>
+</body>
+</html>
